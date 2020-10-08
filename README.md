@@ -19,7 +19,7 @@ A high performance JSON library written in ANSI C.
 ![Reader Apple](doc/images/reader_apple.png)
 ![Writer Apple](doc/images/writer_apple.png)
 
-Benchmark project: [yyjson_benchmark](https://github.com/ibireme/yyjson_benchmark)
+Benchmark and datasets: [yyjson_benchmark](https://github.com/ibireme/yyjson_benchmark)
 
 # Building
 
@@ -48,6 +48,7 @@ make test
 Supported CMake options:
 
 - `-DBUILD_SHARED_LIBS=ON` Build shared library instead of static library.
+- `-DYYJSON_BUILD_TESTS=ON` Build all tests.
 - `-DYYJSON_DISABLE_READER=ON` Disable JSON reader if you don't need it.
 - `-DYYJSON_DISABLE_WRITER=ON` Disable JSON write if you don't need it.
 - `-DYYJSON_DISABLE_FP_READER=ON` Disable custom double number reader to reduce binary size.
@@ -57,7 +58,7 @@ Supported CMake options:
 
 # Usage Example
 
-### Read JSON
+### Read JSON string
 ```c
 const char *str = "{\"name\":\"Mash\",\"star\":4,\"hits\":[2,2,1,3]}";
 yyjson_doc *doc = yyjson_read(str, strlen(str), 0);
@@ -79,7 +80,7 @@ yyjson_arr_foreach(hits, idx, max, hit) {
 yyjson_doc_free(doc);
 ```
 
-### Write JSON
+### Write JSON string
 ```c
 yyjson_mut_doc *doc = yyjson_mut_doc_new(NULL);
 yyjson_mut_val *root = yyjson_mut_obj(doc);
@@ -101,11 +102,11 @@ if (json) {
 yyjson_mut_doc_free(doc);
 ```
 
-### Read JSON With Options
+### Read JSON file with options
 ```c
 yyjson_read_err err;
 yyjson_read_flag flg = YYJSON_READ_ALLOW_COMMENTS | YYJSON_READ_ALLOW_TRAILING_COMMAS;
-yyjson_doc *doc = yyjson_read_file("test.json", flg, NULL, &err);
+yyjson_doc *doc = yyjson_read_file("/tmp/test.json", flg, NULL, &err);
     
 if (doc) {
     yyjson_val *obj = yyjson_doc_get_root(doc);
@@ -121,9 +122,9 @@ if (doc) {
 }
 ```
 
-### Write JSON With Options
+### Write JSON file with options
 ```c
-yyjson_doc *idoc = yyjson_read_file("test.json", 0, NULL, NULL);
+yyjson_doc *idoc = yyjson_read_file("/tmp/test.json", 0, NULL, NULL);
 yyjson_mut_doc *doc = yyjson_doc_mut_copy(idoc, NULL);
 yyjson_mut_val *obj = yyjson_mut_doc_get_root(doc);
     
@@ -139,7 +140,7 @@ while ((key = yyjson_mut_obj_iter_next(&iter))) {
     
 yyjson_write_err err;
 yyjson_write_flag flg = YYJSON_WRITE_PRETTY | YYJSON_WRITE_ESCAPE_UNICODE;
-yyjson_mut_write_file("test.json", doc, flg, NULL, &err);
+yyjson_mut_write_file("/tmp/test.json", doc, flg, NULL, &err);
 if (err.code) {
     printf("write error: %d, message: %s\n", err.code, err.msg);
 }
