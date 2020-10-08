@@ -553,7 +553,7 @@ static void make_esc_single_char_table(void) {
     table['"' * 2 + 0] = '\\';
     table['"' * 2 + 1] = '"';
     
-    printf("const u8 esc_single_char_table[512] = {\n");
+    printf("static const u8 esc_single_char_table[512] = {\n");
     for (int i = 0; i < table_len; i++) {
         bool is_head = ((i % line_len) == 0);
         bool is_tail = ((i % line_len) == line_len - 1);
