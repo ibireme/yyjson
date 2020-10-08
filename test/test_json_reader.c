@@ -1,0 +1,260 @@
+#include "yyjson.h"
+#include "yy_test_utils.h"
+
+#if !YYJSON_DISABLE_READER
+
+typedef enum {
+    EXPECT_NONE,
+    EXPECT_PASS,
+    EXPECT_FAIL,
+} expect_type;
+
+typedef enum {
+    FLAG_NONE       = 0 << 0,
+    FLAG_COMMA      = 1 << 0,
+    FLAG_COMMENT    = 1 << 1,
+    FLAG_INF_NAN    = 1 << 2,
+    FLAG_EXTRA      = 1 << 3,
+} flag_type;
+
+static void test_read_file(const char *path, flag_type type, expect_type expect) {
+    yyjson_read_flag flag = YYJSON_READ_NOFLAG;
+    if (type & FLAG_COMMA) flag |= YYJSON_READ_ALLOW_TRAILING_COMMAS;
+    if (type & FLAG_COMMENT) flag |= YYJSON_READ_ALLOW_COMMENTS;
+    if (type & FLAG_INF_NAN) flag |= YYJSON_READ_ALLOW_INF_AND_NAN;
+    if (type & FLAG_EXTRA) flag |= YYJSON_READ_STOP_WHEN_DONE;
+    
+    
+    // test read from file
+    yyjson_read_err err;
+    yyjson_doc *doc = yyjson_read_file(path, flag, NULL, &err);
+    if (expect == EXPECT_PASS) {
+        yy_assertf(doc != NULL, "file should pass with flag 0x%u, but fail:\n%s\n", flag, path);
+        yy_assert(yyjson_doc_get_read_size(doc) > 0);
+        yy_assert(yyjson_doc_get_val_count(doc) > 0);
+        yy_assert(err.code == YYJSON_READ_SUCCESS);
+        yy_assert(err.msg == NULL);
+    }
+    if (expect == EXPECT_FAIL) {
+        yy_assertf(doc == NULL, "file should fail with flag 0x%u, but pass:\n%s\n", flag, path);
+        yy_assert(yyjson_doc_get_read_size(doc) == 0);
+        yy_assert(yyjson_doc_get_val_count(doc) == 0);
+        yy_assert(err.code != YYJSON_READ_SUCCESS);
+        yy_assert(err.msg != NULL);
+    }
+    if (doc) { // test write again
+#if !YYJSON_DISABLE_WRITER
+        usize len;
+        char *ret;
+        ret = yyjson_write(doc, YYJSON_WRITE_ALLOW_INF_AND_NAN, &len);
+        yy_assert(ret && len);
+        free(ret);
+        ret = yyjson_write(doc, YYJSON_WRITE_PRETTY | YYJSON_WRITE_ALLOW_INF_AND_NAN, &len);
+        yy_assert(ret && len);
+        free(ret);
+#endif
+    }
+    yyjson_doc_free(doc);
+    
+    
+    // test alloc fail
+    yyjson_alc alc_small;
+    char alc_buf[64];
+    yy_assert(yyjson_alc_pool_init(&alc_small, alc_buf, sizeof(void *) * 8));
+    yy_assert(!yyjson_read_file(path, flag, &alc_small, NULL));
+    
+    
+    // test read insitu
+    flag |= YYJSON_READ_INSITU;
+    
+    u8 *dat;
+    usize len;
+    bool read_suc = yy_file_read_with_padding(path, &dat, &len, 4);
+    yy_assert(read_suc);
+    
+    usize max_mem_len = yyjson_read_max_memory_usage(len, flag);
+    void *buf = malloc(max_mem_len );
+    yyjson_alc alc;
+    yyjson_alc_pool_init(&alc, buf, max_mem_len);
+    
+    doc = yyjson_read_opts((char *)dat, len, flag, &alc, &err);
+    if (expect == EXPECT_PASS) {
+        yy_assertf(doc != NULL, "file should pass but fail:\n%s\n", path);
+        yy_assert(yyjson_doc_get_read_size(doc) > 0);
+        yy_assert(yyjson_doc_get_val_count(doc) > 0);
+        yy_assert(err.code == YYJSON_READ_SUCCESS);
+        yy_assert(err.msg == NULL);
+    }
+    if (expect == EXPECT_FAIL) {
+        yy_assertf(doc == NULL, "file should fail but pass:\n%s\n", path);
+        yy_assert(yyjson_doc_get_read_size(doc) == 0);
+        yy_assert(yyjson_doc_get_val_count(doc) == 0);
+        yy_assert(err.code != YYJSON_READ_SUCCESS);
+        yy_assert(err.msg != NULL);
+    }
+    yyjson_doc_free(doc);
+    free(buf);
+    free(dat);
+}
+
+// yyjson test data
+static void test_json_yyjson(void) {
+    char dir[YY_MAX_PATH];
+    yy_path_combine(dir, YYJSON_TEST_DATA_PATH, "data", "json", "test_yyjson", NULL);
+    int count;
+    char **names = yy_dir_read(dir, &count);
+    yy_assertf(names != NULL && count != 0, "read dir fail:%s\n", dir);
+
+    for (int i = 0; i < count; i++) {
+        char *name = names[i];
+        char path[YY_MAX_PATH];
+        yy_path_combine(path, dir, name, NULL);
+     
+        for (flag_type type = 0; type < (1 << 4); type++) {
+            if (yy_str_has_prefix(name, "pass_")) {
+                bool should_fail = false;
+                if (yy_str_contains(name, "(comma)")) {
+                    should_fail |= (type & FLAG_COMMA) == 0;
+                }
+                if (yy_str_contains(name, "(comment)")) {
+#if !YYJSON_DISABLE_COMMENT_READER
+                    should_fail |= (type & FLAG_COMMENT) == 0;
+#else
+                    should_fail = true;
+#endif
+                }
+                if (yy_str_contains(name, "(inf)") || yy_str_contains(name, "(nan)")) {
+#if !YYJSON_DISABLE_INF_AND_NAN_READER
+                    should_fail |= (type & FLAG_INF_NAN) == 0;
+#else
+                    should_fail = true;
+#endif
+                }
+                if (yy_str_contains(name, "(extra)")) {
+                    should_fail |= (type & FLAG_EXTRA) == 0;
+                }
+                test_read_file(path, type, should_fail ? EXPECT_FAIL : EXPECT_PASS);
+            } else if (yy_str_has_prefix(name, "fail_")) {
+                test_read_file(path, type, EXPECT_FAIL);
+            } else {
+                test_read_file(path, type, EXPECT_NONE);
+            }
+        }
+    }
+    
+    // test fail
+    yy_assert(!yyjson_read_opts(NULL, 0, 0, NULL, NULL));
+    yy_assert(!yyjson_read_opts("1", 0, 0, NULL, NULL));
+    yy_assert(!yyjson_read_opts("1", SIZE_MAX, 0, NULL, NULL));
+    
+    yyjson_alc alc_small;
+    char alc_buf[64];
+    yy_assert(yyjson_alc_pool_init(&alc_small, alc_buf, sizeof(void *) * 8));
+    yy_assert(!yyjson_read_opts("", 64, 0, &alc_small, NULL));
+    
+    yy_assert(!yyjson_read_file(NULL, 0, NULL, NULL));
+    yy_assert(!yyjson_read_file("...not a valid file...", 0, NULL, NULL));
+    
+    yy_dir_free(names);
+}
+
+
+
+// http://www.json.org/JSON_checker/
+static void test_json_checker(void) {
+    char dir[YY_MAX_PATH];
+    yy_path_combine(dir, YYJSON_TEST_DATA_PATH, "data", "json", "test_checker", NULL);
+    int count;
+    char **names = yy_dir_read(dir, &count);
+    yy_assertf(names != NULL && count != 0, "read dir fail:%s\n", dir);
+    
+    for (int i = 0; i < count; i++) {
+        char *name = names[i];
+        char path[YY_MAX_PATH];
+        yy_path_combine(path, dir, name, NULL);
+        if (yy_str_has_prefix(name, "pass_")) {
+            test_read_file(path, FLAG_NONE, EXPECT_PASS);
+        } else if (yy_str_has_prefix(name, "fail_") &&
+                   !yy_str_contains(name, "EXCLUDE")) {
+            test_read_file(path, FLAG_NONE, EXPECT_FAIL);
+        } else {
+            test_read_file(path, FLAG_NONE, EXPECT_NONE);
+        }
+    }
+    
+    yy_dir_free(names);
+}
+
+// https://github.com/nst/JSONTestSuite
+static void test_json_parsing(void) {
+    char dir[YY_MAX_PATH];
+    yy_path_combine(dir, YYJSON_TEST_DATA_PATH, "data", "json", "test_parsing", NULL);
+    int count;
+    char **names = yy_dir_read(dir, &count);
+    yy_assertf(names != NULL && count != 0, "read dir fail:%s\n", dir);
+    
+    for (int i = 0; i < count; i++) {
+        char *name = names[i];
+        char path[YY_MAX_PATH];
+        yy_path_combine(path, dir, name, NULL);
+        if (yy_str_has_prefix(name, "y_")) {
+            test_read_file(path, FLAG_NONE, EXPECT_PASS);
+        } else if (yy_str_has_prefix(name, "n_")) {
+            test_read_file(path, FLAG_NONE, EXPECT_FAIL);
+        } else {
+            test_read_file(path, FLAG_NONE, EXPECT_NONE);
+        }
+    }
+    yy_dir_free(names);
+}
+
+// https://github.com/nst/JSONTestSuite
+static void test_json_transform(void) {
+    char dir[YY_MAX_PATH];
+    yy_path_combine(dir, YYJSON_TEST_DATA_PATH, "data", "json", "test_transform", NULL);
+    int count;
+    char **names = yy_dir_read(dir, &count);
+    yy_assertf(names != NULL && count != 0, "read dir fail:%s\n", dir);
+    
+    for (int i = 0; i < count; i++) {
+        char *name = names[i];
+        char path[YY_MAX_PATH];
+        yy_path_combine(path, dir, name, NULL);
+        test_read_file(path, FLAG_NONE, EXPECT_NONE);
+    }
+    
+    yy_dir_free(names);
+}
+
+// https://github.com/miloyip/nativejson-benchmark
+static void test_json_encoding(void) {
+    char dir[YY_MAX_PATH];
+    yy_path_combine(dir, YYJSON_TEST_DATA_PATH, "data", "json", "test_encoding", NULL);
+    int count;
+    char **names = yy_dir_read(dir, &count);
+    yy_assertf(names != NULL && count != 0, "read dir fail:%s\n", dir);
+    
+    for (int i = 0; i < count; i++) {
+        char *name = names[i];
+        char path[YY_MAX_PATH];
+        yy_path_combine(path, dir, name, NULL);
+        if (strcmp(name, "utf8.json") == 0) {
+            test_read_file(path, FLAG_NONE, EXPECT_PASS);
+        } else {
+            test_read_file(path, FLAG_NONE, EXPECT_FAIL);
+        }
+    }
+    yy_dir_free(names);
+}
+
+yy_test_case(test_json_reader) {
+    test_json_yyjson();
+    test_json_checker();
+    test_json_parsing();
+    test_json_transform();
+    test_json_encoding();
+}
+
+#else
+yy_test_case(test_json_reader) {}
+#endif

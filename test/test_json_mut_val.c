@@ -1,0 +1,1705 @@
+#include "yyjson.h"
+#include "yy_test_utils.h"
+
+
+/// Validate value type
+static bool validate_mut_val_type(yyjson_mut_val *val,
+                                  yyjson_type type,
+                                  yyjson_subtype subtype) {
+    
+    if (yyjson_mut_is_null(val) != (type == YYJSON_TYPE_NULL &&
+                                subtype == YYJSON_SUBTYPE_NONE)) return false;
+    if (yyjson_mut_is_true(val) != (type == YYJSON_TYPE_BOOL &&
+                                subtype == YYJSON_SUBTYPE_TRUE)) return false;
+    if (yyjson_mut_is_false(val) != (type == YYJSON_TYPE_BOOL &&
+                                 subtype == YYJSON_SUBTYPE_FALSE)) return false;
+    if (yyjson_mut_is_bool(val) != (type == YYJSON_TYPE_BOOL &&
+                                (subtype == YYJSON_SUBTYPE_TRUE ||
+                                 subtype == YYJSON_SUBTYPE_FALSE))) return false;
+    if (yyjson_mut_is_uint(val) != (type == YYJSON_TYPE_NUM &&
+                                subtype == YYJSON_SUBTYPE_UINT)) return false;
+    if (yyjson_mut_is_sint(val) != (type == YYJSON_TYPE_NUM &&
+                                subtype == YYJSON_SUBTYPE_SINT)) return false;
+    if (yyjson_mut_is_int(val) != (type == YYJSON_TYPE_NUM &&
+                               (subtype == YYJSON_SUBTYPE_UINT ||
+                                subtype == YYJSON_SUBTYPE_SINT))) return false;
+    if (yyjson_mut_is_real(val) != (type == YYJSON_TYPE_NUM &&
+                                subtype == YYJSON_SUBTYPE_REAL)) return false;
+    if (yyjson_mut_is_num(val) != (type == YYJSON_TYPE_NUM &&
+                               (subtype == YYJSON_SUBTYPE_UINT ||
+                                subtype == YYJSON_SUBTYPE_SINT ||
+                                subtype == YYJSON_SUBTYPE_REAL))) return false;
+    if (yyjson_mut_is_str(val) != (type == YYJSON_TYPE_STR &&
+                               subtype == YYJSON_SUBTYPE_NONE)) return false;
+    if (yyjson_mut_is_arr(val) != (type == YYJSON_TYPE_ARR &&
+                               subtype == YYJSON_SUBTYPE_NONE)) return false;
+    if (yyjson_mut_is_obj(val) != (type == YYJSON_TYPE_OBJ &&
+                               subtype == YYJSON_SUBTYPE_NONE)) return false;
+    if (yyjson_mut_is_ctn(val) != ((type == YYJSON_TYPE_ARR ||
+                                type == YYJSON_TYPE_OBJ) &&
+                                subtype == YYJSON_SUBTYPE_NONE)) return false;
+    
+    if (yyjson_mut_get_type(val) != type) return false;
+    if (yyjson_mut_get_subtype(val) != subtype) return false;
+    if (yyjson_mut_get_tag(val) != (type | subtype)) return false;
+    
+    return true;
+}
+
+
+/// Validate creation of mutable string value
+static void validate_mut_str(yyjson_mut_doc *doc,
+                             const char *str, usize len, bool suc) {
+    yyjson_mut_val *val;
+    
+    val = yyjson_mut_str(doc, str);
+    if (suc) {
+        yy_assert(validate_mut_val_type(val, YYJSON_TYPE_STR, YYJSON_SUBTYPE_NONE));
+        yy_assert(strcmp(yyjson_mut_get_type_desc(val), "string") == 0);
+        yy_assert(strcmp(yyjson_mut_get_str(val), str) == 0);
+        yy_assert(yyjson_mut_get_len(val) == strlen(str));
+        yy_assert(yyjson_mut_equals_str(val, str));
+        yy_assert(yyjson_mut_get_str(val) == str);
+    } else {
+        yy_assert(val == NULL);
+    }
+    
+    val = yyjson_mut_strn(doc, str, len);
+    if (suc) {
+        yy_assert(validate_mut_val_type(val, YYJSON_TYPE_STR, YYJSON_SUBTYPE_NONE));
+        yy_assert(strcmp(yyjson_mut_get_type_desc(val), "string") == 0);
+        yy_assert(strcmp(yyjson_mut_get_str(val), str) == 0);
+        yy_assert(yyjson_mut_get_len(val) == len);
+        yy_assert(yyjson_mut_equals_str(val, str) == (strlen(str) == len));
+        yy_assert(yyjson_mut_get_str(val) == str);
+    } else {
+        yy_assert(val == NULL);
+    }
+    
+    val = yyjson_mut_strcpy(doc, str);
+    if (suc) {
+        yy_assert(validate_mut_val_type(val, YYJSON_TYPE_STR, YYJSON_SUBTYPE_NONE));
+        yy_assert(strcmp(yyjson_mut_get_type_desc(val), "string") == 0);
+        yy_assert(strcmp(yyjson_mut_get_str(val), str) == 0);
+        yy_assert(yyjson_mut_get_len(val) == strlen(str));
+        yy_assert(yyjson_mut_equals_str(val, str));
+        yy_assert(yyjson_mut_get_str(val) != str);
+    } else {
+        yy_assert(val == NULL);
+    }
+    
+    val = yyjson_mut_strncpy(doc, str, len);
+    if (suc) {
+        yy_assert(validate_mut_val_type(val, YYJSON_TYPE_STR, YYJSON_SUBTYPE_NONE));
+        yy_assert(strcmp(yyjson_mut_get_type_desc(val), "string") == 0);
+        yy_assert(strcmp(yyjson_mut_get_str(val), str) == 0);
+        yy_assert(yyjson_mut_get_len(val) == len);
+        yy_assert(yyjson_mut_equals_str(val, str) == (strlen(str) == len));
+        yy_assert(yyjson_mut_get_str(val) != str);
+    } else {
+        yy_assert(val == NULL);
+    }
+}
+
+static void test_json_mut_val_api(void) {
+    yyjson_mut_doc *doc = yyjson_mut_doc_new(NULL);
+    yyjson_mut_val *val;
+    
+    yy_assert(yyjson_mut_null(NULL) == NULL);
+    val = yyjson_mut_null(doc);
+    yy_assert(validate_mut_val_type(val, YYJSON_TYPE_NULL, YYJSON_SUBTYPE_NONE));
+    yy_assert(strcmp(yyjson_mut_get_type_desc(val), "null") == 0);
+
+    yy_assert(yyjson_mut_true(NULL) == NULL);
+    val = yyjson_mut_true(doc);
+    yy_assert(validate_mut_val_type(val, YYJSON_TYPE_BOOL, YYJSON_SUBTYPE_TRUE));
+    yy_assert(strcmp(yyjson_mut_get_type_desc(val), "true") == 0);
+    yy_assert(yyjson_mut_get_bool(val) == true);
+
+    yy_assert(yyjson_mut_bool(NULL, true) == NULL);
+    val = yyjson_mut_bool(doc, true);
+    yy_assert(validate_mut_val_type(val, YYJSON_TYPE_BOOL, YYJSON_SUBTYPE_TRUE));
+    yy_assert(strcmp(yyjson_mut_get_type_desc(val), "true") == 0);
+    yy_assert(yyjson_mut_get_bool(val) == true);
+
+    yy_assert(yyjson_mut_false(NULL) == NULL);
+    val = yyjson_mut_false(doc);
+    yy_assert(validate_mut_val_type(val, YYJSON_TYPE_BOOL, YYJSON_SUBTYPE_FALSE));
+    yy_assert(strcmp(yyjson_mut_get_type_desc(val), "false") == 0);
+    yy_assert(yyjson_mut_get_bool(val) == false);
+
+    yy_assert(yyjson_mut_bool(NULL, false) == NULL);
+    val = yyjson_mut_bool(doc, false);
+    yy_assert(validate_mut_val_type(val, YYJSON_TYPE_BOOL, YYJSON_SUBTYPE_FALSE));
+    yy_assert(strcmp(yyjson_mut_get_type_desc(val), "false") == 0);
+    yy_assert(yyjson_mut_get_bool(val) == false);
+
+    yy_assert(yyjson_mut_uint(NULL, 123) == NULL);
+    val = yyjson_mut_uint(doc, 123);
+    yy_assert(validate_mut_val_type(val, YYJSON_TYPE_NUM, YYJSON_SUBTYPE_UINT));
+    yy_assert(strcmp(yyjson_mut_get_type_desc(val), "uint") == 0);
+    yy_assert(yyjson_mut_get_uint(val) == (u64)123);
+    yy_assert(yyjson_mut_get_sint(val) == (i64)123);
+    yy_assert(yyjson_mut_get_int(val) == (i64)123);
+    yy_assert(yyjson_mut_get_real(val) == (f64)0);
+    yy_assert(yyjson_mut_get_bool(val) == false);
+
+    yy_assert(yyjson_mut_sint(NULL, -123) == NULL);
+    val = yyjson_mut_sint(doc, -123);
+    yy_assert(validate_mut_val_type(val, YYJSON_TYPE_NUM, YYJSON_SUBTYPE_SINT));
+    yy_assert(strcmp(yyjson_mut_get_type_desc(val), "sint") == 0);
+    yy_assert(yyjson_mut_get_uint(val) == (u64)-123);
+    yy_assert(yyjson_mut_get_sint(val) == (i64)-123);
+    yy_assert(yyjson_mut_get_int(val) == (i64)-123);
+    yy_assert(yyjson_mut_get_real(val) == (f64)0);
+
+    yy_assert(yyjson_mut_real(NULL, 123.0) == NULL);
+    val = yyjson_mut_real(doc, 123.0);
+    yy_assert(validate_mut_val_type(val, YYJSON_TYPE_NUM, YYJSON_SUBTYPE_REAL));
+    yy_assert(strcmp(yyjson_mut_get_type_desc(val), "real") == 0);
+    yy_assert(yyjson_mut_get_uint(val) == (u64)0);
+    yy_assert(yyjson_mut_get_sint(val) == (i64)0);
+    yy_assert(yyjson_mut_get_int(val) == (i64)0);
+    yy_assert(yyjson_mut_get_real(val) == (f64)123.0);
+
+    yy_assert(yyjson_mut_arr(NULL) == NULL);
+    val = yyjson_mut_arr(doc);
+    yy_assert(validate_mut_val_type(val, YYJSON_TYPE_ARR, YYJSON_SUBTYPE_NONE));
+    yy_assert(strcmp(yyjson_mut_get_type_desc(val), "array") == 0);
+
+    yy_assert(yyjson_mut_obj(NULL) == NULL);
+    val = yyjson_mut_obj(doc);
+    yy_assert(validate_mut_val_type(val, YYJSON_TYPE_OBJ, YYJSON_SUBTYPE_NONE));
+    yy_assert(strcmp(yyjson_mut_get_type_desc(val), "object") == 0);
+
+    val = NULL;
+    yy_assert(validate_mut_val_type(val, YYJSON_TYPE_NONE, YYJSON_SUBTYPE_NONE));
+
+    yy_assert(yyjson_mut_str(NULL, "abc") == NULL);
+    yy_assert(yyjson_mut_strn(NULL, "abc", 3) == NULL);
+    yy_assert(yyjson_mut_strcpy(NULL, "abc") == NULL);
+    yy_assert(yyjson_mut_strncpy(NULL, "abc", 3) == NULL);
+    validate_mut_str(doc, NULL, 0, false);
+    validate_mut_str(doc, NULL, 1, false);
+    validate_mut_str(doc, "", 0, true);
+    validate_mut_str(doc, "abc", 3, true);
+    validate_mut_str(doc, "abc\0def", 7, true);
+    validate_mut_str(doc, "\0abc", 4, true);
+    validate_mut_str(doc, "abc\0", 4, true);
+    validate_mut_str(doc, "\0", 1, true);
+    validate_mut_str(doc, "\0\0\0", 3, true);
+    
+    yyjson_mut_doc_free(doc);
+}
+
+/// Validate array with int
+static void validate_mut_arr(yyjson_mut_val *arr, i64 *cmp,  usize len) {
+    yy_assert(yyjson_mut_is_arr(arr));
+    yy_assert(yyjson_mut_arr_size(arr) == len);
+    yy_assert(yyjson_mut_is_arr(NULL) == false);
+    yy_assert(yyjson_mut_arr_size(NULL) == 0);
+    
+    yyjson_mut_arr_iter iter;
+    yyjson_mut_val *val;
+    usize idx, max, count;
+    int tmp[8];
+    
+    if (len == 0) {
+        val = yyjson_mut_arr_get(arr, 0);
+        yy_assert(val == NULL);
+        val = yyjson_mut_arr_get_first(arr);
+        yy_assert(val == NULL);
+        val = yyjson_mut_arr_get_last(arr);
+        yy_assert(val == NULL);
+        
+        yyjson_mut_arr_iter_init(arr, &iter);
+        yy_assert(yyjson_mut_arr_iter_has_next(&iter) == false);
+        while ((val = yyjson_mut_arr_iter_next(&iter))) {
+            yy_assert(false);
+        }
+        yy_assert(yyjson_mut_arr_iter_has_next(&iter) == false);
+        
+        yyjson_mut_arr_foreach(arr, idx, max, val) {
+            yy_assert(false);
+        }
+        
+    } else {
+        for (usize i = 0; i < len; i++) {
+            val = yyjson_mut_arr_get(arr, i);
+            yy_assert(yyjson_mut_get_int(val) == cmp[i]);
+        }
+        val = yyjson_mut_arr_get(arr, len);
+        yy_assert(val == NULL);
+        val = yyjson_mut_arr_get_first(arr);
+        yy_assert(yyjson_mut_get_int(val) == cmp[0]);
+        val = yyjson_mut_arr_get_last(arr);
+        yy_assert(yyjson_mut_get_int(val) == cmp[len - 1]);
+        
+        count = 0;
+        memset(tmp, 0, sizeof(tmp));
+        yyjson_mut_arr_iter_init(arr, &iter);
+        yy_assert(yyjson_mut_arr_iter_has_next(&iter) == true);
+        while ((val = yyjson_mut_arr_iter_next(&iter))) {
+            yy_assert(yyjson_mut_get_int(val) == cmp[count]);
+            yy_assert(tmp[count] == 0);
+            tmp[count] = 1;
+            count++;
+            yy_assert(yyjson_mut_arr_iter_has_next(&iter) == count < len);
+        }
+        yy_assert(yyjson_mut_arr_iter_has_next(&iter) == false);
+        yy_assert(count == len);
+        
+        count = 0;
+        memset(tmp, 0, sizeof(tmp));
+        yyjson_mut_arr_foreach(arr, idx, max, val) {
+            yy_assert(yyjson_mut_get_int(val) == cmp[count]);
+            yy_assert(tmp[count] == 0);
+            yy_assert(count == idx);
+            yy_assert(max == len);
+            tmp[count] = 1;
+            count++;
+        }
+        yy_assert(count == len);
+    }
+}
+
+static void test_json_mut_arr_api(void) {
+    yyjson_mut_doc *doc = yyjson_mut_doc_new(NULL);
+    yyjson_mut_val *arr, *val, *num1, *num2, *num3, *num4, *num5, *num6;
+    yyjson_mut_arr_iter iter;
+    i64 cmp[8];
+    
+    num1 = yyjson_mut_int(doc, 1);
+    num2 = yyjson_mut_int(doc, 2);
+    num3 = yyjson_mut_int(doc, 3);
+    num4 = yyjson_mut_int(doc, 4);
+    num5 = yyjson_mut_int(doc, 5);
+    num6 = yyjson_mut_int(doc, 6);
+    arr = yyjson_mut_arr(doc);
+    
+    
+    //---------------------------------------------
+    // append()
+    
+    yy_assert(yyjson_mut_arr_append(NULL, num1) == false);
+    
+    cmp[0] = 1;
+    cmp[1] = 2;
+    cmp[2] = 3;
+    
+    validate_mut_arr(arr, cmp, 0);
+    
+    yy_assert(yyjson_mut_arr_append(arr, num1));
+    validate_mut_arr(arr, cmp, 1);
+    
+    yy_assert(yyjson_mut_arr_append(arr, num2));
+    validate_mut_arr(arr, cmp, 2);
+    
+    yy_assert(yyjson_mut_arr_append(arr, num3));
+    validate_mut_arr(arr, cmp, 3);
+    
+    yyjson_mut_arr_clear(arr);
+    validate_mut_arr(arr, cmp, 0);
+    
+    
+    //---------------------------------------------
+    // prepend()
+    
+    yy_assert(yyjson_mut_arr_prepend(NULL, num1) == false);
+    
+    cmp[0] = 1;
+    yy_assert(yyjson_mut_arr_prepend(arr, num1));
+    validate_mut_arr(arr, cmp, 1);
+    
+    cmp[0] = 2;
+    cmp[1] = 1;
+    yy_assert(yyjson_mut_arr_prepend(arr, num2));
+    validate_mut_arr(arr, cmp, 2);
+    
+    cmp[0] = 3;
+    cmp[1] = 2;
+    cmp[2] = 1;
+    yy_assert(yyjson_mut_arr_prepend(arr, num3));
+    validate_mut_arr(arr, cmp, 3);
+    
+    yyjson_mut_arr_clear(arr);
+    
+    
+    //---------------------------------------------
+    // insert(idx)
+    
+    yy_assert(yyjson_mut_arr_insert(NULL, num1, 0) == false);
+    
+    cmp[0] = 1;
+    yy_assert(yyjson_mut_arr_insert(arr, num1, 0));
+    validate_mut_arr(arr, cmp, 1);
+    
+    cmp[0] = 1;
+    cmp[1] = 2;
+    yy_assert(yyjson_mut_arr_insert(arr, num2, 1));
+    validate_mut_arr(arr, cmp, 2);
+    
+    cmp[0] = 1;
+    cmp[1] = 3;
+    cmp[2] = 2;
+    yy_assert(yyjson_mut_arr_insert(arr, num3, 1));
+    validate_mut_arr(arr, cmp, 3);
+    
+    yyjson_mut_arr_clear(arr);
+    
+    
+    //---------------------------------------------
+    // replace(first)
+    
+    yy_assert(yyjson_mut_arr_replace(NULL, 0, num1) == NULL);
+    
+    val = yyjson_mut_arr_replace(arr, 0, num1);
+    yy_assert(val == NULL);
+    validate_mut_arr(arr, cmp, 0);
+    
+    cmp[0] = 4;
+    yyjson_mut_arr_append(arr, num1);
+    val = yyjson_mut_arr_replace(arr, 0, num4);
+    yy_assert(val == num1);
+    validate_mut_arr(arr, cmp, 1);
+    yyjson_mut_arr_clear(arr);
+    
+    cmp[0] = 4;
+    cmp[1] = 2;
+    yyjson_mut_arr_append(arr, num1);
+    yyjson_mut_arr_append(arr, num2);
+    val = yyjson_mut_arr_replace(arr, 0, num4);
+    yy_assert(val == num1);
+    validate_mut_arr(arr, cmp, 2);
+    yyjson_mut_arr_clear(arr);
+    
+    cmp[0] = 4;
+    cmp[1] = 2;
+    cmp[2] = 3;
+    yyjson_mut_arr_append(arr, num1);
+    yyjson_mut_arr_append(arr, num2);
+    yyjson_mut_arr_append(arr, num3);
+    val = yyjson_mut_arr_replace(arr, 0, num4);
+    yy_assert(val == num1);
+    validate_mut_arr(arr, cmp, 3);
+    val = yyjson_mut_arr_replace(arr, 0, NULL);
+    yy_assert(val == NULL);
+    validate_mut_arr(arr, cmp, 3);
+    val = yyjson_mut_arr_replace(arr, 3, num5);
+    yy_assert(val == NULL);
+    validate_mut_arr(arr, cmp, 3);
+    yyjson_mut_arr_clear(arr);
+    
+    
+    //---------------------------------------------
+    // replace(last)
+    
+    cmp[0] = 1;
+    cmp[1] = 4;
+    yyjson_mut_arr_append(arr, num1);
+    yyjson_mut_arr_append(arr, num2);
+    val = yyjson_mut_arr_replace(arr, 1, num4);
+    yy_assert(val == num2);
+    validate_mut_arr(arr, cmp, 2);
+    yyjson_mut_arr_clear(arr);
+    
+    cmp[0] = 1;
+    cmp[1] = 2;
+    cmp[2] = 4;
+    yyjson_mut_arr_append(arr, num1);
+    yyjson_mut_arr_append(arr, num2);
+    yyjson_mut_arr_append(arr, num3);
+    val = yyjson_mut_arr_replace(arr, 2, num4);
+    yy_assert(val == num3);
+    validate_mut_arr(arr, cmp, 3);
+    yyjson_mut_arr_clear(arr);
+    
+    
+    //---------------------------------------------
+    // replace(mid)
+    
+    cmp[0] = 1;
+    cmp[1] = 4;
+    cmp[2] = 3;
+    yyjson_mut_arr_append(arr, num1);
+    yyjson_mut_arr_append(arr, num2);
+    yyjson_mut_arr_append(arr, num3);
+    val = yyjson_mut_arr_replace(arr, 1, num4);
+    yy_assert(val == num2);
+    validate_mut_arr(arr, cmp, 3);
+    yyjson_mut_arr_clear(arr);
+    
+    
+    //---------------------------------------------
+    // remove_last()
+    
+    cmp[0] = 1;
+    cmp[1] = 2;
+    cmp[2] = 3;
+    yyjson_mut_arr_append(arr, num1);
+    yyjson_mut_arr_append(arr, num2);
+    yyjson_mut_arr_append(arr, num3);
+    
+    yy_assert(yyjson_mut_arr_remove_last(arr) == num3);
+    validate_mut_arr(arr, cmp, 2);
+    
+    yy_assert(yyjson_mut_arr_remove_last(arr) == num2);
+    validate_mut_arr(arr, cmp, 1);
+    
+    yy_assert(yyjson_mut_arr_remove_last(arr) == num1);
+    validate_mut_arr(arr, cmp, 0);
+    
+    yy_assert(yyjson_mut_arr_remove_last(arr) == NULL);
+    validate_mut_arr(arr, cmp, 0);
+    
+    yyjson_mut_arr_clear(arr);
+    
+    
+    //---------------------------------------------
+    // remove_first()
+    
+    yyjson_mut_arr_append(arr, num1);
+    yyjson_mut_arr_append(arr, num2);
+    yyjson_mut_arr_append(arr, num3);
+    
+    cmp[0] = 2;
+    cmp[1] = 3;
+    yy_assert(yyjson_mut_arr_remove_first(arr) == num1);
+    validate_mut_arr(arr, cmp, 2);
+    
+    cmp[0] = 3;
+    yy_assert(yyjson_mut_arr_remove_first(arr) == num2);
+    validate_mut_arr(arr, cmp, 1);
+    
+    yy_assert(yyjson_mut_arr_remove_first(arr) == num3);
+    validate_mut_arr(arr, cmp, 0);
+    
+    yy_assert(yyjson_mut_arr_remove_first(arr) == NULL);
+    validate_mut_arr(arr, cmp, 0);
+    
+    yyjson_mut_arr_clear(arr);
+    
+    
+    //---------------------------------------------
+    // remove(first)
+    
+    cmp[0] = 2;
+    cmp[1] = 3;
+    yyjson_mut_arr_append(arr, num1);
+    yyjson_mut_arr_append(arr, num2);
+    yyjson_mut_arr_append(arr, num3);
+    
+    yy_assert(yyjson_mut_arr_remove(arr, 0) == num1);
+    validate_mut_arr(arr, cmp, 2);
+    yyjson_mut_arr_clear(arr);
+    
+    
+    //---------------------------------------------
+    // remove(mid)
+    
+    cmp[0] = 1;
+    cmp[1] = 3;
+    yyjson_mut_arr_append(arr, num1);
+    yyjson_mut_arr_append(arr, num2);
+    yyjson_mut_arr_append(arr, num3);
+    
+    yy_assert(yyjson_mut_arr_remove(arr, 1) == num2);
+    validate_mut_arr(arr, cmp, 2);
+    yyjson_mut_arr_clear(arr);
+    
+    
+    //---------------------------------------------
+    // remove(last)
+    
+    cmp[0] = 1;
+    cmp[1] = 2;
+    yyjson_mut_arr_append(arr, num1);
+    yyjson_mut_arr_append(arr, num2);
+    yyjson_mut_arr_append(arr, num3);
+    
+    yy_assert(yyjson_mut_arr_remove(arr, 2) == num3);
+    validate_mut_arr(arr, cmp, 2);
+    
+    yy_assert(yyjson_mut_arr_remove(arr, 2) == NULL);
+    validate_mut_arr(arr, cmp, 2);
+    
+    yy_assert(yyjson_mut_arr_remove(arr, 1) == num2);
+    validate_mut_arr(arr, cmp, 1);
+    
+    yy_assert(yyjson_mut_arr_remove(arr, 0) == num1);
+    validate_mut_arr(arr, cmp, 0);
+    
+    yy_assert(yyjson_mut_arr_remove(arr, 0) == NULL);
+    validate_mut_arr(arr, cmp, 0);
+    
+    yyjson_mut_arr_clear(arr);
+    
+    
+    //---------------------------------------------
+    // remove_range
+    
+    yy_assert(!yyjson_mut_arr_remove_range(NULL, 0, 0));
+    yy_assert(yyjson_mut_arr_remove_range(arr, 0, 0));
+    yy_assert(!yyjson_mut_arr_remove_range(arr, 1, 0));
+    yy_assert(!yyjson_mut_arr_remove_range(arr, 0, 1));
+    validate_mut_arr(arr, cmp, 0);
+    
+    cmp[0] = 1;
+    cmp[1] = 2;
+    cmp[2] = 3;
+    cmp[3] = 4;
+    yyjson_mut_arr_append(arr, num1);
+    yyjson_mut_arr_append(arr, num2);
+    yyjson_mut_arr_append(arr, num3);
+    yyjson_mut_arr_append(arr, num4);
+    validate_mut_arr(arr, cmp, 4);
+    
+    cmp[0] = 1;
+    cmp[1] = 4;
+    yy_assert(yyjson_mut_arr_remove_range(arr, 1, 2));
+    validate_mut_arr(arr, cmp, 2);
+    
+    yy_assert(!yyjson_mut_arr_remove_range(arr, 1, 2));
+    validate_mut_arr(arr, cmp, 2);
+    
+    yy_assert(yyjson_mut_arr_remove_range(arr, 0, 2));
+    validate_mut_arr(arr, cmp, 0);
+    
+    yyjson_mut_arr_clear(arr);
+    
+    
+    //---------------------------------------------
+    // iterator
+    yy_assert(yyjson_mut_arr_iter_init(arr, NULL) == false);
+    yy_assert(yyjson_mut_arr_iter_init(NULL, &iter) == false);
+    yy_assert(yyjson_mut_arr_iter_init(NULL, NULL) == false);
+    yy_assert(yyjson_mut_arr_iter_remove(NULL) == NULL);
+    
+    
+    //---------------------------------------------
+    // iterator with remove(last)
+    
+    yyjson_mut_arr_append(arr, num1);
+    yyjson_mut_arr_append(arr, num2);
+    yyjson_mut_arr_append(arr, num3);
+    
+    cmp[0] = 1;
+    cmp[1] = 2;
+    cmp[2] = 3;
+    yyjson_mut_arr_iter_init(arr, &iter);
+    while ((val = yyjson_mut_arr_iter_next(&iter))) {
+        if (yyjson_mut_get_int(val) == 3) {
+            yyjson_mut_arr_iter_remove(&iter);
+        }
+    }
+    validate_mut_arr(arr, cmp, 2);
+    
+    yyjson_mut_arr_iter_init(arr, &iter);
+    while ((val = yyjson_mut_arr_iter_next(&iter))) {
+        if (yyjson_mut_get_int(val) == 2) {
+            yyjson_mut_arr_iter_remove(&iter);
+        }
+    }
+    validate_mut_arr(arr, cmp, 1);
+    
+    yyjson_mut_arr_iter_init(arr, &iter);
+    while ((val = yyjson_mut_arr_iter_next(&iter))) {
+        if (yyjson_mut_get_int(val) == 1) {
+            yyjson_mut_arr_iter_remove(&iter);
+        }
+    }
+    validate_mut_arr(arr, cmp, 0);
+    
+    yyjson_mut_arr_iter_init(arr, &iter);
+    while ((val = yyjson_mut_arr_iter_next(&iter))) {
+        yy_assert(false);
+    }
+    
+    yyjson_mut_arr_clear(arr);
+    
+    
+    //---------------------------------------------
+    // iterator with remove(first)
+    
+    yyjson_mut_arr_append(arr, num1);
+    yyjson_mut_arr_append(arr, num2);
+    yyjson_mut_arr_append(arr, num3);
+    
+    cmp[0] = 2;
+    cmp[1] = 3;
+    yyjson_mut_arr_iter_init(arr, &iter);
+    while ((val = yyjson_mut_arr_iter_next(&iter))) {
+        if (yyjson_mut_get_int(val) == 1) {
+            yyjson_mut_arr_iter_remove(&iter);
+        }
+    }
+    validate_mut_arr(arr, cmp, 2);
+    
+    cmp[0] = 3;
+    yyjson_mut_arr_iter_init(arr, &iter);
+    while ((val = yyjson_mut_arr_iter_next(&iter))) {
+        if (yyjson_mut_get_int(val) == 2) {
+            yyjson_mut_arr_iter_remove(&iter);
+        }
+    }
+    validate_mut_arr(arr, cmp, 1);
+    
+    yyjson_mut_arr_iter_init(arr, &iter);
+    while ((val = yyjson_mut_arr_iter_next(&iter))) {
+        if (yyjson_mut_get_int(val) == 3) {
+            yyjson_mut_arr_iter_remove(&iter);
+        }
+    }
+    validate_mut_arr(arr, cmp, 0);
+    
+    yyjson_mut_arr_iter_init(arr, &iter);
+    while ((val = yyjson_mut_arr_iter_next(&iter))) {
+        yy_assert(false);
+    }
+    
+    yyjson_mut_arr_clear(arr);
+    
+    
+    //---------------------------------------------
+    // iterator with remove(mid)
+    
+    yyjson_mut_arr_append(arr, num1);
+    yyjson_mut_arr_append(arr, num2);
+    yyjson_mut_arr_append(arr, num3);
+    
+    cmp[0] = 1;
+    cmp[1] = 3;
+    yyjson_mut_arr_iter_init(arr, &iter);
+    while ((val = yyjson_mut_arr_iter_next(&iter))) {
+        if (yyjson_mut_get_int(val) == 2) {
+            yyjson_mut_arr_iter_remove(&iter);
+        }
+    }
+    validate_mut_arr(arr, cmp, 2);
+    
+    yyjson_mut_arr_clear(arr);
+    
+    
+    //---------------------------------------------
+    // iterator with remove(all)
+    
+    yyjson_mut_arr_append(arr, num1);
+    yyjson_mut_arr_append(arr, num2);
+    yyjson_mut_arr_append(arr, num3);
+    
+    yyjson_mut_arr_iter_init(arr, &iter);
+    while ((val = yyjson_mut_arr_iter_next(&iter))) {
+        yyjson_mut_arr_iter_remove(&iter);
+    }
+    validate_mut_arr(arr, cmp, 0);
+    
+    yyjson_mut_arr_clear(arr);
+    
+    
+    //---------------------------------------------
+    // array add()
+    val = yyjson_mut_str(doc, "abc");
+    yy_assert(!yyjson_mut_arr_add_val(NULL, NULL));
+    yy_assert(!yyjson_mut_arr_add_val(arr, NULL));
+    yy_assert(!yyjson_mut_arr_add_val(NULL, val));
+    yy_assert(yyjson_mut_arr_add_val(arr, val));
+    yy_assert(yyjson_mut_arr_get_last(arr) == val);
+    
+    yy_assert(!yyjson_mut_arr_add_null(NULL, arr));
+    yy_assert(!yyjson_mut_arr_add_null(doc, NULL));
+    yy_assert(yyjson_mut_arr_add_null(doc, arr));
+    val = yyjson_mut_arr_get_last(arr);
+    yy_assert(yyjson_mut_is_null(val));
+    
+    yy_assert(!yyjson_mut_arr_add_true(NULL, arr));
+    yy_assert(!yyjson_mut_arr_add_true(doc, NULL));
+    yy_assert(yyjson_mut_arr_add_true(doc, arr));
+    val = yyjson_mut_arr_get_last(arr);
+    yy_assert(yyjson_mut_is_true(val));
+    
+    yy_assert(!yyjson_mut_arr_add_false(NULL, arr));
+    yy_assert(!yyjson_mut_arr_add_false(doc, NULL));
+    yy_assert(yyjson_mut_arr_add_false(doc, arr));
+    val = yyjson_mut_arr_get_last(arr);
+    yy_assert(yyjson_mut_is_false(val));
+    
+    yy_assert(!yyjson_mut_arr_add_bool(NULL, arr, true));
+    yy_assert(!yyjson_mut_arr_add_bool(doc, NULL, true));
+    yy_assert(yyjson_mut_arr_add_bool(doc, arr, true));
+    val = yyjson_mut_arr_get_last(arr);
+    yy_assert(yyjson_mut_is_true(val));
+    
+    yy_assert(!yyjson_mut_arr_add_uint(NULL, arr, 12));
+    yy_assert(!yyjson_mut_arr_add_uint(doc, NULL, 12));
+    yy_assert(yyjson_mut_arr_add_uint(doc, arr, 12));
+    val = yyjson_mut_arr_get_last(arr);
+    yy_assert(yyjson_mut_get_uint(val) == 12);
+    
+    yy_assert(!yyjson_mut_arr_add_sint(NULL, arr, -12));
+    yy_assert(!yyjson_mut_arr_add_sint(doc, NULL, -12));
+    yy_assert(yyjson_mut_arr_add_sint(doc, arr, -12));
+    val = yyjson_mut_arr_get_last(arr);
+    yy_assert(yyjson_mut_get_sint(val) == -12);
+    
+    yy_assert(!yyjson_mut_arr_add_int(NULL, arr, -12));
+    yy_assert(!yyjson_mut_arr_add_int(doc, NULL, -12));
+    yy_assert(yyjson_mut_arr_add_int(doc, arr, -12));
+    val = yyjson_mut_arr_get_last(arr);
+    yy_assert(yyjson_mut_get_int(val) == -12);
+    
+    yy_assert(!yyjson_mut_arr_add_real(NULL, arr, -20.0));
+    yy_assert(!yyjson_mut_arr_add_real(doc, NULL, -20.0));
+    yy_assert(yyjson_mut_arr_add_real(doc, arr, -20.0));
+    val = yyjson_mut_arr_get_last(arr);
+    yy_assert(yyjson_mut_get_real(val) == -20.0);
+    
+    yy_assert(!yyjson_mut_arr_add_str(NULL, arr, "abc"));
+    yy_assert(!yyjson_mut_arr_add_str(doc, NULL, "abc"));
+    yy_assert(!yyjson_mut_arr_add_str(doc, arr, NULL));
+    yy_assert(yyjson_mut_arr_add_str(doc, arr, "abc"));
+    val = yyjson_mut_arr_get_last(arr);
+    yy_assert(yyjson_mut_equals_str(val, "abc"));
+    
+    yy_assert(!yyjson_mut_arr_add_strn(NULL, arr, "abc\0def", 7));
+    yy_assert(!yyjson_mut_arr_add_strn(doc, NULL, "abc\0def", 7));
+    yy_assert(yyjson_mut_arr_add_strn(doc, arr, "abc\0def", 7));
+    val = yyjson_mut_arr_get_last(arr);
+    yy_assert(yyjson_mut_equals_strn(val, "abc\0def", 7));
+    
+    yy_assert(!yyjson_mut_arr_add_strcpy(NULL, arr, "abc"));
+    yy_assert(!yyjson_mut_arr_add_strcpy(doc, NULL, "abc"));
+    yy_assert(!yyjson_mut_arr_add_strcpy(doc, arr, NULL));
+    yy_assert(yyjson_mut_arr_add_strcpy(doc, arr, "abc"));
+    val = yyjson_mut_arr_get_last(arr);
+    yy_assert(yyjson_mut_equals_str(val, "abc"));
+    
+    yy_assert(!yyjson_mut_arr_add_strncpy(NULL, arr, "abc\0def", 7));
+    yy_assert(!yyjson_mut_arr_add_strncpy(doc, NULL, "abc\0def", 7));
+    yy_assert(yyjson_mut_arr_add_strncpy(doc, arr, "abc\0def", 7));
+    val = yyjson_mut_arr_get_last(arr);
+    yy_assert(yyjson_mut_equals_strn(val, "abc\0def", 7));
+    
+    yyjson_mut_arr_clear(arr);
+    yy_assert(!yyjson_mut_arr_add_arr(NULL, NULL));
+    yy_assert(!yyjson_mut_arr_add_arr(NULL, arr));
+    yy_assert(!yyjson_mut_arr_add_arr(doc, NULL));
+    val = yyjson_mut_arr_add_arr(doc, arr);
+    yy_assert(yyjson_mut_is_arr(val));
+    yy_assert(yyjson_mut_arr_get_first(arr) == val);
+    yy_assert(yyjson_mut_arr_get_last(arr) == val);
+    
+    yyjson_mut_arr_clear(arr);
+    yy_assert(!yyjson_mut_arr_add_obj(NULL, NULL));
+    yy_assert(!yyjson_mut_arr_add_obj(NULL, arr));
+    yy_assert(!yyjson_mut_arr_add_obj(doc, NULL));
+    val = yyjson_mut_arr_add_obj(doc, arr);
+    yy_assert(yyjson_mut_is_obj(val));
+    yy_assert(yyjson_mut_arr_get_first(arr) == val);
+    yy_assert(yyjson_mut_arr_get_last(arr) == val);
+    
+    
+    //---------------------------------------------
+    // array with bool
+    {
+        usize len = 0;
+        yy_assert(yyjson_mut_arr_with_bool(NULL, NULL, 0) == NULL);
+        arr = yyjson_mut_arr_with_bool(doc, NULL, len);
+        yy_assert(yyjson_mut_is_arr(arr));
+        yy_assert(yyjson_mut_arr_size(arr) == len);
+    }
+    {
+        bool vals[] = {true};
+        usize len = 0;
+        yy_assert(yyjson_mut_arr_with_bool(doc, vals, SIZE_MAX / 2) == NULL);
+        arr = yyjson_mut_arr_with_bool(doc, vals, len);
+        yy_assert(yyjson_mut_is_arr(arr));
+        yy_assert(yyjson_mut_arr_size(arr) == len);
+    }
+    {
+        bool vals[] = {true};
+        usize len = sizeof(vals) / sizeof(vals[0]);
+        arr = yyjson_mut_arr_with_bool(doc, vals, len);
+        yy_assert(yyjson_mut_is_arr(arr));
+        yy_assert(yyjson_mut_arr_size(arr) == len);
+        val = yyjson_mut_arr_get(arr, 0);
+        yy_assert(yyjson_mut_is_true(val));
+    }
+    {
+        bool vals[] = {true, false};
+        usize len = sizeof(vals) / sizeof(vals[0]);
+        arr = yyjson_mut_arr_with_bool(doc, vals, len);
+        yy_assert(yyjson_mut_is_arr(arr));
+        yy_assert(yyjson_mut_arr_size(arr) == len);
+        val = yyjson_mut_arr_get(arr, 0);
+        yy_assert(yyjson_mut_is_true(val));
+        val = yyjson_mut_arr_get(arr, 1);
+        yy_assert(yyjson_mut_is_false(val));
+    }
+    {
+        bool vals[] = {true, false, true};
+        usize len = sizeof(vals) / sizeof(vals[0]);
+        arr = yyjson_mut_arr_with_bool(doc, vals, len);
+        yy_assert(yyjson_mut_is_arr(arr));
+        yy_assert(yyjson_mut_arr_size(arr) == len);
+        val = yyjson_mut_arr_get(arr, 0);
+        yy_assert(yyjson_mut_is_true(val));
+        val = yyjson_mut_arr_get(arr, 1);
+        yy_assert(yyjson_mut_is_false(val));
+        val = yyjson_mut_arr_get(arr, 2);
+        yy_assert(yyjson_mut_is_true(val));
+    }
+    
+    //---------------------------------------------
+    // array with sint
+    {
+        i64 vals[] = {1, -2, 3};
+        usize len = sizeof(vals) / sizeof(vals[0]);
+        arr = yyjson_mut_arr_with_sint(doc, vals, len);
+        yy_assert(yyjson_mut_is_arr(arr));
+        yy_assert(yyjson_mut_arr_size(arr) == len);
+        val = yyjson_mut_arr_get(arr, 0);
+        yy_assert(yyjson_mut_get_sint(val) == 1);
+        val = yyjson_mut_arr_get(arr, 1);
+        yy_assert(yyjson_mut_get_sint(val) == -2);
+        val = yyjson_mut_arr_get(arr, 2);
+        yy_assert(yyjson_mut_get_sint(val) == 3);
+    }
+    {
+        i8 vals[] = {1, -2, 3};
+        usize len = sizeof(vals) / sizeof(vals[0]);
+        arr = yyjson_mut_arr_with_sint8(doc, vals, len);
+        yy_assert(yyjson_mut_is_arr(arr));
+        yy_assert(yyjson_mut_arr_size(arr) == len);
+        val = yyjson_mut_arr_get(arr, 0);
+        yy_assert(yyjson_mut_get_sint(val) == 1);
+        val = yyjson_mut_arr_get(arr, 1);
+        yy_assert(yyjson_mut_get_sint(val) == -2);
+        val = yyjson_mut_arr_get(arr, 2);
+        yy_assert(yyjson_mut_get_sint(val) == 3);
+    }
+    {
+        i16 vals[] = {1, -2, 3};
+        usize len = sizeof(vals) / sizeof(vals[0]);
+        arr = yyjson_mut_arr_with_sint16(doc, vals, len);
+        yy_assert(yyjson_mut_is_arr(arr));
+        yy_assert(yyjson_mut_arr_size(arr) == len);
+        val = yyjson_mut_arr_get(arr, 0);
+        yy_assert(yyjson_mut_get_sint(val) == 1);
+        val = yyjson_mut_arr_get(arr, 1);
+        yy_assert(yyjson_mut_get_sint(val) == -2);
+        val = yyjson_mut_arr_get(arr, 2);
+        yy_assert(yyjson_mut_get_sint(val) == 3);
+    }
+    {
+        i32 vals[] = {1, -2, 3};
+        usize len = sizeof(vals) / sizeof(vals[0]);
+        arr = yyjson_mut_arr_with_sint32(doc, vals, len);
+        yy_assert(yyjson_mut_is_arr(arr));
+        yy_assert(yyjson_mut_arr_size(arr) == len);
+        val = yyjson_mut_arr_get(arr, 0);
+        yy_assert(yyjson_mut_get_sint(val) == 1);
+        val = yyjson_mut_arr_get(arr, 1);
+        yy_assert(yyjson_mut_get_sint(val) == -2);
+        val = yyjson_mut_arr_get(arr, 2);
+        yy_assert(yyjson_mut_get_sint(val) == 3);
+    }
+    {
+        i64 vals[] = {1, -2, 3};
+        usize len = sizeof(vals) / sizeof(vals[0]);
+        arr = yyjson_mut_arr_with_sint64(doc, vals, len);
+        yy_assert(yyjson_mut_is_arr(arr));
+        yy_assert(yyjson_mut_arr_size(arr) == len);
+        val = yyjson_mut_arr_get(arr, 0);
+        yy_assert(yyjson_mut_get_sint(val) == 1);
+        val = yyjson_mut_arr_get(arr, 1);
+        yy_assert(yyjson_mut_get_sint(val) == -2);
+        val = yyjson_mut_arr_get(arr, 2);
+        yy_assert(yyjson_mut_get_sint(val) == 3);
+    }
+    
+    
+    //---------------------------------------------
+    // array with uint
+    {
+        u64 vals[] = {1, 2, 3};
+        usize len = sizeof(vals) / sizeof(vals[0]);
+        arr = yyjson_mut_arr_with_uint(doc, vals, len);
+        yy_assert(yyjson_mut_is_arr(arr));
+        yy_assert(yyjson_mut_arr_size(arr) == len);
+        val = yyjson_mut_arr_get(arr, 0);
+        yy_assert(yyjson_mut_get_uint(val) == 1);
+        val = yyjson_mut_arr_get(arr, 1);
+        yy_assert(yyjson_mut_get_uint(val) == 2);
+        val = yyjson_mut_arr_get(arr, 2);
+        yy_assert(yyjson_mut_get_uint(val) == 3);
+    }
+    {
+        u8 vals[] = {1, 2, 3};
+        usize len = sizeof(vals) / sizeof(vals[0]);
+        arr = yyjson_mut_arr_with_uint8(doc, vals, len);
+        yy_assert(yyjson_mut_is_arr(arr));
+        yy_assert(yyjson_mut_arr_size(arr) == len);
+        val = yyjson_mut_arr_get(arr, 0);
+        yy_assert(yyjson_mut_get_uint(val) == 1);
+        val = yyjson_mut_arr_get(arr, 1);
+        yy_assert(yyjson_mut_get_uint(val) == 2);
+        val = yyjson_mut_arr_get(arr, 2);
+        yy_assert(yyjson_mut_get_uint(val) == 3);
+    }
+    {
+        u16 vals[] = {1, 2, 3};
+        usize len = sizeof(vals) / sizeof(vals[0]);
+        arr = yyjson_mut_arr_with_uint16(doc, vals, len);
+        yy_assert(yyjson_mut_is_arr(arr));
+        yy_assert(yyjson_mut_arr_size(arr) == len);
+        val = yyjson_mut_arr_get(arr, 0);
+        yy_assert(yyjson_mut_get_uint(val) == 1);
+        val = yyjson_mut_arr_get(arr, 1);
+        yy_assert(yyjson_mut_get_uint(val) == 2);
+        val = yyjson_mut_arr_get(arr, 2);
+        yy_assert(yyjson_mut_get_uint(val) == 3);
+    }
+    {
+        u32 vals[] = {1, 2, 3};
+        usize len = sizeof(vals) / sizeof(vals[0]);
+        arr = yyjson_mut_arr_with_uint32(doc, vals, len);
+        yy_assert(yyjson_mut_is_arr(arr));
+        yy_assert(yyjson_mut_arr_size(arr) == len);
+        val = yyjson_mut_arr_get(arr, 0);
+        yy_assert(yyjson_mut_get_uint(val) == 1);
+        val = yyjson_mut_arr_get(arr, 1);
+        yy_assert(yyjson_mut_get_uint(val) == 2);
+        val = yyjson_mut_arr_get(arr, 2);
+        yy_assert(yyjson_mut_get_uint(val) == 3);
+    }
+    {
+        u64 vals[] = {1, 2, 3};
+        usize len = sizeof(vals) / sizeof(vals[0]);
+        arr = yyjson_mut_arr_with_uint64(doc, vals, len);
+        yy_assert(yyjson_mut_is_arr(arr));
+        yy_assert(yyjson_mut_arr_size(arr) == len);
+        val = yyjson_mut_arr_get(arr, 0);
+        yy_assert(yyjson_mut_get_uint(val) == 1);
+        val = yyjson_mut_arr_get(arr, 1);
+        yy_assert(yyjson_mut_get_uint(val) == 2);
+        val = yyjson_mut_arr_get(arr, 2);
+        yy_assert(yyjson_mut_get_uint(val) == 3);
+    }
+    
+    
+    //---------------------------------------------
+    // array with real
+    {
+        f64 vals[] = {1.0, 2.0, 3.0};
+        usize len = sizeof(vals) / sizeof(vals[0]);
+        arr = yyjson_mut_arr_with_real(doc, vals, len);
+        yy_assert(yyjson_mut_is_arr(arr));
+        yy_assert(yyjson_mut_arr_size(arr) == len);
+        val = yyjson_mut_arr_get(arr, 0);
+        yy_assert(yyjson_mut_get_real(val) == 1.0);
+        val = yyjson_mut_arr_get(arr, 1);
+        yy_assert(yyjson_mut_get_real(val) == 2.0);
+        val = yyjson_mut_arr_get(arr, 2);
+        yy_assert(yyjson_mut_get_real(val) == 3.0);
+    }
+    {
+        f32 vals[] = {1.0f, 2.0f, 3.0f};
+        usize len = sizeof(vals) / sizeof(vals[0]);
+        arr = yyjson_mut_arr_with_float(doc, vals, len);
+        yy_assert(yyjson_mut_is_arr(arr));
+        yy_assert(yyjson_mut_arr_size(arr) == len);
+        val = yyjson_mut_arr_get(arr, 0);
+        yy_assert(yyjson_mut_get_real(val) == 1.0);
+        val = yyjson_mut_arr_get(arr, 1);
+        yy_assert(yyjson_mut_get_real(val) == 2.0);
+        val = yyjson_mut_arr_get(arr, 2);
+        yy_assert(yyjson_mut_get_real(val) == 3.0);
+    }
+    {
+        f64 vals[] = {1.0, 2.0, 3.0};
+        usize len = sizeof(vals) / sizeof(vals[0]);
+        arr = yyjson_mut_arr_with_double(doc, vals, len);
+        yy_assert(yyjson_mut_is_arr(arr));
+        yy_assert(yyjson_mut_arr_size(arr) == len);
+        val = yyjson_mut_arr_get(arr, 0);
+        yy_assert(yyjson_mut_get_real(val) == 1.0);
+        val = yyjson_mut_arr_get(arr, 1);
+        yy_assert(yyjson_mut_get_real(val) == 2.0);
+        val = yyjson_mut_arr_get(arr, 2);
+        yy_assert(yyjson_mut_get_real(val) == 3.0);
+    }
+    
+    
+    //---------------------------------------------
+    // array with str
+    {
+        const char *vals[] = {"", "a", "bc", "abc\0def"};
+        usize lens[] = {0, 1, 2, 7};
+        usize len = sizeof(vals) / sizeof(vals[0]);
+        
+        arr = yyjson_mut_arr_with_str(doc, vals, len);
+        yy_assert(yyjson_mut_is_arr(arr));
+        yy_assert(yyjson_mut_arr_size(arr) == len);
+        val = yyjson_mut_arr_get(arr, 0);
+        yy_assert(yyjson_mut_equals_str(val, ""));
+        val = yyjson_mut_arr_get(arr, 1);
+        yy_assert(yyjson_mut_equals_str(val, "a"));
+        val = yyjson_mut_arr_get(arr, 2);
+        yy_assert(yyjson_mut_equals_str(val, "bc"));
+        val = yyjson_mut_arr_get(arr, 3);
+        yy_assert(yyjson_mut_equals_str(val, "abc"));
+        yy_assert(yyjson_mut_get_str(val) == vals[3]);
+        
+        arr = yyjson_mut_arr_with_strn(doc, vals, lens, len);
+        yy_assert(yyjson_mut_is_arr(arr));
+        yy_assert(yyjson_mut_arr_size(arr) == len);
+        val = yyjson_mut_arr_get(arr, 0);
+        yy_assert(yyjson_mut_equals_str(val, ""));
+        val = yyjson_mut_arr_get(arr, 1);
+        yy_assert(yyjson_mut_equals_str(val, "a"));
+        val = yyjson_mut_arr_get(arr, 2);
+        yy_assert(yyjson_mut_equals_str(val, "bc"));
+        val = yyjson_mut_arr_get(arr, 3);
+        yy_assert(yyjson_mut_equals_strn(val, "abc\0def", 7));
+        yy_assert(yyjson_mut_get_str(val) == vals[3]);
+        
+        arr = yyjson_mut_arr_with_strcpy(doc, vals, len);
+        yy_assert(yyjson_mut_is_arr(arr));
+        yy_assert(yyjson_mut_arr_size(arr) == len);
+        val = yyjson_mut_arr_get(arr, 0);
+        yy_assert(yyjson_mut_equals_str(val, ""));
+        val = yyjson_mut_arr_get(arr, 1);
+        yy_assert(yyjson_mut_equals_str(val, "a"));
+        val = yyjson_mut_arr_get(arr, 2);
+        yy_assert(yyjson_mut_equals_str(val, "bc"));
+        val = yyjson_mut_arr_get(arr, 3);
+        yy_assert(yyjson_mut_equals_str(val, "abc"));
+        yy_assert(yyjson_mut_get_str(val) != vals[3]);
+        
+        arr = yyjson_mut_arr_with_strncpy(doc, vals, lens, len);
+        yy_assert(yyjson_mut_is_arr(arr));
+        yy_assert(yyjson_mut_arr_size(arr) == len);
+        val = yyjson_mut_arr_get(arr, 0);
+        yy_assert(yyjson_mut_equals_str(val, ""));
+        val = yyjson_mut_arr_get(arr, 1);
+        yy_assert(yyjson_mut_equals_str(val, "a"));
+        val = yyjson_mut_arr_get(arr, 2);
+        yy_assert(yyjson_mut_equals_str(val, "bc"));
+        val = yyjson_mut_arr_get(arr, 3);
+        yy_assert(yyjson_mut_equals_strn(val, "abc\0def", 7));
+        yy_assert(yyjson_mut_get_str(val) != vals[3]);
+    }
+    
+    yy_assert(yyjson_mut_arr_clear(arr));
+    yy_assert(!yyjson_mut_arr_clear(NULL));
+    
+    //---------------------------------------------
+    yyjson_mut_doc_free(doc);
+}
+
+
+/// Validate object with int
+static void validate_mut_obj(yyjson_mut_val *obj,
+                             const char **keys, usize *key_lens,
+                             i64 *vals, usize len) {
+    yy_assert(yyjson_mut_is_obj(obj));
+    yy_assert(yyjson_mut_obj_size(obj) == len);
+    yy_assert(yyjson_mut_is_obj(NULL) == false);
+    yy_assert(yyjson_mut_obj_size(NULL) == 0);
+    
+    yyjson_mut_obj_iter iter;
+    yyjson_mut_val *key, *val, *first_key;
+    usize idx, max, count;
+    int tmp[8];
+        
+    if (len == 0) {
+        val = yyjson_mut_obj_get(obj, NULL);
+        yy_assert(val == NULL);
+        val = yyjson_mut_obj_getn(obj, NULL, 0);
+        yy_assert(val == NULL);
+        val = yyjson_mut_obj_get(obj, "");
+        yy_assert(val == NULL);
+        val = yyjson_mut_obj_getn(obj, "", 0);
+        yy_assert(val == NULL);
+        val = yyjson_mut_obj_get(obj, "a");
+        yy_assert(val == NULL);
+        val = yyjson_mut_obj_getn(obj, "a", 1);
+        yy_assert(val == NULL);
+        
+        yyjson_mut_obj_iter_init(obj, &iter);
+        yy_assert(yyjson_mut_obj_iter_has_next(&iter) == false);
+        while ((key = yyjson_mut_obj_iter_next(&iter))) {
+            yy_assert(false);
+        }
+        yy_assert(yyjson_mut_obj_iter_has_next(&iter) == false);
+        
+        yyjson_mut_obj_foreach(obj, idx, max, key, val) {
+            yy_assert(false);
+        }
+        
+    } else {
+        val = yyjson_mut_obj_get(obj, NULL);
+        yy_assert(val == NULL);
+        val = yyjson_mut_obj_getn(obj, NULL, 0);
+        yy_assert(val == NULL);
+        val = yyjson_mut_obj_get(obj, "not_exist");
+        yy_assert(val == NULL);
+        val = yyjson_mut_obj_getn(obj, "not_exist", 9);
+        
+        // test get() api
+        for (usize i = 0; i < len; i++) {
+            const char *str = keys[i];
+            usize str_len = key_lens[i];
+
+            i64 first_val = -9999;
+            for (usize t = 0; t < len; t++) {
+                if (str_len == key_lens[t] && memcmp(str, keys[t], str_len) == 0) {
+                    first_val = vals[t];
+                    break;
+                }
+            }
+            
+            if (strlen(str) == str_len) { // no '\0' inside string
+                val = yyjson_mut_obj_get(obj, str);
+                yy_assert(yyjson_mut_get_int(val) == first_val);
+            }
+            val = yyjson_mut_obj_getn(obj, str, str_len);
+            yy_assert(yyjson_mut_get_int(val) == first_val);
+        }
+        
+        // test all key-val pairs
+        first_key = ((yyjson_mut_val *)obj->uni.ptr)->next->next;
+        key = first_key;
+        val = key->next;
+        for (usize i = 0; i < len; i++) {
+            const char *str = keys[i];
+            usize str_len = key_lens[i];
+            yy_assert(yyjson_mut_equals_strn(key, str, str_len));
+            yy_assert(yyjson_mut_get_int(val) == vals[i]);
+            key = val->next;
+            val = key->next;
+        }
+        yy_assert(key == first_key);
+        
+        // test iterator api
+        count = 0;
+        memset(tmp, 0, sizeof(tmp));
+        yyjson_mut_obj_iter_init(obj, &iter);
+        yy_assert(yyjson_mut_obj_iter_has_next(&iter) == true);
+        while ((key = yyjson_mut_obj_iter_next(&iter))) {
+            val = key->next;
+            yy_assert(yyjson_mut_equals_strn(key, keys[count], key_lens[count]));
+            yy_assert(yyjson_mut_get_int(val) == vals[count]);
+            yy_assert(tmp[count] == 0);
+            tmp[count] = 1;
+            count++;
+            yy_assert(yyjson_mut_obj_iter_has_next(&iter) == count < len);
+        }
+        yy_assert(yyjson_mut_obj_iter_has_next(&iter) == false);
+        yy_assert(count == len);
+        
+        // test foreach api
+        count = 0;
+        memset(tmp, 0, sizeof(tmp));
+        yyjson_mut_obj_foreach(obj, idx, max, key, val) {
+            yy_assert(yyjson_mut_equals_strn(key, keys[count], key_lens[count]));
+            yy_assert(yyjson_mut_get_int(val) == vals[count]);
+            yy_assert(tmp[count] == 0);
+            yy_assert(count == idx);
+            yy_assert(max == len);
+            tmp[count] = 1;
+            count++;
+        }
+        yy_assert(count == len);
+    }
+}
+
+
+static void test_json_mut_obj_api(void) {
+    yyjson_mut_doc *doc;
+    yyjson_mut_val *obj, *key, *val;
+    const char *keys[64];
+    usize key_lens[64], idx;
+    i64 vals[64];
+    const char *str;
+    yyjson_mut_obj_iter iter;
+    
+    
+#define set_validate(idx, str, len, val) \
+    keys[idx] = str; \
+    key_lens[idx] = len; \
+    vals[idx] = val;
+    
+#define new_key_val(idx) \
+    key = yyjson_mut_strn(doc, keys[idx], key_lens[idx]); \
+    val = yyjson_mut_int(doc, vals[idx]);
+    
+    doc = yyjson_mut_doc_new(NULL);
+    obj = yyjson_mut_obj(doc);
+    yy_assert(yyjson_mut_is_obj(obj));
+    
+    
+    //---------------------------------------------
+    // add()
+    
+    validate_mut_obj(obj, keys, key_lens, vals, 0);
+    
+    set_validate(0, "a", 1, 10);
+    new_key_val(0);
+    
+    yy_assert(!yyjson_mut_obj_add(NULL, key, val));
+    yy_assert(!yyjson_mut_obj_add(obj, NULL, val));
+    yy_assert(!yyjson_mut_obj_add(obj, key, NULL));
+    
+    yy_assert(yyjson_mut_obj_add(obj, key, val));
+    validate_mut_obj(obj, keys, key_lens, vals, 1);
+    
+    set_validate(1, "xxx", 3, 11);
+    new_key_val(1);
+    yy_assert(yyjson_mut_obj_add(obj, key, val));
+    validate_mut_obj(obj, keys, key_lens, vals, 2);
+    
+    set_validate(2, "b", 1, 12);
+    new_key_val(2);
+    yy_assert(yyjson_mut_obj_add(obj, key, val));
+    validate_mut_obj(obj, keys, key_lens, vals, 3);
+    
+    set_validate(3, "xxx", 3, 13);
+    new_key_val(3);
+    yy_assert(yyjson_mut_obj_add(obj, key, val));
+    validate_mut_obj(obj, keys, key_lens, vals, 4);
+    
+    set_validate(4, "xxx\0xxx", 7, 20);
+    new_key_val(4);
+    yy_assert(yyjson_mut_obj_add(obj, key, val));
+    validate_mut_obj(obj, keys, key_lens, vals, 5);
+    
+    yy_assert(!yyjson_mut_obj_remove(NULL, key));
+    yy_assert(!yyjson_mut_obj_remove(obj, NULL));
+    yy_assert(yyjson_mut_obj_remove(obj, key));
+    validate_mut_obj(obj, keys, key_lens, vals, 4);
+    
+    yyjson_mut_obj_clear(obj);
+    validate_mut_obj(obj, keys, key_lens, vals, 0);
+    
+    //---------------------------------------------
+    // put()
+    
+    // add
+    set_validate(0, "a", 1, 10);
+    new_key_val(0);
+    yy_assert(yyjson_mut_obj_add(obj, key, val));
+    validate_mut_obj(obj, keys, key_lens, vals, 1);
+    
+    // replace(a)
+    set_validate(0, "a", 1, 11);
+    new_key_val(0);
+    yy_assert(!yyjson_mut_obj_put(NULL, key, val));
+    yy_assert(!yyjson_mut_obj_put(obj, NULL, val));
+    yy_assert(yyjson_mut_obj_put(obj, key, val));
+    validate_mut_obj(obj, keys, key_lens, vals, 1);
+    
+    // add
+    set_validate(1, "b", 1, 20);
+    new_key_val(1);
+    yy_assert(yyjson_mut_obj_add(obj, key, val));
+    validate_mut_obj(obj, keys, key_lens, vals, 2);
+    
+    // replace(b)
+    set_validate(1, "b", 1, 21);
+    new_key_val(1);
+    yy_assert(yyjson_mut_obj_put(obj, key, val));
+    validate_mut_obj(obj, keys, key_lens, vals, 2);
+    
+    // replace(a)
+    set_validate(0, "b", 1, 21);
+    set_validate(1, "a", 1, 30);
+    new_key_val(1);
+    yy_assert(yyjson_mut_obj_put(obj, key, val));
+    validate_mut_obj(obj, keys, key_lens, vals, 2);
+    
+    // add
+    set_validate(2, "c", 1, 40);
+    new_key_val(2);
+    yy_assert(yyjson_mut_obj_add(obj, key, val));
+    validate_mut_obj(obj, keys, key_lens, vals, 3);
+    
+    // add
+    set_validate(3, "c", 1, 41);
+    new_key_val(3);
+    yy_assert(yyjson_mut_obj_add(obj, key, val));
+    validate_mut_obj(obj, keys, key_lens, vals, 4);
+    
+    // replace(duplicated)
+    set_validate(2, "c", 1, 42);
+    new_key_val(2);
+    yy_assert(yyjson_mut_obj_put(obj, key, val));
+    validate_mut_obj(obj, keys, key_lens, vals, 3);
+    
+    // replace(NULL)
+    new_key_val(2);
+    yy_assert(yyjson_mut_obj_put(obj, key, NULL));
+    validate_mut_obj(obj, keys, key_lens, vals, 2);
+    new_key_val(1);
+    yy_assert(yyjson_mut_obj_put(obj, key, NULL));
+    validate_mut_obj(obj, keys, key_lens, vals, 1);
+    new_key_val(0);
+    yy_assert(yyjson_mut_obj_put(obj, key, NULL));
+    validate_mut_obj(obj, keys, key_lens, vals, 0);
+    
+    yyjson_mut_obj_clear(obj);
+    
+    
+    //---------------------------------------------
+    // add (convenience)
+    
+    yy_assert(!yyjson_mut_obj_add_null(NULL, obj, "a"));
+    yy_assert(!yyjson_mut_obj_add_null(doc, NULL, "a"));
+    yy_assert(!yyjson_mut_obj_add_null(doc, obj, NULL));
+    yy_assert(yyjson_mut_obj_add_null(doc, obj, "a"));
+    val = yyjson_mut_obj_get(obj, "a");
+    yy_assert(yyjson_mut_is_null(val));
+    
+    yy_assert(yyjson_mut_obj_add_true(doc, obj, "b"));
+    val = yyjson_mut_obj_get(obj, "b");
+    yy_assert(yyjson_mut_is_true(val));
+    
+    yy_assert(yyjson_mut_obj_add_false(doc, obj, "c"));
+    val = yyjson_mut_obj_get(obj, "c");
+    yy_assert(yyjson_mut_is_false(val));
+    
+    yy_assert(yyjson_mut_obj_add_bool(doc, obj, "d", true));
+    val = yyjson_mut_obj_get(obj, "d");
+    yy_assert(yyjson_mut_is_true(val));
+    
+    yy_assert(yyjson_mut_obj_add_uint(doc, obj, "e", 123));
+    val = yyjson_mut_obj_get(obj, "e");
+    yy_assert(yyjson_mut_get_uint(val) == 123);
+    
+    yy_assert(yyjson_mut_obj_add_sint(doc, obj, "f", -123));
+    val = yyjson_mut_obj_get(obj, "f");
+    yy_assert(yyjson_mut_get_sint(val) == -123);
+    
+    yy_assert(yyjson_mut_obj_add_int(doc, obj, "g", -456));
+    val = yyjson_mut_obj_get(obj, "g");
+    yy_assert(yyjson_mut_get_int(val) == -456);
+    
+    yy_assert(yyjson_mut_obj_add_real(doc, obj, "h", 789.0));
+    val = yyjson_mut_obj_get(obj, "h");
+    yy_assert(yyjson_mut_get_real(val) == 789.0);
+    
+    str = "xxx";
+    yy_assert(yyjson_mut_obj_add_str(doc, obj, "aa", str));
+    val = yyjson_mut_obj_get(obj, "aa");
+    yy_assert(yyjson_mut_get_str(val) == str);
+    yy_assert(yyjson_mut_get_len(val) == 3);
+    
+    str = "xxx\0xxx";
+    yy_assert(yyjson_mut_obj_add_strn(doc, obj, "bb", str, 7));
+    val = yyjson_mut_obj_get(obj, "bb");
+    yy_assert(yyjson_mut_get_str(val) == str);
+    yy_assert(yyjson_mut_get_len(val) == 7);
+    
+    str = "xxx";
+    yy_assert(yyjson_mut_obj_add_strcpy(doc, obj, "cc", str));
+    val = yyjson_mut_obj_get(obj, "cc");
+    yy_assert(yyjson_mut_get_str(val) != str);
+    yy_assert(yyjson_mut_get_len(val) == 3);
+    yy_assert(yyjson_mut_equals_strn(val, str, 3));
+    
+    str = "xxx\0xxx";
+    yy_assert(yyjson_mut_obj_add_strncpy(doc, obj, "dd", str, 7));
+    val = yyjson_mut_obj_get(obj, "dd");
+    yy_assert(yyjson_mut_get_str(val) != str);
+    yy_assert(yyjson_mut_get_len(val) == 7);
+    yy_assert(yyjson_mut_equals_strn(val, str, 7));
+    
+    val = yyjson_mut_str(doc, "zzz");
+    yy_assert(yyjson_mut_obj_add_val(doc, obj, "yyy", val));
+    val = yyjson_mut_obj_get(obj, "yyy");
+    yy_assert(yyjson_mut_equals_str(val, "zzz"));
+    
+    yyjson_mut_obj_clear(obj);
+    
+    
+    //---------------------------------------------
+    // remove (convenience)
+    
+    set_validate(0, "a", 1, 10);
+    new_key_val(0);
+    yy_assert(yyjson_mut_obj_add(obj, key, val));
+    set_validate(1, "b", 1, 11);
+    new_key_val(1);
+    yy_assert(yyjson_mut_obj_add(obj, key, val));
+    set_validate(2, "c", 1, 12);
+    new_key_val(2);
+    yy_assert(yyjson_mut_obj_add(obj, key, val));
+    yy_assert(!yyjson_mut_obj_remove_str(NULL, "b"));
+    yy_assert(!yyjson_mut_obj_remove_str(obj, NULL));
+    yy_assert(yyjson_mut_obj_remove_str(obj, "b"));
+    set_validate(1, "c", 1, 12);
+    validate_mut_obj(obj, keys, key_lens, vals, 2);
+    yyjson_mut_obj_clear(obj);
+    
+    set_validate(0, "a", 1, 10);
+    new_key_val(0);
+    yy_assert(yyjson_mut_obj_add(obj, key, val));
+    set_validate(1, "xxx\0xxx", 7, 11);
+    new_key_val(1);
+    yy_assert(yyjson_mut_obj_add(obj, key, val));
+    set_validate(2, "xxx", 3, 12);
+    new_key_val(2);
+    yy_assert(yyjson_mut_obj_add(obj, key, val));
+    yyjson_mut_obj_remove_strn(obj, "xxx\0xxx", 7);
+    set_validate(1, "xxx", 3, 12);
+    validate_mut_obj(obj, keys, key_lens, vals, 2);
+    yyjson_mut_obj_clear(obj);
+    
+    
+    //---------------------------------------------
+    // create (convenience)
+    {
+        const char *keys_str[3] = {"a", "b", "c"};
+        const char *vals_str[3] = {"x", "y", "z"};
+        obj = yyjson_mut_obj_with_str(NULL, keys_str, vals_str, 3);
+        yy_assert(!obj);
+        obj = yyjson_mut_obj_with_str(doc, keys_str, vals_str, 3);
+        yy_assert(yyjson_mut_is_obj(obj));
+        yy_assert(yyjson_mut_obj_size(obj) == 3);
+        val = yyjson_mut_obj_get(obj, "a");
+        yy_assert(yyjson_mut_equals_str(val, "x"));
+        val = yyjson_mut_obj_get(obj, "b");
+        yy_assert(yyjson_mut_equals_str(val, "y"));
+        val = yyjson_mut_obj_get(obj, "c");
+        yy_assert(yyjson_mut_equals_str(val, "z"));
+        yyjson_mut_obj_clear(obj);
+    }
+    {
+        const char *pairs[6] = {"a", "x", "b", "y", "c", "z"};
+        obj = yyjson_mut_obj_with_kv(NULL, pairs, 3);
+        yy_assert(!obj)
+        obj = yyjson_mut_obj_with_kv(doc, pairs, 3);
+        yy_assert(yyjson_mut_is_obj(obj));
+        yy_assert(yyjson_mut_obj_size(obj) == 3);
+        val = yyjson_mut_obj_get(obj, "a");
+        yy_assert(yyjson_mut_equals_str(val, "x"));
+        val = yyjson_mut_obj_get(obj, "b");
+        yy_assert(yyjson_mut_equals_str(val, "y"));
+        val = yyjson_mut_obj_get(obj, "c");
+        yy_assert(yyjson_mut_equals_str(val, "z"));
+        yyjson_mut_obj_clear(obj);
+    }
+    
+    
+    //---------------------------------------------
+    // iterator
+    yy_assert(yyjson_mut_obj_iter_init(obj, NULL) == false);
+    yy_assert(yyjson_mut_obj_iter_init(NULL, &iter) == false);
+    yy_assert(yyjson_mut_obj_iter_init(NULL, NULL) == false);
+    
+    
+    //---------------------------------------------
+    // iterator
+    
+    // obj(1)
+    set_validate(0, "a", 1, 10);
+    new_key_val(0);
+    yy_assert(yyjson_mut_obj_add(obj, key, val));
+    validate_mut_obj(obj, keys, key_lens, vals, 1);
+    yyjson_mut_obj_iter_init(obj, &iter);
+    idx = 0;
+    while ((key = yyjson_mut_obj_iter_next(&iter))) {
+        val = key->next;
+        if (idx == 0) yy_assert(yyjson_mut_equals_str(key, "a"));
+        if (idx == 0) yy_assert(yyjson_mut_get_int(val) == 10);
+        idx++;
+    }
+    yy_assert(idx == 1);
+    validate_mut_obj(obj, keys, key_lens, vals, 1);
+    
+    
+    // obj(2)
+    set_validate(1, "b", 1, 11);
+    new_key_val(1);
+    yy_assert(yyjson_mut_obj_add(obj, key, val));
+    yyjson_mut_obj_iter_init(obj, &iter);
+    idx = 0;
+    while ((key = yyjson_mut_obj_iter_next(&iter))) {
+        val = key->next;
+        if (idx == 0) yy_assert(yyjson_mut_equals_str(key, "a"));
+        if (idx == 0) yy_assert(yyjson_mut_get_int(val) == 10);
+        if (idx == 1) yy_assert(yyjson_mut_equals_str(key, "b"));
+        if (idx == 1) yy_assert(yyjson_mut_get_int(val) == 11);
+        idx++;
+    }
+    yy_assert(idx == 2);
+    validate_mut_obj(obj, keys, key_lens, vals, 2);
+    
+    // obj(3)
+    set_validate(2, "c", 1, 12);
+    new_key_val(2);
+    yy_assert(yyjson_mut_obj_add(obj, key, val));
+    yyjson_mut_obj_iter_init(obj, &iter);
+    idx = 0;
+    while ((key = yyjson_mut_obj_iter_next(&iter))) {
+        val = key->next;
+        if (idx == 0) yy_assert(yyjson_mut_equals_str(key, "a"));
+        if (idx == 0) yy_assert(yyjson_mut_get_int(val) == 10);
+        if (idx == 1) yy_assert(yyjson_mut_equals_str(key, "b"));
+        if (idx == 1) yy_assert(yyjson_mut_get_int(val) == 11);
+        if (idx == 2) yy_assert(yyjson_mut_equals_str(key, "c"));
+        if (idx == 2) yy_assert(yyjson_mut_get_int(val) == 12);
+        idx++;
+    }
+    yy_assert(idx == 3);
+    validate_mut_obj(obj, keys, key_lens, vals, 3);
+    
+    yyjson_mut_obj_clear(obj);
+    
+    
+    
+    //---------------------------------------------
+    // iterator remove, size:1, remove:0
+    
+    set_validate(0, "a", 1, 10);
+    new_key_val(0);
+    yy_assert(yyjson_mut_obj_add(obj, key, val));
+    validate_mut_obj(obj, keys, key_lens, vals, 1);
+    yyjson_mut_obj_iter_init(obj, &iter);
+    idx = 0;
+    while ((key = yyjson_mut_obj_iter_next(&iter))) {
+        val = key->next;
+        if (yyjson_mut_equals_str(key, "a")) yyjson_mut_obj_iter_remove(&iter);
+        idx++;
+    }
+    yy_assert(idx == 1);
+    validate_mut_obj(obj, keys, key_lens, vals, 0);
+    yyjson_mut_obj_clear(obj);
+    
+    
+    //---------------------------------------------
+    // iterator remove, size:2, remove:0
+    
+    set_validate(0, "a", 1, 10);
+    new_key_val(0);
+    yy_assert(yyjson_mut_obj_add(obj, key, val));
+    set_validate(1, "b", 1, 11);
+    new_key_val(1);
+    yy_assert(yyjson_mut_obj_add(obj, key, val));
+    validate_mut_obj(obj, keys, key_lens, vals, 2);
+    yyjson_mut_obj_iter_init(obj, &iter);
+    idx = 0;
+    while ((key = yyjson_mut_obj_iter_next(&iter))) {
+        val = key->next;
+        if (yyjson_mut_equals_str(key, "a")) yyjson_mut_obj_iter_remove(&iter);
+        idx++;
+    }
+    yy_assert(idx == 2);
+    set_validate(0, "b", 1, 11);
+    validate_mut_obj(obj, keys, key_lens, vals, 1);
+    yyjson_mut_obj_clear(obj);
+    
+    
+    //---------------------------------------------
+    // iterator remove, size:2, remove:1
+    
+    set_validate(0, "a", 1, 10);
+    new_key_val(0);
+    yy_assert(yyjson_mut_obj_add(obj, key, val));
+    set_validate(1, "b", 1, 11);
+    new_key_val(1);
+    yy_assert(yyjson_mut_obj_add(obj, key, val));
+    validate_mut_obj(obj, keys, key_lens, vals, 2);
+    yyjson_mut_obj_iter_init(obj, &iter);
+    idx = 0;
+    while ((key = yyjson_mut_obj_iter_next(&iter))) {
+        val = key->next;
+        if (yyjson_mut_equals_str(key, "b")) yyjson_mut_obj_iter_remove(&iter);
+        idx++;
+    }
+    yy_assert(idx == 2);
+    validate_mut_obj(obj, keys, key_lens, vals, 1);
+    yyjson_mut_obj_clear(obj);
+    
+    
+    //---------------------------------------------
+    // iterator remove, size:3, remove:1
+    
+    set_validate(0, "a", 1, 10);
+    new_key_val(0);
+    yy_assert(yyjson_mut_obj_add(obj, key, val));
+    set_validate(1, "b", 1, 11);
+    new_key_val(1);
+    yy_assert(yyjson_mut_obj_add(obj, key, val));
+    set_validate(2, "c", 1, 12);
+    new_key_val(2);
+    yy_assert(yyjson_mut_obj_add(obj, key, val));
+    validate_mut_obj(obj, keys, key_lens, vals, 3);
+    yyjson_mut_obj_iter_init(obj, &iter);
+    idx = 0;
+    while ((key = yyjson_mut_obj_iter_next(&iter))) {
+        val = key->next;
+        if (yyjson_mut_equals_str(key, "b")) yyjson_mut_obj_iter_remove(&iter);
+        idx++;
+    }
+    yy_assert(idx == 3);
+    set_validate(1, "c", 1, 12);
+    validate_mut_obj(obj, keys, key_lens, vals, 2);
+    yyjson_mut_obj_clear(obj);
+    
+    
+    //---------------------------------------------
+    // iterator remove all
+    
+    set_validate(0, "a", 1, 10);
+    new_key_val(0);
+    yy_assert(yyjson_mut_obj_add(obj, key, val));
+    set_validate(1, "b", 1, 11);
+    new_key_val(1);
+    yy_assert(yyjson_mut_obj_add(obj, key, val));
+    set_validate(2, "c", 1, 12);
+    new_key_val(2);
+    yy_assert(yyjson_mut_obj_add(obj, key, val));
+    validate_mut_obj(obj, keys, key_lens, vals, 3);
+    yyjson_mut_obj_iter_init(obj, &iter);
+    idx = 0;
+    while ((key = yyjson_mut_obj_iter_next(&iter))) {
+        val = key->next;
+        yyjson_mut_obj_iter_remove(&iter);
+        idx++;
+    }
+    yy_assert(idx == 3);
+    validate_mut_obj(obj, keys, key_lens, vals, 0);
+    yyjson_mut_obj_clear(obj);
+    
+    yy_assert(!yyjson_mut_obj_iter_remove(NULL));
+    
+    
+    yyjson_mut_obj_clear(NULL);
+    yyjson_mut_obj_clear(obj);
+    //---------------------------------------------
+    
+    yyjson_mut_doc_free(doc);
+}
+
+static void test_json_mut_doc_api(void) {
+    yyjson_mut_doc_set_root(NULL, NULL);
+    yy_assert(yyjson_mut_doc_get_root(NULL) == NULL);
+    
+    yyjson_mut_doc *doc = yyjson_mut_doc_new(NULL);
+    yy_assert(yyjson_mut_doc_get_root(doc) == NULL);
+    
+    yyjson_mut_val *val = yyjson_mut_str(doc, "abc");
+    yy_assert(yyjson_mut_is_str(val));
+    yyjson_mut_doc_set_root(doc, val);
+    yy_assert(yyjson_mut_doc_get_root(doc) == val);
+
+    yyjson_mut_doc_free(doc);
+}
+
+yy_test_case(test_json_mut_val) {
+    test_json_mut_val_api();
+    test_json_mut_arr_api();
+    test_json_mut_obj_api();
+    test_json_mut_doc_api();
+}
