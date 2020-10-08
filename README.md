@@ -19,7 +19,8 @@ A high performance JSON library written in ANSI C.
 ![Reader Apple](doc/images/reader_apple.png)
 ![Writer Apple](doc/images/writer_apple.png)
 
-Benchmark and datasets: [yyjson_benchmark](https://github.com/ibireme/yyjson_benchmark)
+Benchmark code and datasets: [yyjson_benchmark](https://github.com/ibireme/yyjson_benchmark)
+More benchmark reports: [yyjson_benchmark/report](https://github.com/ibireme/yyjson_benchmark/tree/master/report)
 
 # Building
 
