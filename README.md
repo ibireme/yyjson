@@ -6,9 +6,9 @@ A high performance JSON library written in ANSI C.
 - **Portable**: compliant with ANSI C (C89).
 - **Standard**: compliant with [RFC 8259](https://tools.ietf.org/html/rfc8259) and [ECMA-404](https://www.ecma-international.org/publications/standards/Ecma-404.htm) standard.
 - **Safe**: complete JSON form, number format and UTF-8 validation.
-- **Accuracy**: can process int64/uint64/double number accurately.
+- **Accuracy**: can process `int64`, `uint64` and `double` number accurately.
 - **No Limit**: support large data size, unlimited JSON level, `\u0000` string.
-- **Extendable**: support comment, trailing comma, nan/inf, custom memory allocator.
+- **Extendable**: support comments, trailing commas, nan/inf, custom memory allocator.
 - **Developer Friendly**: only one `h` and one `c` file, easy to use API.
 
 # Performance
@@ -19,8 +19,9 @@ A high performance JSON library written in ANSI C.
 ![Reader Apple](doc/images/reader_apple.png)
 ![Writer Apple](doc/images/writer_apple.png)
 
-Benchmark code and datasets: [yyjson_benchmark](https://github.com/ibireme/yyjson_benchmark)
-More benchmark reports: [yyjson_benchmark/report](https://github.com/ibireme/yyjson_benchmark/tree/master/report)
+Benchmark project: [yyjson_benchmark](https://github.com/ibireme/yyjson_benchmark)
+
+More benchmark reports (gcc/clang/msvc): [yyjson_benchmark/report](https://github.com/ibireme/yyjson_benchmark/tree/master/report)
 
 # Building
 
@@ -49,9 +50,9 @@ make test
 Supported CMake options:
 
 - `-DBUILD_SHARED_LIBS=ON` Build shared library instead of static library.
-- `-DYYJSON_BUILD_TESTS=ON` Build all tests.
+- `-DYYJSON_BUILD_TEST=ON` Build all tests.
 - `-DYYJSON_DISABLE_READER=ON` Disable JSON reader if you don't need it.
-- `-DYYJSON_DISABLE_WRITER=ON` Disable JSON write if you don't need it.
+- `-DYYJSON_DISABLE_WRITER=ON` Disable JSON writer if you don't need it.
 - `-DYYJSON_DISABLE_FP_READER=ON` Disable custom double number reader to reduce binary size.
 - `-DYYJSON_DISABLE_FP_WRITER=ON` Disable custom double number writer to reduce binary size.
 - `-DYYJSON_DISABLE_COMMENT_READER=ON` Disable non-standard comment support at compile time.
