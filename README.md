@@ -41,7 +41,7 @@ make
 
 Build and run tests:
 ```shell
-cmake .. -DYYJSON_BUILD_TESTS=ON
+cmake .. -DYYJSON_BUILD_TEST=ON
 make
 make test
 ```
