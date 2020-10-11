@@ -1,4 +1,4 @@
-name: ubuntu
+name: codecov
 
 on: [push, pull_request]
 
