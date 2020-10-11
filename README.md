@@ -15,6 +15,7 @@ A high performance JSON library written in ANSI C.
 ### Intel Core i5-8259U (3.8GHz) with Clang 10
 ![Reader Intel](doc/images/reader_intel.png)
 ![Writer Intel](doc/images/writer_intel.png)
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fibireme%2Fyyjson.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Fibireme%2Fyyjson?ref=badge_shield)
 ### Apple A12 (2.5GHz) with Clang 12
 ![Reader Apple](doc/images/reader_apple.png)
 ![Writer Apple](doc/images/writer_apple.png)
@@ -162,3 +163,6 @@ if (err.code) {
 
 # License
 This project is released under the MIT license.
+
+
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fibireme%2Fyyjson.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Fibireme%2Fyyjson?ref=badge_large)
