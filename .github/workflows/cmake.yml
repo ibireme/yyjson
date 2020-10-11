@@ -64,16 +64,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        build_type:
-          - Debug
-          - Release
         build_option:
           - Default
           - DisableCustomFP
           - DisableNonStandard
-        compiler:
-          - gcc
-          - clang
     steps:
     - uses: actions/checkout@v2
     - name: Prepare
@@ -86,37 +80,58 @@ jobs:
         else
           BUILD_OPTIONS=""
         fi
-        if [ "${{matrix.compiler}}" == "gcc" ]; then
-          BUILD_COMPILER="-DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++"
-        else
-          BUILD_COMPILER=""
-        fi
         cmake -E make_directory ${{runner.workspace}}/build
 
     - name: CMake
       shell: bash
       working-directory: ${{runner.workspace}}/build
-      run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=${{matrix.build_type}} -DYYJSON_BUILD_TEST=ON $BUILD_OPTIONS $BUILD_COMPILER 
+      run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=Release -DYYJSON_BUILD_TEST=ON $BUILD_OPTIONS
     
     - name: Build
       shell: bash
       working-directory: ${{runner.workspace}}/build
-      run: cmake --build . --config ${{matrix.build_type}}
+      run: cmake --build . --config Release
     
     - name: Test
       shell: bash
       working-directory: ${{runner.workspace}}/build
-      run: ctest -C ${{matrix.build_type}}
+      run: ctest -C Release
 
 
   windows:
     runs-on: windows-latest
     steps:
     - uses: actions/checkout@v2
-    - name: Prepare
+    - name: Build and Test
       run: |
         mkdir build
         cd build
         cmake .. -DCMAKE_BUILD_TYPE=Release -DYYJSON_BUILD_TEST=ON
         cmake --build . --config Release
         ctest -C Release
+
+
+  codecov:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Prepare
+      shell: bash
+      run: sudo apt install lcov -y
+
+    - name: Build and Test
+      shell: bash
+      run: |
+        mkdir build
+        cd build
+        cmake .. -DCMAKE_BUILD_TYPE=Debug -DYYJSON_BUILD_TEST=ON -DYYJSON_ENABLE_TEST_COVERAGE=ON
+        cmake --build . --config Debug
+        ctest
+
+    - name: CodeCov
+      shell: bash
+      working-directory: ${{runner.workspace}}/build/
+      run: |
+        lcov --directory . --capture --output-file coverage.info
+        bash <(curl -s https://codecov.io/bash) -f coverage.info || echo "Codecov did not collect coverage reports"
+

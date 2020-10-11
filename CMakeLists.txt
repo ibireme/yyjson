@@ -75,15 +75,6 @@ if(BUILD_SHARED_LIBS)
     endif()
 endif()
 
-if(YYJSON_ENABLE_TEST_COVERAGE AND CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
-    target_compile_options(yyjson INTERFACE -O0 -g -ftest-coverage -fprofile-arcs)
-    if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.13)
-        target_link_options(yyjson INTERFACE -lgcov --coverage)
-    else()
-        target_link_libraries(yyjson INTERFACE -lgcov --coverage)
-    endif()
-endif()
-
 
 # Testing
 if(YYJSON_BUILD_TEST)
@@ -105,7 +96,6 @@ if(YYJSON_BUILD_TEST)
         set(YYJSON_TEST_LINES "")
         foreach(SRC_FILE ${YYJSON_TEST_SOURCE})
             string(REGEX REPLACE "(^.*/|\\.[^.]*$)" "" SRC_NAME ${SRC_FILE})
-            set(YYJSON_TEST_LINES "${YYJSON_TEST_LINES}")
             set(YYJSON_TEST_LINES "${YYJSON_TEST_LINES}- (void)${SRC_NAME} {\n")
             set(YYJSON_TEST_LINES "${YYJSON_TEST_LINES}    extern void ${SRC_NAME}(void);\n")
             set(YYJSON_TEST_LINES "${YYJSON_TEST_LINES}    ${SRC_NAME}();\n")
@@ -154,8 +144,7 @@ if(YYJSON_BUILD_TEST)
             test/util/david_gay_dtoa.c
         )
         target_include_directories(yyjson_test_utils PUBLIC test/util)
-        target_link_libraries(yyjson_test_utils PRIVATE yyjson)   
-        
+
         # Add test cases
         file(GLOB YYJSON_TEST_SOURCE
             "test/test_*.c"
@@ -169,6 +158,11 @@ if(YYJSON_BUILD_TEST)
             set_tests_properties(${SRC_NAME} PROPERTIES TIMEOUT 60)
             message("add test ${SRC_NAME}")
         endforeach()
+        if(YYJSON_ENABLE_TEST_COVERAGE AND CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
+            target_compile_options(yyjson PRIVATE --coverage)
+            target_link_libraries(yyjson INTERFACE --coverage)
+        endif()
+
     endif()
 
     # Test strict C89/C++98 compatibility
@@ -200,6 +194,7 @@ if(YYJSON_BUILD_TEST)
             set(YYJSON_STRICT_CXX_FLAGS -std=c++98 -Wall -Wextra -Werror -pedantic -pedantic-errors)
             target_compile_options(test_compile_cxx98 PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${YYJSON_STRICT_CXX_FLAGS}>)
         endif()
+
     endif()
 
 endif()
