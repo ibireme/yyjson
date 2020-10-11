@@ -115,11 +115,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
-    - name: Prepare
-      shell: bash
-      run: sudo apt install lcov -y
-
-    - name: Build and Test
+    - name: CodeCov
       shell: bash
       run: |
         mkdir build
@@ -127,11 +123,4 @@ jobs:
         cmake .. -DCMAKE_BUILD_TYPE=Debug -DYYJSON_BUILD_TEST=ON -DYYJSON_ENABLE_TEST_COVERAGE=ON
         cmake --build . --config Debug
         ctest
-
-    - name: CodeCov
-      shell: bash
-      working-directory: ${{runner.workspace}}/build/
-      run: |
-        lcov --directory . --capture --output-file coverage.info
-        bash <(curl -s https://codecov.io/bash) -f coverage.info || echo "Codecov did not collect coverage reports"
-
+        bash <(curl -s https://codecov.io/bash) || echo "Codecov did not collect coverage reports"
