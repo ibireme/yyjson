@@ -27,6 +27,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Prepare
+      shell: bash
       run: |
         if [ "${{matrix.build_flag}}" == "DisableCustomFP" ]; then
           BUILD_OPTIONS="-DYYJSON_DISABLE_FP_READER=ON -DYYJSON_DISABLE_FP_WRITER=ON"
@@ -36,19 +37,25 @@ jobs:
           BUILD_OPTIONS=""
         fi
         if [ "${{matrix.compiler}}" == "clang" ]; then
-          BUILD_COMPILE="-DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++"
+          BUILD_COMPILER="-DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++"
+        else
+          BUILD_COMPILER=""
         fi
-        mkdir build
-        cd build
-        rm -rf ./*
+        cmake -E make_directory ${{runner.workspace}}/build
 
     - name: CMake
-      run: cmake .. -DCMAKE_BUILD_TYPE=${{matrix.build_type}} -DYYJSON_BUILD_TEST=ON $BUILD_OPTIONS $BUILD_COMPILE 
-    
+      shell: bash
+      working-directory: ${{runner.workspace}}/build
+      run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=${{matrix.build_type}} -DYYJSON_BUILD_TEST=ON $BUILD_OPTIONS $BUILD_COMPILER 
+
     - name: Build
+      shell: bash
+      working-directory: ${{runner.workspace}}/build
       run: cmake --build . --config ${{matrix.build_type}}
     
     - name: Test
+      shell: bash
+      working-directory: ${{runner.workspace}}/build
       run: ctest -C ${{matrix.build_type}}
 
 
@@ -70,6 +77,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Prepare
+      shell: bash
       run: |
         if [ "${{matrix.build_flag}}" == "DisableCustomFP" ]; then
           BUILD_OPTIONS="-DYYJSON_DISABLE_FP_READER=ON -DYYJSON_DISABLE_FP_WRITER=ON"
@@ -79,19 +87,25 @@ jobs:
           BUILD_OPTIONS=""
         fi
         if [ "${{matrix.compiler}}" == "gcc" ]; then
-          BUILD_COMPILE="-DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++"
+          BUILD_COMPILER="-DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++"
+        else
+          BUILD_COMPILER=""
         fi
-        mkdir build
-        cd build
-        rm -rf ./*
+        cmake -E make_directory ${{runner.workspace}}/build
 
     - name: CMake
-      run: cmake .. -DCMAKE_BUILD_TYPE=${{matrix.build_type}} -DYYJSON_BUILD_TEST=ON $BUILD_OPTIONS $BUILD_COMPILE 
+      shell: bash
+      working-directory: ${{runner.workspace}}/build
+      run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=${{matrix.build_type}} -DYYJSON_BUILD_TEST=ON $BUILD_OPTIONS $BUILD_COMPILER 
     
     - name: Build
+      shell: bash
+      working-directory: ${{runner.workspace}}/build
       run: cmake --build . --config ${{matrix.build_type}}
     
     - name: Test
+      shell: bash
+      working-directory: ${{runner.workspace}}/build
       run: ctest -C ${{matrix.build_type}}
 
 
@@ -103,12 +117,6 @@ jobs:
       run: |
         mkdir build
         cd build
-
-    - name: CMake
-      run: cmake .. -DCMAKE_BUILD_TYPE=Release -DYYJSON_BUILD_TEST=ON
-    
-    - name: Build
-      run: cmake --build . --config Release
-    
-    - name: Test
-      run: ctest -C Release
+        cmake .. -DCMAKE_BUILD_TYPE=Release -DYYJSON_BUILD_TEST=ON
+        cmake --build . --config Release
+        ctest -C Release
