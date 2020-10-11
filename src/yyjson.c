@@ -618,7 +618,6 @@ static_inline void *mem_align_down(void *mem, usize align) {
 
 
 
-
 /*==============================================================================
  * Bits Utils
  *============================================================================*/
@@ -1360,7 +1359,6 @@ static_inline bool read_null(u8 *cur, u8 **end, yyjson_val *val) {
     return false;
 }
 
-
 /** Read 'Inf' or 'Infinity' literal (ignoring case). */
 static_inline bool read_inf(bool sign, u8 *cur, u8 **end, yyjson_val *val) {
 #if !YYJSON_DISABLE_INF_AND_NAN_READER
@@ -2096,12 +2094,15 @@ static const f64 f64_pow10_table[F64_POW10_EXP_MAX + 1] = {
 /** Minimum valid bits in f64_bits_to_pow10_exp_table. */
 #define F64_BITS_TO_POW10_MIN 3
 
-/** Maximum pow10 exponent value which can fit in the bits.
-    For example:
+/** 
+ Maximum pow10 exponent value which can fit in the bits.
+ For example:
+
     10^4 = binary [1001110001]0000, significant bit is 10.
     10^5 = binary [110000110101]00000, significant bit is 12.
     table[10] = 4.
     table[12] = 5.
+    
  */
 static const i32 f64_bit_to_pow10_exp_table[F64_SIG_FULL_BITS + 1] = {
     -1, 0, 0, 1, 1, 2, 2, 3, 3, 3, 4, 4, 5, 5, 6, 6, 6, 7, 7, 8, 8,

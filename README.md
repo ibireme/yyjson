@@ -30,21 +30,23 @@ Just copy `yyjson.h` and `yyjson.c` to your project and start using it.
 Since yyjson is ANSI C compatible, no other configuration is needed typically.
 
 ### CMake
-
-Build static library:
+Clone repository and create build directory:
 ```shell
-cd yyjson
+git clone https://github.com/ibireme/yyjson.git
 mkdir build
 cd build
+```
+Build static library:
+```shell
 cmake .. 
-make
+cmake --build .
 ```
 
-Build and run tests:
+Build static library and run tests:
 ```shell
 cmake .. -DYYJSON_BUILD_TEST=ON
-make
-make test
+cmake --build .
+ctest
 ```
 
 Supported CMake options:
@@ -62,8 +64,9 @@ Supported CMake options:
 
 ### Read JSON string
 ```c
-const char *str = "{\"name\":\"Mash\",\"star\":4,\"hits\":[2,2,1,3]}";
-yyjson_doc *doc = yyjson_read(str, strlen(str), 0);
+const char *json = "{\"name\":\"Mash\",\"star\":4,\"hits\":[2,2,1,3]}";
+
+yyjson_doc *doc = yyjson_read(json, strlen(json), 0);
 yyjson_val *root = yyjson_doc_get_root(doc);
 
 yyjson_val *name = yyjson_obj_get(root, "name");
@@ -109,7 +112,7 @@ yyjson_mut_doc_free(doc);
 yyjson_read_err err;
 yyjson_read_flag flg = YYJSON_READ_ALLOW_COMMENTS | YYJSON_READ_ALLOW_TRAILING_COMMAS;
 yyjson_doc *doc = yyjson_read_file("/tmp/test.json", flg, NULL, &err);
-    
+
 if (doc) {
     yyjson_val *obj = yyjson_doc_get_root(doc);
     yyjson_obj_iter iter;
@@ -129,7 +132,7 @@ if (doc) {
 yyjson_doc *idoc = yyjson_read_file("/tmp/test.json", 0, NULL, NULL);
 yyjson_mut_doc *doc = yyjson_doc_mut_copy(idoc, NULL);
 yyjson_mut_val *obj = yyjson_mut_doc_get_root(doc);
-    
+
 yyjson_mut_obj_iter iter;
 yyjson_mut_obj_iter_init(obj, &iter);
 yyjson_mut_val *key, *val;
@@ -139,7 +142,7 @@ while ((key = yyjson_mut_obj_iter_next(&iter))) {
         yyjson_mut_obj_iter_remove(&iter);
     }
 }
-    
+
 yyjson_write_err err;
 yyjson_write_flag flg = YYJSON_WRITE_PRETTY | YYJSON_WRITE_ESCAPE_UNICODE;
 yyjson_mut_write_file("/tmp/test.json", doc, flg, NULL, &err);
@@ -151,6 +154,7 @@ if (err.code) {
 
 ## TODO
 * [ ] Add full document page.
+* [ ] Add Github Actions (CI/CodeCov/...).
 * [ ] Add more tests: valgrind, sanitizer, fuzzer.
 * [ ] Support JSON Pointer to query value from document.
 * [ ] Support return big number as raw string.
