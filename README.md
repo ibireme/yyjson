@@ -1,4 +1,9 @@
 # YYJSON
+
+![Build](https://img.shields.io/github/workflow/status/ibireme/yyjson/cmake?style=flat-square)
+![Codecov](https://img.shields.io/codecov/c/gh/ibireme/yyjson?style=flat-square)
+![License](https://img.shields.io/github/license/ibireme/yyjson?style=flat-square)
+
 A high performance JSON library written in ANSI C.
 
 # Features
