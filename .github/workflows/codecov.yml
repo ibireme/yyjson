@@ -14,29 +14,20 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
-    - name: Create Build Environment
-      run: cmake -E make_directory ${{runner.workspace}}/build
-
     - name: Configure CMake
       shell: bash
-      working-directory: ${{runner.workspace}}/build
-      run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DYYJSON_BUILD_TEST=ON -DENABLE_TEST_COVERAGE=ON
+      run: cmake -Htest -Bbuild -DENABLE_TEST_COVERAGE=1 -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DYYJSON_BUILD_TEST=ON -DENABLE_TEST_COVERAGE=1
 
     - name: Build
-      working-directory: ${{runner.workspace}}/build
       shell: bash
       run: cmake --build . --config $BUILD_TYPE
 
     - name: Test
-      working-directory: ${{runner.workspace}}/build
-      shell: bash
-      run: ctest -C $BUILD_TYPE
-
-    - name: Codecov
-      working-directory: ${{runner.workspace}}/build
       shell: bash
       run: |
-        lcov --directory . --capture --output-file coverage.info &&
-        lcov --remove coverage.info '/usr/*' "${HOME}"'/.cache/*' '*/test/*' --output-file coverage.info &&
-        lcov --list coverage.info &&
-        bash <(curl -s https://codecov.io/bash) -f coverage.info || echo "Codecov did not collect coverage reports"
+        cd build
+        ctest -C $BUILD_TYPE
+
+    - name: Codecov
+      shell: bash
+      run: bash <(curl -s https://codecov.io/bash) || echo "Codecov did not collect coverage reports"
