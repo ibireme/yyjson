@@ -11,6 +11,7 @@ option(YYJSON_DISABLE_FP_WRITER "Disable custom floating-point number writer" OF
 option(YYJSON_DISABLE_COMMENT_READER "Disable non-standard comment reader" OFF)
 option(YYJSON_DISABLE_INF_AND_NAN_READER "Disable non-standard inf and nan reader" OFF)
 option(YYJSON_BUILD_TEST "Build test" OFF)
+option(YYJSON_ENABLE_TEST_COVERAGE "Enable code coverage for text" OFF)
 option(YYJSON_BUILD_MISC "Build misc" OFF)
 
 
@@ -71,6 +72,15 @@ endif()
 if(BUILD_SHARED_LIBS)
     if(WIN32)
         target_compile_definitions(yyjson PRIVATE YYJSON_EXPORTS)
+    endif()
+endif()
+
+if(YYJSON_ENABLE_TEST_COVERAGE AND CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
+    target_compile_options(yyjson INTERFACE -O0 -g -ftest-coverage -fprofile-arcs)
+    if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.13)
+        target_link_options(yyjson INTERFACE -lgcov --coverage)
+    else()
+        target_link_libraries(yyjson INTERFACE -lgcov --coverage)
     endif()
 endif()
 
@@ -173,7 +183,7 @@ if(YYJSON_BUILD_TEST)
         target_compile_options(test_compile_c89 PRIVATE $<$<COMPILE_LANGUAGE:C>:${YYJSON_STRICT_FLAGS}>)
         target_compile_options(test_compile_cxx98 PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${YYJSON_STRICT_FLAGS}>)
 
-    elseif((CMAKE_C_COMPILER_ID MATCHES "GNU") OR (CMAKE_C_COMPILER_ID MATCHES "Clang"))
+    elseif(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
 
         include(CheckCCompilerFlag)
         check_c_compiler_flag("-std=c89" COMPILER_SUPPORTS_C89)

@@ -1,0 +1,114 @@
+name: cmake
+
+on:
+  push:
+    paths-ignore:
+      - '**.md'
+  pull_request:
+    paths-ignore:
+      - '**.md'
+
+jobs:
+  linux:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        build_type:
+          - Debug
+          - Release
+        build_option:
+          - Default
+          - DisableCustomFP
+          - DisableNonStandard
+        compiler:
+          - gcc
+          - clang
+    steps:
+    - uses: actions/checkout@v2
+    - name: Prepare
+      run: |
+        if [ "${{matrix.build_flag}}" == "DisableCustomFP" ]; then
+          BUILD_OPTIONS="-DYYJSON_DISABLE_FP_READER=ON -DYYJSON_DISABLE_FP_WRITER=ON"
+        elif [ "${{ matrix.build_flag }}" == "DisableNonStandard" ]; then
+          BUILD_OPTIONS="-DYYJSON_DISABLE_COMMENT_READER=ON -DYYJSON_DISABLE_INF_AND_NAN_READER=ON"
+        else
+          BUILD_OPTIONS=""
+        fi
+        if [ "${{matrix.compiler}}" == "clang" ]; then
+          BUILD_COMPILE="-DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++"
+        fi
+        mkdir build
+        cd build
+        rm -rf ./*
+
+    - name: CMake
+      run: cmake .. -DCMAKE_BUILD_TYPE=${{matrix.build_type}} -DYYJSON_BUILD_TEST=ON $BUILD_OPTIONS $BUILD_COMPILE 
+    
+    - name: Build
+      run: cmake --build . --config ${{matrix.build_type}}
+    
+    - name: Test
+      run: ctest -C ${{matrix.build_type}}
+
+
+  macos:
+    runs-on: macos-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        build_type:
+          - Debug
+          - Release
+        build_option:
+          - Default
+          - DisableCustomFP
+          - DisableNonStandard
+        compiler:
+          - gcc
+          - clang
+    steps:
+    - uses: actions/checkout@v2
+    - name: Prepare
+      run: |
+        if [ "${{matrix.build_flag}}" == "DisableCustomFP" ]; then
+          BUILD_OPTIONS="-DYYJSON_DISABLE_FP_READER=ON -DYYJSON_DISABLE_FP_WRITER=ON"
+        elif [ "${{ matrix.build_flag }}" == "DisableNonStandard" ]; then
+          BUILD_OPTIONS="-DYYJSON_DISABLE_COMMENT_READER=ON -DYYJSON_DISABLE_INF_AND_NAN_READER=ON"
+        else
+          BUILD_OPTIONS=""
+        fi
+        if [ "${{matrix.compiler}}" == "gcc" ]; then
+          BUILD_COMPILE="-DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++"
+        fi
+        mkdir build
+        cd build
+        rm -rf ./*
+
+    - name: CMake
+      run: cmake .. -DCMAKE_BUILD_TYPE=${{matrix.build_type}} -DYYJSON_BUILD_TEST=ON $BUILD_OPTIONS $BUILD_COMPILE 
+    
+    - name: Build
+      run: cmake --build . --config ${{matrix.build_type}}
+    
+    - name: Test
+      run: ctest -C ${{matrix.build_type}}
+
+
+  windows:
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Prepare
+      run: |
+        mkdir build
+        cd build
+
+    - name: CMake
+      run: cmake .. -DCMAKE_BUILD_TYPE=Release -DYYJSON_BUILD_TEST=ON
+    
+    - name: Build
+      run: cmake --build . --config Release
+    
+    - name: Test
+      run: ctest -C Release
