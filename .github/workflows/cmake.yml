@@ -120,7 +120,7 @@ jobs:
       run: |
         mkdir build
         cd build
-        cmake .. -DCMAKE_BUILD_TYPE=Debug -DYYJSON_BUILD_TEST=ON -DYYJSON_ENABLE_TEST_COVERAGE=ON
+        cmake .. -DCMAKE_BUILD_TYPE=Debug -DYYJSON_BUILD_TEST=ON -DYYJSON_ENABLE_COVERAGE=ON
         cmake --build . --config Debug
         ctest
         bash <(curl -s https://codecov.io/bash) || echo "Codecov did not collect coverage reports"

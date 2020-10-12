@@ -2,16 +2,18 @@ cmake_minimum_required (VERSION 3.5)
 project (yyjson VERSION 0.1.0)
 
 
-# Compiler Options
-# See yyjson.h for more explain.
+# Compile Options, see yyjson.h for more explanation.
 option(YYJSON_DISABLE_READER "Disable JSON reader" OFF)
 option(YYJSON_DISABLE_WRITER "disable JSON writer" OFF)
 option(YYJSON_DISABLE_FP_READER "Disable custom floating-point number reader" OFF)
 option(YYJSON_DISABLE_FP_WRITER "Disable custom floating-point number writer" OFF)
 option(YYJSON_DISABLE_COMMENT_READER "Disable non-standard comment reader" OFF)
 option(YYJSON_DISABLE_INF_AND_NAN_READER "Disable non-standard inf and nan reader" OFF)
-option(YYJSON_BUILD_TEST "Build test" OFF)
-option(YYJSON_ENABLE_TEST_COVERAGE "Enable code coverage for text" OFF)
+
+
+# Build Options
+option(YYJSON_BUILD_TEST "Build all tests" OFF)
+option(YYJSON_ENABLE_COVERAGE "Enable code coverage in test" OFF)
 option(YYJSON_BUILD_MISC "Build misc" OFF)
 
 
@@ -158,7 +160,7 @@ if(YYJSON_BUILD_TEST)
             set_tests_properties(${SRC_NAME} PROPERTIES TIMEOUT 60)
             message("add test ${SRC_NAME}")
         endforeach()
-        if(YYJSON_ENABLE_TEST_COVERAGE AND CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
+        if(YYJSON_ENABLE_COVERAGE AND CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
             target_compile_options(yyjson PRIVATE --coverage)
             target_link_libraries(yyjson INTERFACE --coverage)
         endif()
