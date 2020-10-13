@@ -2125,15 +2125,15 @@ static_inline bool read_number(u8 *cur,
                                yyjson_read_flag flg,
                                yyjson_val *val,
                                const char **msg) {
-
+    
 #define has_flag(_flag) unlikely((flg & YYJSON_READ_##_flag) != 0)
-
+    
 #define return_err(_pos, _msg) do { \
     *msg = _msg; \
     *end = _pos; \
     return false; \
 } while(false)
-
+    
 #define return_i64(_v) do { \
     val->tag = YYJSON_TYPE_NUM | ((u8)sign << 3); \
     val->uni.u64 = (u64)(sign ? (u64)(~(_v) + 1) : (u64)(_v)); \
@@ -2167,7 +2167,7 @@ static_inline bool read_number(u8 *cur,
     bool exp_sign = false; /* temporary exponent sign from literal part */
     i64 exp_sig = 0; /* temporary exponent number from significant part */
     i64 exp_lit = 0; /* temporary exponent number from exponent literal part */
-    u8 num; /* temporary number for reading */
+    u64 num; /* temporary number for reading */
     u8 *tmp; /* temporary cursor for reading */
     
     u8 *hdr = cur;
@@ -2214,7 +2214,7 @@ static_inline bool read_number(u8 *cur,
     
     /* read integral part */
 #define expr_intg(i) \
-    if (likely(digi_is_digit(cur[i]))) sig = (u64)(cur[i] - '0') + sig * 10; \
+    if (likely((num = (u64)(cur[i] - (u8)'0')) <= 9)) sig = num + sig * 10; \
     else goto digi_sepr_##i;
     repeat_in_1_18(expr_intg);
 #undef expr_intg
@@ -2239,8 +2239,8 @@ static_inline bool read_number(u8 *cur,
     /* read fraction part */
 #define expr_frac(i) \
     digi_frac_##i: \
-    if (likely(digi_is_digit(cur[i + 1]))) \
-        sig = (u64)(cur[i + 1] - '0') + sig * 10; \
+    if (likely((num = (u64)(cur[i + 1] - (u8)'0')) <= 9)) \
+        sig = num + sig * 10; \
     else goto digi_stop_##i;
     repeat_in_1_18(expr_frac)
 #undef expr_frac
@@ -2261,7 +2261,7 @@ digi_intg_more: /* read more digits in integral part */
     if (digi_is_digit(*cur)) {
         if (!digi_is_digit_or_fp(cur[1])) {
             /* this number is an integer with 20 digits */
-            num = (u8)(*cur - '0');
+            num = (u64)(*cur - '0');
             if ((sig < (U64_MAX / 10)) ||
                 (sig == (U64_MAX / 10) && num <= (U64_MAX % 10))) {
                 sig = num + sig * 10;
@@ -2585,7 +2585,7 @@ static_noinline bool read_number(u8 *cur,
     *end = cur; return true; \
 } while(false)
     
-    u64 sig;
+    u64 sig, num;
     u8 *hdr = cur;
     bool sign = (*hdr == '-');
     
@@ -2610,7 +2610,7 @@ static_noinline bool read_number(u8 *cur,
     
     /* read continuous digits, up to 19 characters */
 #define expr_intg(i) \
-    if (likely(digi_is_digit(cur[i]))) sig = (u64)(cur[i] - '0') + sig * 10; \
+    if (likely((num = (u64)(cur[i] - (u8)'0')) <= 9)) sig = num + sig * 10; \
     else { cur += i; goto intg_end; }
     repeat_in_1_18(expr_intg);
 #undef expr_intg
@@ -2619,7 +2619,7 @@ static_noinline bool read_number(u8 *cur,
     cur += 19;
     if (digi_is_digit(cur[0]) && !digi_is_digit_or_fp(cur[1])) {
         /* this number is an integer consisting of 20 digits */
-        u64 num = *cur - '0';
+        num = *cur - '0';
         if ((sig < (U64_MAX / 10)) ||
             (sig == (U64_MAX / 10) && num <= (U64_MAX % 10))) {
             sig = num + sig * 10;
@@ -2660,7 +2660,8 @@ read_double:
     /*
      We use libc's strtod() to read the number as a double value.
      The format of this number has been verified, so we don't need the endptr.
-     Note that the decimal point character used by strtod() is locale-dependent.
+     Note that the decimal point character used by strtod() is locale-dependent,
+     and the rounding direction may affected by fesetround().
      */
     val->uni.f64 = strtod((const char *)hdr, NULL);
     if (unlikely(!f64_isfinite(val->uni.f64)) && !has_flag(ALLOW_INF_AND_NAN)) {
