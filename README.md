@@ -64,7 +64,7 @@ cmake --build .
 
 Build static library and run tests:
 ```shell
-cmake .. -DYYJSON_BUILD_TEST=ON
+cmake .. -DYYJSON_BUILD_TESTS=ON
 cmake --build .
 ctest
 ```
@@ -72,7 +72,7 @@ ctest
 Supported CMake options:
 
 - `-DBUILD_SHARED_LIBS=ON` Build shared library instead of static library.
-- `-DYYJSON_BUILD_TEST=ON` Build all tests.
+- `-DYYJSON_BUILD_TESTS=ON` Build all tests.
 - `-DYYJSON_DISABLE_READER=ON` Disable JSON reader if you don't need it.
 - `-DYYJSON_DISABLE_WRITER=ON` Disable JSON writer if you don't need it.
 - `-DYYJSON_DISABLE_FP_READER=ON` Disable custom double number reader to reduce binary size.

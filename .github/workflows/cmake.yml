@@ -46,7 +46,7 @@ jobs:
     - name: CMake
       shell: bash
       working-directory: ${{runner.workspace}}/build
-      run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=${{matrix.build_type}} -DYYJSON_BUILD_TEST=ON $BUILD_OPTIONS $BUILD_COMPILER 
+      run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=${{matrix.build_type}} -DYYJSON_BUILD_TESTS=ON $BUILD_OPTIONS $BUILD_COMPILER 
 
     - name: Build
       shell: bash
@@ -85,7 +85,7 @@ jobs:
     - name: CMake
       shell: bash
       working-directory: ${{runner.workspace}}/build
-      run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=Release -DYYJSON_BUILD_TEST=ON $BUILD_OPTIONS
+      run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=Release -DYYJSON_BUILD_TESTS=ON $BUILD_OPTIONS
     
     - name: Build
       shell: bash
@@ -106,7 +106,7 @@ jobs:
       run: |
         mkdir build
         cd build
-        cmake .. -DCMAKE_BUILD_TYPE=Release -DYYJSON_BUILD_TEST=ON
+        cmake .. -DCMAKE_BUILD_TYPE=Release -DYYJSON_BUILD_TESTS=ON
         cmake --build . --config Release
         ctest -C Release
 
@@ -120,7 +120,7 @@ jobs:
       run: |
         mkdir build
         cd build
-        cmake .. -DCMAKE_BUILD_TYPE=Debug -DYYJSON_BUILD_TEST=ON -DYYJSON_ENABLE_COVERAGE=ON
+        cmake .. -DCMAKE_BUILD_TYPE=Debug -DYYJSON_BUILD_TESTS=ON -DYYJSON_ENABLE_COVERAGE=ON
         cmake --build . --config Debug
         ctest
         bash <(curl -s https://codecov.io/bash) || echo "Codecov did not collect coverage reports"

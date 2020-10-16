@@ -12,7 +12,7 @@ option(YYJSON_DISABLE_INF_AND_NAN_READER "Disable non-standard inf and nan reade
 
 
 # Build Options
-option(YYJSON_BUILD_TEST "Build all tests" OFF)
+option(YYJSON_BUILD_TESTS "Build all tests" OFF)
 option(YYJSON_ENABLE_COVERAGE "Enable code coverage in test" OFF)
 option(YYJSON_BUILD_MISC "Build misc" OFF)
 
@@ -79,7 +79,7 @@ endif()
 
 
 # Testing
-if(YYJSON_BUILD_TEST)
+if(YYJSON_BUILD_TESTS)
     enable_testing()
 
     if(XCODE)
