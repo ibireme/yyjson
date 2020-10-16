@@ -18,11 +18,11 @@ A high performance JSON library written in ANSI C.
 
 # Performance
 ### Intel Core i5-8259U (3.8GHz) with Clang 10
-![Reader Intel](doc/images/reader_intel.png)
-![Writer Intel](doc/images/writer_intel.png)
+![Reader Intel](doc/images/reader_intel.svg)
+![Writer Intel](doc/images/writer_intel.svg)
 ### Apple A12 (2.5GHz) with Clang 12
-![Reader Apple](doc/images/reader_apple.png)
-![Writer Apple](doc/images/writer_apple.png)
+![Reader Apple](doc/images/reader_apple.svg)
+![Writer Apple](doc/images/writer_apple.svg)
 
 Benchmark project: [yyjson_benchmark](https://github.com/ibireme/yyjson_benchmark)
 
