@@ -325,32 +325,34 @@ extern "C" {
  * JSON Types
  *============================================================================*/
 
-/** Type of JSON value. */
+/** Type of JSON value (3 bit). */
 typedef uint8_t yyjson_type;
-#define YYJSON_TYPE_NONE ((yyjson_type)0) /* __000 */
-#define YYJSON_TYPE_NULL ((yyjson_type)2) /* __010 */
-#define YYJSON_TYPE_BOOL ((yyjson_type)3) /* __011 */
-#define YYJSON_TYPE_NUM  ((yyjson_type)4) /* __100 */
-#define YYJSON_TYPE_STR  ((yyjson_type)5) /* __101 */
-#define YYJSON_TYPE_ARR  ((yyjson_type)6) /* __110 */
-#define YYJSON_TYPE_OBJ  ((yyjson_type)7) /* __111 */
+#define YYJSON_TYPE_NONE        ((uint8_t)0)        /* _____000 */
+#define YYJSON_TYPE_NULL        ((uint8_t)2)        /* _____010 */
+#define YYJSON_TYPE_BOOL        ((uint8_t)3)        /* _____011 */
+#define YYJSON_TYPE_NUM         ((uint8_t)4)        /* _____100 */
+#define YYJSON_TYPE_STR         ((uint8_t)5)        /* _____101 */
+#define YYJSON_TYPE_ARR         ((uint8_t)6)        /* _____110 */
+#define YYJSON_TYPE_OBJ         ((uint8_t)7)        /* _____111 */
 
-/** Subtype of JSON value. */
+/** Subtype of JSON value (2 bit). */
 typedef uint8_t yyjson_subtype;
-#define YYJSON_SUBTYPE_NONE  ((yyjson_subtype)(0 << 3)) /* 00___ */
-#define YYJSON_SUBTYPE_FALSE ((yyjson_subtype)(0 << 3)) /* 00___ */
-#define YYJSON_SUBTYPE_TRUE  ((yyjson_subtype)(1 << 3)) /* 01___ */
-#define YYJSON_SUBTYPE_UINT  ((yyjson_subtype)(0 << 3)) /* 00___ */
-#define YYJSON_SUBTYPE_SINT  ((yyjson_subtype)(1 << 3)) /* 01___ */
-#define YYJSON_SUBTYPE_REAL  ((yyjson_subtype)(2 << 3)) /* 10___ */
+#define YYJSON_SUBTYPE_NONE     ((uint8_t)(0 << 3)) /* ___00___ */
+#define YYJSON_SUBTYPE_FALSE    ((uint8_t)(0 << 3)) /* ___00___ */
+#define YYJSON_SUBTYPE_TRUE     ((uint8_t)(1 << 3)) /* ___01___ */
+#define YYJSON_SUBTYPE_UINT     ((uint8_t)(0 << 3)) /* ___00___ */
+#define YYJSON_SUBTYPE_SINT     ((uint8_t)(1 << 3)) /* ___01___ */
+#define YYJSON_SUBTYPE_REAL     ((uint8_t)(2 << 3)) /* ___10___ */
 
 /** Mask and bits of JSON value. */
-#define YYJSON_TYPE_MASK    ((uint8_t)0x07) /* 00111*/
-#define YYJSON_TYPE_BIT     ((uint8_t)3)
-#define YYJSON_SUBTYPE_MASK ((uint8_t)0x18) /* 11000 */
-#define YYJSON_SUBTYPE_BIT  ((uint8_t)2)
-#define YYJSON_TAG_MASK     ((uint8_t)0x1F) /* 11111 */
-#define YYJSON_TAG_BIT      ((uint8_t)5)
+#define YYJSON_TYPE_MASK        ((uint8_t)0x07)     /* _____111 */
+#define YYJSON_TYPE_BIT         ((uint8_t)3)
+#define YYJSON_SUBTYPE_MASK     ((uint8_t)0x18)     /* ___11___ */
+#define YYJSON_SUBTYPE_BIT      ((uint8_t)2)
+#define YYJSON_RESERVED_MASK    ((uint8_t)0xE0)     /* 111_____ */
+#define YYJSON_RESERVED_BIT     ((uint8_t)3)
+#define YYJSON_TAG_MASK         ((uint8_t)0xFF)     /* 11111111 */
+#define YYJSON_TAG_BIT          ((uint8_t)8)
 
 
 
@@ -1852,15 +1854,18 @@ struct yyjson_doc {
  *============================================================================*/
 
 yyjson_api_inline yyjson_type unsafe_yyjson_get_type(void *val) {
-    return (yyjson_type)(((yyjson_val *)val)->tag & YYJSON_TYPE_MASK);
+    uint8_t tag = (uint8_t)((yyjson_val *)val)->tag;
+    return (yyjson_type)(tag & YYJSON_TYPE_MASK);
 }
 
 yyjson_api_inline yyjson_subtype unsafe_yyjson_get_subtype(void *val) {
-    return (yyjson_subtype)(((yyjson_val *)val)->tag & YYJSON_SUBTYPE_MASK);
+    uint8_t tag = (uint8_t)((yyjson_val *)val)->tag;
+    return (yyjson_subtype)(tag & YYJSON_SUBTYPE_MASK);
 }
 
 yyjson_api_inline uint8_t unsafe_yyjson_get_tag(void *val) {
-    return (uint8_t)(((yyjson_val *)val)->tag & YYJSON_TAG_MASK);
+    uint8_t tag = (uint8_t)((yyjson_val *)val)->tag;
+    return (uint8_t)(tag & YYJSON_TAG_MASK);
 }
 
 yyjson_api_inline bool unsafe_yyjson_is_null(void *val) {
@@ -1889,7 +1894,7 @@ yyjson_api_inline bool unsafe_yyjson_is_obj(void *val) {
 
 yyjson_api_inline bool unsafe_yyjson_is_ctn(void *val) {
     uint8_t mask = YYJSON_TYPE_ARR & YYJSON_TYPE_OBJ;
-    return (((yyjson_val *)val)->tag & mask) == mask;
+    return (unsafe_yyjson_get_tag(val) & mask) == mask;
 }
 
 yyjson_api_inline bool unsafe_yyjson_is_uint(void *val) {
@@ -1905,7 +1910,7 @@ yyjson_api_inline bool unsafe_yyjson_is_sint(void *val) {
 yyjson_api_inline bool unsafe_yyjson_is_int(void *val) {
     const uint8_t mask = YYJSON_TAG_MASK & (~YYJSON_SUBTYPE_SINT);
     const uint8_t patt = YYJSON_TYPE_NUM | YYJSON_SUBTYPE_UINT;
-    return (((yyjson_val *)val)->tag & mask) == patt;
+    return (unsafe_yyjson_get_tag(val) & mask) == patt;
 }
 
 yyjson_api_inline bool unsafe_yyjson_is_real(void *val) {
@@ -1930,7 +1935,8 @@ yyjson_api_inline bool unsafe_yyjson_arr_is_flat(yyjson_val *val) {
 }
 
 yyjson_api_inline bool unsafe_yyjson_get_bool(void *val) {
-    return (((yyjson_val *)val)->tag & YYJSON_SUBTYPE_MASK) >> YYJSON_TYPE_BIT;
+    uint8_t tag = unsafe_yyjson_get_tag(val);
+    return (tag & YYJSON_SUBTYPE_MASK) >> YYJSON_TYPE_BIT;
 }
 
 yyjson_api_inline uint64_t unsafe_yyjson_get_uint(void *val) {
@@ -1965,7 +1971,8 @@ yyjson_api_inline yyjson_val *unsafe_yyjson_get_first(yyjson_val *ctn) {
 
 yyjson_api_inline yyjson_val *unsafe_yyjson_get_next(yyjson_val *val) {
     bool is_ctn = unsafe_yyjson_is_ctn(val);
-    size_t ofs = (is_ctn ? val->uni.ofs : sizeof(yyjson_val));
+    size_t ctn_ofs = val->uni.ofs;
+    size_t ofs = (is_ctn ? ctn_ofs : sizeof(yyjson_val));
     return (yyjson_val *)((uint8_t *)val + ofs);
 }
 
@@ -2125,14 +2132,17 @@ yyjson_api_inline size_t yyjson_get_len(yyjson_val *val) {
 }
 
 yyjson_api_inline bool yyjson_equals_str(yyjson_val *val, const char *str) {
-    if (yyjson_likely(val && str)) return unsafe_yyjson_equals_str(val, str);
+    if (yyjson_likely(val && str)) {
+        return unsafe_yyjson_equals_str(val, str);
+    }
     return false;
 }
 
 yyjson_api_inline bool yyjson_equals_strn(yyjson_val *val, const char *str,
                                           size_t len) {
-    if (yyjson_likely(val && str)) return unsafe_yyjson_equals_strn(val, str,
-                                                                    len);
+    if (yyjson_likely(val && str)) {
+        return unsafe_yyjson_equals_strn(val, str, len);
+    }
     return false;
 }
 
@@ -2631,8 +2641,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_strn(yyjson_mut_doc *doc,
     if (yyjson_likely(doc && str)) {
         yyjson_mut_val *val = unsafe_yyjson_mut_val(doc, 1);
         if (yyjson_likely(val)) {
-            val->tag = YYJSON_TYPE_STR | YYJSON_SUBTYPE_NONE;
-            val->tag |= (uint64_t)len << YYJSON_TAG_BIT;
+            val->tag = ((uint64_t)len << YYJSON_TAG_BIT) | YYJSON_TYPE_STR;
             val->uni.str = str;
             return val;
         }
@@ -2653,8 +2662,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_strncpy(yyjson_mut_doc *doc,
         yyjson_mut_val *val = unsafe_yyjson_mut_val(doc, 1);
         char *new_str = unsafe_yyjson_mut_strncpy(doc, str, len);
         if (yyjson_likely(val && new_str)) {
-            val->tag = YYJSON_TYPE_STR | YYJSON_SUBTYPE_NONE;
-            val->tag |= (uint64_t)len << YYJSON_TAG_BIT;
+            val->tag = ((uint64_t)len << YYJSON_TAG_BIT) | YYJSON_TYPE_STR;
             val->uni.str = new_str;
             return val;
         }
@@ -2780,8 +2788,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_arr(yyjson_mut_doc *doc) {
     if (yyjson_likely(doc && ((count > 0 && vals) || count == 0))) { \
         yyjson_mut_val *arr = unsafe_yyjson_mut_val(doc, 1 + count); \
         if (yyjson_likely(arr)) { \
-            arr->tag = YYJSON_TYPE_ARR | YYJSON_SUBTYPE_NONE; \
-            arr->tag |= (uint64_t)count << YYJSON_TAG_BIT; \
+            arr->tag = ((uint64_t)count << YYJSON_TAG_BIT) | YYJSON_TYPE_ARR; \
             if (count > 0) { \
                 size_t i; \
                 for (i = 0; i < count; i++) { \
@@ -2902,8 +2909,8 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_with_double(
 yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_with_str(
     yyjson_mut_doc *doc, const char **vals, size_t count) {
     yyjson_mut_arr_with_func({
-        val->tag = YYJSON_TYPE_STR | YYJSON_SUBTYPE_NONE;
-        val->tag |= (uint64_t)strlen(vals[i]) << YYJSON_TAG_BIT;
+        uint64_t len = (uint64_t)strlen(vals[i]);
+        val->tag = (len << YYJSON_TAG_BIT) | YYJSON_TYPE_STR;
         val->uni.str = vals[i];
     });
 }
@@ -2912,8 +2919,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_with_strn(
     yyjson_mut_doc *doc, const char **vals, const size_t *lens, size_t count) {
     if (yyjson_unlikely(count > 0 && !lens)) return NULL;
     yyjson_mut_arr_with_func({
-        val->tag = YYJSON_TYPE_STR | YYJSON_SUBTYPE_NONE;
-        val->tag |= (uint64_t)lens[i] << YYJSON_TAG_BIT;
+        val->tag = ((uint64_t)lens[i] << YYJSON_TAG_BIT) | YYJSON_TYPE_STR;
         val->uni.str = vals[i];
     });
 }
@@ -2926,8 +2932,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_with_strcpy(
         str = vals[i];
         if (!str) return NULL;
         len = strlen(str);
-        val->tag = YYJSON_TYPE_STR | YYJSON_SUBTYPE_NONE;
-        val->tag |= (uint64_t)len << YYJSON_TAG_BIT;
+        val->tag = ((uint64_t)len << YYJSON_TAG_BIT) | YYJSON_TYPE_STR;
         val->uni.str = unsafe_yyjson_mut_strncpy(doc, str, len);
         if (!val->uni.str) return NULL;
     });
@@ -2941,8 +2946,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_with_strncpy(
     yyjson_mut_arr_with_func({
         str = vals[i];
         len = lens[i];
-        val->tag = YYJSON_TYPE_STR | YYJSON_SUBTYPE_NONE;
-        val->tag |= (uint64_t)len << YYJSON_TAG_BIT;
+        val->tag = ((uint64_t)len << YYJSON_TAG_BIT) | YYJSON_TYPE_STR;
         val->uni.str = unsafe_yyjson_mut_strncpy(doc, str, len);
         if (!val->uni.str) return NULL;
     });
@@ -3407,17 +3411,16 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_obj_with_str(yyjson_mut_doc *doc,
     if (yyjson_likely(doc && ((count > 0 && keys && vals) || (count == 0)))) {
         yyjson_mut_val *obj = unsafe_yyjson_mut_val(doc, 1 + count * 2);
         if (yyjson_likely(obj)) {
-            obj->tag = YYJSON_TYPE_OBJ | YYJSON_SUBTYPE_NONE;
-            obj->tag |= (uint64_t)count << YYJSON_TAG_BIT;
+            obj->tag = ((uint64_t)count << YYJSON_TAG_BIT) | YYJSON_TYPE_OBJ;
             if (count > 0) {
                 size_t i;
                 for (i = 0; i < count; i++) {
                     yyjson_mut_val *key = obj + (i * 2 + 1);
                     yyjson_mut_val *val = obj + (i * 2 + 2);
-                    key->tag = YYJSON_TYPE_STR | YYJSON_SUBTYPE_NONE;
-                    val->tag = YYJSON_TYPE_STR | YYJSON_SUBTYPE_NONE;
-                    key->tag |= (uint64_t)strlen(keys[i]) << YYJSON_TAG_BIT;
-                    val->tag |= (uint64_t)strlen(vals[i]) << YYJSON_TAG_BIT;
+                    uint64_t key_len = (uint64_t)strlen(keys[i]);
+                    uint64_t val_len = (uint64_t)strlen(vals[i]);
+                    key->tag = (key_len << YYJSON_TAG_BIT) | YYJSON_TYPE_STR;
+                    val->tag = (val_len << YYJSON_TAG_BIT) | YYJSON_TYPE_STR;
                     key->uni.str = keys[i];
                     val->uni.str = vals[i];
                     key->next = val;
@@ -3438,8 +3441,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_obj_with_kv(yyjson_mut_doc *doc,
     if (yyjson_likely(doc && ((count > 0 && pairs) || (count == 0)))) {
         yyjson_mut_val *obj = unsafe_yyjson_mut_val(doc, 1 + count * 2);
         if (yyjson_likely(obj)) {
-            obj->tag = YYJSON_TYPE_OBJ | YYJSON_SUBTYPE_NONE;
-            obj->tag |= (uint64_t)count << YYJSON_TAG_BIT;
+            obj->tag = ((uint64_t)count << YYJSON_TAG_BIT) | YYJSON_TYPE_OBJ;
             if (count > 0) {
                 size_t i;
                 for (i = 0; i < count; i++) {
@@ -3447,10 +3449,10 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_obj_with_kv(yyjson_mut_doc *doc,
                     yyjson_mut_val *val = obj + (i * 2 + 2);
                     const char *key_str = pairs[i * 2 + 0];
                     const char *val_str = pairs[i * 2 + 1];
-                    key->tag = YYJSON_TYPE_STR | YYJSON_SUBTYPE_NONE;
-                    val->tag = YYJSON_TYPE_STR | YYJSON_SUBTYPE_NONE;
-                    key->tag |= (uint64_t)strlen(key_str) << YYJSON_TAG_BIT;
-                    val->tag |= (uint64_t)strlen(val_str) << YYJSON_TAG_BIT;
+                    uint64_t key_len = (uint64_t)strlen(key_str);
+                    uint64_t val_len = (uint64_t)strlen(val_str);
+                    key->tag = (key_len << YYJSON_TAG_BIT) | YYJSON_TYPE_STR;
+                    val->tag = (val_len << YYJSON_TAG_BIT) | YYJSON_TYPE_STR;
                     key->uni.str = key_str;
                     val->uni.str = val_str;
                     key->next = val;
@@ -3660,8 +3662,7 @@ yyjson_api_inline bool yyjson_mut_obj_add_str(yyjson_mut_doc *doc,
                                               const char *_val) {
     if (yyjson_unlikely(!_val)) return false;
     yyjson_mut_obj_add_func({
-        val->tag = YYJSON_TYPE_STR | YYJSON_SUBTYPE_NONE;
-        val->tag |= (uint64_t)strlen(_val) << YYJSON_TAG_BIT;
+        val->tag = ((uint64_t)strlen(_val) << YYJSON_TAG_BIT) | YYJSON_TYPE_STR;
         val->uni.str = _val;
     });
 }
@@ -3673,8 +3674,7 @@ yyjson_api_inline bool yyjson_mut_obj_add_strn(yyjson_mut_doc *doc,
                                                size_t _len) {
     if (yyjson_unlikely(!_val)) return false;
     yyjson_mut_obj_add_func({
-        val->tag = YYJSON_TYPE_STR | YYJSON_SUBTYPE_NONE;
-        val->tag |= (uint64_t)_len << YYJSON_TAG_BIT;
+        val->tag = ((uint64_t)_len << YYJSON_TAG_BIT) | YYJSON_TYPE_STR;
         val->uni.str = _val;
     });
 }
@@ -3688,8 +3688,7 @@ yyjson_api_inline bool yyjson_mut_obj_add_strcpy(yyjson_mut_doc *doc,
         size_t _len = strlen(_val);
         val->uni.str = unsafe_yyjson_mut_strncpy(doc, _val, _len);
         if (yyjson_unlikely(!val->uni.str)) return false;
-        val->tag = YYJSON_TYPE_STR | YYJSON_SUBTYPE_NONE;
-        val->tag |= (uint64_t)_len << YYJSON_TAG_BIT;
+        val->tag = ((uint64_t)_len << YYJSON_TAG_BIT) | YYJSON_TYPE_STR;
     });
 }
 
@@ -3702,8 +3701,7 @@ yyjson_api_inline bool yyjson_mut_obj_add_strncpy(yyjson_mut_doc *doc,
     yyjson_mut_obj_add_func({
         val->uni.str = unsafe_yyjson_mut_strncpy(doc, _val, _len);
         if (yyjson_unlikely(!val->uni.str)) return false;
-        val->tag = YYJSON_TYPE_STR | YYJSON_SUBTYPE_NONE;
-        val->tag |= (uint64_t)_len << YYJSON_TAG_BIT;
+        val->tag = ((uint64_t)_len << YYJSON_TAG_BIT) | YYJSON_TYPE_STR;
     });
 }
 

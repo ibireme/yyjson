@@ -172,6 +172,7 @@ if (err.code) {
 * [ ] Support JSON Pointer to query value from document.
 * [ ] Support return big number as raw string.
 * [ ] Optimize performance for 32-bit processor.
+* [ ] Optimize performance of double number reader/writer with other algorithms [\[1\]](https://github.com/abolz/Drachennest) [\[2\]](https://github.com/lemire/fast_double_parser).
 
 # License
 This project is released under the MIT license.
