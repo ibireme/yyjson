@@ -36,11 +36,11 @@ More benchmark reports with interactive charts:
 * [Raspberry Pi 4 gcc (Ubuntu 20.04 arm64)](https://ibireme.github.io/yyjson_benchmark/reports/Raspberry_Pi_4_arm64_gcc.html)
 * [Raspberry Pi 4 gcc (Ubuntu 20.04 armv7)](https://ibireme.github.io/yyjson_benchmark/reports/Raspberry_Pi_4_armv7_gcc.html)
 
-### For good performance, yyjson need:
+### For good performance, yyjson needs:
 * A modern superscale processor with:
-    * Wide issue width.
-    * Excellent branch predictor.
-    * Low penalty for misaligned memory access.
+    * wide issue width
+    * excellent branch predictor
+    * low penalty for misaligned memory access
 * A modern compiler with good optimization.
 
 # Building
