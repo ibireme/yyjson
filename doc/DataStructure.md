@@ -1,1 +1,70 @@
-# TODO
+# Data Structure
+
+YYJSON has two types of data structures: mutable and immutable.
+
+When reading JSON, yyjson returns immutable document and values;
+When building JSON, yyjson uses mutable document and values.
+YYJSON also provides some methods to convert immutable document into mutable document.
+
+---------------
+## Immutable Value
+Each JSON value is stored in an immutable `yyjson_val` struct:
+```c
+struct yyjson_val {
+    uint64_t tag;
+    union {
+        uint64_t    u64;
+        int64_t     i64;
+        double      f64;
+        const char *str;
+        void       *ptr;
+        size_t      ofs;
+    } uni;
+}
+```
+![yyjson_val](images/struct_ival.svg)
+
+The lower 8 bits of `tag` stores the type of value.
+The higher 56 bits of `tag` stores the size of value (such as object size, array size, string length).
+
+Modern 64-bit processors are typically limited to supporting fewer than 64 bits for RAM addresses ([Wikipedia](https://en.wikipedia.org/wiki/RAM_limit)). For example, Intel64, AMD64 and ARMv8.2 has a 52-bit (4PB) physical address limit. So we can safely store type and size into a 64 bits `tag`.
+
+## Immutable Document
+YYJSON document stores all strings in a contiguous memory area. Each string is unescaped in-place and ended with a null-terminator. For example:
+
+![yyjson_val](images/struct_idoc1.svg)
+
+<br/>
+YYJSON document stores all values in another contiguous memory area. `object` and `array` stores their own memory usage, so we can easily walk through a container's child values. For example:
+
+![yyjson_val](images/struct_idoc2.svg)
+
+---------------
+## Mutable Value
+Each mutable JSON value is stored in an `yyjson_mut_val` struct:
+```c
+struct yyjson_mut_val {
+    uint64_t tag;
+    union {
+        uint64_t    u64;
+        int64_t     i64;
+        double      f64;
+        const char *str;
+        void       *ptr;
+        size_t      ofs;
+    } uni;
+    yyjson_mut_val *next;
+}
+```
+![yyjson_val](images/struct_mval.svg)
+
+The `tag` and `uni` field is same as immutable value, the `next` field is used to build linked list.
+
+
+## Mutable Document
+A yyjson document is composed of multiple `yyjson_mut_val`.
+
+The child values of an `object` or `array` are linked as a cycle, the parent hold the tail of the linked list, so yyjson can do `append`, `prepend` and `remove_first` in O(1) time.
+
+For example:
+![yyjson_val](images/struct_mdoc.svg)

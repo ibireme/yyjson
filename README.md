@@ -18,11 +18,11 @@ A high performance JSON library written in ANSI C.
 
 # Performance
 ### Intel Core i5-8259U (3.8GHz) with Clang 10
-![Reader Intel](doc/images/reader_intel.svg)
-![Writer Intel](doc/images/writer_intel.svg)
+![Reader Intel](doc/images/perf_reader_intel.svg)
+![Writer Intel](doc/images/perf_writer_intel.svg)
 ### Apple A12 (2.5GHz) with Clang 12
-![Reader Apple](doc/images/reader_apple.svg)
-![Writer Apple](doc/images/writer_apple.svg)
+![Reader Apple](doc/images/perf_reader_apple.svg)
+![Writer Apple](doc/images/perf_writer_apple.svg)
 
 Benchmark project: [yyjson_benchmark](https://github.com/ibireme/yyjson_benchmark)
 
@@ -36,9 +36,9 @@ More benchmark reports with interactive charts:
 * [Raspberry Pi 4 gcc (Ubuntu 20.04 arm64)](https://ibireme.github.io/yyjson_benchmark/reports/Raspberry_Pi_4_arm64_gcc.html)
 * [Raspberry Pi 4 gcc (Ubuntu 20.04 armv7)](https://ibireme.github.io/yyjson_benchmark/reports/Raspberry_Pi_4_armv7_gcc.html)
 
-### For good performance, yyjson needs:
-* A modern superscale processor with:
-    * wide issue width
+### For better performance, yyjson prefers:
+* A modern processor with:
+    * high instruction level parallelism
     * excellent branch predictor
     * low penalty for misaligned memory access
 * A modern compiler with good optimization.
