@@ -1,8 +1,10 @@
 # Table of Contents
 
 * [Import Manually](#read-json)
-* Write JSON
-* Build JSON
+* [Use CMake to build a library](#use-cmake-to-build-a-library)
+* [Use CMake as a dependency](#use-cmake-as-a-dependency)
+* [Use CMake to generate project](#use-cmake-to-generate-project)
+* [Compile Flags](#compile-flags)
 
 
 ------
@@ -31,9 +33,14 @@ cmake --build .
 ctest
 ```
 
+Build shared library:
+```shell
+cmake .. -DBUILD_SHARED_LIBS=ON
+cmake --build .
+```
+
 Supported CMake options:
 
-- `-DBUILD_SHARED_LIBS=ON` Build shared library instead of static library.
 - `-DYYJSON_BUILD_TESTS=ON` Build all tests.
 - `-DYYJSON_DISABLE_READER=ON` Disable JSON reader if you don't need it.
 - `-DYYJSON_DISABLE_WRITER=ON` Disable JSON writer if you don't need it.

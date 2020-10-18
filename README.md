@@ -69,9 +69,14 @@ cmake --build .
 ctest
 ```
 
+Build shared library:
+```shell
+cmake ..-DBUILD_SHARED_LIBS=ON
+cmake --build .
+```
+
 Supported CMake options:
 
-- `-DBUILD_SHARED_LIBS=ON` Build shared library instead of static library.
 - `-DYYJSON_BUILD_TESTS=ON` Build all tests.
 - `-DYYJSON_DISABLE_READER=ON` Disable JSON reader if you don't need it.
 - `-DYYJSON_DISABLE_WRITER=ON` Disable JSON writer if you don't need it.
