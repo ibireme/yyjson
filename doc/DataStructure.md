@@ -4,7 +4,9 @@ YYJSON have 2 types of data structures: immutable and mutable.
 
 When reading a JSON, yyjson returns immutable document and values;<br/>
 When building a JSON, yyjson creates mutable document and values.<br/>
-YYJSON also provides some methods to convert immutable document into mutable document.
+YYJSON also provides some methods to convert immutable document into mutable document.<br/>
+<br/>
+Note that the data structures described in this document is private, and you should use public APIs to access them.
 
 ---------------
 ## Immutable Value
@@ -30,15 +32,15 @@ The higher 56 bits of `tag` stores the size of value (such as object size, array
 Modern 64-bit processors are typically limited to supporting fewer than 64 bits for RAM addresses ([Wikipedia](https://en.wikipedia.org/wiki/RAM_limit)). For example, Intel64, AMD64 and ARMv8.2 has a 52-bit (4PB) physical address limit. So we can safely store type and size into a 64 bits `tag`.
 
 ## Immutable Document
-yyjson document stores all strings in a contiguous memory area.<br/> 
+yyjson document stores all strings in a **contiguous** memory area.<br/> 
 Each string is unescaped in-place and ended with a null-terminator.<br/>
 For example:
 
 ![yyjson_val](images/struct_idoc1.svg)
 
 <br/>
-yyjson document stores all values in another contiguous memory area.<br/>
-`object` and `array` stores their own memory usage, so we can easily walk through a container's child values.<br/>
+yyjson document stores all values in another **contiguous** memory area.<br/>
+The `object` and `array` stores their own memory usage, so we can easily walk through a container's child values.<br/>
 For example:
 
 ![yyjson_val](images/struct_idoc2.svg)
@@ -69,7 +71,7 @@ The `tag` and `uni` field is same as immutable value, the `next` field is used t
 A yyjson document is composed of multiple `yyjson_mut_val`.
 
 The child values of an `object` or `array` are linked as a cycle,<br/>
-the parent hold the tail of the linked list, so yyjson can do `append`, `prepend` and `remove_first` in O(1) time.
+the parent hold the **tail** of the linked list, so yyjson can do `append`, `prepend` and `remove_first` in O(1) time.
 
 For example:
 

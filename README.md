@@ -171,9 +171,14 @@ if (err.code) {
 }
 ```
 
+## Documentation
+* [Building](https://github.com/ibireme/yyjson/blob/master/doc/Building.md)
+* [API and Samples](https://github.com/ibireme/yyjson/blob/master/doc/API.md) (under construction...)
+* [Data Structure](https://github.com/ibireme/yyjson/blob/master/doc/DataStructure.md)
 
 ## TODO
 * [ ] Add full document page.
+* [x] Add GitHub workflow for CI and codecov.
 * [ ] Add more tests: valgrind, sanitizer, fuzzer.
 * [ ] Support JSON Pointer to query value from document.
 * [ ] Support return big number as raw string.
