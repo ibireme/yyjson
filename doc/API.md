@@ -165,23 +165,22 @@ free(dat);
 **YYJSON_READ_ALLOW_TRAILING_COMMAS**<br/>
 Allow single trailing comma at the end of an object or array, for example:
 
-```json
+```
+{
+    "a": 1,
+    "b": 2,
+}
+
 [
-    {
-        "a": 1,
-        "b": 2,
-    },
-    [
-        "a",
-        "b",
-    ]
+    "a",
+    "b",
 ]
 ```
 
 **YYJSON_READ_ALLOW_COMMENTS**<br/>
 Allow C-style single line and multiple line comments, for example:
 
-```json
+```
 {
     "name": "Harry", // single line comment
     "id": /* multiple line comment */ 123
@@ -191,7 +190,7 @@ Allow C-style single line and multiple line comments, for example:
 **YYJSON_READ_ALLOW_INF_AND_NAN**<br/>
 Allow nan/inf number or literal  (case-insensitive), such as 1e999, NaN, Inf, -Infinity, for example:
 
-```json
+```
 {
     "large": 123e999,
     "nan1": NaN,
