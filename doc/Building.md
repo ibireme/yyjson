@@ -1,6 +1,6 @@
 # Table of Contents
 
-* [Import Manually](#read-json)
+* [Import Manually](#import-manually)
 * [Use CMake to build a library](#use-cmake-to-build-a-library)
 * [Use CMake as a dependency](#use-cmake-as-a-dependency)
 * [Use CMake to generate project](#use-cmake-to-generate-project)
@@ -76,9 +76,13 @@ cmake .. -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
 # Intel ICC for Linux/Unix:
 cmake .. -DCMAKE_C_COMPILER=icc -DCMAKE_CXX_COMPILER=icpc
 
+# Other version of GCC:
+cmake .. -DCMAKE_C_COMPILER=/usr/local/gcc-8.2/bin/gcc -DCMAKE_CXX_COMPILER=/usr/local/gcc-8.2/bin/g++
+
 # Microsoft Visual Studio for Windows:
 cmake .. -G "Visual Studio 16 2019" -A x64
 cmake .. -G "Visual Studio 16 2019" -A Win32
+cmake .. -G "Visual Studio 15 2017 Win64"
 
 # Xcode for macOS:
 cmake .. -G Xcode
@@ -94,21 +98,21 @@ cmake .. -G Xcode -DYYJSON_BUILD_TESTS=ON
 # Compile Flags
 yyjson support some compile flags:
 
-●**YYJSON_DISABLE_READER**
+●**YYJSON_DISABLE_READER**<br/>
 Define it as 1 to disable the JSON reader.<br/>
 This may reduce binary size if you don't need JSON reader.<br/>
 These functions will be removed by this flag:
-```c
+```
 yyjson_read_opts()
 yyjson_read_file()
 yyjson_read()
 ```
 
-●**YYJSON_DISABLE_WRITER**
+●**YYJSON_DISABLE_WRITER**<br/>
 Define it as 1 to disable the JSON writer.<br/>
 This may reduce binary size if you don't need JSON writer.<br/>
 These functions will be removed by this flag:
-```c
+```
 yyjson_write_opts()
 yyjson_write_file()
 yyjson_write()
@@ -117,7 +121,7 @@ yyjson_mut_write_file()
 yyjson_mut_write()
 ```
 
-●**YYJSON_DISABLE_FP_READER**
+●**YYJSON_DISABLE_FP_READER**<br/>
 Define it as 1 to disable custom floating-point number reader.<br/>
 yyjson implements a high-performance floating-point number reader,<br/>
 but the fp reader may cost lots of binary size.<br/>
@@ -127,7 +131,7 @@ so this flag may reduce binary size, but slow down floating-point reading speed.
 
 This flag may also invalidate the `YYJSON_READ_FASTFP` option. 
 
-●**YYJSON_DISABLE_FP_WRITER**
+●**YYJSON_DISABLE_FP_WRITER**<br/>
 Define it as 1 to disable custom floating-point number writer.<br/>
 yyjson implements a high-performance floating-point number writer,<br/>
 but the fp writer may cost lots of binary size.<br/>
@@ -135,18 +139,18 @@ but the fp writer may cost lots of binary size.<br/>
 This flag may disable the custom fp writer, and use libc's `sprintf()` instead,<br/>
 so this flag may reduce binary size, but slow down floating-point writing speed.<br/>
 
-●**YYJSON_DISABLE_COMMENT_READER**
+●**YYJSON_DISABLE_COMMENT_READER**<br/>
 Define it as 1 to disable non-standard comment support in JSON reader at compile time.<br/>
 This flag may reduce binary size, and increase reading speed slightly.<br/>
 This flag may also invalidate the `YYJSON_READ_ALLOW_TRAILING_COMMAS` option.
 
-●**YYJSON_DISABLE_INF_AND_NAN_READER**
+●**YYJSON_DISABLE_INF_AND_NAN_READER**<br/>
 Define it as 1 to disable non-standard inf and nan literal support in JSON reader at compile time.<br/>
 This flag may reduce binary size, and increase reading speed slightly.<br/>
 This flag may also invalidate the `YYJSON_READ_ALLOW_INF_AND_NAN` option.
 
-●**YYJSON_EXPORTS**
+●**YYJSON_EXPORTS**<br/>
 Define it as 1 to export symbols when build library as Windows DLL.
 
-●**YYJSON_IMPORTS**
+●**YYJSON_IMPORTS**<br/>
 Define it as 1 to import symbols when use library as Windows DLL.

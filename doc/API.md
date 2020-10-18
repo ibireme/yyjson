@@ -3,7 +3,7 @@
 * [Read JSON](#read-json)
     * [Read JSON from string](#read-json-from-string)
     * [Read JSON from file](#read-json-from-file)
-    * [Read JSON with full options](#read-json-with-full-options)
+    * [Read JSON with options](#read-json-with-options)
     * [Reader flag](#reader-flag)
 * Write JSON
 * Build JSON
@@ -59,7 +59,7 @@ if (doc) {...}
 yyjson_doc_free(doc);
 ```
 
-### Read JSON with full options
+### Read JSON with options
 The `dat` should be a UTF-8 string, you can pass a const string if you don't use `YYJSON_READ_INSITU` flag.<br/>
 The `len` is the `dat`'s length in bytes.<br/>
 The `flg` is reader flag, specify 0 if you don't need it, see [reader flag](#reader-flag) for details.<br/>
@@ -134,7 +134,7 @@ such as display a 3D model or play a lottie animation on mobile.
 
 ●**YYJSON_READ_STOP_WHEN_DONE**<br/>
 Stop when done instead of issues an error if there's additional content after a JSON document.<br/> 
-This option may used to parse small pieces of JSON in larger data, such as NDJSON.<br/>
+This option may used to parse small pieces of JSON in larger data, such as [NDJSON](https://en.wikipedia.org/wiki/JSON_streaming).<br/>
 
 Code Sample:
 
@@ -155,7 +155,7 @@ while (true) {
     yyjson_doc *doc = yyjson_read_opts(hdr, end - hdr, flg, NULL, NULL);
     if (!doc) break;
     your_doc_process(doc);
-    hdr += doc->dat_read; // move to next position
+    hdr += yyjson_doc_get_read_size(doc); // move to next position
     yyjson_doc_free(doc);
 }
 free(dat);
