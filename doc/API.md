@@ -4,7 +4,7 @@
     * [Read JSON from string](#read-json-from-string)
     * [Read JSON from file](#read-json-from-file)
     * [Read JSON with full options](#read-json-with-full-options)
-    * [Reader flags](#reader-flags)
+    * [Reader flag](#reader-flag)
 * Write json
 * Build json
 
@@ -19,7 +19,7 @@ returns a document if succeeds, or returns NULL if fails.
 ### Read JSON from string
 The `dat` should be a UTF-8 string, null-terminator is not required.<br/>
 The `len` is the byte length of `dat`.<br/>
-The `flg` is read flags, specify 0 if you don't need it, see [reader flag](#reader-flag) for detail.<br/>
+The `flg` is reader flag, specify 0 if you don't need it, see [reader flag](#reader-flag) for detail.<br/>
 If input is invalid, `NULL` is returned.
 
 ```c
@@ -39,7 +39,7 @@ yyjson_doc_free(doc);
 ### Read JSON from file
 
 The `path` is JSON file path.<br/>
-The `flg` is read flags, specify 0 if you don't need it, see [reader flag](#reader-flag) for details.<br/>
+The `flg` is reader flag, specify 0 if you don't need it, see [reader flag](#reader-flag) for details.<br/>
 The `alc` is memory allocator, specify NULL if you don't need it, see [memory allocator](#memory-allocator) for details.<br/>
 The `err` is a pointer to receive error message, specify NULL if you don't need it.<br/>
 If input is invalid, `NULL` is returned.
@@ -62,7 +62,7 @@ yyjson_doc_free(doc);
 ### Read JSON with full options
 The `dat` should be a UTF-8 string, you can pass a const string if you don't use `YYJSON_READ_INSITU` flag.<br/>
 The `len` is the `dat`'s length in bytes.<br/>
-The `flg` is read flags, specify 0 if you don't need it, see [reader flag](#reader-flag) for details.<br/>
+The `flg` is reader flag, specify 0 if you don't need it, see [reader flag](#reader-flag) for details.<br/>
 The `alc` is memory allocator, specify NULL if you don't need it, see [memory allocator](#memory-allocator) for details.<br/>
 The `err` is a pointer to receive error message, specify NULL if you don't need it.<br/>
 
@@ -83,19 +83,22 @@ size_t len = your_file.size;
 yyjson_read_flag flg = YYJSON_READ_ALLOW_COMMENTS | YYJSON_READ_ALLOW_INF_AND_NAN;
 yyjson_err err;
 yyjson_doc *doc = yyjson_read_opts(dat, len, flg, NULL, &err);
+
 if (doc) {...}
 else printf("read error: %s code: %u at position: %ld\n", err.msg, err.code, err.pos);
+
 yyjson_doc_free(doc);
 ```
 
 
 
-### Reader flags
+### Reader flag
 yyjson provides a set of flags for JSON reader.<br/>
 You can use a single flag, or combine multiple flags with bitwise `|` operator.
 
 **YYJSON_READ_NOFLAG = 0**<br/>
-Default option (RFC 8259 compliant):
+
+This is the default option (RFC 8259 compliant):
 
 - Read positive integer as `uint64_t`.
 - Read negative integer as `int64_t`.
@@ -126,7 +129,7 @@ free(buf); // the input dat should free after document.
 **YYJSON_READ_FASTFP**<br/>
 Read floating-point number with a fast method.<br/>
 This option can greatly increase the reading speed of long floating-point numbers,<br/>
-but may get 0-2 ULP error for each number.<br/>
+but may get 0-2 ulp error for each number.<br/>
 This flag is very useful when the precision of floating-point numbers is not important,<br/>
 such as display a 3D model or play a lottie animation on mobile.
 
