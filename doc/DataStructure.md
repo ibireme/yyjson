@@ -38,7 +38,8 @@ For example:
 
 ![yyjson_val](images/struct_idoc1.svg)
 
-<br/>
+
+
 yyjson document stores all values in another **contiguous** memory area.<br/>
 The `object` and `array` stores their own memory usage, so we can easily walk through a container's child values.<br/>
 For example:
