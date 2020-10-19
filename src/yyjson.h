@@ -756,8 +756,7 @@ yyjson_api bool yyjson_write_file(const char *path,
  
  @return    A new JSON string, or NULL if error occurs.
             This string is encoded as UTF-8 with a null-terminator.
-            You should use free() or alc->free() to release it
-            when it's no longer needed.
+            You should use free() to release it when it's no longer needed.
  */
 yyjson_api_inline char *yyjson_write(yyjson_doc *doc,
                                      yyjson_write_flag flg,
@@ -1068,7 +1067,7 @@ yyjson_api_inline yyjson_val *yyjson_obj_getn(yyjson_val *obj, const char *key,
      yyjson_obj_iter iter;
      yyjson_obj_iter_init(obj, &iter);
      while ((key = yyjson_obj_iter_next(&iter))) {
-         val = key + 1;
+         val = yyjson_obj_iter_get_val(key);
          print(key, val);
      }
  */
@@ -1083,6 +1082,9 @@ yyjson_api_inline bool yyjson_obj_iter_has_next(yyjson_obj_iter *iter);
 
 /** Returns the next key in the iteration, or NULL on end. */
 yyjson_api_inline yyjson_val *yyjson_obj_iter_next(yyjson_obj_iter *iter);
+
+/** Returns the value for key inside the iteration. */
+yyjson_api_inline yyjson_val *yyjson_obj_iter_get_val(yyjson_val *key);
 
 /**
  Macro for iterating over an object, code example:
@@ -1230,7 +1232,7 @@ yyjson_api_inline bool yyjson_mut_equals_strn(yyjson_mut_val *val,
 
 
 /*==============================================================================
- * Mutable JSON Value Creation
+ * Mutable JSON Value Creation API
  *============================================================================*/
 
 /** Creates and returns a null value, returns NULL on error. */
@@ -1269,7 +1271,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_str(yyjson_mut_doc *doc,
                                                  const char *str);
 
 /** Creates and returns a string value, returns NULL on error.
-    The input value should be a valid UTF-8 encoded string with null-terminator.
+    The input value should be a valid UTF-8 encoded string.
     @warning The input string is not copied. */
 yyjson_api_inline yyjson_mut_val *yyjson_mut_strn(yyjson_mut_doc *doc,
                                                   const char *str,
@@ -1277,13 +1279,13 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_strn(yyjson_mut_doc *doc,
 
 /** Creates and returns a string value, returns NULL on error.
     The input value should be a valid UTF-8 encoded string with null-terminator.
-    @warning The input string is copied and hold by the document. */
+    The input string is copied and held by the document. */
 yyjson_api_inline yyjson_mut_val *yyjson_mut_strcpy(yyjson_mut_doc *doc,
                                                     const char *str);
 
 /** Creates and returns a string value, returns NULL on error.
     The input value should be a valid UTF-8 encoded string.
-    @warning The input string is copied and hold by the document. */
+    The input string is copied and held by the document. */
 yyjson_api_inline yyjson_mut_val *yyjson_mut_strncpy(yyjson_mut_doc *doc,
                                                      const char *str,
                                                      size_t len);
@@ -1616,7 +1618,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_obj_getn(yyjson_mut_val *obj,
      yyjson_mut_obj_iter iter;
      yyjson_mut_obj_iter_init(obj, &iter);
      while ((key = yyjson_mut_obj_iter_next(&iter))) {
-         val = key->next;
+         val = yyjson_mut_obj_iter_get_val(key);
          print(key, val);
          if (key_is_unused(key)) {
              yyjson_mut_obj_iter_remove(&iter);
@@ -1638,6 +1640,10 @@ yyjson_api_inline bool yyjson_mut_obj_iter_has_next(yyjson_mut_obj_iter *iter);
 /** Returns the next key in the iteration, or NULL on end. */
 yyjson_api_inline yyjson_mut_val *yyjson_mut_obj_iter_next(
                                                     yyjson_mut_obj_iter *iter);
+
+/** Returns the value for key inside the iteration. */
+yyjson_api_inline yyjson_mut_val *yyjson_mut_obj_iter_get_val(
+                                                    yyjson_mut_val *key);
 
 /** Removes and returns current key in the iteration, the value can be
     accessed by key->next. */
@@ -2307,6 +2313,9 @@ yyjson_api_inline yyjson_val *yyjson_obj_iter_next(yyjson_obj_iter *iter) {
     return NULL;
 }
 
+yyjson_api_inline yyjson_val *yyjson_obj_iter_get_val(yyjson_val *key) {
+    return key + 1;
+}
 
 
 /*==============================================================================
@@ -3368,6 +3377,11 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_obj_iter_next(
         return iter->cur;
     }
     return NULL;
+}
+
+yyjson_api_inline yyjson_mut_val *yyjson_mut_obj_iter_get_val(
+    yyjson_mut_val *key) {
+    return key->next;
 }
 
 yyjson_api_inline yyjson_mut_val *yyjson_mut_obj_iter_remove(
