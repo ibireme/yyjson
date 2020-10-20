@@ -28,7 +28,7 @@ A high performance JSON library written in ANSI C.
 |simdjson|2.21|0.84|
 |sajson|1.04|   |
 |rapidjson(insitu)|0.47|   |
-|rapidjson(valid)|0.26|0.74|
+|rapidjson(utf8)|0.26|0.74|
 |cjson|0.32|0.19|
 |jansson|0.07|0.19|
 
@@ -43,7 +43,7 @@ A high performance JSON library written in ANSI C.
 |simdjson|1.78|0.75|
 |sajson|1.41|   |
 |rapidjson(insitu)|0.51|   |
-|rapidjson(valid)|0.39|0.51|
+|rapidjson(utf8)|0.39|0.51|
 |cjson|0.28|0.27|
 |jansson|0.06|0.20|
 
@@ -207,6 +207,7 @@ if (err.code) {
 * [ ] Add more tests: valgrind, sanitizer, fuzzer.
 * [ ] Support JSON Pointer to query value from document.
 * [ ] Support return big number as raw string.
+* [ ] Optimize performance for gcc.
 * [ ] Optimize performance for 32-bit processor.
 * [ ] Optimize performance of double number reader/writer with other algorithms [\[1\]](https://github.com/abolz/Drachennest) [\[2\]](https://github.com/lemire/fast_double_parser).
 
