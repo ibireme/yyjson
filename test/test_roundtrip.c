@@ -34,7 +34,20 @@ yy_test_case(test_roundtrip) {
                    "roundtrip fail: %s\nin:  %.*s\nout: %.*s\n",
                    path, (int)in_len, in_dat, (int)out_len, out_dat);
 #endif
+        
+        usize mout_len;
+        yyjson_mut_doc *mdoc = yyjson_doc_mut_copy(doc, NULL);
+        char *mout_dat = yyjson_mut_write(mdoc, 0, &mout_len);
+        yy_assertf(mout_dat != NULL, "json mut write fail: %s\n", path);
+        
+#if !YYJSON_DISABLE_FP_WRITER
+        yy_assertf(in_len == mout_len && memcmp(in_dat, mout_dat, in_len) == 0,
+                   "roundtrip (mut) fail: %s\nin:  %.*s\nout: %.*s\n",
+                   path, (int)in_len, in_dat, (int)mout_len, mout_dat);
+#endif
+        
         yyjson_doc_free(doc);
+        yyjson_mut_doc_free(mdoc);
         free(in_dat);
         free(out_dat);
     }

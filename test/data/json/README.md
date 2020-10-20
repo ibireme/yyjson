@@ -34,6 +34,7 @@ Source: https://github.com/miloyip/nativejson-benchmark
 
 27 condensed JSONs are parsed and stringified. The results are compared to the original JSONs.
 
+yyjson add more test case in this directory.
 
 ## test_encoding
 Source: https://github.com/miloyip/nativejson-benchmark

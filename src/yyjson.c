@@ -1013,6 +1013,12 @@ yyjson_api yyjson_mut_doc *yyjson_doc_mut_copy(yyjson_doc *i_doc,
 
 yyjson_api yyjson_mut_val *yyjson_val_mut_copy(yyjson_mut_doc *m_doc,
                                                yyjson_val *i_vals) {
+    /*
+     The immutable object or array stores all sub-value in a contiguous memory,
+     We copy them to another contiguous memory as mutable values,
+     then reconnect the mutable values with the original relationship.
+     */
+    
     usize i_vals_len;
     yyjson_mut_val *m_vals, *m_val;
     yyjson_val *i_val, *i_end;
@@ -1053,17 +1059,18 @@ yyjson_api yyjson_mut_val *yyjson_val_mut_copy(yyjson_mut_doc *m_doc,
         } else if (type == YYJSON_TYPE_OBJ) {
             usize len = unsafe_yyjson_get_len(i_val);
             if (len > 0) {
-                yyjson_val *ii_key = i_val + 1, *ii_next;
-                yyjson_mut_val *mm_key = m_val + 1, *mm_ctn = m_val, *mm_next;
+                yyjson_val *ii_key = i_val + 1, *ii_nextkey;
+                yyjson_mut_val *mm_key = m_val + 1, *mm_ctn = m_val, *mm_nextkey;
                 while (len-- > 1) {
-                    ii_next = unsafe_yyjson_get_next(ii_key + 1);
-                    mm_next = mm_key + (ii_next - ii_key);
+                    ii_nextkey = unsafe_yyjson_get_next(ii_key + 1);
+                    mm_nextkey = mm_key + (ii_nextkey - ii_key);
                     mm_key->next = mm_key + 1;
-                    mm_key->next->next = mm_next;
-                    ii_key = ii_next;
-                    mm_key = mm_next;
+                    mm_key->next->next = mm_nextkey;
+                    ii_key = ii_nextkey;
+                    mm_key = mm_nextkey;
                 }
-                mm_key->next = mm_ctn + 1;
+                mm_key->next = mm_key + 1;
+                mm_key->next->next = mm_ctn + 1;
                 mm_ctn->uni.ptr = mm_key;
             }
         }
