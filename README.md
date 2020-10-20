@@ -17,12 +17,36 @@ A high performance JSON library written in ANSI C.
 - **Developer Friendly**: only one `h` and one `c` file, easy to use API.
 
 # Performance
-### Intel Core i5-8259U (3.8GHz) with Clang 10
+#### Intel Core i5-8259U (3.8GHz) with Clang 10
 ![Reader Intel](doc/images/perf_reader_intel.svg)
 ![Writer Intel](doc/images/perf_writer_intel.svg)
-### Apple A12 (2.5GHz) with Clang 12
+
+|twitter.json|read (GB/s)|write (GB/s)|
+|---|---|---|
+|yyjson(insitu)|2.36|1.90|
+|yyjson|2.17|1.70|
+|simdjson|2.21|0.84|
+|sajson|1.04|   |
+|rapidjson(insitu)|0.47|   |
+|rapidjson(valid)|0.26|0.74|
+|cjson|0.32|0.19|
+|jansson|0.07|0.19|
+
+#### Apple A12 (2.5GHz) with Clang 12
 ![Reader Apple](doc/images/perf_reader_apple.svg)
 ![Writer Apple](doc/images/perf_writer_apple.svg)
+
+|twitter.json|read (GB/s)|write (GB/s)|
+|---|---|---|
+|yyjson(insitu)|2.57|1.94|
+|yyjson|2.39|1.59|
+|simdjson|1.78|0.75|
+|sajson|1.41|   |
+|rapidjson(insitu)|0.51|   |
+|rapidjson(valid)|0.39|0.51|
+|cjson|0.28|0.27|
+|jansson|0.06|0.20|
+
 
 Benchmark project: [yyjson_benchmark](https://github.com/ibireme/yyjson_benchmark)
 
@@ -31,10 +55,6 @@ More benchmark reports with interactive charts:
 * [Intel NUC 8i5 clang (Ubuntu 20.04)](https://ibireme.github.io/yyjson_benchmark/reports/Intel_NUC_8i5_clang.html)
 * [Intel NUC 8i5 gcc (Ubuntu 20.04)](https://ibireme.github.io/yyjson_benchmark/reports/Intel_NUC_8i5_gcc.html)
 * [Intel NUC 8i5 msvc (Windows 10 2004)](https://ibireme.github.io/yyjson_benchmark/reports/Intel_NUC_8i5_msvc.html)
-* [Raspberry Pi 4 clang (Ubuntu 20.04 arm64)](https://ibireme.github.io/yyjson_benchmark/reports/Raspberry_Pi_4_arm64_clang.html)
-* [Raspberry Pi 4 clang (Ubuntu 20.04 armv7)](https://ibireme.github.io/yyjson_benchmark/reports/Raspberry_Pi_4_armv7_clang.html)
-* [Raspberry Pi 4 gcc (Ubuntu 20.04 arm64)](https://ibireme.github.io/yyjson_benchmark/reports/Raspberry_Pi_4_arm64_gcc.html)
-* [Raspberry Pi 4 gcc (Ubuntu 20.04 armv7)](https://ibireme.github.io/yyjson_benchmark/reports/Raspberry_Pi_4_armv7_gcc.html)
 
 ### For better performance, yyjson prefers:
 * A modern processor with:
