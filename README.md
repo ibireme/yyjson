@@ -200,6 +200,7 @@ if (err.code) {
 * [Building](https://github.com/ibireme/yyjson/blob/master/doc/Building.md)
 * [API and sample code](https://github.com/ibireme/yyjson/blob/master/doc/API.md)
 * [Data structure](https://github.com/ibireme/yyjson/blob/master/doc/DataStructure.md)
+* [Fast way to read and write numbers](https://github.com/ibireme/c_numconv_benchmark)
 
 ## TODO
 * [x] Add full document page.
