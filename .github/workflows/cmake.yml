@@ -17,14 +17,17 @@ jobs:
         build_type:
           - Debug
           - Release
-        build_option:
+        build_flag:
           - Default
-          - DisableCustomFP
-          - DisableNonStandard
+          - ReduceBinary
+        checker:
+          - Valgrind
+          - Sanitizer
+          - None
         compiler:
           - gcc
           - clang
-
+          
     steps:
     - uses: actions/checkout@v2
 
@@ -35,16 +38,18 @@ jobs:
     - name: CMake
       shell: bash
       run: |
-        if [ "${{matrix.build_flag}}" == "DisableCustomFP" ]; then
-          BUILD_OPTIONS="-DYYJSON_DISABLE_FP_READER=ON -DYYJSON_DISABLE_FP_WRITER=ON"
-        elif [ "${{ matrix.build_flag }}" == "DisableNonStandard" ]; then
-          BUILD_OPTIONS="-DYYJSON_DISABLE_COMMENT_READER=ON -DYYJSON_DISABLE_INF_AND_NAN_READER=ON"
-        else
-          BUILD_OPTIONS=""
+        BUILD_OPTIONS="-DYYJSON_BUILD_TESTS=ON"
+        if [ "${{matrix.build_flag}}" == "ReduceBinary" ]; then
+          BUILD_OPTIONS="${BUILD_OPTIONS} -DYYJSON_DISABLE_FP_READER=ON"
+          BUILD_OPTIONS="${BUILD_OPTIONS} -DYYJSON_DISABLE_FP_WRITER=ON"
+          BUILD_OPTIONS="${BUILD_OPTIONS} -DYYJSON_DISABLE_COMMENT_READER=ON"
+          BUILD_OPTIONS="${BUILD_OPTIONS} -DYYJSON_DISABLE_INF_AND_NAN_READER=ON"
         fi
-        BUILD_OPTIONS="${BUILD_OPTIONS} -DYYJSON_BUILD_TESTS=ON"
-        if [ "${{matrix.build_type}}" == "Debug" ]; then
+        if [ "${{matrix.checker}}" == "Valgrind" ]; then
           BUILD_OPTIONS="${BUILD_OPTIONS} -DYYJSON_ENABLE_VALGRIND=ON"
+        fi
+        if [ "${{matrix.checker}}" == "Sanitizer" ]; then
+          BUILD_OPTIONS="${BUILD_OPTIONS} -DYYJSON_ENABLE_SANITIZE=ON"
         fi
         if [ "${{matrix.compiler}}" == "clang" ]; then
           BUILD_COMPILER="-DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++"
