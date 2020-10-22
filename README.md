@@ -206,11 +206,12 @@ if (err.code) {
 * [Fast way to read and write numbers](https://github.com/ibireme/c_numconv_benchmark)
 
 ## TODO
-* [x] Add full document page.
+* [x] Add documentation page.
 * [x] Add GitHub workflow for CI and codecov.
-* [ ] Add more tests: sanitizer, fuzzer.
+* [x] Add more tests: valgrind, sanitizer.
+* [ ] Add fuzzer.
 * [ ] Support JSON Pointer to query value from document.
-* [ ] Support return big number as raw string.
+* [ ] Add documentation for performance.
 * [ ] Optimize performance for gcc.
 * [ ] Optimize performance for 32-bit processor.
 * [ ] Optimize performance of double number reader/writer with other algorithms [\[1\]](https://github.com/abolz/Drachennest) [\[2\]](https://github.com/lemire/fast_double_parser).
