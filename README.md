@@ -167,7 +167,7 @@ if (doc) {
     yyjson_obj_iter_init(obj, &iter);
     yyjson_val *key, *val;
     while ((key = yyjson_obj_iter_next(&iter))) {
-        val = key + 1;
+        val = yyjson_obj_iter_get_val(key);
         printf("%s: %s\n", yyjson_get_str(key), yyjson_get_type_desc(val));
     }
 } else {
@@ -185,7 +185,7 @@ yyjson_mut_obj_iter iter;
 yyjson_mut_obj_iter_init(obj, &iter);
 yyjson_mut_val *key, *val;
 while ((key = yyjson_mut_obj_iter_next(&iter))) {
-    val = key->next;
+    val = yyjson_mut_obj_iter_get_val(key);
     if (yyjson_mut_is_null(val)) {
         yyjson_mut_obj_iter_remove(&iter);
     }
