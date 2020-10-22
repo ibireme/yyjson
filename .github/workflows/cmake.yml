@@ -36,6 +36,10 @@ jobs:
         else
           BUILD_OPTIONS=""
         fi
+        BUILD_OPTIONS="${BUILD_OPTIONS} -DYYJSON_BUILD_TESTS=ON"
+        if [ "${{matrix.build_type}}" == "Debug" ]; then
+          BUILD_OPTIONS="${BUILD_OPTIONS} -DYYJSON_ENABLE_VALGRIND=ON"
+        fi
         if [ "${{matrix.compiler}}" == "clang" ]; then
           BUILD_COMPILER="-DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++"
         else
@@ -46,7 +50,7 @@ jobs:
     - name: CMake
       shell: bash
       working-directory: ${{runner.workspace}}/build
-      run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=${{matrix.build_type}} -DYYJSON_BUILD_TESTS=ON $BUILD_OPTIONS $BUILD_COMPILER 
+      run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=${{matrix.build_type}} $BUILD_OPTIONS $BUILD_COMPILER 
 
     - name: Build
       shell: bash
