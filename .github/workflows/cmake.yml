@@ -24,8 +24,14 @@ jobs:
         compiler:
           - gcc
           - clang
+
     steps:
     - uses: actions/checkout@v2
+      
+    - name: Prepare
+      shell: bash
+      run: apt install valgrind
+
     - name: CMake
       shell: bash
       run: |
@@ -48,7 +54,7 @@ jobs:
         cmake -E make_directory ${{runner.workspace}}/build
         cd ${{runner.workspace}}/build
         cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=${{matrix.build_type}} $BUILD_OPTIONS $BUILD_COMPILER
-      
+
     - name: Build
       shell: bash
       working-directory: ${{runner.workspace}}/build
