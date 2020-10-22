@@ -13,7 +13,8 @@ option(YYJSON_DISABLE_INF_AND_NAN_READER "Disable non-standard inf and nan reade
 
 # Build Options
 option(YYJSON_BUILD_TESTS "Build all tests" OFF)
-option(YYJSON_ENABLE_COVERAGE "Enable code coverage in test" OFF)
+option(YYJSON_ENABLE_COVERAGE "Enable code coverage for tests" OFF)
+option(YYJSON_ENABLE_VALGRIND "Enable valgrind memory checker for tests" OFF)
 option(YYJSON_BUILD_MISC "Build misc" OFF)
 
 
@@ -136,10 +137,22 @@ if(YYJSON_BUILD_TESTS)
         set_xcode_deployment_version(yyjson_tests "10.11" "9.0" "9.0" "2.0")
 
     else()
+        # Check valgrind command
+        if (YYJSON_ENABLE_VALGRIND)
+            find_program(MEMORYCHECK_COMMAND valgrind)
+            if ("${MEMORYCHECK_COMMAND}" MATCHES "MEMORYCHECK_COMMAND-NOTFOUND")
+                message(WARNING "valgrind command not found!")
+                unset(MEMORYCHECK_COMMAND)
+            else()
+                message(STATUS "valgrind found.")
+                set(MEMORYCHECK_COMMAND_OPTIONS --tool=memcheck --leak-check=full --trace-children=yes --error-exitcode=1)
+            endif()
+        endif()
+
         # Copy test data
         file(COPY "${CMAKE_CURRENT_SOURCE_DIR}/test/data" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}")
         add_definitions(-DYYJSON_TEST_DATA_PATH="${CMAKE_CURRENT_BINARY_DIR}")
-
+        
         # Add dependency
         add_library(yyjson_test_utils
             test/util/yy_test_utils.c
@@ -156,9 +169,16 @@ if(YYJSON_BUILD_TESTS)
             string(REGEX REPLACE "(^.*/|\\.[^.]*$)" "" SRC_NAME ${SRC_FILE})
             add_executable(${SRC_NAME} ${SRC_FILE})
             target_link_libraries(${SRC_NAME} PRIVATE yyjson yyjson_test_utils)
-            add_test(${SRC_NAME} ${SRC_NAME})
+
+            if(MEMORYCHECK_COMMAND)
+                add_test(NAME ${SRC_NAME}
+                         COMMAND "${MEMORYCHECK_COMMAND}" ${MEMORYCHECK_COMMAND_OPTIONS} "${CMAKE_CURRENT_BINARY_DIR}/${SRC_NAME}")
+            else()
+                add_test(${SRC_NAME} ${SRC_NAME})
+            endif()
+
             set_tests_properties(${SRC_NAME} PROPERTIES TIMEOUT 60)
-            message("add test ${SRC_NAME}")
+            message(STATUS "add test: ${SRC_NAME}")
         endforeach()
         if(YYJSON_ENABLE_COVERAGE AND CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
             target_compile_options(yyjson PRIVATE --coverage)

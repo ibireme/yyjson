@@ -50,6 +50,7 @@ yy_test_case(test_roundtrip) {
         yyjson_mut_doc_free(mdoc);
         free(in_dat);
         free(out_dat);
+        free(mout_dat);
     }
     
     yy_dir_free(names);
