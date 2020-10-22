@@ -15,6 +15,7 @@ option(YYJSON_DISABLE_INF_AND_NAN_READER "Disable non-standard inf and nan reade
 option(YYJSON_BUILD_TESTS "Build all tests" OFF)
 option(YYJSON_ENABLE_COVERAGE "Enable code coverage for tests" OFF)
 option(YYJSON_ENABLE_VALGRIND "Enable valgrind memory checker for tests" OFF)
+option(YYJSON_ENABLE_SANITIZE "Enable sanitizer for tests" OFF)
 option(YYJSON_BUILD_MISC "Build misc" OFF)
 
 
@@ -141,10 +142,10 @@ if(YYJSON_BUILD_TESTS)
         if (YYJSON_ENABLE_VALGRIND)
             find_program(MEMORYCHECK_COMMAND valgrind)
             if ("${MEMORYCHECK_COMMAND}" MATCHES "MEMORYCHECK_COMMAND-NOTFOUND")
-                message(WARNING "valgrind command not found!")
+                message(WARNING "Valgrind not found")
                 unset(MEMORYCHECK_COMMAND)
             else()
-                message(STATUS "valgrind found.")
+                message(STATUS "Valgrind found")
                 set(MEMORYCHECK_COMMAND_OPTIONS --tool=memcheck --leak-check=full --trace-children=yes --error-exitcode=1)
             endif()
         endif()
@@ -178,11 +179,27 @@ if(YYJSON_BUILD_TESTS)
             endif()
 
             set_tests_properties(${SRC_NAME} PROPERTIES TIMEOUT 60)
-            message(STATUS "add test: ${SRC_NAME}")
+            message(STATUS "Add test: ${SRC_NAME}")
         endforeach()
-        if(YYJSON_ENABLE_COVERAGE AND CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
-            target_compile_options(yyjson PRIVATE --coverage)
-            target_link_libraries(yyjson INTERFACE --coverage)
+        
+        if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
+            if (YYJSON_ENABLE_COVERAGE)
+                set(COMPILE_FLAGS --coverage)
+                target_compile_options(yyjson PRIVATE ${COMPILE_FLAGS})
+                target_link_libraries(yyjson INTERFACE ${COMPILE_FLAGS})
+            endif()
+            if (YYJSON_ENABLE_SANITIZE)
+                set(COMPILE_FLAGS 
+                    -fsanitize=address
+                    -fsanitize=undefined
+                    -fsanitize=leak
+                    -fsanitize-recover=all
+                    -fno-omit-frame-pointer
+                    -fno-optimize-sibling-calls
+                    -O1 -g)
+                target_compile_options(yyjson PRIVATE ${COMPILE_FLAGS})
+                target_link_libraries(yyjson INTERFACE ${COMPILE_FLAGS})
+            endif()
         endif()
 
     endif()
