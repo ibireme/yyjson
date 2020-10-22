@@ -42,6 +42,9 @@ cmake --build .
 Supported CMake options:
 
 - `-DYYJSON_BUILD_TESTS=ON` Build all tests.
+- `-DYYJSON_ENABLE_COVERAGE=ON` Enable code coverage for tests.
+- `-DYYJSON_ENABLE_VALGRIND=ON` Enable valgrind memory checker for tests.
+- `-DYYJSON_ENABLE_SANITIZE=ON` Enable sanitizer for tests.
 - `-DYYJSON_DISABLE_READER=ON` Disable JSON reader if you don't need it.
 - `-DYYJSON_DISABLE_WRITER=ON` Disable JSON writer if you don't need it.
 - `-DYYJSON_DISABLE_FP_READER=ON` Disable custom double number reader to reduce binary size.

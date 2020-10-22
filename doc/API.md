@@ -32,6 +32,7 @@
     * [Number Writer](#number-writer)
 * [Memory Allocator](#memory-allocator)
     * [Single allocator for multiple JSON](#single-allocator-for-multiple-json)
+    * [Stack memory allocator](#stack-memory-allocator)
     * [Use third-party allocator library](#use-third-party-allocator-library)
 * [Mutable and Immutable](#mutable-and-immutable)
 * [Thread Safe](#thread-safe)
