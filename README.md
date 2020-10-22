@@ -53,7 +53,7 @@ Benchmark project: [yyjson_benchmark](https://github.com/ibireme/yyjson_benchmar
 More benchmark reports with interactive charts:
 * [Apple A12 clang](https://ibireme.github.io/yyjson_benchmark/reports/Apple_A12_clang.html)
 * [Intel NUC 8i5 clang (Ubuntu 20.04)](https://ibireme.github.io/yyjson_benchmark/reports/Intel_NUC_8i5_clang.html)
-* [Intel NUC 8i5 gcc (Ubuntu 20.04)](https://ibireme.github.io/yyjson_benchmark/reports/Intel_NUC_8i5_gcc.html)
+* [Intel NUC 8i5 gcc (Ubuntu 20.04)](https://ibireme.github.io/yyjson_benchmark/reports/Intel_NUC_8i5_gcc.html) (slower, need optimize)
 * [Intel NUC 8i5 msvc (Windows 10 2004)](https://ibireme.github.io/yyjson_benchmark/reports/Intel_NUC_8i5_msvc.html)
 
 ### For better performance, yyjson prefers:
@@ -207,7 +207,7 @@ if (err.code) {
 ## TODO
 * [x] Add full document page.
 * [x] Add GitHub workflow for CI and codecov.
-* [ ] Add more tests: valgrind, sanitizer, fuzzer.
+* [ ] Add more tests: sanitizer, fuzzer.
 * [ ] Support JSON Pointer to query value from document.
 * [ ] Support return big number as raw string.
 * [ ] Optimize performance for gcc.
