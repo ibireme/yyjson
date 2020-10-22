@@ -26,7 +26,7 @@ jobs:
           - clang
     steps:
     - uses: actions/checkout@v2
-    - name: Prepare
+    - name: CMake
       shell: bash
       run: |
         if [ "${{matrix.build_flag}}" == "DisableCustomFP" ]; then
@@ -46,12 +46,9 @@ jobs:
           BUILD_COMPILER=""
         fi
         cmake -E make_directory ${{runner.workspace}}/build
-
-    - name: CMake
-      shell: bash
-      working-directory: ${{runner.workspace}}/build
-      run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=${{matrix.build_type}} $BUILD_OPTIONS $BUILD_COMPILER 
-
+        cd ${{runner.workspace}}/build
+        cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=${{matrix.build_type}} $BUILD_OPTIONS $BUILD_COMPILER
+      
     - name: Build
       shell: bash
       working-directory: ${{runner.workspace}}/build
@@ -74,7 +71,7 @@ jobs:
           - DisableNonStandard
     steps:
     - uses: actions/checkout@v2
-    - name: Prepare
+    - name: CMake
       shell: bash
       run: |
         if [ "${{matrix.build_flag}}" == "DisableCustomFP" ]; then
@@ -85,12 +82,9 @@ jobs:
           BUILD_OPTIONS=""
         fi
         cmake -E make_directory ${{runner.workspace}}/build
+        cd ${{runner.workspace}}/build
+        cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=Release -DYYJSON_BUILD_TESTS=ON $BUILD_OPTIONS
 
-    - name: CMake
-      shell: bash
-      working-directory: ${{runner.workspace}}/build
-      run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=Release -DYYJSON_BUILD_TESTS=ON $BUILD_OPTIONS
-    
     - name: Build
       shell: bash
       working-directory: ${{runner.workspace}}/build
