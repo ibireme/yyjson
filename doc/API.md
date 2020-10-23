@@ -1105,17 +1105,17 @@ static void *my_malloc_func(void *ctx, size_t size) {
     return mi_malloc(size);
 }
 
-static void *my_relloc_func(void *ctx, void *ptr, size_t size) {
+static void *my_realloc_func(void *ctx, void *ptr, size_t size) {
     return mi_realloc(ptr, size);
 }
 
-static void *my_free_func(void *ctx, size_t size) {
-    mi_free(ctx);
+static void my_free_func(void *ctx, void *ptr) {
+    mi_free(ptr);
 }
 
 static const yyjson_alc MY_ALC = {
     my_malloc_func,
-    my_realloc,
+    my_realloc_func,
     my_free_func,
     NULL
 };
