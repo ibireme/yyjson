@@ -53,7 +53,7 @@ Benchmark project: [yyjson_benchmark](https://github.com/ibireme/yyjson_benchmar
 More benchmark reports with interactive charts:
 * [Apple A12 clang](https://ibireme.github.io/yyjson_benchmark/reports/Apple_A12_clang.html)
 * [Intel NUC 8i5 clang (Ubuntu 20.04)](https://ibireme.github.io/yyjson_benchmark/reports/Intel_NUC_8i5_clang.html)
-* [Intel NUC 8i5 gcc (Ubuntu 20.04)](https://ibireme.github.io/yyjson_benchmark/reports/Intel_NUC_8i5_gcc.html) (slower, need optimize)
+* [Intel NUC 8i5 gcc (Ubuntu 20.04)](https://ibireme.github.io/yyjson_benchmark/reports/Intel_NUC_8i5_gcc.html)
 * [Intel NUC 8i5 msvc (Windows 10 2004)](https://ibireme.github.io/yyjson_benchmark/reports/Intel_NUC_8i5_msvc.html)
 
 ### For better performance, yyjson prefers:
@@ -212,7 +212,6 @@ if (err.code) {
 * [ ] Add fuzzer.
 * [ ] Support JSON Pointer to query value from document.
 * [ ] Add documentation for performance.
-* [ ] Optimize performance for gcc.
 * [ ] Optimize performance for 32-bit processor.
 * [ ] Optimize performance of double number reader/writer with other algorithms [\[1\]](https://github.com/abolz/Drachennest) [\[2\]](https://github.com/lemire/fast_double_parser).
 
