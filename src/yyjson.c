@@ -47,6 +47,14 @@
         (major * 10000 + minor * 100 + patch))
 #endif
 
+/* real gcc check */
+#ifndef yyjson_is_real_gcc
+#   if !defined(__clang__) && !defined(__INTEL_COMPILER) && !defined(__ICC) && \
+        defined(__GNUC__) && defined(__GNUC_MINOR__)
+#       define yyjson_is_real_gcc 1
+#   endif
+#endif
+
 /* msvc intrinsic */
 #if _MSC_VER >= 1400
 #   include <intrin.h>
@@ -2768,14 +2776,19 @@ skip_ascii_begin:
      statements.
      
          while (true) repeat16({
-            if (likely(!(char_is_ascii_stop(src[i])))) src++;
+            if (likely(!(char_is_ascii_stop(*src)))) src++;
             else break;
          });
      */
-    
+#if yyjson_is_real_gcc
 #define expr_jump(i) \
-        if (likely(!(char_is_ascii_stop(src[i])))) {} \
+        if (likely(!char_is_ascii_stop(src[i]))) {} \
         else goto skip_ascii_stop##i;
+#else
+#define expr_jump(i) \
+        if (!char_is_ascii_stop(src[i])) {} \
+        else goto skip_ascii_stop##i;
+#endif
     
 #define expr_stop(i) \
         skip_ascii_stop##i: \
@@ -2791,6 +2804,10 @@ skip_ascii_begin:
 #undef expr_stop
     
 skip_ascii_end:
+#if yyjson_is_real_gcc
+    /* tell gcc: you should not preload this value to register */
+    __asm volatile("":"=m"(*src)::);
+#endif
     if (likely(*src == '"')) {
         val->tag = ((u64)(src - cur) << YYJSON_TAG_BIT) | YYJSON_TYPE_STR;
         val->uni.str = (const char *)cur;
@@ -2850,7 +2867,11 @@ copy_escape:
                     return_err(src - 2, "invalid escaped unicode in string");
                 }
                 src += 4;
+#if yyjson_is_real_gcc
+                if (unlikely((hi & 0xF800) != 0xD800)) {
+#else
                 if (likely((hi & 0xF800) != 0xD800)) {
+#endif
                     /* a BMP character */
                     if (hi >= 0x800) {
                         *dst++ = (u8)(0xE0 | (hi >> 12));
