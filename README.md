@@ -170,6 +170,7 @@ if (doc) {
         val = yyjson_obj_iter_get_val(key);
         printf("%s: %s\n", yyjson_get_str(key), yyjson_get_type_desc(val));
     }
+    yyjson_doc_free(doc);
 } else {
     printf("read error: %s at position: %ld\n", err.msg, err.pos);
 }
@@ -177,8 +178,7 @@ if (doc) {
 
 ### Write JSON file with options
 ```c
-yyjson_doc *idoc = yyjson_read_file("/tmp/test.json", 0, NULL, NULL);
-yyjson_mut_doc *doc = yyjson_doc_mut_copy(idoc, NULL);
+yyjson_mut_doc *doc = yyjson_mut_read_file("/tmp/test.json", 0, NULL, NULL);
 yyjson_mut_val *obj = yyjson_mut_doc_get_root(doc);
 
 yyjson_mut_obj_iter iter;
@@ -197,6 +197,7 @@ yyjson_mut_write_file("/tmp/test.json", doc, flg, NULL, &err);
 if (err.code) {
     printf("write error: %d, message: %s\n", err.code, err.msg);
 }
+yyjson_mut_doc_free(doc);
 ```
 
 ## Documentation

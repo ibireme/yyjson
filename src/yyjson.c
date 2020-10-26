@@ -743,7 +743,9 @@ static_inline void u128_mul_add(u64 a, u64 b, u64 c, u64 *hi, u64 *lo) {
 
 
 /*==============================================================================
- * Allocator
+ * Default Memory Allocator
+ *
+ * This is a simple wrapper of libc.
  *============================================================================*/
 
 static void *default_malloc(void *ctx, usize size) {
@@ -764,6 +766,14 @@ const yyjson_alc YYJSON_DEFAULT_ALC = {
     default_free,
     NULL
 };
+
+
+
+/*==============================================================================
+ * Pool Memory Allocator
+ *
+ * This is a simple memory allocator that uses linked list memory chunk.
+ *============================================================================*/
 
 /** chunk header */
 typedef struct pool_chunk {
@@ -1471,6 +1481,10 @@ static_noinline bool skip_spaces_and_comments(u8 *cur, u8 **end) {
 
 /*==============================================================================
  * BigInt For Floating Point Number Reader
+ *
+ * The bigint algorithm is used by floating-point number parser to get correctly
+ * rounded result for numbers with lots of digits. This part of code is rarely
+ * used for normal JSON.
  *============================================================================*/
 
 /** Maximum exponent of exact pow10 */
@@ -2572,6 +2586,7 @@ digi_finish: /* all digit read finished */
 
 /**
  Read a JSON number.
+ This is a fallback function if the custom number parser is disabled.
  This function use libc's strtod() to read floating-point number.
  */
 static_noinline bool read_number(u8 *cur,
@@ -2773,7 +2788,8 @@ skip_ascii_begin:
      We want to make loop unrolling, as shown in the following code. Some
      compiler (such as msvc) doesn't support 'builtin_expect', or may not
      generate instructions as expected, so we rewrite it with explicit goto
-     statements.
+     statements. We hope the compiler can generate instructions like this:
+     https://godbolt.org/z/j3YbEo
      
          while (true) repeat16({
             if (likely(!(char_is_ascii_stop(*src)))) src++;
@@ -2807,7 +2823,12 @@ skip_ascii_begin:
     
 skip_ascii_end:
 #if yyjson_is_real_gcc
-    /* tell gcc: you should not preload this value to register */
+    /*
+     GCC may store src[i] in a register at each line of expr_jump(i) above.
+     These instructions are useless and will degrade performance.
+     This line of assembly is a hint for gcc: "the memory has been modified
+     before use, you should not cache it before."
+     */
     __asm volatile("":"=m"(*src)::);
 #endif
     if (likely(*src == '"')) {
@@ -5535,6 +5556,7 @@ static const char_esc_type esc_table_unicode_with_slashes[256] = {
 
 /** Escaped hex character table: ["00" "01" "02" ... "FD" "FE" "FF"].
     (generate with misc/make_tables.c) */
+yyjson_align(2)
 static const u8 esc_hex_char_table[512] = {
     '0', '0', '0', '1', '0', '2', '0', '3',
     '0', '4', '0', '5', '0', '6', '0', '7',
@@ -5602,8 +5624,8 @@ static const u8 esc_hex_char_table[512] = {
     'F', 'C', 'F', 'D', 'F', 'E', 'F', 'F'
 };
 
-/** Escaped single character table.
-    (generate with misc/make_tables.c) */
+/** Escaped single character table. (generate with misc/make_tables.c) */
+yyjson_align(2)
 static const u8 esc_single_char_table[512] = {
     ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ',
     ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ',
