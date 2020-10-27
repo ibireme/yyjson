@@ -259,7 +259,7 @@
 #   if defined(__INT64_TYPE__) && defined(__UINT64_TYPE__)
         typedef __INT64_TYPE__  int64_t;
         typedef __UINT64_TYPE__ uint64_t;
-#   if defined(__GNUC__) || defined(__clang__)
+#   elif defined(__GNUC__) || defined(__clang__)
         __extension__ typedef long long             int64_t;
         __extension__ typedef unsigned long long    uint64_t;
 #   elif defined(_LONG_LONG) || defined(__MWERKS__) || defined(_CRAYC) || \
