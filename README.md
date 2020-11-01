@@ -70,6 +70,8 @@ More benchmark reports with interactive charts:
 Just copy `yyjson.h` and `yyjson.c` to your project and start using it.
 Since yyjson is ANSI C compatible, no other configuration is needed typically.
 
+We have tested `yyjson` with the following compilers: gcc, clang, msvc, icc, tcc. If you find a compile error, please report a bug.
+
 ### CMake
 Clone repository and create build directory:
 ```shell
@@ -92,7 +94,7 @@ ctest
 
 Build shared library:
 ```shell
-cmake ..-DBUILD_SHARED_LIBS=ON
+cmake .. -DBUILD_SHARED_LIBS=ON
 cmake --build .
 ```
 

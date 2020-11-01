@@ -49,16 +49,16 @@
 #ifndef YYJSON_DISABLE_WRITER
 #endif
 
-/* Define 1 to use libc's API `strtod` to read floating-point number
+/* Define 1 to use libc's `strtod()` to read floating-point number
    instead of the custom floating-point number reader in yyjson.
    This may reduce binary size, but slow down floating-point reading speed.
    This may also invalidate the YYJSON_READ_FASTFP option. */
 #ifndef YYJSON_DISABLE_FP_READER
 #endif
 
-/* Define 1 to use libc's API `sprintf` to write floating-point number
+/* Define 1 to use libc's `sprintf()` to write floating-point number
    instead of the custom floating-point number writer in yyjson.
-   This may reduce binary size, but slow down floating-point writing speed. */
+   This may reduce binary size, but slow down floating-point writing speed,. */
 #ifndef YYJSON_DISABLE_FP_WRITER
 #endif
 

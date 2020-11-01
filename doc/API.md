@@ -1041,7 +1041,7 @@ it will write numbers according to these rules by default:<br/>
     * If number is `NaN` or `Inf`, report an error.
     * Keep the negative sign of 0.0 to preserve input information.
     * Remove positive sign of exponent part.
-* Floating-point number writer should generate an accurate and shortest representation.
+* Floating-point number writer should generate shortest correctly rounded decimal representation.
 
 You can use `YYJSON_WRITE_ALLOW_INF_AND_NAN` flag to write `inf` and `nan` number without error,
 but this is not standard JSON, see [writer flag](#writer-flag) for details.

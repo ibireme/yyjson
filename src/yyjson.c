@@ -2789,7 +2789,7 @@ skip_ascii_begin:
      compiler (such as msvc) doesn't support 'builtin_expect', or may not
      generate instructions as expected, so we rewrite it with explicit goto
      statements. We hope the compiler can generate instructions like this:
-     https://godbolt.org/z/j3YbEo
+     https://godbolt.org/z/8vjsYq
      
          while (true) repeat16({
             if (likely(!(char_is_ascii_stop(*src)))) src++;
@@ -2822,13 +2822,14 @@ skip_ascii_begin:
 #undef expr_stop
     
 skip_ascii_end:
-#if yyjson_is_real_gcc
+
     /*
      GCC may store src[i] in a register at each line of expr_jump(i) above.
      These instructions are useless and will degrade performance.
      This line of assembly is a hint for gcc: "the memory has been modified
-     before use, you should not cache it before."
+     before use, you should not cache it".
      */
+#if yyjson_is_real_gcc
     __asm volatile("":"=m"(*src)::);
 #endif
     if (likely(*src == '"')) {
