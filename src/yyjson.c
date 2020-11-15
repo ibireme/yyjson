@@ -3782,14 +3782,18 @@ arr_begin:
     if (*cur == '\n') cur++;
     
 arr_val_begin:
-    while (true) repeat16({
 #if yyjson_is_real_gcc
+    while (true) repeat16({
         if (byte_match_2(cur, "  ")) cur += 2;
-#else
-        if (likely(byte_match_2(cur, "  "))) cur += 2;
-#endif
         else break;
     });
+#else
+    while (true) repeat16({
+        if (likely(byte_match_2(cur, "  "))) cur += 2;
+        else break;
+    });
+#endif
+    
     if (*cur == '{') {
         cur++;
         goto obj_begin;
@@ -3912,14 +3916,17 @@ obj_begin:
     if (*cur == '\n') cur++;
     
 obj_key_begin:
-    while (true) repeat16({
 #if yyjson_is_real_gcc
+    while (true) repeat16({
         if (byte_match_2(cur, "  ")) cur += 2;
-#else
-        if (likely(byte_match_2(cur, "  "))) cur += 2;
-#endif
         else break;
     });
+#else
+    while (true) repeat16({
+        if (likely(byte_match_2(cur, "  "))) cur += 2;
+        else break;
+    });
+#endif
     if (likely(*cur == '"')) {
         val_incr();
         ctn_len++;
