@@ -2928,7 +2928,7 @@ skip_ascii_end:
      do not cache it".
      */
 #if yyjson_is_real_gcc
-    __asm volatile("":"=m"(*src)::)
+    __asm volatile("":"=m"(*src)::);
 #endif
     if (likely(*src == '"')) {
         val->tag = ((u64)(src - cur) << YYJSON_TAG_BIT) | YYJSON_TYPE_STR;
