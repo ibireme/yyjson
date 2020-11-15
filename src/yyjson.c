@@ -3783,7 +3783,11 @@ arr_begin:
     
 arr_val_begin:
     while (true) repeat16({
+#if yyjson_is_real_gcc
+        if (byte_match_2(cur, "  ")) cur += 2;
+#else
         if (likely(byte_match_2(cur, "  "))) cur += 2;
+#endif
         else break;
     });
     if (*cur == '{') {
@@ -3909,7 +3913,11 @@ obj_begin:
     
 obj_key_begin:
     while (true) repeat16({
+#if yyjson_is_real_gcc
+        if (byte_match_2(cur, "  ")) cur += 2;
+#else
         if (likely(byte_match_2(cur, "  "))) cur += 2;
+#endif
         else break;
     });
     if (likely(*cur == '"')) {
