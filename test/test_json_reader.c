@@ -216,11 +216,44 @@ static void test_json_transform(void) {
     char **names = yy_dir_read(dir, &count);
     yy_assertf(names != NULL && count != 0, "read dir fail:%s\n", dir);
     
+    const char *pass_names[] = {
+        "number_1.0.json",
+        "number_1.000000000000000005.json",
+        "number_1e-999.json",
+        "number_1e6.json",
+        "number_1000000000000000.json",
+        "number_10000000000000000999.json",
+        "object_key_nfc_nfd.json",
+        "object_key_nfd_nfc.json",
+        "object_same_key_different_values.json",
+        "object_same_key_same_value.json",
+        "object_same_key_unclear_values.json",
+        "string_with_escaped_NULL.json"
+    };
+    
+    const char *fail_names[] = {
+        "string_1_escaped_invalid_codepoint.json",
+        "string_1_invalid_codepoint.json",
+        "string_2_escaped_invalid_codepoints.json",
+        "string_2_invalid_codepoints.json",
+        "string_3_escaped_invalid_codepoints.json",
+        "string_3_invalid_codepoints.json"
+    };
+    
     for (int i = 0; i < count; i++) {
         char *name = names[i];
         char path[YY_MAX_PATH];
+        
+        expect_type expect = EXPECT_NONE;
+        for (usize p = 0; p < sizeof(pass_names) / sizeof(pass_names[0]); p++) {
+            if (strcmp(name, pass_names[p]) == 0) expect = EXPECT_PASS;
+        }
+        for (usize p = 0; p < sizeof(fail_names) / sizeof(fail_names[0]); p++) {
+            if (strcmp(name, fail_names[p]) == 0) expect = EXPECT_FAIL;
+        }
+        
         yy_path_combine(path, dir, name, NULL);
-        test_read_file(path, FLAG_NONE, EXPECT_NONE);
+        test_read_file(path, FLAG_NONE, expect);
     }
     
     yy_dir_free(names);

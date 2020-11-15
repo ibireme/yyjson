@@ -433,31 +433,59 @@ typedef union { u64 u; f64 f; } f64_uni;
  * Character Utils
  *============================================================================*/
 
-/** Checks if the given buffer matches the pattern (1 character). */
-static_inline bool buf_match_1char(const u8 *buf, const char *pat) {
-    return *buf == (u8)*pat;
+static_inline void byte_move_1(void *dst, void *src) {
+    memmove(dst, src, 1);
 }
 
-/** Checks if the given buffer matches the pattern (2 characters). */
-static_inline bool buf_match_2char(const u8 *buf, const char *pat) {
+static_inline void byte_move_2(void *dst, void *src) {
+    memmove(dst, src, 2);
+}
+
+static_inline void byte_move_4(void *dst, void *src) {
+    memmove(dst, src, 4);
+}
+
+static_inline void byte_move_8(void *dst, void *src) {
+    memmove(dst, src, 8);
+}
+
+static_inline void byte_move_16(void *dst, void *src) {
+    memmove(dst, src, 16);
+}
+
+static_inline bool byte_match_1(void *buf, const char *pat) {
+    return *(u8 *)buf == (u8)*pat;
+}
+
+static_inline bool byte_match_2(void *buf, const char *pat) {
     v16_uni u1, u2;
     u1.v = *(v16 *)pat;
     u2.v = *(v16 *)buf;
     return u1.u == u2.u;
 }
 
-/** Checks if the given buffer matches the pattern (4 characters). */
-static_inline bool buf_match_4char(const u8 *buf, const char *pat) {
+static_inline bool byte_match_4(void *buf, const char *pat) {
     v32_uni u1, u2;
     u1.v = *(v32 *)pat;
     u2.v = *(v32 *)buf;
     return u1.u == u2.u;
 }
 
-/** Read u32 from buffer. */
-static_inline u32 buf_read_u32(const u8 *buf) {
+static_inline u16 byte_load_2(void *src) {
+    v16_uni uni;
+    uni.v = *(v16 *)src;
+    return uni.u;
+}
+
+static_inline u32 byte_load_4(void *src) {
     v32_uni uni;
-    uni.v = *(v32 *)buf;
+    uni.v = *(v32 *)src;
+    return uni.u;
+}
+
+static_inline u64 byte_load_8(void *src) {
+    v64_uni uni;
+    uni.v = *(v64 *)src;
     return uni.u;
 }
 
@@ -1356,7 +1384,7 @@ static_inline bool read_hex_u16(const u8 *cur, u16 *val) {
 
 /** Read 'true' literal, '*cur' should be 't'. */
 static_inline bool read_true(u8 *cur, u8 **end, yyjson_val *val) {
-    if (likely(buf_match_4char(cur, "true"))) {
+    if (likely(byte_match_4(cur, "true"))) {
         val->tag = YYJSON_TYPE_BOOL | YYJSON_SUBTYPE_TRUE;
         *end = cur + 4;
         return true;
@@ -1366,7 +1394,7 @@ static_inline bool read_true(u8 *cur, u8 **end, yyjson_val *val) {
 
 /** Read 'false' literal, '*cur' should be 'f'. */
 static_inline bool read_false(u8 *cur, u8 **end, yyjson_val *val) {
-    if (likely(buf_match_4char(cur + 1, "alse"))) {
+    if (likely(byte_match_4(cur + 1, "alse"))) {
         val->tag = YYJSON_TYPE_BOOL | YYJSON_SUBTYPE_FALSE;
         *end = cur + 5;
         return true;
@@ -1376,7 +1404,7 @@ static_inline bool read_false(u8 *cur, u8 **end, yyjson_val *val) {
 
 /** Read 'null' literal, '*cur' should be 'n'. */
 static_inline bool read_null(u8 *cur, u8 **end, yyjson_val *val) {
-    if (likely(buf_match_4char(cur, "null"))) {
+    if (likely(byte_match_4(cur, "null"))) {
         val->tag = YYJSON_TYPE_NULL;
         *end = cur + 4;
         return true;
@@ -1443,15 +1471,15 @@ static_inline bool read_inf_or_nan(bool sign, u8 *cur, u8 **end,
 static_noinline bool skip_spaces_and_comments(u8 *cur, u8 **end) {
     u8 *hdr = cur;
     while (true) {
-        if (buf_match_2char(cur, "/*")) {
+        if (byte_match_2(cur, "/*")) {
             hdr = cur;
             cur += 2;
             while (true) {
-                if (buf_match_2char(cur, "*/")) {
+                if (byte_match_2(cur, "*/")) {
                     cur += 2;
                     break;
                 }
-                if (buf_match_1char(cur, "\0")) {
+                if (byte_match_1(cur, "\0")) {
                     *end = hdr;
                     return false;
                 }
@@ -1459,7 +1487,7 @@ static_noinline bool skip_spaces_and_comments(u8 *cur, u8 **end) {
             }
             continue;
         }
-        if (buf_match_2char(cur, "//")) {
+        if (byte_match_2(cur, "//")) {
             cur += 2;
             while (!char_is_line_end(*cur)) cur++;
             continue;
@@ -2728,95 +2756,165 @@ static_inline bool read_string(u8 *cur,
                                yyjson_val *val,
                                const char **msg) {
     
+    /*
+     Each unicode code point is encoded as 1 to 4 bytes in UTF-8 encoding,
+     we use 4-byte mask and pattern value to validate UTF-8 byte sequence,
+     this requires the input data to have 4-byte zero padding.
+     ---------------------------------------------------
+     1 byte
+     unicode range [U+0000, U+007F]
+     unicode min   [.......0]
+     unicode max   [.1111111]
+     bit pattern   [0.......]
+     ---------------------------------------------------
+     2 byte
+     unicode range [U+0080, U+07FF]
+     unicode min   [......10 ..000000]
+     unicode max   [...11111 ..111111]
+     bit require   [...xxxx. ........] (1E 00)
+     bit mask      [xxx..... xx......] (E0 C0)
+     bit pattern   [110..... 10......] (C0 80)
+     ---------------------------------------------------
+     3 byte
+     unicode range [U+0800, U+FFFF]
+     unicode min   [........ ..100000 ..000000]
+     unicode max   [....1111 ..111111 ..111111]
+     bit require   [....xxxx ..x..... ........] (0F 20 00)
+     bit mask      [xxxx.... xx...... xx......] (F0 C0 C0)
+     bit pattern   [1110.... 10...... 10......] (E0 80 80)
+     ---------------------------------------------------
+     3 byte invalid (reserved for surrogate halves)
+     unicode range [U+D800, U+DFFF]
+     unicode min   [....1101 ..100000 ..000000]
+     unicode max   [....1101 ..111111 ..111111]
+     bit mask      [....xxxx ..x..... ........] (0F 20 00)
+     bit pattern   [....1101 ..1..... ........] (0D 20 00)
+     ---------------------------------------------------
+     4 byte
+     unicode range [U+10000, U+10FFFF]
+     unicode min   [........ ...10000 ..000000 ..000000]
+     unicode max   [.....100 ..001111 ..111111 ..111111]
+     bit require   [.....xxx ..xx.... ........ ........] (07 30 00 00)
+     bit mask      [xxxxx... xx...... xx...... xx......] (F8 C0 C0 C0)
+     bit pattern   [11110... 10...... 10...... 10......] (F0 80 80 80)
+     ---------------------------------------------------
+     */
+#if YYJSON_ENDIAN == YYJSON_BIG_ENDIAN
+    const u32 b1_mask = 0x80000000UL;
+    const u32 b1_patt = 0x00000000UL;
+    const u32 b2_mask = 0xE0C00000UL;
+    const u32 b2_patt = 0xC0800000UL;
+    const u32 b2_requ = 0x1E000000UL;
+    const u32 b3_mask = 0xF0C0C000UL;
+    const u32 b3_patt = 0xE0808000UL;
+    const u32 b3_requ = 0x0F200000UL;
+    const u32 b3_erro = 0x0D200000UL;
+    const u32 b4_mask = 0xF8C0C0C0UL;
+    const u32 b4_patt = 0xF0808080UL;
+    const u32 b4_requ = 0x07300000UL;
+    const u32 b4_err0 = 0x04000000UL;
+    const u32 b4_err1 = 0x03300000UL;
+#elif YYJSON_ENDIAN == YYJSON_LITTLE_ENDIAN
+    const u32 b1_mask = 0x00000080UL;
+    const u32 b1_patt = 0x00000000UL;
+    const u32 b2_mask = 0x0000C0E0UL;
+    const u32 b2_patt = 0x000080C0UL;
+    const u32 b2_requ = 0x0000001EUL;
+    const u32 b3_mask = 0x00C0C0F0UL;
+    const u32 b3_patt = 0x008080E0UL;
+    const u32 b3_requ = 0x0000200FUL;
+    const u32 b3_erro = 0x0000200DUL;
+    const u32 b4_mask = 0xC0C0C0F8UL;
+    const u32 b4_patt = 0x808080F0UL;
+    const u32 b4_requ = 0x00003007UL;
+    const u32 b4_err0 = 0x00000004UL;
+    const u32 b4_err1 = 0x00003003UL;
+#else
+    v32_uni b1_mask_uni = {{ 0x80, 0x00, 0x00, 0x00 }};
+    v32_uni b1_patt_uni = {{ 0x00, 0x00, 0x00, 0x00 }};
+    v32_uni b2_mask_uni = {{ 0xE0, 0xC0, 0x00, 0x00 }};
+    v32_uni b2_patt_uni = {{ 0xC0, 0x80, 0x00, 0x00 }};
+    v32_uni b2_requ_uni = {{ 0x1E, 0x00, 0x00, 0x00 }};
+    v32_uni b3_mask_uni = {{ 0xF0, 0xC0, 0xC0, 0x00 }};
+    v32_uni b3_patt_uni = {{ 0xE0, 0x80, 0x80, 0x00 }};
+    v32_uni b3_requ_uni = {{ 0x0F, 0x20, 0x00, 0x00 }};
+    v32_uni b3_erro_uni = {{ 0x0D, 0x20, 0x00, 0x00 }};
+    v32_uni b4_mask_uni = {{ 0xF8, 0xC0, 0xC0, 0xC0 }};
+    v32_uni b4_patt_uni = {{ 0xF0, 0x80, 0x80, 0x80 }};
+    v32_uni b4_requ_uni = {{ 0x07, 0x30, 0x00, 0x00 }};
+    v32_uni b4_err0_uni = {{ 0x04, 0x00, 0x00, 0x00 }};
+    v32_uni b4_err1_uni = {{ 0x03, 0x30, 0x00, 0x00 }};
+    u32 b1_mask = b1_mask_uni.u;
+    u32 b1_patt = b1_patt_uni.u;
+    u32 b2_mask = b2_mask_uni.u;
+    u32 b2_patt = b2_patt_uni.u;
+    u32 b2_requ = b2_requ_uni.u;
+    u32 b3_mask = b3_mask_uni.u;
+    u32 b3_patt = b3_patt_uni.u;
+    u32 b3_requ = b3_requ_uni.u;
+    u32 b3_erro = b3_erro_uni.u;
+    u32 b4_mask = b4_mask_uni.u;
+    u32 b4_patt = b4_patt_uni.u;
+    u32 b4_requ = b4_requ_uni.u;
+    u32 b4_err0 = b4_err0_uni.u;
+    u32 b4_err1 = b4_err1_uni.u;
+#endif
+    
+#define is_valid_seq_1(uni) \
+    ((uni & b1_mask) == b1_patt)
+
+#define is_valid_seq_2(uni) \
+    ((uni & b2_mask) == b2_patt) && \
+    ((uni & b2_requ))
+
+#define is_valid_seq_3(uni) \
+    ((uni & b3_mask) == b3_patt) && \
+    ((tmp = (uni & b3_requ))) && \
+    ((tmp != b3_erro))
+
+#define is_valid_seq_4(uni) \
+    ((uni & b4_mask) == b4_patt) && \
+    ((tmp = (uni & b4_requ))) && \
+    ((tmp & b4_err0) == 0 || (tmp & b4_err1) == 0)
+    
 #define return_err(_end, _msg) do { \
     *msg = _msg; \
     *end = _end; \
     return false; \
 } while(false);
     
-    /*
-     Each unicode code point is encoded as 1 to 4 bytes in UTF-8 encoding,
-     we use 4-byte mask and pattern value to validate UTF-8 byte sequence,
-     this requires the input data to have 4-byte zero padding.
-     
-     0xxxxxxx ........ ........ ........ 1 Byte [U+0000, U+007F]
-     110xxxxx 10xxxxxx ........ ........ 2 Byte [U+0080, U+07FF]
-     1110xxxx 10xxxxxx 10xxxxxx ........ 3 Byte [U+0800, U+FFFF]
-     11110xxx 10xxxxxx 10xxxxxx 10xxxxxx 4 Byte [U+10000, U+10FFFF]
-
-     All 'goto' statements in this function can be replaced by 'while' loop,
-     but use 'goto' here can improve performance slightly for some compilers.
-     */
-#if YYJSON_ENDIAN == YYJSON_BIG_ENDIAN
-    const u32 b2_mask = 0xE0C00000UL;
-    const u32 b3_mask = 0xF0C0C000UL;
-    const u32 b4_mask = 0xF8C0C0C0UL;
-    const u32 b2_patt = 0xC0800000UL;
-    const u32 b3_patt = 0xE0808000UL;
-    const u32 b4_patt = 0xF0808080UL;
-#elif YYJSON_ENDIAN == YYJSON_LITTLE_ENDIAN
-    const u32 b2_mask = 0x0000C0E0UL;
-    const u32 b3_mask = 0x00C0C0F0UL;
-    const u32 b4_mask = 0xC0C0C0F8UL;
-    const u32 b2_patt = 0x000080C0UL;
-    const u32 b3_patt = 0x008080E0UL;
-    const u32 b4_patt = 0x808080F0UL;
-#else
-    const v32_uni b2_mask_uni = {{ 0xE0, 0xC0, 0x00, 0x00 }};
-    const v32_uni b3_mask_uni = {{ 0xF0, 0xC0, 0xC0, 0x00 }};
-    const v32_uni b4_mask_uni = {{ 0xF8, 0xC0, 0xC0, 0xC0 }};
-    const v32_uni b2_patt_uni = {{ 0xC0, 0x80, 0x00, 0x00 }};
-    const v32_uni b3_patt_uni = {{ 0xE0, 0x80, 0x80, 0x00 }};
-    const v32_uni b4_patt_uni = {{ 0xF0, 0x80, 0x80, 0x80 }};
-    const u32 b2_mask = b2_mask_uni.u;
-    const u32 b3_mask = b3_mask_uni.u;
-    const u32 b4_mask = b4_mask_uni.u;
-    const u32 b2_patt = b2_patt_uni.u;
-    const u32 b3_patt = b3_patt_uni.u;
-    const u32 b4_patt = b4_patt_uni.u;
-#endif
-
     u8 *src = ++cur, *dst, *pos;
     u16 hi, lo;
-    u32 uni;
+    u32 uni, tmp;
     
-    /* Most strings have no escaped characters, so we can jump them quickly. */
 skip_ascii:
+    /* Most strings have no escaped characters, so we can jump them quickly. */
     
 skip_ascii_begin:
     /*
      We want to make loop unrolling, as shown in the following code. Some
-     compiler (such as msvc) doesn't support 'builtin_expect', or may not
-     generate instructions as expected, so we rewrite it with explicit goto
-     statements. We hope the compiler can generate instructions like this:
-     https://godbolt.org/z/8vjsYq
+     compiler may not generate instructions as expected, so we rewrite it with
+     explicit goto statements. We hope the compiler can generate instructions
+     like this: https://godbolt.org/z/8vjsYq
      
          while (true) repeat16({
             if (likely(!(char_is_ascii_stop(*src)))) src++;
             else break;
          });
      */
-    
-#if yyjson_is_real_gcc
-        /* remove 'likely' to avoid unnecessary instructions generated by gcc */
 #define expr_jump(i) \
-        if (!char_is_ascii_stop(src[i])) {} \
-        else goto skip_ascii_stop##i;
-#else
-#define expr_jump(i) \
-        if (likely(!char_is_ascii_stop(src[i]))) {} \
-        else goto skip_ascii_stop##i;
-#endif
+    if (likely(!char_is_ascii_stop(src[i]))) {} \
+    else goto skip_ascii_stop##i;
     
 #define expr_stop(i) \
-        skip_ascii_stop##i: \
-        src += i; \
-        goto skip_ascii_end;
+    skip_ascii_stop##i: \
+    src += i; \
+    goto skip_ascii_end;
     
-        repeat16_incr(expr_jump);
-        src += 16;
-        goto skip_ascii_begin;
-        repeat16_incr(expr_stop);
+    repeat16_incr(expr_jump);
+    src += 16;
+    goto skip_ascii_begin;
+    repeat16_incr(expr_stop);
     
 #undef expr_jump
 #undef expr_stop
@@ -2826,11 +2924,11 @@ skip_ascii_end:
     /*
      GCC may store src[i] in a register at each line of expr_jump(i) above.
      These instructions are useless and will degrade performance.
-     This line of assembly is a hint for gcc: "the memory has been modified
-     before use, you should not cache it".
+     This inline asm is a hint for gcc: "the memory has been modified,
+     do not cache it".
      */
 #if yyjson_is_real_gcc
-    __asm volatile("":"=m"(*src)::);
+    __asm volatile("":"=m"(*src)::)
 #endif
     if (likely(*src == '"')) {
         val->tag = ((u64)(src - cur) << YYJSON_TAG_BIT) | YYJSON_TYPE_STR;
@@ -2844,29 +2942,26 @@ skip_utf8:
     if (*src & 0x80) { /* non-ASCII character */
         /*
          Non-ASCII character appears here, which means that the text is likely
-         to be written in a non-English language or emoji. Characters of the
-         same number may appear consecutively or only once in mose cases.
-         
-         Handling characters of the same length each time, which is more
-         friendly to branch prediction.
-         
-         As the character is not ASCII, no need to check escape or string
-         terminator.
+         to be written in non-English or emoticons. According to some common
+         data set statistics, byte sequences of the same length may appear
+         consecutively. We process the byte sequences of the same length in each
+         loop, which is more friendly to branch prediction.
          */
         pos = src;
-        uni = buf_read_u32(src);
-        while((uni & b3_mask) == b3_patt) {
+        uni = byte_load_4(src);
+        while (is_valid_seq_3(uni)) {
             src += 3;
-            uni = buf_read_u32(src);
-        };
-        while((uni & b2_mask) == b2_patt) {
+            uni = byte_load_4(src);
+        }
+        if (is_valid_seq_1(uni)) goto skip_ascii;
+        while (is_valid_seq_2(uni)) {
             src += 2;
-            uni = buf_read_u32(src);
-        };
-        while((uni & b4_mask) == b4_patt) {
+            uni = byte_load_4(src);
+        }
+        while (is_valid_seq_4(uni)) {
             src += 4;
-            uni = buf_read_u32(src);
-        };
+            uni = byte_load_4(src);
+        }
         if (unlikely(pos == src)) {
             return_err(src, "invalid UTF-8 encoding in string");
         }
@@ -2891,11 +2986,7 @@ copy_escape:
                     return_err(src - 2, "invalid escaped unicode in string");
                 }
                 src += 4;
-#if yyjson_is_real_gcc
-                if (unlikely((hi & 0xF800) != 0xD800)) {
-#else
                 if (likely((hi & 0xF800) != 0xD800)) {
-#endif
                     /* a BMP character */
                     if (hi >= 0x800) {
                         *dst++ = (u8)(0xE0 | (hi >> 12));
@@ -2912,7 +3003,7 @@ copy_escape:
                     if (unlikely((hi & 0xFC00) != 0xD800)) {
                         return_err(src - 6, "invalid high surrogate in string");
                     }
-                    if (unlikely(!buf_match_2char(src, "\\u")) ||
+                    if (unlikely(!byte_match_2(src, "\\u")) ||
                         unlikely(!read_hex_u16(src + 2, &lo))) {
                         return_err(src, "no matched low surrogate in string");
                     }
@@ -2949,52 +3040,146 @@ copy_ascii:
             *dst++ = *src++;
          });
      */
-    
-#define expr_jump(i) \
+#if yyjson_is_real_gcc
+#   define expr_jump(i) \
     if (likely(!(char_is_ascii_stop(src[i])))) {} \
-    else goto copy_ascii_stop_##i;
-    
-#define expr_stop(i) \
-    copy_ascii_stop_##i: \
-    memmove(dst, src, i); \
-    src += i; \
-    dst += i; \
-    goto copy_utf8;
-    
+    else { __asm volatile("":"=m"(src[i])::); goto copy_ascii_stop_##i; }
+#else
+#   define expr_jump(i) \
+    if (likely(!(char_is_ascii_stop(src[i])))) {} \
+    else { goto copy_ascii_stop_##i; }
+#endif
     repeat16_incr(expr_jump);
-    memmove(dst, src, 16);
+#undef expr_jump
+    
+    byte_move_16(dst, src);
     src += 16;
     dst += 16;
     goto copy_ascii;
-    repeat16_incr(expr_stop);
     
-#undef expr_jump
-#undef expr_stop
-
+copy_ascii_stop_0:
+    goto copy_utf8;
+copy_ascii_stop_1:
+    byte_move_2(dst, src);
+    src += 1;
+    dst += 1;
+    goto copy_utf8;
+copy_ascii_stop_2:
+    byte_move_2(dst, src);
+    src += 2;
+    dst += 2;
+    goto copy_utf8;
+copy_ascii_stop_3:
+    byte_move_4(dst, src);
+    src += 3;
+    dst += 3;
+    goto copy_utf8;
+copy_ascii_stop_4:
+    byte_move_4(dst, src);
+    src += 4;
+    dst += 4;
+    goto copy_utf8;
+copy_ascii_stop_5:
+    byte_move_4(dst, src);
+    byte_move_2(dst + 4, src + 4);
+    src += 5;
+    dst += 5;
+    goto copy_utf8;
+copy_ascii_stop_6:
+    byte_move_4(dst, src);
+    byte_move_2(dst + 4, src + 4);
+    src += 6;
+    dst += 6;
+    goto copy_utf8;
+copy_ascii_stop_7:
+    byte_move_8(dst, src);
+    src += 7;
+    dst += 7;
+    goto copy_utf8;
+copy_ascii_stop_8:
+    byte_move_8(dst, src);
+    src += 8;
+    dst += 8;
+    goto copy_utf8;
+copy_ascii_stop_9:
+    byte_move_8(dst, src);
+    byte_move_2(dst + 8, src + 8);
+    src += 9;
+    dst += 9;
+    goto copy_utf8;
+copy_ascii_stop_10:
+    byte_move_8(dst, src);
+    byte_move_2(dst + 8, src + 8);
+    src += 10;
+    dst += 10;
+    goto copy_utf8;
+copy_ascii_stop_11:
+    byte_move_8(dst, src);
+    byte_move_4(dst + 8, src + 8);
+    src += 11;
+    dst += 11;
+    goto copy_utf8;
+copy_ascii_stop_12:
+    byte_move_8(dst, src);
+    byte_move_4(dst + 8, src + 8);
+    src += 12;
+    dst += 12;
+    goto copy_utf8;
+copy_ascii_stop_13:
+    byte_move_8(dst, src);
+    byte_move_4(dst + 8, src + 8);
+    byte_move_2(dst + 12, src + 12);
+    src += 13;
+    dst += 13;
+    goto copy_utf8;
+copy_ascii_stop_14:
+    byte_move_8(dst, src);
+    byte_move_4(dst + 8, src + 8);
+    byte_move_2(dst + 12, src + 12);
+    src += 14;
+    dst += 14;
+    goto copy_utf8;
+copy_ascii_stop_15:
+    byte_move_16(dst, src);
+    src += 15;
+    dst += 15;
+    goto copy_utf8;
+    
 copy_utf8:
     if (*src & 0x80) { /* non-ASCII character */
         pos = src;
-        uni = buf_read_u32(src);
-        while((uni & b3_mask) == b3_patt) {
-            repeat3(*dst++ = *src++;)
-            uni = buf_read_u32(src);
-        };
-        while((uni & b2_mask) == b2_patt) {
-            repeat2(*dst++ = *src++;)
-            uni = buf_read_u32(src);
-        };
-        while((uni & b4_mask) == b4_patt) {
-            repeat4(*dst++ = *src++;)
-            uni = buf_read_u32(src);
-        };
+        uni = byte_load_4(src);
+        while (is_valid_seq_3(uni)) {
+            byte_move_4(dst, &uni);
+            dst += 3;
+            src += 3;
+            uni = byte_load_4(src);
+        }
+        if (is_valid_seq_1(uni)) goto copy_ascii;
+        while (is_valid_seq_2(uni)) {
+            byte_move_2(dst, &uni);
+            dst += 2;
+            src += 2;
+            uni = byte_load_4(src);
+        }
+        while (is_valid_seq_4(uni)) {
+            byte_move_4(dst, &uni);
+            dst += 4;
+            src += 4;
+            uni = byte_load_4(src);
+        }
         if (unlikely(pos == src)) {
-            return_err(src, "invalid UTF-8 encoding in string")
+            return_err(src, "invalid UTF-8 encoding in string");
         }
         goto copy_ascii;
     }
     goto copy_escape;
     
 #undef return_err
+#undef is_valid_seq_1
+#undef is_valid_seq_2
+#undef is_valid_seq_3
+#undef is_valid_seq_4
 }
 
 
@@ -3080,7 +3265,7 @@ doc_end:
 #if !YYJSON_DISABLE_COMMENT_READER
         if (has_flag(ALLOW_COMMENTS)) {
             if (!skip_spaces_and_comments(cur, &cur)) {
-                if (buf_match_2char(cur, "/*")) goto fail_comment;
+                if (byte_match_2(cur, "/*")) goto fail_comment;
             }
         } else while(char_is_space(*cur)) cur++;
 #else
@@ -3268,7 +3453,7 @@ arr_val_begin:
 #if !YYJSON_DISABLE_COMMENT_READER
     if (has_flag(ALLOW_COMMENTS)) {
         if (skip_spaces_and_comments(cur, &cur)) goto arr_val_begin;
-        if (buf_match_2char(cur, "/*")) goto fail_comment;
+        if (byte_match_2(cur, "/*")) goto fail_comment;
     }
 #endif
     goto fail_character;
@@ -3289,7 +3474,7 @@ arr_val_end:
 #if !YYJSON_DISABLE_COMMENT_READER
     if (has_flag(ALLOW_COMMENTS)) {
         if (skip_spaces_and_comments(cur, &cur)) goto arr_val_end;
-        if (buf_match_2char(cur, "/*")) goto fail_comment;
+        if (byte_match_2(cur, "/*")) goto fail_comment;
     }
 #endif
     goto fail_character;
@@ -3343,7 +3528,7 @@ obj_key_begin:
 #if !YYJSON_DISABLE_COMMENT_READER
     if (has_flag(ALLOW_COMMENTS)) {
         if (skip_spaces_and_comments(cur, &cur)) goto obj_key_begin;
-        if (buf_match_2char(cur, "/*")) goto fail_comment;
+        if (byte_match_2(cur, "/*")) goto fail_comment;
     }
 #endif
     goto fail_character;
@@ -3360,7 +3545,7 @@ obj_key_end:
 #if !YYJSON_DISABLE_COMMENT_READER
     if (has_flag(ALLOW_COMMENTS)) {
         if (skip_spaces_and_comments(cur, &cur)) goto obj_key_end;
-        if (buf_match_2char(cur, "/*")) goto fail_comment;
+        if (byte_match_2(cur, "/*")) goto fail_comment;
     }
 #endif
     goto fail_character;
@@ -3420,7 +3605,7 @@ obj_val_begin:
 #if !YYJSON_DISABLE_COMMENT_READER
     if (has_flag(ALLOW_COMMENTS)) {
         if (skip_spaces_and_comments(cur, &cur)) goto obj_val_begin;
-        if (buf_match_2char(cur, "/*")) goto fail_comment;
+        if (byte_match_2(cur, "/*")) goto fail_comment;
     }
 #endif
     goto fail_character;
@@ -3441,7 +3626,7 @@ obj_val_end:
 #if !YYJSON_DISABLE_COMMENT_READER
     if (has_flag(ALLOW_COMMENTS)) {
         if (skip_spaces_and_comments(cur, &cur)) goto obj_val_end;
-        if (buf_match_2char(cur, "/*")) goto fail_comment;
+        if (byte_match_2(cur, "/*")) goto fail_comment;
     }
 #endif
     goto fail_character;
@@ -3598,7 +3783,7 @@ arr_begin:
     
 arr_val_begin:
     while (true) repeat16({
-        if (likely(buf_match_2char(cur, "  "))) cur += 2;
+        if (likely(byte_match_2(cur, "  "))) cur += 2;
         else break;
     });
     if (*cur == '{') {
@@ -3661,13 +3846,13 @@ arr_val_begin:
 #if !YYJSON_DISABLE_COMMENT_READER
     if (has_flag(ALLOW_COMMENTS)) {
         if (skip_spaces_and_comments(cur, &cur)) goto arr_val_begin;
-        if (buf_match_2char(cur, "/*")) goto fail_comment;
+        if (byte_match_2(cur, "/*")) goto fail_comment;
     }
 #endif
     goto fail_character;
     
 arr_val_end:
-    if (buf_match_2char(cur, ",\n")) {
+    if (byte_match_2(cur, ",\n")) {
         cur += 2;
         goto arr_val_begin;
     }
@@ -3686,7 +3871,7 @@ arr_val_end:
 #if !YYJSON_DISABLE_COMMENT_READER
     if (has_flag(ALLOW_COMMENTS)) {
         if (skip_spaces_and_comments(cur, &cur)) goto arr_val_end;
-        if (buf_match_2char(cur, "/*")) goto fail_comment;
+        if (byte_match_2(cur, "/*")) goto fail_comment;
     }
 #endif
     goto fail_character;
@@ -3724,7 +3909,7 @@ obj_begin:
     
 obj_key_begin:
     while (true) repeat16({
-        if (likely(buf_match_2char(cur, "  "))) cur += 2;
+        if (likely(byte_match_2(cur, "  "))) cur += 2;
         else break;
     });
     if (likely(*cur == '"')) {
@@ -3746,13 +3931,13 @@ obj_key_begin:
 #if !YYJSON_DISABLE_COMMENT_READER
     if (has_flag(ALLOW_COMMENTS)) {
         if (skip_spaces_and_comments(cur, &cur)) goto obj_key_begin;
-        if (buf_match_2char(cur, "/*")) goto fail_comment;
+        if (byte_match_2(cur, "/*")) goto fail_comment;
     }
 #endif
     goto fail_character;
     
 obj_key_end:
-    if (buf_match_2char(cur, ": ")) {
+    if (byte_match_2(cur, ": ")) {
         cur += 2;
         goto obj_val_begin;
     }
@@ -3767,7 +3952,7 @@ obj_key_end:
 #if !YYJSON_DISABLE_COMMENT_READER
     if (has_flag(ALLOW_COMMENTS)) {
         if (skip_spaces_and_comments(cur, &cur)) goto obj_key_end;
-        if (buf_match_2char(cur, "/*")) goto fail_comment;
+        if (byte_match_2(cur, "/*")) goto fail_comment;
     }
 #endif
     goto fail_character;
@@ -3827,13 +4012,13 @@ obj_val_begin:
 #if !YYJSON_DISABLE_COMMENT_READER
     if (has_flag(ALLOW_COMMENTS)) {
         if (skip_spaces_and_comments(cur, &cur)) goto obj_val_begin;
-        if (buf_match_2char(cur, "/*")) goto fail_comment;
+        if (byte_match_2(cur, "/*")) goto fail_comment;
     }
 #endif
     goto fail_character;
     
 obj_val_end:
-    if (buf_match_2char(cur, ",\n")) {
+    if (byte_match_2(cur, ",\n")) {
         cur += 2;
         goto obj_key_begin;
     }
@@ -3852,7 +4037,7 @@ obj_val_end:
 #if !YYJSON_DISABLE_COMMENT_READER
     if (has_flag(ALLOW_COMMENTS)) {
         if (skip_spaces_and_comments(cur, &cur)) goto obj_val_end;
-        if (buf_match_2char(cur, "/*")) goto fail_comment;
+        if (byte_match_2(cur, "/*")) goto fail_comment;
     }
 #endif
     goto fail_character;
