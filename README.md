@@ -18,44 +18,48 @@ A high performance JSON library written in ANSI C.
 - **Developer Friendly**: only one `h` and one `c` file, easy to use API.
 
 # Performance
-#### Intel Core i5-8259U (3.8GHz) with Clang 10
-![Reader Intel](doc/images/perf_reader_intel.svg)
-![Writer Intel](doc/images/perf_writer_intel.svg)
+Benchmark project and dataset: [yyjson_benchmark](https://github.com/ibireme/yyjson_benchmark)
 
-|twitter.json|read (GB/s)|write (GB/s)|
+#### AWS EC2 (AMD EPYC 7002, gcc 9.3)
+![Reader Intel](doc/images/perf_reader_ec2.svg)
+
+|twitter.json|parse (GB/s)|stringify (GB/s)|
 |---|---|---|
-|yyjson(insitu)|2.36|1.90|
-|yyjson|2.17|1.70|
-|simdjson|2.21|0.84|
-|sajson|1.04|   |
-|rapidjson(insitu)|0.47|   |
-|rapidjson(utf8)|0.26|0.74|
-|cjson|0.32|0.19|
-|jansson|0.07|0.19|
+|yyjson(insitu)|1.82|1.51|
+|yyjson|1.74|1.46|
+|simdjson|1.52|0.60|
+|sajson|1.17|   |
+|rapidjson(insitu)|0.78|   |
+|rapidjson(utf8)|0.26|0.39|
+|cjson|0.31|0.16|
+|jansson|0.04|0.09|
 
-#### Apple A12 (2.5GHz) with Clang 12
-![Reader Apple](doc/images/perf_reader_apple.svg)
-![Writer Apple](doc/images/perf_writer_apple.svg)
 
-|twitter.json|read (GB/s)|write (GB/s)|
+#### iPhone 12 (Apple A14, clang 12)
+![Reader Apple](doc/images/perf_reader_a14.svg)
+
+|twitter.json|parse (GB/s)|stringify (GB/s)|
 |---|---|---|
-|yyjson(insitu)|2.57|1.94|
-|yyjson|2.39|1.59|
-|simdjson|1.78|0.75|
-|sajson|1.41|   |
-|rapidjson(insitu)|0.51|   |
-|rapidjson(utf8)|0.39|0.51|
-|cjson|0.28|0.27|
-|jansson|0.06|0.20|
+|yyjson(insitu)|3.50|2.43|
+|yyjson|2.41|1.97|
+|simdjson|2.23|0.81|
+|sajson|1.76||
+|rapidjson(insitu)|0.76| |
+|rapidjson(utf8)|0.30|0.58|
+|cjson|0.48|0.33|
+|jansson|0.09|0.23|
 
+More benchmark reports with interactive charts (update 2020-11-15)
 
-Benchmark project: [yyjson_benchmark](https://github.com/ibireme/yyjson_benchmark)
-
-More benchmark reports with interactive charts:
-* [Apple A12 clang](https://ibireme.github.io/yyjson_benchmark/reports/Apple_A12_clang.html)
-* [Intel NUC 8i5 clang (Ubuntu 20.04)](https://ibireme.github.io/yyjson_benchmark/reports/Intel_NUC_8i5_clang.html)
-* [Intel NUC 8i5 gcc (Ubuntu 20.04)](https://ibireme.github.io/yyjson_benchmark/reports/Intel_NUC_8i5_gcc.html)
-* [Intel NUC 8i5 msvc (Windows 10 2004)](https://ibireme.github.io/yyjson_benchmark/reports/Intel_NUC_8i5_msvc.html)
+|Platform|CPU|Compiler|OS|Report|
+|---|---|---|---|---|
+|Intel NUC 8i5|Core i5-8259U|msvc 2019|Windows 10 2004|[Charts](https://ibireme.github.io/yyjson_benchmark/reports/Intel_NUC_8i5_msvc_2019.html)|
+|Intel NUC 8i5|Core i5-8259U|clang 10|Ubuntu 20.04|[Charts](https://ibireme.github.io/yyjson_benchmark/reports/Intel_NUC_8i5_clang_10.html)|
+|Intel NUC 8i5|Core i5-8259U|gcc 10.2|Ubuntu 20.04|[Charts](https://ibireme.github.io/yyjson_benchmark/reports/Intel_NUC_8i5_gcc_10.html)|
+|Intel NUC 8i5|Core i5-8259U|gcc 9.3|Ubuntu 20.04|[Charts](https://ibireme.github.io/yyjson_benchmark/reports/Intel_NUC_8i5_gcc_9.html)|
+|AWS EC2 c2a.large|AMD EPYC 7002|gcc 9.3|Ubuntu 20.04|[Charts](https://ibireme.github.io/yyjson_benchmark/reports/EC2_c5a.large_gcc_9.html)|
+|AWS EC2 t4g.medium|Graviton2 (ARM64)|gcc 9.3|Ubuntu 20.04|[Charts](https://ibireme.github.io/yyjson_benchmark/reports/EC2_t4g.medium_gcc_9.html)|
+|Apple iPhone 12 Pro|A14 (ARM64)|clang 12|iOS 14|[Charts](https://ibireme.github.io/yyjson_benchmark/reports/Apple_A14_clang_12.html)|
 
 ### For better performance, yyjson prefers:
 * A modern processor with:
