@@ -56,7 +56,7 @@ yyjson_doc *yyjson_read(const char *dat,
                         size_t len, 
                         yyjson_read_flag flg);
 ```
-Sample Code:
+Sample code:
 
 ```c
 const char *str = "[1,2,3,4]";
@@ -80,7 +80,7 @@ yyjson_doc *yyjson_read_file(const char *path,
                              yyjson_read_err *err);
 ```
 
-Sample Code:
+Sample code:
 
 ```c
 yyjson_doc *doc = yyjson_read_file("/tmp/test.json", 0, NULL, NULL);
@@ -125,7 +125,7 @@ You can use a single flag, or combine multiple flags with bitwise `|` operator.
 
 ●**YYJSON_READ_NOFLAG = 0**<br/>
 
-This is the default flag for JSON writer (RFC 8259 compliant):
+This is the default flag for JSON reader (RFC 8259 compliant):
 
 - Read positive integer as `uint64_t`.
 - Read negative integer as `int64_t`.
@@ -139,7 +139,7 @@ This is the default flag for JSON writer (RFC 8259 compliant):
 Read the input data in-situ.<br/>
 This option allows the reader to modify and use input data to store string values, which can increase reading speed slightly. The caller should hold the input data before free the document. The input data must be padded by at least 4-byte zero byte. For example: "[1,2]" should be "[1,2]\0\0\0\0", length should be 5.
 
-Sample Code:
+Sample code:
 
 ```c
 size_t dat_len = ...;
@@ -292,7 +292,7 @@ bool yyjson_mut_write_file(const char *path,
                            yyjson_write_err *err);
 ```
 
-Sample Code:
+Sample code:
 
 ```c
 yyjson_doc *doc = yyjson_read_file("/tmp/test.json", 0, NULL, NULL);
@@ -324,7 +324,7 @@ char *yyjson_mut_write_opts(yyjson_mut_doc *doc,
                             yyjson_write_err *err);
 ```
 
-Sample Code:
+Sample code:
 
 ```c
 yyjson_doc *doc = ...;
@@ -674,7 +674,10 @@ yyjson_obj_foreach(obj, idx, max, key, val) {
 ---------------
 # Create JSON Document
 You can use a `yyjson_mut_doc` to build your JSON document.<br/>
-The JSON document and value's memory is managed by the `yyjson_mut_doc`, for example:
+
+Notice that `yyjson_mut_doc` use a **memory pool** to hold all strings and values; the pool can only be created, grown or freed in its entirety. Thus `yyjson_mut_doc` is more suitable for write-once, than mutation of an existing document.
+
+Sample code:
 
 ```c
 // Create a mutable document.
