@@ -125,7 +125,7 @@ You can use a single flag, or combine multiple flags with bitwise `|` operator.
 
 ●**YYJSON_READ_NOFLAG = 0**<br/>
 
-This is the default flag for JSON reader (RFC 8259 compliant):
+This is the default flag for JSON reader (RFC-8259 or ECMA-404 compliant):
 
 - Read positive integer as `uint64_t`.
 - Read negative integer as `int64_t`.
@@ -165,11 +165,11 @@ such as display a 3D model or play a lottie animation on mobile.
 Stop when done instead of issues an error if there's additional content after a JSON document.<br/> 
 This option may used to parse small pieces of JSON in larger data, such as [NDJSON](https://en.wikipedia.org/wiki/JSON_streaming).<br/>
 
-Code Sample:
+Sample code:
 
 ```c
 // single file with multiple json, such as:
-// <[1,2,3] [4,5,6] {"a":"b"}>
+// [1,2,3] [4,5,6] {"a":"b"}
 
 size_t file_size = ...;
 char *dat = malloc(file_size + 4);
@@ -227,7 +227,6 @@ Allow nan/inf number or literal  (case-insensitive), such as 1e999, NaN, Inf, -I
     "inf2": -Infinity
 }
 ```
-
 
 ---------------
 # Write JSON
@@ -382,7 +381,7 @@ Escape `/` as `\/`, for example:
 
 ●**YYJSON_WRITE_ALLOW_INF_AND_NAN**<br/>
 Write inf and nan number as 'Infinity' and 'NaN' literal.<br/>
-Note that this output is **NOT** standard JSON, for example:
+Note that this output is **NOT** standard JSON and may be rejected by other JSON libraries, for example:
 
 ```js
 {"not a number":NaN,"large number":Infinity}
@@ -665,7 +664,6 @@ yyjson_obj_foreach(obj, idx, max, key, val) {
     print(key, val);
 }
 ```
-
 
 
 
@@ -1135,7 +1133,6 @@ char *json = yyjson_doc_write(doc, 0, alc, NULL, NULL);
 alc->free(alc->ctx, json);
 
 ```
-
 
 ---------------
 # Mutable and Immutable

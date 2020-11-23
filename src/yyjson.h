@@ -388,7 +388,7 @@ typedef struct yyjson_alc {
  a general-purpose allocator, and should only be used to read or write
  single JSON document.
  
- Code example (parse JSON with stack memory only):
+ Sample code (parse JSON with stack memory only):
  
      char buf[65536];
      yyjson_alc alc;
@@ -584,7 +584,9 @@ yyjson_api_inline yyjson_doc *yyjson_read(const char *dat,
 /**
  Returns the size of maximum memory usage to read a JSON data.
  You may use this value to avoid malloc() or calloc() call inside the reader
- to get better performance, or read multiple JSON, for example:
+ to get better performance, or read multiple JSON.
+ 
+ Sample code:
  
      char *dat1, *dat2, *dat3; // JSON data
      size_t len1, len2, len3; // JSON length
@@ -999,7 +1001,9 @@ yyjson_api_inline yyjson_val *yyjson_arr_get_last(yyjson_val *arr);
  *============================================================================*/
 
 /**
- A JSON array iterator, code example:
+ A JSON array iterator.
+ 
+ Sample code:
  
      yyjson_val *val;
      yyjson_arr_iter iter;
@@ -1021,7 +1025,9 @@ yyjson_api_inline bool yyjson_arr_iter_has_next(yyjson_arr_iter *iter);
 yyjson_api_inline yyjson_val *yyjson_arr_iter_next(yyjson_arr_iter *iter);
 
 /**
- Macro for iterating over an array, code example:
+ Macro for iterating over an array.
+ 
+ Sample code:
  
      size_t idx, max;
      yyjson_val *val;
@@ -1064,7 +1070,9 @@ yyjson_api_inline yyjson_val *yyjson_obj_getn(yyjson_val *obj, const char *key,
  *============================================================================*/
 
 /**
- A JSON object iterator, code example:
+ A JSON object iterator.
+ 
+ Sample code:
  
      yyjson_val *key, *val;
      yyjson_obj_iter iter;
@@ -1090,7 +1098,9 @@ yyjson_api_inline yyjson_val *yyjson_obj_iter_next(yyjson_obj_iter *iter);
 yyjson_api_inline yyjson_val *yyjson_obj_iter_get_val(yyjson_val *key);
 
 /**
- Macro for iterating over an object, code example:
+ Macro for iterating over an object.
+ 
+ Sample code:
  
      size_t idx, max;
      yyjson_val *key, *val;
@@ -1323,7 +1333,9 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_get_last(yyjson_mut_val *arr);
  *============================================================================*/
 
 /**
- A mutable JSON array iterator, code example:
+ A mutable JSON array iterator.
+ 
+ Sample code:
  
      yyjson_mut_val *val;
      yyjson_mut_arr_iter iter;
@@ -1356,7 +1368,9 @@ yyjson_api_inline
 yyjson_mut_val *yyjson_mut_arr_iter_remove(yyjson_mut_arr_iter *iter);
 
 /**
- Macro for iterating over an array, code example:
+ Macro for iterating over an array.
+ 
+ Sample code:
  
      size_t idx, max;
      yyjson_mut_val *val;
@@ -1617,7 +1631,9 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_obj_getn(yyjson_mut_val *obj,
  *============================================================================*/
 
 /**
- A mutable JSON object iterator, code example:
+ A mutable JSON object iterator.
+ 
+ Sample code:
  
      yyjson_mut_val *key, *val;
      yyjson_mut_obj_iter iter;
@@ -1656,7 +1672,9 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_obj_iter_remove(
                                                     yyjson_mut_obj_iter *iter);
 
 /**
- Macro for iterating over an object, code example:
+ Macro for iterating over an object.
+ 
+ Sample code:
  
      size_t idx, max;
      yyjson_val *key, *val;

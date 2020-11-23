@@ -21,7 +21,7 @@ A high performance JSON library written in ANSI C.
 Benchmark project and dataset: [yyjson_benchmark](https://github.com/ibireme/yyjson_benchmark)
 
 #### AWS EC2 (AMD EPYC 7002, gcc 9.3)
-![Reader Intel](doc/images/perf_reader_ec2.svg)
+![ec2_chart](doc/images/perf_reader_ec2.svg)
 
 |twitter.json|parse (GB/s)|stringify (GB/s)|
 |---|---|---|
@@ -35,8 +35,8 @@ Benchmark project and dataset: [yyjson_benchmark](https://github.com/ibireme/yyj
 |jansson|0.04|0.09|
 
 
-#### iPhone 12 (Apple A14, clang 12)
-![Reader Apple](doc/images/perf_reader_a14.svg)
+#### iPhone (Apple A14, clang 12)
+![a14_chart](doc/images/perf_reader_a14.svg)
 
 |twitter.json|parse (GB/s)|stringify (GB/s)|
 |---|---|---|
@@ -115,7 +115,7 @@ Supported CMake options:
 - `-DYYJSON_DISABLE_COMMENT_READER=ON` Disable non-standard comment support at compile time.
 - `-DYYJSON_DISABLE_INF_AND_NAN_READER=ON` Disable non-standard nan/inf support at compile time.
 
-# Usage Example
+# Sample Code
 
 ### Read JSON string
 ```c
@@ -211,7 +211,7 @@ yyjson_mut_doc_free(doc);
 * [Building](https://github.com/ibireme/yyjson/blob/master/doc/Building.md)
 * [API and sample code](https://github.com/ibireme/yyjson/blob/master/doc/API.md)
 * [Data structure](https://github.com/ibireme/yyjson/blob/master/doc/DataStructure.md)
-* [Fast way to read and write numbers](https://github.com/ibireme/c_numconv_benchmark)
+* [Number conversion benchmark](https://github.com/ibireme/c_numconv_benchmark)
 
 ## TODO
 * [x] Add documentation page.
