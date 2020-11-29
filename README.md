@@ -12,7 +12,7 @@ A high performance JSON library written in ANSI C.
 - **Portable**: compliant with ANSI C (C89).
 - **Standard**: compliant with [RFC 8259](https://tools.ietf.org/html/rfc8259) and [ECMA-404](https://www.ecma-international.org/publications/standards/Ecma-404.htm) standard.
 - **Safe**: complete JSON form, number format and UTF-8 validation.
-- **Accuracy**: can process `int64`, `uint64` and `double` number accurately.
+- **Accuracy**: can read and write `int64`, `uint64` and `double` number accurately.
 - **No Limit**: support large data size, unlimited JSON level, `\u0000` string.
 - **Extendable**: support comments, trailing commas, nan/inf, custom memory allocator.
 - **Developer Friendly**: only one `h` and one `c` file, easy to use API.
@@ -20,7 +20,7 @@ A high performance JSON library written in ANSI C.
 # Performance
 Benchmark project and dataset: [yyjson_benchmark](https://github.com/ibireme/yyjson_benchmark)
 
-#### AWS EC2 (AMD EPYC 7002, gcc 9.3)
+#### AWS EC2 (AMD EPYC 7R32, gcc 9.3)
 ![ec2_chart](doc/images/perf_reader_ec2.svg)
 
 |twitter.json|parse (GB/s)|stringify (GB/s)|
@@ -54,12 +54,11 @@ More benchmark reports with interactive charts (update 2020-11-15)
 |Platform|CPU|Compiler|OS|Report|
 |---|---|---|---|---|
 |Intel NUC 8i5|Core i5-8259U|msvc 2019|Windows 10 2004|[Charts](https://ibireme.github.io/yyjson_benchmark/reports/Intel_NUC_8i5_msvc_2019.html)|
-|Intel NUC 8i5|Core i5-8259U|clang 10|Ubuntu 20.04|[Charts](https://ibireme.github.io/yyjson_benchmark/reports/Intel_NUC_8i5_clang_10.html)|
-|Intel NUC 8i5|Core i5-8259U|gcc 10.2|Ubuntu 20.04|[Charts](https://ibireme.github.io/yyjson_benchmark/reports/Intel_NUC_8i5_gcc_10.html)|
+|Intel NUC 8i5|Core i5-8259U|clang 10.0|Ubuntu 20.04|[Charts](https://ibireme.github.io/yyjson_benchmark/reports/Intel_NUC_8i5_clang_10.html)|
 |Intel NUC 8i5|Core i5-8259U|gcc 9.3|Ubuntu 20.04|[Charts](https://ibireme.github.io/yyjson_benchmark/reports/Intel_NUC_8i5_gcc_9.html)|
-|AWS EC2 c5a.large|AMD EPYC 7002|gcc 9.3|Ubuntu 20.04|[Charts](https://ibireme.github.io/yyjson_benchmark/reports/EC2_c5a.large_gcc_9.html)|
+|AWS EC2 c5a.large|AMD EPYC 7R32|gcc 9.3|Ubuntu 20.04|[Charts](https://ibireme.github.io/yyjson_benchmark/reports/EC2_c5a.large_gcc_9.html)|
 |AWS EC2 t4g.medium|Graviton2 (ARM64)|gcc 9.3|Ubuntu 20.04|[Charts](https://ibireme.github.io/yyjson_benchmark/reports/EC2_t4g.medium_gcc_9.html)|
-|Apple iPhone 12 Pro|A14 (ARM64)|clang 12|iOS 14|[Charts](https://ibireme.github.io/yyjson_benchmark/reports/Apple_A14_clang_12.html)|
+|Apple iPhone 12 Pro|A14 (ARM64)|clang 12.0|iOS 14|[Charts](https://ibireme.github.io/yyjson_benchmark/reports/Apple_A14_clang_12.html)|
 
 ### For better performance, yyjson prefers:
 * A modern processor with:
@@ -96,15 +95,10 @@ cmake --build .
 ctest
 ```
 
-Build shared library:
-```shell
-cmake .. -DBUILD_SHARED_LIBS=ON
-cmake --build .
-```
-
 Supported CMake options:
 
 - `-DYYJSON_BUILD_TESTS=ON` Build all tests.
+- `-DBUILD_SHARED_LIBS=ON` Build shared library instead of static library.
 - `-DYYJSON_ENABLE_COVERAGE=ON` Enable code coverage for tests.
 - `-DYYJSON_ENABLE_VALGRIND=ON` Enable valgrind memory checker for tests.
 - `-DYYJSON_ENABLE_SANITIZE=ON` Enable sanitizer for tests.
@@ -126,6 +120,7 @@ yyjson_val *root = yyjson_doc_get_root(doc);
 
 yyjson_val *name = yyjson_obj_get(root, "name");
 printf("name: %s\n", yyjson_get_str(name));
+printf("name length:%d\n", (int)yyjson_get_len(name));
 
 yyjson_val *star = yyjson_obj_get(root, "star");
 printf("star: %d\n", (int)yyjson_get_int(star));
@@ -211,7 +206,6 @@ yyjson_mut_doc_free(doc);
 * [Building](https://github.com/ibireme/yyjson/blob/master/doc/Building.md)
 * [API and sample code](https://github.com/ibireme/yyjson/blob/master/doc/API.md)
 * [Data structure](https://github.com/ibireme/yyjson/blob/master/doc/DataStructure.md)
-* [Number conversion benchmark](https://github.com/ibireme/c_numconv_benchmark)
 
 ## TODO
 * [x] Add documentation page.
