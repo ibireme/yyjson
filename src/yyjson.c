@@ -2586,10 +2586,6 @@ static_inline bool read_number(u8 *cur,
         }
         return_f64_raw(0);
     }
-//
-//#if yyjson_is_real_gcc
-//    __asm volatile("":"=m"(*src)::);
-//#endif
     
     /* begin with non-zero digit,  */
     sig = (u64)(*cur - '0');
@@ -2792,7 +2788,7 @@ digi_finish: /* all digit read finished */
      let the slow path to handle subnormal and infinity number.
      */
     if (likely(!sig_cut &&
-               exp > -F64_MAX_DEC_EXP + 1 && /// TODO: 这里定义的名字有问题
+               exp > -F64_MAX_DEC_EXP + 1 &&
                exp < +F64_MAX_DEC_EXP - 20)) {
         /*
          The result value is exactly equal to (sig * 10^exp),
