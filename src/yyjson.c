@@ -2587,11 +2587,19 @@ static_inline bool read_number(u8 *cur,
         return_f64_raw(0);
     }
     
-    /* begin with non-zero digit,  */
+    /* begin with non-zero digit */
     sig = (u64)(*cur - '0');
     
-    /* read integral part */
-    
+    /*
+     Read integral part, same as the following code.
+     For more explanation, see the comments under label `skip_ascii_begin`.
+     
+         for (int i = 1; i <= 18; i++) {
+            num = cur[i] - '0';
+            if (num <= 9) sig = num + sig * 10;
+            else goto digi_sepr_i;
+         }
+     */
 #if yyjson_is_real_gcc
 #define expr_intg(i) \
     if (likely((num = (u64)(cur[i] - (u8)'0')) <= 9)) sig = num + sig * 10; \
