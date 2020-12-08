@@ -51,8 +51,7 @@
 
 /* Define 1 to use libc's `strtod()` to read floating-point number
    instead of the custom floating-point number reader in yyjson.
-   This may reduce binary size, but slow down floating-point reading speed.
-   This may also invalidate the YYJSON_READ_FASTFP option. */
+   This may reduce binary size, but slow down floating-point reading speed. */
 #ifndef YYJSON_DISABLE_FP_READER
 #endif
 
@@ -445,24 +444,19 @@ static const yyjson_read_flag YYJSON_READ_NOFLAG                = 0 << 0;
     For example: "[1,2]" should be "[1,2]\0\0\0\0", length should be 5. */
 static const yyjson_read_flag YYJSON_READ_INSITU                = 1 << 0;
 
-/** Read floating-point number with a fast method.
-    This option can greatly increase the reading speed of long floating-point
-    numbers, but may get 0-2 ULP error for each number. */
-static const yyjson_read_flag YYJSON_READ_FASTFP                = 1 << 1;
-
 /** Stop when done instead of issues an error if there's additional content
     after a JSON document. This option may used to parse small pieces of JSON 
     in larger data, such as NDJSON. */
-static const yyjson_read_flag YYJSON_READ_STOP_WHEN_DONE        = 1 << 2;
+static const yyjson_read_flag YYJSON_READ_STOP_WHEN_DONE        = 1 << 1;
 
 /** Allow single trailing comma at the end of an object or array. */
-static const yyjson_read_flag YYJSON_READ_ALLOW_TRAILING_COMMAS = 1 << 3;
+static const yyjson_read_flag YYJSON_READ_ALLOW_TRAILING_COMMAS = 1 << 2;
 
 /** Allow C-style single line and multiple line comments.*/
-static const yyjson_read_flag YYJSON_READ_ALLOW_COMMENTS        = 1 << 4;
+static const yyjson_read_flag YYJSON_READ_ALLOW_COMMENTS        = 1 << 3;
 
 /** Allow nan/inf number or literal, such as 1e999, NaN, Inf, -Infinity. */
-static const yyjson_read_flag YYJSON_READ_ALLOW_INF_AND_NAN     = 1 << 5;
+static const yyjson_read_flag YYJSON_READ_ALLOW_INF_AND_NAN     = 1 << 4;
 
 
 

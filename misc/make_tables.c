@@ -49,9 +49,8 @@ void make_pow10_sig_table(void) {
     
     printf("#define POW10_SIG_TABLE_MIN_EXP %d\n", e10min);
     printf("#define POW10_SIG_TABLE_MAX_EXP %d\n", e10max);
-    printf("static const uint64_t pow10_sig_table[] = {\n");
+    printf("static const u64 pow10_sig_table[] = {\n");
     
-    int i = 0;
     for (int e10 = e10min; e10 <= e10max; e10 += e10step) {
         mpfr_set_d(pow10, 10, MPFR_RNDN);
         mpfr_pow_si(pow10, pow10, e10, MPFR_RNDN); // pow10 = 10^e10
@@ -62,20 +61,32 @@ void make_pow10_sig_table(void) {
             mpfr_div(div, pow10, pow2, MPFR_RNDN); // div = pow10 / pow2;
             
             if (mpfr_cmp(div, sigMax) <= 0 &&
-                mpfr_cmp(div, sigMin) >= 0) {
+                mpfr_cmp(div, sigMin) >= 0) { // nomalized
+                
                 mpfr_snprintf(buf, BUF_LEN, "%.1000Rg", div);
-                
-                char *end;
-                u64 val = strtoull(buf, &end, 0);
-                
+                u64 val = strtoull(buf, NULL, 0);
                 mpfr_sub_ui(sub, div, val, MPFR_RNDN); // sub = div - (uint64_t)div
-                if (mpfr_cmp(sub, half) > 0) val++;
+                int cmp = mpfr_cmp(sub, half);
+                if (cmp == 0) printf("err!\n"); // avoid round to even
+                if (cmp > 0 && val == UINT64_MAX) printf("err!\n"); // avoid round up overflow
                 
-                if ((i % 2) == 0) printf("    ");
-                i++;
+                printf("    ");
                 printf("U64(0x%.8X, 0x%.8X),", (u32)(val >> 32), (u32)val);
-                if ((i % 2) == 0) printf("\n");
-                else printf(" ");
+                
+                mpfr_set_d(pow2, 2, MPFR_RNDN);
+                mpfr_pow_si(pow2, pow2, 64, MPFR_RNDN); // pow2 = 2^64
+                mpfr_mul(sub, sub, pow2, MPFR_RNDN); // sub *= 2^64
+                
+                mpfr_snprintf(buf, BUF_LEN, "%.1000Rg", sub);
+                u64 val2 = strtoull(buf, NULL, 0);
+                mpfr_sub_ui(sub, sub, val2, MPFR_RNDN); // sub -= (uint64_t)sub
+                int cmp2 = mpfr_cmp(sub, half);
+                if (cmp2 == 0) printf("err!\n"); // avoid round to even
+                if ((cmp > 0) && (val2 < ((u64)1) << 63)) printf("err!\n"); // avoid round up overflow
+                
+                printf(" ");
+                printf("U64(0x%.8X, 0x%.8X),", (u32)(val2 >> 32), (u32)val2);
+                printf("\n");
                 
                 e2min = e2;
                 break;
@@ -84,6 +95,7 @@ void make_pow10_sig_table(void) {
     }
     
     printf("};\n");
+    printf("\n");
     
     mpfr_clears(sigMax, sigMin, half, NULL);
     mpfr_clears(pow10, pow2, div, sub, NULL);
@@ -91,7 +103,7 @@ void make_pow10_sig_table(void) {
 
 /*----------------------------------------------------------------------------*/
 
-void make_pow5_sig_table(void) {
+void make_pow5_inv_sig_table(void) {
     int POW5_TABLE_SIZE = 326;
     int POW5_INV_TABLE_SIZE = 291;
     
@@ -152,6 +164,7 @@ void make_pow5_sig_table(void) {
         printf("\n");
     }
     printf("};\n");
+    printf("\n");
     
     mpz_clears(mask64, mask32, pow5, inv5, pow5hi, pow5lo, hi, lo, NULL);
 }
@@ -574,7 +587,7 @@ static void make_esc_single_char_table(void) {
 int main(void) {
     
     make_pow10_sig_table();
-    make_pow5_sig_table();
+    make_pow5_inv_sig_table();
     
     make_char_table();
     make_digit_table();

@@ -178,20 +178,7 @@ static void test_real_read(const char *line, usize len, f64 num) {
         yy_assertf(!doc, "num %s should fail, but returns %.17g\n",
                    line, yyjson_get_real(val));
         
-        doc = yyjson_read(line, len, YYJSON_READ_FASTFP);
-        val = yyjson_doc_get_root(doc);
-        yy_assertf(!doc, "num %s should fail, but returns %.17g\n",
-                   line, yyjson_get_real(val));
-        
         doc = yyjson_read(line, len, YYJSON_READ_ALLOW_INF_AND_NAN);
-        val = yyjson_doc_get_root(doc);
-        ret = yyjson_get_real(val);
-        yy_assertf(yyjson_is_real(val) && (ret == num),
-                   "num %s should be read as inf, but returns %.17g\n",
-                   line, ret);
-        yyjson_doc_free(doc);
-        
-        doc = yyjson_read(line, len, YYJSON_READ_FASTFP | YYJSON_READ_ALLOW_INF_AND_NAN);
         val = yyjson_doc_get_root(doc);
         ret = yyjson_get_real(val);
         yy_assertf(yyjson_is_real(val) && (ret == num),
@@ -216,19 +203,6 @@ static void test_real_read(const char *line, usize len, f64 num) {
                    "string %s should be read as %.17g, but returns %.17g\n",
                    line, num, ret);
         yyjson_doc_free(doc);
-        
-        // 0-2 ulp error
-        doc = yyjson_read(line, len, YYJSON_READ_FASTFP | YYJSON_READ_ALLOW_INF_AND_NAN);
-        val = yyjson_doc_get_root(doc);
-        ret = yyjson_get_real(val);
-        ret_raw = f64_to_u64_raw(ret);
-        ulp = (i64)num_raw - (i64)ret_raw;
-        if (ulp < 0) ulp = -ulp;
-        yy_assertf(yyjson_is_real(val) && ulp <= 2,
-                   "string %s should be read as %.17g, but returns %.17g\n",
-                   line, num, ret);
-        yyjson_doc_free(doc);
-        
 #else
         // strtod, should be 0 ulp error, but may get 1 ulp error in some env
         doc = yyjson_read(line, len, 0);
@@ -309,21 +283,7 @@ static void test_nan_inf_read(const char *line, usize len, f64 num) {
     doc = yyjson_read(line, len, 0);
     yy_assertf(doc == NULL, "number %s should fail in default mode\n", line);
     
-    doc = yyjson_read(line, len, YYJSON_READ_FASTFP);
-    yy_assertf(doc == NULL, "number %s should fail in default mode\n", line);
-    
     doc = yyjson_read(line, len, YYJSON_READ_ALLOW_INF_AND_NAN);
-    val = yyjson_doc_get_root(doc);
-    ret = yyjson_get_real(val);
-    yy_assertf(yyjson_is_real(val), "nan or inf read fail: %s \n", line);
-    if (isnan(num)) {
-        yy_assertf(isnan(ret), "num %s should read as nan\n", line);
-    } else {
-        yy_assertf(ret == num, "num %s should read as inf\n", line);
-    }
-    yyjson_doc_free(doc);
-    
-    doc = yyjson_read(line, len, YYJSON_READ_FASTFP | YYJSON_READ_ALLOW_INF_AND_NAN);
     val = yyjson_doc_get_root(doc);
     ret = yyjson_get_real(val);
     yy_assertf(yyjson_is_real(val), "nan or inf read fail: %s \n", line);
@@ -384,10 +344,6 @@ static void test_fail(const char *line, usize len) {
     doc = yyjson_read(line, len, 0);
     yy_assertf(doc == NULL, "num should fail: %s\n", line);
     doc = yyjson_read(line, len, YYJSON_READ_ALLOW_INF_AND_NAN);
-    yy_assertf(doc == NULL, "num should fail: %s\n", line);
-    doc = yyjson_read(line, len, YYJSON_READ_FASTFP);
-    yy_assertf(doc == NULL, "num should fail: %s\n", line);
-    doc = yyjson_read(line, len, YYJSON_READ_ALLOW_INF_AND_NAN | YYJSON_READ_FASTFP);
     yy_assertf(doc == NULL, "num should fail: %s\n", line);
 #endif
 }
