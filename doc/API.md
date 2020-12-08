@@ -153,14 +153,6 @@ yyjson_doc_free(doc);
 free(buf); // the input dat should free after document.
 ```
 
-●**YYJSON_READ_FASTFP**<br/>
-Read floating-point number with a fast method.<br/>
-
-This option can greatly increase the reading speed of long floating-point numbers,<br/>
-but may get 0-2 ulp error for each number.<br/>
-This flag is very useful when the precision of floating-point numbers is not important,<br/>
-such as display a 3D model or play a lottie animation on mobile.
-
 ●**YYJSON_READ_STOP_WHEN_DONE**<br/>
 Stop when done instead of issues an error if there's additional content after a JSON document.<br/> 
 This option may used to parse small pieces of JSON in larger data, such as [NDJSON](https://en.wikipedia.org/wiki/JSON_streaming).<br/>
@@ -1025,10 +1017,7 @@ it will parse numbers according to these rules by default:<br/>
 * If a `real` number overflow (infinity), it will report an error.
 * If a number does not match the [JSON](https://www.json.org) standard, it will report an error.
 
-You can use some reader flags to change the default rules:
-
-* YYJSON_READ_FASTFP: use a fast floating-pointer reader instead, but may get 0-2 ulp error.
-* YYJSON_READ_ALLOW_INF_AND_NAN: allow `nan` and `inf` number/literal.
+You can use `YYJSON_READ_ALLOW_INF_AND_NAN` flag to allow `nan` and `inf` number/literal, see [reader flag](#reader-flag) for details.
 
 See [reader flag](#reader-flag) for details.
 
