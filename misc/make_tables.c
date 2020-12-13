@@ -44,54 +44,60 @@ void make_pow10_sig_table(void) {
     mpfr_set_ui(sigMin, 0x8000000000000000ULL, MPFR_RNDN);
     mpfr_set_d(half, 0.5, MPFR_RNDN);
     
-    int e2min = -1300, e2max = 1300;
-    int e10min = -343, e10max = 308, e10step = 1;
+    int e10min = -343, e10max = 324, e10step = 1;
     
     printf("#define POW10_SIG_TABLE_MIN_EXP %d\n", e10min);
     printf("#define POW10_SIG_TABLE_MAX_EXP %d\n", e10max);
+    printf("#define POW10_SIG_TABLE_MIN_EXACT_EXP %d\n", 0);
+    printf("#define POW10_SIG_TABLE_MAX_EXACT_EXP %d\n", 55);
     printf("static const u64 pow10_sig_table[] = {\n");
     
     for (int e10 = e10min; e10 <= e10max; e10 += e10step) {
         mpfr_set_d(pow10, 10, MPFR_RNDN);
         mpfr_pow_si(pow10, pow10, e10, MPFR_RNDN); // pow10 = 10^e10
         
-        for (int e2 = e2min; e2 < e2max; e2++) {
-            mpfr_set_d(pow2, 2, MPFR_RNDN);
-            mpfr_pow_si(pow2, pow2, e2, MPFR_RNDN); // pow2 = 2^e2
-            mpfr_div(div, pow10, pow2, MPFR_RNDN); // div = pow10 / pow2;
-            
-            if (mpfr_cmp(div, sigMax) <= 0 &&
-                mpfr_cmp(div, sigMin) >= 0) { // nomalized
-                
-                mpfr_snprintf(buf, BUF_LEN, "%.1000Rg", div);
-                u64 val = strtoull(buf, NULL, 0);
-                mpfr_sub_ui(sub, div, val, MPFR_RNDN); // sub = div - (uint64_t)div
-                int cmp = mpfr_cmp(sub, half);
-                if (cmp == 0) printf("err!\n"); // avoid round to even
-                if (cmp > 0 && val == UINT64_MAX) printf("err!\n"); // avoid round up overflow
-                
-                printf("    ");
-                printf("U64(0x%.8X, 0x%.8X),", (u32)(val >> 32), (u32)val);
-                
-                mpfr_set_d(pow2, 2, MPFR_RNDN);
-                mpfr_pow_si(pow2, pow2, 64, MPFR_RNDN); // pow2 = 2^64
-                mpfr_mul(sub, sub, pow2, MPFR_RNDN); // sub *= 2^64
-                
-                mpfr_snprintf(buf, BUF_LEN, "%.1000Rg", sub);
-                u64 val2 = strtoull(buf, NULL, 0);
-                mpfr_sub_ui(sub, sub, val2, MPFR_RNDN); // sub -= (uint64_t)sub
-                int cmp2 = mpfr_cmp(sub, half);
-                if (cmp2 == 0) printf("err!\n"); // avoid round to even
-                if ((cmp > 0) && (val2 < ((u64)1) << 63)) printf("err!\n"); // avoid round up overflow
-                
-                printf(" ");
-                printf("U64(0x%.8X, 0x%.8X),", (u32)(val2 >> 32), (u32)val2);
-                printf("\n");
-                
-                e2min = e2;
-                break;
-            }
+        // 10^e10 = 2^e2
+        // e2 = floor(log2(pow(10, e10)))
+        // e2 = floor(log2(10) * e10)
+        int e2 = (int)floor(log2(10) * e10) - 64 + 1;
+        mpfr_set_d(pow2, 2, MPFR_RNDN);
+        mpfr_pow_si(pow2, pow2, e2, MPFR_RNDN); // pow2 = 2^e2
+        mpfr_div(div, pow10, pow2, MPFR_RNDN); // div = pow10 / pow2;
+        if (mpfr_cmp(div, sigMin) < 0 || mpfr_cmp(div, sigMax) > 0) {
+            printf("err!\n"); // make sure the highest bit is 1 (nomalized)
         }
+        
+        mpfr_set_d(pow2, 2, MPFR_RNDN);
+        mpfr_pow_si(pow2, pow2, e2, MPFR_RNDN); // pow2 = 2^e2
+        mpfr_div(div, pow10, pow2, MPFR_RNDN); // div = pow10 / pow2;
+        
+        mpfr_snprintf(buf, BUF_LEN, "%.1000Rg", div);
+        u64 val = strtoull(buf, NULL, 0);
+        mpfr_sub_ui(sub, div, val, MPFR_RNDN); // sub = div - (uint64_t)div
+        int cmp = mpfr_cmp(sub, half);
+        if (cmp == 0) printf("err!\n"); // avoid round to even
+        if (cmp > 0 && val == UINT64_MAX) printf("err!\n"); // avoid round up overflow
+        
+        printf("    ");
+        printf("U64(0x%.8X, 0x%.8X),", (u32)(val >> 32), (u32)val);
+        
+        mpfr_set_d(pow2, 2, MPFR_RNDN);
+        mpfr_pow_si(pow2, pow2, 64, MPFR_RNDN); // pow2 = 2^64
+        mpfr_mul(sub, sub, pow2, MPFR_RNDN); // sub *= 2^64
+        
+        mpfr_snprintf(buf, BUF_LEN, "%.1000Rg", sub);
+        u64 val2 = strtoull(buf, NULL, 0);
+        mpfr_sub_ui(sub, sub, val2, MPFR_RNDN); // sub -= (uint64_t)sub
+        int cmp2 = mpfr_cmp(sub, half);
+        if (cmp2 == 0) printf("err!\n"); // avoid round to even
+        if ((cmp > 0) && (val2 < ((u64)1) << 63)) printf("err!\n"); // avoid round up overflow
+        bool is_exact = mpfr_cmp_ui(sub, 0) == 0;
+        
+        printf(" ");
+        printf("U64(0x%.8X, 0x%.8X)", (u32)(val2 >> 32), (u32)val2);
+        printf("%c", e10 < e10max ? ',' : ' ');
+        printf(" /* %s 10^%d */", is_exact ? "==" : "~=", e10);
+        printf("\n");
     }
     
     printf("};\n");
@@ -103,70 +109,31 @@ void make_pow10_sig_table(void) {
 
 /*----------------------------------------------------------------------------*/
 
-void make_pow5_inv_sig_table(void) {
-    int POW5_TABLE_SIZE = 326;
-    int POW5_INV_TABLE_SIZE = 291;
+static void make_dec_trailing_zero_table(void) {
+    int table_len = 100;
+    int line_len = 10;
     
-    int POW5_BITS = 121; // max 127
-    int POW5_INV_BITS = 122; // max 127
-    
-    mpz_t mask64, mask32, pow5, inv5, pow5hi, pow5lo, hi, lo;
-    mpz_inits(mask64, mask32, pow5, inv5, pow5hi, pow5lo, hi, lo, NULL);
-    mpz_set_str(mask64, "0xFFFFFFFFFFFFFFFF", 0);
-    mpz_set_str(mask32, "0xFFFFFFFF", 0);
-    
-    printf("#define POW5_INV_SIG_BITS %d\n", POW5_INV_BITS);
-    printf("static const u64 pow5_inv_sig_table[%d][2] = {\n", POW5_INV_TABLE_SIZE);
-    for (int i = 0; i < POW5_INV_TABLE_SIZE; i++) {
-        mpz_ui_pow_ui(pow5, 5, i); // 5^i
-        int pow5bits = (int)mpz_sizeinbase(pow5, 2);
-        int j = pow5bits - 1 + POW5_INV_BITS;
+    printf("static const u8 dec_trailing_zero_table[] = {\n");
+    for (int i = 0; i < table_len; i++) {        
+        int tz = 0;
+        if (i == 0) tz = 2;
+        else {
+            if ((i % 10) == 0) tz++;
+        }
         
-        mpz_ui_pow_ui(inv5, 2, j); // x = 2^j
-        mpz_div(inv5, inv5, pow5);  // x /= pow
-        mpz_add_ui(inv5, inv5, 1); // x += 1
+        bool is_head = ((i % line_len) == 0);
+        bool is_tail = ((i % line_len) == line_len - 1);
+        bool is_last = i + 1 == table_len;
         
-        mpz_tdiv_q_2exp(pow5hi, inv5, 64); // shr
-        mpz_and(pow5lo, inv5, mask64); // and
+        if (is_head) printf("    ");
         
-        mpz_tdiv_q_2exp(hi, pow5hi, 32); // shr
-        mpz_and(lo, pow5hi, mask32); // and
-        gmp_printf("    { U64(0x%.8ZX, 0x%.8ZX), ", hi, lo);
-        mpz_tdiv_q_2exp(hi, pow5lo, 32); // shr
-        mpz_and(lo, pow5lo, mask32); // and
-        gmp_printf("U64(0x%.8ZX, 0x%.8ZX) }", hi, lo);
+        printf("%1d", tz);
         
-        if (i < POW5_INV_TABLE_SIZE - 1) printf(",");
-        printf("\n");
-    }
-    printf("};\n\n");
-    printf("#define POW5_SIG_BITS %d\n", POW5_BITS);
-    printf("static const u64 pow5_sig_table[%d][2] = {\n", POW5_TABLE_SIZE);
-    for (int i = 0; i < POW5_TABLE_SIZE; i++) {
-        mpz_ui_pow_ui(pow5, 5, i); // 5^i
-        int pow5bits = (int)mpz_sizeinbase(pow5, 2); // bits
-        int hi_shift = pow5bits - POW5_BITS + 64;
-        int lo_shift =  pow5bits - POW5_BITS;
-        if (hi_shift > 0) mpz_tdiv_q_2exp(pow5hi, pow5, hi_shift);  // shr
-        else                 mpz_mul_2exp(pow5hi, pow5, -hi_shift); // shl
-        if (lo_shift > 0) mpz_tdiv_q_2exp(pow5lo, pow5, lo_shift);  // shr
-        else                 mpz_mul_2exp(pow5lo, pow5, -lo_shift); // shl
-        
-        mpz_and(pow5lo, pow5lo, mask64); // and
-        mpz_tdiv_q_2exp(hi, pow5hi, 32); // shr
-        mpz_and(lo, pow5hi, mask32); // and
-        gmp_printf("    { U64(0x%.8ZX, 0x%.8ZX), ", hi, lo);
-        mpz_tdiv_q_2exp(hi, pow5lo, 32); // shr
-        mpz_and(lo, pow5lo, mask32); // and
-        gmp_printf("U64(0x%.8ZX, 0x%.8ZX) }", hi, lo);
-        
-        if (i < POW5_TABLE_SIZE - 1) printf(",");
-        printf("\n");
+        if (i + 1 < table_len) printf(",");
+        if (!is_tail && !is_last) printf(" "); else printf("\n");
     }
     printf("};\n");
     printf("\n");
-    
-    mpz_clears(mask64, mask32, pow5, inv5, pow5hi, pow5lo, hi, lo, NULL);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -335,27 +302,6 @@ static void make_u64_pow10_table(void) {
         
         if (is_head) printf("    ");
         printf("U64(0x%.8X, 0x%.8X)", (u32)(num >> 32), (u32)(num));
-        if (i + 1 < table_len) printf(",");
-        if (!is_tail && !is_last) printf(" "); else printf("\n");
-    }
-    printf("};\n");
-    printf("\n");
-}
-
-/*----------------------------------------------------------------------------*/
-
-static void make_f64_pow10_table(void) {
-    int table_len = 308 + 1;
-    int line_len = 10;
-    
-    printf("static const f64 f64_pow10_table[F64_POW10_EXP_MAX + 1] = {\n");
-    for (int i = 0; i < table_len; i++) {
-        bool is_head = ((i % line_len) == 0);
-        bool is_tail = ((i % line_len) == line_len - 1);
-        bool is_last = i + 1 == table_len;
-        
-        if (is_head) printf("    ");
-        printf("1e%d", i);
         if (i + 1 < table_len) printf(",");
         if (!is_tail && !is_last) printf(" "); else printf("\n");
     }
@@ -585,18 +531,14 @@ static void make_esc_single_char_table(void) {
 }
 
 int main(void) {
-    
     make_pow10_sig_table();
-    make_pow5_inv_sig_table();
-    
+    make_dec_trailing_zero_table();
     make_char_table();
     make_digit_table();
     make_hex_conv_table();
     make_u64_pow10_table();
-    make_f64_pow10_table();
     make_esc_table();
     make_esc_hex_char_table();
     make_esc_single_char_table();
-    
     return 0;
 }
