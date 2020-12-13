@@ -25,14 +25,14 @@ Benchmark project and dataset: [yyjson_benchmark](https://github.com/ibireme/yyj
 
 |twitter.json|parse (GB/s)|stringify (GB/s)|
 |---|---|---|
-|yyjson(insitu)|1.82|1.51|
-|yyjson|1.74|1.46|
-|simdjson|1.52|0.60|
-|sajson|1.17|   |
-|rapidjson(insitu)|0.78|   |
+|yyjson(insitu)|1.80|1.51|
+|yyjson|1.72|1.42|
+|simdjson|1.52|0.61|
+|sajson|1.16|   |
+|rapidjson(insitu)|0.77|   |
 |rapidjson(utf8)|0.26|0.39|
-|cjson|0.31|0.16|
-|jansson|0.04|0.09|
+|cjson|0.32|0.17|
+|jansson|0.05|0.11|
 
 
 #### iPhone (Apple A14, clang 12)
@@ -40,16 +40,16 @@ Benchmark project and dataset: [yyjson_benchmark](https://github.com/ibireme/yyj
 
 |twitter.json|parse (GB/s)|stringify (GB/s)|
 |---|---|---|
-|yyjson(insitu)|3.50|2.43|
-|yyjson|2.41|1.97|
-|simdjson|2.23|0.81|
-|sajson|1.76||
-|rapidjson(insitu)|0.76| |
+|yyjson(insitu)|3.51|2.41|
+|yyjson|2.39|2.01|
+|simdjson|2.19|0.80|
+|sajson|1.74||
+|rapidjson(insitu)|0.75| |
 |rapidjson(utf8)|0.30|0.58|
 |cjson|0.48|0.33|
-|jansson|0.09|0.23|
+|jansson|0.09|0.24|
 
-More benchmark reports with interactive charts (update 2020-11-15)
+More benchmark reports with interactive charts (update 2020-12-12)
 
 |Platform|CPU|Compiler|OS|Report|
 |---|---|---|---|---|
@@ -215,7 +215,6 @@ yyjson_mut_doc_free(doc);
 * [ ] Support JSON Pointer to query value from document.
 * [ ] Add documentation for performance.
 * [ ] Optimize performance for 32-bit processor.
-* [ ] Optimize performance of double number reader/writer with other algorithms [\[1\]](https://github.com/abolz/Drachennest) [\[2\]](https://github.com/lemire/fast_double_parser).
 
 # License
 This project is released under the MIT license.
