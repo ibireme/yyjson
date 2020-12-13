@@ -28,10 +28,10 @@
  *============================================================================*/
 
 #define YYJSON_VERSION_MAJOR  0
-#define YYJSON_VERSION_MINOR  1
+#define YYJSON_VERSION_MINOR  2
 #define YYJSON_VERSION_PATCH  0
-#define YYJSON_VERSION_HEX    0x000100
-#define YYJSON_VERSION_STRING "0.1.0"
+#define YYJSON_VERSION_HEX    0x000200
+#define YYJSON_VERSION_STRING "0.2.0"
 
 
 
