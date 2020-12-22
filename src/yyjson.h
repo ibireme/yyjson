@@ -1835,6 +1835,35 @@ yyjson_api_inline bool yyjson_mut_obj_remove_strn(yyjson_mut_val *obj,
 
 
 
+/*==============================================================================
+ * JSON Pointer API
+ *============================================================================*/
+
+/** Get a JSON value with JSON Pointer: https://tools.ietf.org/html/rfc6901
+    For example: "/users/0/uid".
+    Returns NULL if there's no matched value. */
+yyjson_api_inline yyjson_val *yyjson_get_pointer(yyjson_val *val,
+                                                 const char *pointer);
+
+/** Get a JSON value with JSON Pointer: https://tools.ietf.org/html/rfc6901
+    For example: "/users/0/uid".
+    Returns NULL if there's no matched value. */
+yyjson_api_inline yyjson_val *yyjson_doc_get_pointer(yyjson_doc *doc,
+                                                     const char *pointer);
+
+/** Get a JSON value with JSON Pointer: https://tools.ietf.org/html/rfc6901
+    For example: "/users/0/uid".
+    Returns NULL if there's no matched value. */
+yyjson_api_inline yyjson_mut_val *yyjson_mut_get_pointer(yyjson_mut_val *val,
+                                                         const char *pointer);
+
+/** Get a JSON value with JSON Pointer: https://tools.ietf.org/html/rfc6901
+    For example: "/users/0/uid".
+    Returns NULL if there's no matched value. */
+yyjson_api_inline yyjson_mut_val *yyjson_mut_doc_get_pointer(
+                                    yyjson_mut_doc *doc, const char *pointer);
+
+
 
 /*==============================================================================
  * JSON Structure (Private)
@@ -3767,6 +3796,52 @@ yyjson_api_inline bool yyjson_mut_obj_remove_strn(yyjson_mut_val *obj,
         return true;
     }
     return false;
+}
+
+
+
+/*==============================================================================
+ * JSON Pointer API (Private)
+ *============================================================================*/
+
+yyjson_api yyjson_val *unsafe_yyjson_get_pointer(yyjson_val *val,
+                                                 const char *ptr,
+                                                 size_t len);
+
+yyjson_api yyjson_mut_val *unsafe_yyjson_mut_get_pointer(yyjson_mut_val *val,
+                                                         const char *ptr,
+                                                         size_t len);
+
+yyjson_api_inline yyjson_val *yyjson_get_pointer(yyjson_val *val,
+                                                 const char *ptr) {
+    if (val && ptr) {
+        if (*ptr == '\0') return val;
+        if (*ptr != '/') return NULL;
+        return unsafe_yyjson_get_pointer(val, ptr, strlen(ptr));
+    }
+    return NULL;
+}
+
+yyjson_api_inline yyjson_val *yyjson_doc_get_pointer(yyjson_doc *doc,
+                                                     const char *ptr) {
+    if (doc) return yyjson_get_pointer(doc->root, ptr);
+    return NULL;
+}
+
+yyjson_api_inline yyjson_mut_val *yyjson_mut_get_pointer(yyjson_mut_val *val,
+                                                         const char *ptr) {
+    if (val && ptr) {
+        if (*ptr == '\0') return val;
+        if (*ptr != '/') return NULL;
+        return unsafe_yyjson_mut_get_pointer(val, ptr, strlen(ptr));
+    }
+    return NULL;
+}
+
+yyjson_api_inline yyjson_mut_val *yyjson_mut_doc_get_pointer(
+    yyjson_mut_doc *doc, const char *ptr) {
+    if (doc) return yyjson_mut_get_pointer(doc->root, ptr);
+    return NULL;
 }
 
 

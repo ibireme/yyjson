@@ -19,6 +19,11 @@
     test_json_mut_val();
 }
 
+- (void)test_json_pointer {
+    extern void test_json_pointer(void);
+    test_json_pointer();
+}
+
 - (void)test_json_reader {
     extern void test_json_reader(void);
     test_json_reader();

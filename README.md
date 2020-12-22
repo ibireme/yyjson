@@ -14,7 +14,7 @@ A high performance JSON library written in ANSI C.
 - **Safe**: complete JSON form, number format and UTF-8 validation.
 - **Accuracy**: can read and write `int64`, `uint64` and `double` number accurately.
 - **No Limit**: support large data size, unlimited JSON level, `\u0000` string.
-- **Extendable**: support comments, trailing commas, nan/inf, custom memory allocator.
+- **Extendable**: options to allow comments, trailing commas, nan/inf, custom memory allocator.
 - **Developer Friendly**: only one `h` and one `c` file, easy to use API.
 
 # Performance

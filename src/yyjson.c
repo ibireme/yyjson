@@ -433,10 +433,6 @@ typedef union { u64 u; f64 f; } f64_uni;
  * Character Utils
  *============================================================================*/
 
-static_inline void byte_move_1(void *dst, void *src) {
-    memmove(dst, src, 1);
-}
-
 static_inline void byte_move_2(void *dst, void *src) {
     memmove(dst, src, 2);
 }
@@ -717,10 +713,6 @@ static_inline u32 u64_tz_bits(u64 v) {
 #endif
 }
 
-/** Returns the number of significant bits in value (should not be 0). */
-static_inline u32 u64_sig_bits(u64 v) {
-    return (u32)64 - u64_lz_bits(v) - u64_tz_bits(v);
-}
 
 
 
@@ -1124,6 +1116,189 @@ yyjson_api yyjson_mut_val *yyjson_val_mut_copy(yyjson_mut_doc *m_doc,
     }
     
     return m_vals;
+}
+
+
+
+/*==============================================================================
+ * JSON Pointer
+ *============================================================================*/
+
+/* only 0x0, 0x2F ('/') and 0x7E ('~') are excluded from this table */
+static const bool pointer_char_table[] = {
+    0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1
+};
+
+static_inline bool pointer_read_index(const char *ptr, const char **end,
+                                      usize *idx) {
+    u64 num;
+    u32 i;
+    u8 add;
+    
+    add = (u8)(*ptr++ - '0');
+    if (add == 0) {
+        *idx = 0;
+        *end = ptr;
+        return true;
+    }
+    if (add > 9) return false;
+    
+    num = add;
+    for (i = 0; i < U64_SAFE_DIG; i++) {
+        if ((add = (u8)(ptr[i] - '0')) <= 9) {
+            num = add + num * 10;
+        } else {
+            *idx = (usize)num;
+            *end = ptr + i;
+            return num < (u64)USIZE_MAX;
+        }
+    }
+    return false;
+}
+
+static_inline bool pointer_read_str(const char *ptr, const char **end,
+                                    char *buf, const char **str, usize *len) {
+    const char *hdr = ptr;
+    char *dst = buf;
+    usize distance;
+    
+    /* skip unescaped characters, do not validate encoding */
+    while (true) {
+#define skip_expr(i) \
+        if (likely(pointer_char_table[(u8)ptr[i]])) {} else { ptr += i; break; }
+        repeat8_incr(skip_expr)
+#undef skip_expr
+        ptr += 8;
+    }
+    distance = ptr - hdr;
+    if (likely(*ptr != '~')) {
+        *end = ptr;
+        *str = hdr;
+        *len = distance;
+        return true;
+    }
+    
+    /* copy escaped string */
+    memcpy(dst, hdr, distance);
+    dst += distance;
+    ptr += 1;
+    if (*ptr != '0' && *ptr != '1') return false;
+    *dst++ = (*ptr++ == '0' ? '~' : '/');
+    while (true) {
+        if (pointer_char_table[(u8)*ptr]) {
+            *dst++ = *ptr++;
+        } else if (*ptr != '~') {
+            *end = ptr;
+            *str = buf;
+            *len = dst - buf;
+            return true;
+        } else {
+            ptr++;
+            if (*ptr != '0' && *ptr != '1') return false;
+            *dst++ = (*ptr++ == '0' ? '~' : '/');
+        }
+    }
+}
+
+yyjson_api yyjson_val *unsafe_yyjson_get_pointer(yyjson_val *val,
+                                                 const char *ptr,
+                                                 size_t len) {
+    char tmp[512];
+    char *buf;
+    
+    if (likely(len <= sizeof(tmp))) {
+        buf = tmp;
+    } else {
+        buf = malloc(len);
+        if (!buf) return NULL;
+    }
+    
+    ptr++;
+    while (true) {
+        if (yyjson_is_obj(val)) {
+            const char *key;
+            usize key_len;
+            if (pointer_read_str(ptr, &ptr, buf, &key, &key_len)) {
+                val = yyjson_obj_getn(val, key, key_len);
+            } else {
+                val = NULL;
+            }
+        } else if (yyjson_is_arr(val)) {
+            usize idx;
+            if (pointer_read_index(ptr, &ptr, &idx)) {
+                val = yyjson_arr_get(val, idx);
+            } else {
+                val = NULL;
+            }
+        } else {
+            val = NULL;
+        }
+        if (val && *ptr == '\0') {
+            if (unlikely(len > sizeof(tmp))) free(buf);
+            return val;
+        }
+        if (*ptr++ == '/') continue;
+        if (unlikely(len > sizeof(tmp))) free(buf);
+        return NULL;
+    }
+}
+
+yyjson_api yyjson_mut_val *unsafe_yyjson_mut_get_pointer(yyjson_mut_val *val,
+                                                         const char *ptr,
+                                                         size_t len) {
+    char tmp[512];
+    char *buf;
+    
+    if (likely(len <= sizeof(tmp))) {
+        buf = tmp;
+    } else {
+        buf = malloc(len);
+        if (!buf) return NULL;
+    }
+    
+    ptr++;
+    while (true) {
+        if (yyjson_mut_is_obj(val)) {
+            const char *key;
+            usize key_len;
+            if (pointer_read_str(ptr, &ptr, buf, &key, &key_len)) {
+                val = yyjson_mut_obj_getn(val, key, key_len);
+            } else {
+                val = NULL;
+            }
+        } else if (yyjson_mut_is_arr(val)) {
+            usize idx;
+            if (pointer_read_index(ptr, &ptr, &idx)) {
+                val = yyjson_mut_arr_get(val, idx);
+            } else {
+                val = NULL;
+            }
+        } else {
+            val = NULL;
+        }
+        if (val && *ptr == '\0') {
+            if (unlikely(len > sizeof(tmp))) free(buf);
+            return val;
+        }
+        if (*ptr++ == '/') continue;
+        if (unlikely(len > sizeof(tmp))) free(buf);
+        return NULL;
+    }
 }
 
 
@@ -3069,7 +3244,7 @@ digi_finish: /* all digit read finished */
 #undef has_flag
 #undef return_err
 #undef return_inf
-#undef return_u64
+#undef return_i64
 #undef return_f64
 #undef return_f64_raw
 }
