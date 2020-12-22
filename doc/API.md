@@ -18,6 +18,7 @@
     * [JSON Array Iterator](#json-array-iterator-api)
     * [JSON Object](#json-object-api)
     * [JSON Object Iterator](#json-object-iterator-api)
+    * [JSON Pointer](#json-pointer)
 * [Create JSON Document](#create-json-document)
     * [Mutable Document API](#mutable-document-api)
     * [Mutable JSON Value Creation](#mutable-json-value-creation-api)
@@ -657,8 +658,35 @@ yyjson_obj_foreach(obj, idx, max, key, val) {
 }
 ```
 
+### JSON Pointer
+`yyjson` allows you to query JSON value with `JSON Pointer` ([RFC 6901](https://tools.ietf.org/html/rfc6901)).
 
+```c
+yyjson_val *yyjson_get_pointer(yyjson_val *val, const char *pointer);
+yyjson_val *yyjson_doc_get_pointer(yyjson_doc *doc, const char *pointer);
+yyjson_mut_val *yyjson_mut_get_pointer(yyjson_mut_val *val, const char *pointer);
+yyjson_mut_val *yyjson_mut_doc_get_pointer(yyjson_mut_doc *doc, const char *pointer);
+```
 
+For example, given the JSON document:
+```json
+{
+    "size" : 3,
+    "users" : [
+        {"id": 1, "name": "Harry"},
+        {"id": 2, "name": "Ron"},
+        {"id": 3, "name": "Hermione"}
+    ]
+}
+```
+The following JSON strings evaluate to the accompanying values:
+
+|Pointer|Matched Value|
+|:--|:--|
+| `""` | `the whole document` |
+| `"/size"`| `3` |
+| `"/users/0"` | `{"id": 1, "name": "Harry"}` |
+| `"/users/1/name"` | `"Ron"` | 
 
 
 ---------------

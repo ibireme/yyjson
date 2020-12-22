@@ -212,7 +212,8 @@ yyjson_mut_doc_free(doc);
 * [x] Add GitHub workflow for CI and codecov.
 * [x] Add more tests: valgrind, sanitizer.
 * [ ] Add fuzzer.
-* [ ] Support JSON Pointer to query value from document.
+* [x] Support JSON Pointer to query value from document.
+* [ ] Add `RAW` type for JSON reader and writer.
 * [ ] Add documentation for performance.
 * [ ] Optimize performance for 32-bit processor.
 
