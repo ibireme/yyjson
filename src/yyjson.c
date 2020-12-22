@@ -1224,7 +1224,7 @@ yyjson_api yyjson_val *unsafe_yyjson_get_pointer(yyjson_val *val,
     if (likely(len <= sizeof(tmp))) {
         buf = tmp;
     } else {
-        buf = malloc(len);
+        buf = (char *)malloc(len);
         if (!buf) return NULL;
     }
     
@@ -1267,7 +1267,7 @@ yyjson_api yyjson_mut_val *unsafe_yyjson_mut_get_pointer(yyjson_mut_val *val,
     if (likely(len <= sizeof(tmp))) {
         buf = tmp;
     } else {
-        buf = malloc(len);
+        buf = (char *)malloc(len);
         if (!buf) return NULL;
     }
     
