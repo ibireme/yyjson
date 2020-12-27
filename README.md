@@ -1,4 +1,4 @@
-# YYJSON
+# yyjson
 
 [![Build](https://img.shields.io/github/workflow/status/ibireme/yyjson/cmake?style=flat-square)](https://github.com/ibireme/yyjson/actions)
 [![Codecov](https://img.shields.io/codecov/c/gh/ibireme/yyjson?style=flat-square)](https://codecov.io/gh/ibireme/yyjson)

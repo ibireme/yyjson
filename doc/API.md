@@ -138,7 +138,7 @@ This is the default flag for JSON reader (RFC-8259 or ECMA-404 compliant):
 
 ●**YYJSON_READ_INSITU**<br/>
 Read the input data in-situ.<br/>
-This option allows the reader to modify and use input data to store string values, which can increase reading speed slightly. The caller should hold the input data before free the document. The input data must be padded by at least 4-byte zero byte. For example: "[1,2]" should be "[1,2]\0\0\0\0", length should be 5.
+This option allows the reader to modify and use input data to store string values, which can increase reading speed slightly. The caller should hold the input data before free the document. The input data must be padded by at least `YYJSON_PADDING_SIZE` byte. For example: "[1,2]" should be "[1,2]\0\0\0\0", length should be 5.
 
 Sample code:
 
@@ -687,6 +687,7 @@ The following JSON strings evaluate to the accompanying values:
 | `"/size"`| `3` |
 | `"/users/0"` | `{"id": 1, "name": "Harry"}` |
 | `"/users/1/name"` | `"Ron"` | 
+| `"/none"` | NULL | 
 
 
 ---------------

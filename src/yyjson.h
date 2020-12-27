@@ -356,6 +356,9 @@ typedef uint8_t yyjson_subtype;
 #define YYJSON_TAG_MASK         ((uint8_t)0xFF)     /* 11111111 */
 #define YYJSON_TAG_BIT          ((uint8_t)8)
 
+/** Padding size for JSON reader. */
+#define YYJSON_PADDING_SIZE     4
+
 
 
 /*==============================================================================
@@ -440,7 +443,7 @@ static const yyjson_read_flag YYJSON_READ_NOFLAG                = 0 << 0;
     This option allows the reader to modify and use input data to store string
     values, which can increase reading speed slightly.
     The caller should hold the input data before free the document.
-    The input data must be padded by at least 4-byte zero byte.
+    The input data must be padded by at least `YYJSON_PADDING_SIZE` byte.
     For example: "[1,2]" should be "[1,2]\0\0\0\0", length should be 5. */
 static const yyjson_read_flag YYJSON_READ_INSITU                = 1 << 0;
 

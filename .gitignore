@@ -21,6 +21,7 @@ _deps
 .idea
 
 # Xcode
+/xcode
 .build/
 xcuserdata/
 *.xcscmblueprint
