@@ -1864,6 +1864,11 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_doc_get_pointer(
                                     yyjson_mut_doc *doc, const char *pointer);
 
 
+/*==============================================================================
+ * JSON Patch API
+ *============================================================================*/
+yyjson_api_inline bool yyjson_mut_doc_patch(yyjson_mut_doc *doc,
+                                             yyjson_mut_val *val);
 
 /*==============================================================================
  * JSON Structure (Private)
@@ -3844,6 +3849,19 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_doc_get_pointer(
     return NULL;
 }
 
+/*==============================================================================
+ * JSON Patch API (Private)
+ *============================================================================*/
+
+yyjson_api bool unsafe_yyjson_mut_doc_patch(yyjson_mut_doc *doc,
+                                        yyjson_mut_val *obj);
+
+yyjson_api_inline bool yyjson_mut_doc_patch(yyjson_mut_doc *doc,
+                                            yyjson_mut_val *val) {
+
+    if (doc && val) return unsafe_yyjson_mut_doc_patch(doc, val);
+    return false;
+}
 
 
 /*==============================================================================

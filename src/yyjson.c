@@ -1258,19 +1258,20 @@ yyjson_api yyjson_val *unsafe_yyjson_get_pointer(yyjson_val *val,
     }
 }
 
+
 yyjson_api yyjson_mut_val *unsafe_yyjson_mut_get_pointer(yyjson_mut_val *val,
                                                          const char *ptr,
                                                          size_t len) {
     char tmp[512];
     char *buf;
-    
+
     if (likely(len <= sizeof(tmp))) {
         buf = tmp;
     } else {
         buf = (char *)malloc(len);
         if (!buf) return NULL;
     }
-    
+
     ptr++;
     while (true) {
         if (yyjson_mut_is_obj(val)) {
@@ -1301,6 +1302,338 @@ yyjson_api yyjson_mut_val *unsafe_yyjson_mut_get_pointer(yyjson_mut_val *val,
     }
 }
 
+
+yyjson_api bool unsafe_yyjson_mut_get_pointerx(yyjson_mut_val *val,
+                                               const char *ptr,
+                                               size_t len,
+                                               yyjson_mut_val **match,
+                                               yyjson_mut_val **container,
+                                               char **final_key,
+                                               usize *final_key_len,
+                                               usize *final_idx) {
+    char tmp[512];
+    char *buf;
+
+    if (likely(len <= sizeof(tmp))) {
+        buf = tmp;
+    } else {
+        buf = (char *)malloc(len);
+        if (!buf) return NULL;
+    }
+
+    ptr++;
+    while (true) {
+        if (yyjson_mut_is_obj(val)) {
+            const char *key;
+            usize key_len;
+
+            if (pointer_read_str(ptr, &ptr, buf, &key, &key_len)) {
+                *container = val;
+                val = yyjson_mut_obj_getn(val, key, key_len);
+
+                if (*ptr == '\0') {
+                    *final_key = malloc(key_len);
+                    *final_key_len = key_len;
+                    if (!*final_key) {
+                        if (unlikely(len > sizeof(tmp))) free(buf);
+                        return false;
+                    }
+                    memcpy(*final_key, key, key_len);
+                }
+            } else {
+                val = NULL;
+            }
+        } else if (yyjson_mut_is_arr(val)) {
+            usize idx;
+
+            if (pointer_read_index(ptr, &ptr, &idx)) {
+                *container = val;
+                val = yyjson_mut_arr_get(val, idx);
+
+                if (*ptr == '\0') {
+                    *final_idx = idx;
+                }
+            } else {
+                val = NULL;
+            }
+        } else {
+            val = NULL;
+        }
+
+        // Found the end of the pointer.
+        if (*ptr == '\0') {
+            if (unlikely(len > sizeof(tmp))) free(buf);
+            *match = val;
+            return true;
+        }
+
+        // Current segment exists, and there's at least one more segment.
+        if (val && *ptr++ == '/') continue;
+        if (unlikely(len > sizeof(tmp))) free(buf);
+
+        return false;
+    }
+}
+
+// djb2
+static u32
+djb2_hash(const char *str)
+{
+    u32 hash = 5381;
+    int c;
+
+    while ((c = *str++)) {
+        hash = ((hash << 5) + hash) + c; /* hash * 33 + c */
+    }
+
+    return hash;
+}
+
+#define PATCH_OP_ADD        193486030
+#define PATCH_OP_REMOVE     422343795
+#define PATCH_OP_REPLACE    1055870465
+#define PATCH_OP_COPY       2090156064
+#define PATCH_OP_MOVE       2090515612
+#define PATCH_OP_TEST       2090756197
+
+/**
+ * Apply a JSON Patch (RFC 6902) to an existing document.
+ *
+ * This implementation makes no atomic guarantees. The document may be
+ * be modified even when it returns a failure as each step is done in-situ. If
+ * you need to preserve the original document, make a copy before calling this
+ * function.
+ *
+ * Due to the quirks of yyjson memory management, it's important to note that
+ * any values removed from the document continue to use memory until the
+ * entire document is freed.
+ */
+yyjson_api bool unsafe_yyjson_mut_doc_patch(yyjson_mut_doc *doc,
+                                            yyjson_mut_val *obj) {
+    if (!yyjson_mut_is_arr(obj)) {
+        // Patch must always be a list.
+        return false;
+    }
+
+    yyjson_mut_val *patch;
+    yyjson_mut_arr_iter iter;
+
+    if (!yyjson_mut_arr_iter_init(obj, &iter)) {
+        return false;
+    }
+
+    while ((patch = yyjson_mut_arr_iter_next(&iter))) {
+        if (!yyjson_mut_is_obj(patch)) {
+            // Each entry in a patch must be an object.
+            return false;
+        }
+
+        yyjson_mut_val *op = yyjson_mut_obj_get(patch, "op");
+        if (yyjson_unlikely(!op)) return false;
+        const char *op_str = yyjson_mut_get_str(op);
+        if (yyjson_unlikely(!op_str)) return false;
+        yyjson_mut_val *path = yyjson_mut_obj_get(patch, "path");
+        if (yyjson_unlikely(!path)) return false;
+        const char *path_str = yyjson_mut_get_str(path);
+        if (yyjson_unlikely(!path_str)) return false;
+
+        u32 op_hash = djb2_hash(op_str);
+
+        // Short-circuit to handle root assignment.
+        if (*path_str == '\0') {
+            if (op_hash == PATCH_OP_ADD || op_hash == PATCH_OP_REPLACE) {
+                if (op_hash == PATCH_OP_ADD && doc->root) {
+                    // ADD should not be used on the root unless the
+                    // document is blank. Use REPLACE instead.
+                    return false;
+                }
+
+                yyjson_mut_val *value = yyjson_mut_obj_get(patch, "value");
+                if (!value) return false;
+                yyjson_mut_doc_set_root(doc, value);
+                continue;
+            }
+
+            // Only ADD or REPLACE are supported on the root.
+            return false;
+        }
+
+        yyjson_mut_val *val = NULL;
+        yyjson_mut_val *last_container = NULL;
+        char *key = NULL;
+        usize key_len = 0;
+        usize idx = 0;
+
+        if (!unsafe_yyjson_mut_get_pointerx(
+                doc->root,
+                path_str,
+                strlen(path_str),
+                &val,
+                &last_container,
+                &key,
+                &key_len,
+                &idx
+            )) {
+
+            // Shouldn't be possible, but double check.
+            if (yyjson_unlikely(key)) free(key);
+
+            return false;
+        }
+
+        switch (op_hash) {
+            case PATCH_OP_REMOVE:
+            {
+                if (!val) {
+                    // REMOVE on a non-existant node is a fail.
+                    break;
+                }
+                if (yyjson_mut_is_obj(last_container)) {
+                    // Why doesn't this work? Why do we have to create a
+                    // mut_val to remove by key?
+                    /*
+                    unsafe_yyjson_mut_obj_remove(
+                        last_container,
+                        key,
+                        key_len,
+                        YYJSON_TYPE_STR
+                    );
+                    */
+                    yyjson_mut_obj_remove(
+                        last_container,
+                        yyjson_mut_strn(doc, key, key_len)
+                    );
+                } else {
+                    yyjson_mut_arr_remove(last_container, idx);
+                }
+                if (key) free(key);
+                continue;
+            }
+            case PATCH_OP_ADD:
+            case PATCH_OP_REPLACE:
+            {
+                // ADD & REPLACE are identical except for their handling of
+                // an existing element.
+                if (op_hash == PATCH_OP_REPLACE && !val) {
+                    // REPLACE on a non-existant node is a fail. ADD would
+                    // just create it.
+                    break;
+                }
+                yyjson_mut_val *value = yyjson_mut_obj_get(patch, "value");
+                if (!value) break;
+
+                if (yyjson_mut_is_obj(last_container)) {
+                    yyjson_mut_val *new_key = yyjson_mut_strncpy(
+                        doc, 
+                        key,
+                        key_len
+                    );
+                    if (!new_key) break;
+                    yyjson_mut_obj_put(
+                        last_container,
+                        new_key,
+                        value
+                    );
+                } else {
+                    if (!yyjson_mut_arr_insert(last_container, value, idx)) {
+                        break;
+                    }
+                }
+                if (key) free(key);
+                continue;
+            }
+            case PATCH_OP_COPY:
+            case PATCH_OP_MOVE:
+            {
+                yyjson_mut_val *from = yyjson_mut_obj_get(patch, "from");
+                if (!from) break;
+                const char *from_pointer = yyjson_mut_get_str(from);
+                if (yyjson_unlikely(!from_pointer)) break;
+
+                yyjson_mut_val *from_val = NULL;
+                yyjson_mut_val *from_last_container = NULL;
+                char *from_key = NULL;
+                usize from_key_len = 0;
+                usize from_idx = 0;
+
+                if (!unsafe_yyjson_mut_get_pointerx(
+                        doc->root,
+                        from_pointer,
+                        strlen(from_pointer),
+                        &from_val,
+                        &from_last_container,
+                        &from_key,
+                        &from_key_len,
+                        &from_idx
+                        )) {
+
+                    if (yyjson_unlikely(from_key)) free(from_key);
+
+                    break;
+                }
+
+                if (!from_val) break;
+                // This smells...
+                from_val = yyjson_val_mut_copy(doc, (yyjson_val*)from_val);
+                if (!from_val) break;
+
+                if (yyjson_mut_is_obj(last_container)) {
+                    yyjson_mut_val *new_key = yyjson_mut_strncpy(
+                        doc, 
+                        key,
+                        key_len
+                    );
+                    // Since yyjson doesn't allow values to be relocated,
+                    // we need to copy from_value. We should fix this in
+                    // upstream at some point, as it's a decent performance
+                    // gain.
+                    yyjson_mut_obj_put(
+                        last_container,
+                        new_key,
+                        from_val
+                    );
+                } else {
+                    yyjson_mut_arr_insert(last_container, from_val, idx);
+                }
+
+                if (op_hash == PATCH_OP_MOVE) {
+                    if (yyjson_mut_is_obj(from_last_container)) {
+                        /* unsafe_yyjson_mut_obj_remove(
+                            from_last_container,
+                            from_key,
+                            from_key_len,
+                            YYJSON_TYPE_STR
+                        ); */
+                        yyjson_mut_obj_remove(
+                            from_last_container,
+                            yyjson_mut_strn(doc, from_key, from_key_len)
+                        );
+                    } else {
+                        yyjson_mut_arr_remove(from_last_container, from_idx);
+                    }
+                }
+
+                if (key) free(key);
+                continue;
+            }
+            case PATCH_OP_TEST:
+            {
+                // We should allow passing a comparator into this method so
+                // that a user could plumb this with case-insensitive test,
+                // or use ICU for unicode.
+                if (key) free(key);
+                continue;
+            }
+            default:
+                break;
+        }
+
+        if (key) free(key);
+        return false;
+    }
+
+    return true;
+}
 
 
 /*==============================================================================
