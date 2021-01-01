@@ -336,10 +336,6 @@
 #undef  U64_SAFE_DIG
 #define U64_SAFE_DIG    19
 
-/* Padding size for JSON reader input. */
-#undef  PADDING_SIZE
-#define PADDING_SIZE    4
-
 
 
 /*==============================================================================
@@ -5129,17 +5125,17 @@ yyjson_doc *yyjson_read_opts(char *dat,
     
     /* add 4-byte zero padding for input data */
     if (!has_flag(INSITU)) {
-        if (unlikely(len >= USIZE_MAX - PADDING_SIZE)) {
+        if (unlikely(len >= USIZE_MAX - YYJSON_PADDING_SIZE)) {
             return_err(0, MEMORY_ALLOCATION, "memory allocation failed");
         }
-        hdr = (u8 *)alc.malloc(alc.ctx, len + PADDING_SIZE);
+        hdr = (u8 *)alc.malloc(alc.ctx, len + YYJSON_PADDING_SIZE);
         if (unlikely(!hdr)) {
             return_err(0, MEMORY_ALLOCATION, "memory allocation failed");
         }
         end = hdr + len;
         cur = hdr;
         memcpy(hdr, dat, len);
-        memset(end, 0, PADDING_SIZE);
+        memset(end, 0, YYJSON_PADDING_SIZE);
     } else {
         hdr = (u8 *)dat;
         end = (u8 *)dat + len;
@@ -5264,7 +5260,7 @@ yyjson_doc *yyjson_read_file(const char *path,
         return_err(FILE_READ, "file seeking failed");
     }
     
-    buf_size = (size_t)file_size + PADDING_SIZE;
+    buf_size = (size_t)file_size + YYJSON_PADDING_SIZE;
     buf = alc.malloc(alc.ctx, buf_size);
     if (buf == NULL) {
         return_err(MEMORY_ALLOCATION, "fail to alloc memory");
@@ -5281,7 +5277,7 @@ yyjson_doc *yyjson_read_file(const char *path,
 #endif
     fclose(file);
     
-    memset((u8 *)buf + file_size, 0, PADDING_SIZE);
+    memset((u8 *)buf + file_size, 0, YYJSON_PADDING_SIZE);
     flg |= YYJSON_READ_INSITU;
     doc = yyjson_read_opts((char *)buf, file_size, flg, &alc, err);
     if (doc) {

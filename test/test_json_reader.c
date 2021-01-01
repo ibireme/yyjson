@@ -69,7 +69,7 @@ static void test_read_file(const char *path, flag_type type, expect_type expect)
     
     u8 *dat;
     usize len;
-    bool read_suc = yy_file_read_with_padding(path, &dat, &len, 4);
+    bool read_suc = yy_file_read_with_padding(path, &dat, &len, YYJSON_PADDING_SIZE);
     yy_assert(read_suc);
     
     usize max_mem_len = yyjson_read_max_memory_usage(len, flag);
