@@ -616,8 +616,8 @@ yyjson_api_inline size_t yyjson_read_max_memory_usage(size_t len,
      1. The max value count is (json_size / 2 + 1), for example: "[1,2,3,4]".
      2. Some broken JSON may cost more memory during reading, but fail at end,
         for example: "[[[[[[[[".
-     3. YYJSON use 16 bytes per value, see struct yyjson_val.
-     4. YYJSON use dynamic memory with a growth factor of 1.5.
+     3. yyjson use 16 bytes per value, see struct yyjson_val.
+     4. yyjson use dynamic memory with a growth factor of 1.5.
      
      The max memory size is (json_size / 2 * 16 * 1.5 + padding).
      */

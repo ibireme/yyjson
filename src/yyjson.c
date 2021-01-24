@@ -2672,12 +2672,11 @@ static const f64 f64_pow10_table[] = {
 /**
  Read a JSON number.
  
- 1. This function assume that the floating-point stack is based on IEEE-754.
+ 1. This function assume that the floating-point number is in IEEE-754 format.
  2. This function support uint64/int64/double number. If an integer number
     cannot fit in uint64/int64, it will returns as a double number. If a double
     number is infinite, the return value is based on flag.
- 3. This function does not support 'nan' or 'inf' literal.
- 4. This function (with inline attribute) may generate a lot of instructions.
+ 3. This function (with inline attribute) may generate a lot of instructions.
  */
 static_inline bool read_number(u8 *cur,
                                u8 **end,
@@ -2733,6 +2732,7 @@ static_inline bool read_number(u8 *cur,
     bool sign = (*hdr == '-');
     cur += sign;
     
+    /* begin with a leading zero or non-digit */
     if (unlikely(!digi_is_nonzero(*cur))) { /* 0 or non-digit char */
         if (unlikely(*cur != '0')) { /* non-digit char */
             if (has_flag(ALLOW_INF_AND_NAN)) {
@@ -2793,6 +2793,7 @@ static_inline bool read_number(u8 *cur,
     repeat_in_1_18(expr_intg);
 #undef expr_intg
     
+
     cur += 19; /* skip continuous 19 digits */
     if (!digi_is_digit_or_fp(*cur)) {
         if (sign && (sig > ((u64)1 << 63))) return_f64(sig); /* overflow */
@@ -2800,6 +2801,7 @@ static_inline bool read_number(u8 *cur,
     }
     goto digi_intg_more; /* read more digits in integral part */
     
+
     /* process first non-digit character */
 #define expr_sepr(i) \
     digi_sepr_##i: \
@@ -2810,6 +2812,7 @@ static_inline bool read_number(u8 *cur,
     repeat_in_1_18(expr_sepr)
 #undef expr_sepr
     
+
     /* read fraction part */
 #if yyjson_is_real_gcc
 #define expr_frac(i) \
@@ -2831,6 +2834,7 @@ static_inline bool read_number(u8 *cur,
     if (!digi_is_digit(*cur)) goto digi_frac_end; /* fraction part end */
     goto digi_frac_more; /* read more digits in fraction part */
     
+
     /* significant part end */
 #define expr_stop(i) \
     digi_stop_##i: \
@@ -2839,7 +2843,9 @@ static_inline bool read_number(u8 *cur,
     repeat_in_1_18(expr_stop)
 #undef expr_stop
     
-digi_intg_more: /* read more digits in integral part */
+
+    /* read more digits in integral part */
+digi_intg_more: 
     if (digi_is_digit(*cur)) {
         if (!digi_is_digit_or_fp(cur[1])) {
             /* this number is an integer with 20 digits */
@@ -2867,7 +2873,9 @@ digi_intg_more: /* read more digits in integral part */
         }
     }
     
-digi_frac_more: /* read more digits in fraction part */
+    
+    /* read more digits in fraction part */
+digi_frac_more: 
     sig_cut = cur; /* too large to fit in u64, excess digits need to be cut */
     sig += (*cur >= '5'); /* round */
     while (digi_is_digit(*++cur));
@@ -2895,7 +2903,9 @@ digi_frac_more: /* read more digits in fraction part */
     if (digi_is_exp(*cur)) goto digi_exp_more;
     goto digi_exp_finish;
     
-digi_frac_end: /* fraction part end */
+
+    /* fraction part end */
+digi_frac_end: 
     if (unlikely(dot_pos + 1 == cur)) {
         return_err(cur - 1, "no digit after decimal point");
     }
@@ -2911,7 +2921,9 @@ digi_frac_end: /* fraction part end */
         goto digi_exp_more;
     }
     
-digi_exp_more: /* read exponent part */
+
+    /* read exponent part */
+digi_exp_more: 
     exp_sign = (*++cur == '-');
     cur += digi_is_sign(*cur);
     if (unlikely(!digi_is_digit(*cur))) {
@@ -2933,7 +2945,9 @@ digi_exp_more: /* read exponent part */
     }
     exp_sig += exp_sign ? -exp_lit : exp_lit;
     
-digi_exp_finish: /* validate exponent value */
+
+    /* validate exponent value */
+digi_exp_finish: 
     if (unlikely(exp_sig < F64_MIN_DEC_EXP - 19)) {
         return_f64_raw(0); /* underflow */
     }
@@ -2942,7 +2956,9 @@ digi_exp_finish: /* validate exponent value */
     }
     exp = (i32)exp_sig;
     
-digi_finish: /* all digit read finished */
+
+    /* all digit read finished */
+digi_finish: 
     
     /*
      Fast path 1:

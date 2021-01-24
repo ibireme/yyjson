@@ -12,7 +12,7 @@ A clear and concise description of what the bug is.
 
 **Your environment**
  - OS: [e.g. Ubuntu 20.04 x64]
- - Compiler [e.g. gcc 9.3, Xcode 12]
+ - Compiler: [e.g. gcc 9.3]
 
 **Additional context**
 Add any other context about the problem here.

@@ -36,6 +36,7 @@
     * [Stack memory allocator](#stack-memory-allocator)
     * [Use third-party allocator library](#use-third-party-allocator-library)
 * [Mutable and Immutable](#mutable-and-immutable)
+* [Null Safe](#null-safe)
 * [Thread Safe](#thread-safe)
 
 
@@ -1185,6 +1186,35 @@ yyjson_type yyjson_mut_get_type(yyjson_mut_val *val);
 ```
 
 See [data structure](https://github.com/ibireme/yyjson/blob/master/doc/DataStructure.md) for more details.
+
+# Null Safe
+yyjson's API is designed to be null safe, which means that public API will check for NULL input to avoid crashes.
+
+For example, when reading a JSON, you don't need to do null check or type check on each value:
+```c
+yyjson_doc *doc = yyjson_read("", 0, 0); // doc is NULL
+yyjson_val *val = yyjson_doc_get_root(doc); // val is NULL
+const char *str = yyjson_get_str(val); // str is NULL
+if (!str) printf("err!");
+yyjson_doc_free(doc); // do nothing
+```
+
+
+If you are sure that a value is non-null, and the type is matched, you can use the `unsafe` prefix API to avoid the null check, but be careful because it's `unsafe`.
+
+For example, when traversing an array or object, the value and key must be non-null:
+```c
+size_t idx, max;
+yyjson_val *key, *val;
+yyjson_obj_foreach(obj, idx, max, key, val) {
+    // this is a valid JSON, so the key must be a non-null string
+    if (unsafe_yyjson_equals_str(key, "id") &&
+        unsafe_yyjson_is_uint(val) &&
+        unsafe_yyjson_get_uint(val) == 1234) {
+        // found
+    }
+}
+```
 
 # Thread Safe
 yyjson does not use global variables, so if you can ensure that the input parameters of a function are thread-safe, then the function call is also thread-safe.<br/>

@@ -75,6 +75,8 @@ Since yyjson is ANSI C compatible, no other configuration is needed typically.
 
 We have tested `yyjson` with the following compilers: gcc, clang, msvc, icc, tcc. If you find a compile error, please report a bug.
 
+yyjson includes all features by default, but you can trim out some of them by adding compile flags to get higher performance and/or smaller binary. See [compile flags](https://github.com/ibireme/yyjson/blob/master/doc/Building.md#compile-flags) for details.
+
 ### CMake
 Clone repository and create build directory:
 ```shell
@@ -108,6 +110,8 @@ Supported CMake options:
 - `-DYYJSON_DISABLE_FP_WRITER=ON` Disable custom double number writer to reduce binary size.
 - `-DYYJSON_DISABLE_COMMENT_READER=ON` Disable non-standard comment support at compile time.
 - `-DYYJSON_DISABLE_INF_AND_NAN_READER=ON` Disable non-standard nan/inf support at compile time.
+
+See [compile flags](https://github.com/ibireme/yyjson/blob/master/doc/Building.md#compile-flags) for details.
 
 # Sample Code
 
@@ -211,10 +215,11 @@ yyjson_mut_doc_free(doc);
 * [x] Add documentation page.
 * [x] Add GitHub workflow for CI and codecov.
 * [x] Add more tests: valgrind, sanitizer.
-* [ ] Add fuzzer.
 * [x] Support JSON Pointer to query value from document.
+* [ ] Add fuzzer.
 * [ ] Add `RAW` type for JSON reader and writer.
-* [ ] Add documentation for performance.
+* [ ] Add streaming API for JSON reader and writer.
+* [ ] Add documentation about performance.
 * [ ] Optimize performance for 32-bit processor.
 
 # License

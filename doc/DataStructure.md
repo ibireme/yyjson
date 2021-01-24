@@ -1,12 +1,12 @@
 # Data Structure
 
-YYJSON have 2 types of data structures: immutable and mutable.
+yyjson have 2 types of data structures: immutable and mutable.
 
 When reading a JSON, yyjson returns immutable document and values;<br/>
 When building a JSON, yyjson creates mutable document and values.<br/>
-YYJSON also provides some methods to convert immutable document into mutable document.<br/>
+yyjson also provides some methods to convert immutable document into mutable document.<br/>
 <br/>
-Note that the data structures described in this document is private, and you should use public APIs to access them.
+Note that the data structures described in this document are private, and you should use public API to access them.
 
 ---------------
 ## Immutable Value
