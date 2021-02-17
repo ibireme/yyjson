@@ -2793,7 +2793,7 @@ static_inline bool read_number(u8 *cur,
     repeat_in_1_18(expr_intg);
 #undef expr_intg
     
-
+    
     cur += 19; /* skip continuous 19 digits */
     if (!digi_is_digit_or_fp(*cur)) {
         if (sign && (sig > ((u64)1 << 63))) return_f64(sig); /* overflow */
@@ -2801,7 +2801,7 @@ static_inline bool read_number(u8 *cur,
     }
     goto digi_intg_more; /* read more digits in integral part */
     
-
+    
     /* process first non-digit character */
 #define expr_sepr(i) \
     digi_sepr_##i: \
@@ -2812,7 +2812,7 @@ static_inline bool read_number(u8 *cur,
     repeat_in_1_18(expr_sepr)
 #undef expr_sepr
     
-
+    
     /* read fraction part */
 #if yyjson_is_real_gcc
 #define expr_frac(i) \
@@ -2834,7 +2834,7 @@ static_inline bool read_number(u8 *cur,
     if (!digi_is_digit(*cur)) goto digi_frac_end; /* fraction part end */
     goto digi_frac_more; /* read more digits in fraction part */
     
-
+    
     /* significant part end */
 #define expr_stop(i) \
     digi_stop_##i: \
@@ -2843,7 +2843,7 @@ static_inline bool read_number(u8 *cur,
     repeat_in_1_18(expr_stop)
 #undef expr_stop
     
-
+    
     /* read more digits in integral part */
 digi_intg_more: 
     if (digi_is_digit(*cur)) {
@@ -2903,7 +2903,7 @@ digi_frac_more:
     if (digi_is_exp(*cur)) goto digi_exp_more;
     goto digi_exp_finish;
     
-
+    
     /* fraction part end */
 digi_frac_end: 
     if (unlikely(dot_pos + 1 == cur)) {
@@ -2921,7 +2921,7 @@ digi_frac_end:
         goto digi_exp_more;
     }
     
-
+    
     /* read exponent part */
 digi_exp_more: 
     exp_sign = (*++cur == '-');
@@ -2945,7 +2945,7 @@ digi_exp_more:
     }
     exp_sig += exp_sign ? -exp_lit : exp_lit;
     
-
+    
     /* validate exponent value */
 digi_exp_finish: 
     if (unlikely(exp_sig < F64_MIN_DEC_EXP - 19)) {
@@ -2956,7 +2956,7 @@ digi_exp_finish:
     }
     exp = (i32)exp_sig;
     
-
+    
     /* all digit read finished */
 digi_finish: 
     
@@ -3275,7 +3275,7 @@ static_noinline bool read_number(u8 *cur,
                                  const char **msg) {
     
 #define has_flag(_flag) unlikely((flg & YYJSON_READ_##_flag) != 0)
-
+    
 #define return_err(_pos, _msg) do { \
     *msg = _msg; \
     *end = _pos; \
@@ -3513,16 +3513,16 @@ static_inline bool read_string(u8 *cur,
     
 #define is_valid_seq_1(uni) \
     ((uni & b1_mask) == b1_patt)
-
+    
 #define is_valid_seq_2(uni) \
     ((uni & b2_mask) == b2_patt) && \
     ((uni & b2_requ))
-
+    
 #define is_valid_seq_3(uni) \
     ((uni & b3_mask) == b3_patt) && \
     ((tmp = (uni & b3_requ))) && \
     ((tmp != b3_erro))
-
+    
 #define is_valid_seq_4(uni) \
     ((uni & b4_mask) == b4_patt) && \
     ((tmp = (uni & b4_requ))) && \
@@ -3571,7 +3571,7 @@ skip_ascii_begin:
 #undef expr_stop
     
 skip_ascii_end:
-
+    
     /*
      GCC may store src[i] in a register at each line of expr_jump(i) above.
      These instructions are useless and will degrade performance.
@@ -3961,7 +3961,7 @@ static_inline yyjson_doc *read_root_minify(u8 *hdr,
                                            yyjson_read_err *err) {
     
 #define has_flag(_flag) unlikely((flg & YYJSON_READ_##_flag) != 0)
-
+    
 #define return_err(_pos, _code, _msg) do { \
     if (_pos >= end) { \
         err->pos = end - hdr; \
@@ -4018,7 +4018,7 @@ static_inline yyjson_doc *read_root_minify(u8 *hdr,
     val = val_hdr + hdr_len;
     ctn = val;
     ctn_len = 0;
-
+    
     if (*cur++ == '{') {
         ctn->tag = YYJSON_TYPE_OBJ;
         ctn->uni.ofs = 0;
@@ -4347,7 +4347,7 @@ static_inline yyjson_doc *read_root_pretty(u8 *hdr,
                                            yyjson_read_err *err) {
     
 #define has_flag(_flag) unlikely((flg & YYJSON_READ_##_flag) != 0)
-
+    
 #define return_err(_pos, _code, _msg) do { \
     if (_pos >= end) { \
         err->pos = end - hdr; \
@@ -4759,7 +4759,7 @@ fail_character:
     return_err(cur, UNEXPECTED_CHARACTER, "unexpected character");
 fail_garbage:
     return_err(cur, UNEXPECTED_CONTENT, "unexpected content after document");
-
+    
 #undef has_flag
 #undef val_incr
 #undef return_err
@@ -5880,18 +5880,18 @@ copy_char:
      */
 #define expr_jump(i) \
     if (unlikely(esc_table[str[i]] != CHAR_ESC_NONE)) goto stop_char_##i;
-
+    
 #define expr_stop(i) \
     stop_char_##i: \
     memcpy(cur, str, i); \
     cur += i; str += i; goto copy_next;
-
+    
     repeat16_incr(expr_jump);
     memcpy(cur, str, 16);
     cur += 16; str += 16;
     goto copy_char;
     repeat16_incr(expr_stop);
-
+    
 #undef expr_jump
 #undef expr_stop
     

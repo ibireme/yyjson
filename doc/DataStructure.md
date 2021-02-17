@@ -29,7 +29,7 @@ struct yyjson_val {
 The lower 8 bits of `tag` stores the type of value.<br/>
 The higher 56 bits of `tag` stores the size of value (such as object size, array size, string length).
 
-Modern 64-bit processors are typically limited to supporting fewer than 64 bits for RAM addresses ([Wikipedia](https://en.wikipedia.org/wiki/RAM_limit)). For example, Intel64, AMD64 and ARMv8.2 has a 52-bit (4PB) physical address limit. So we can safely store type and size into a 64 bits `tag`.
+Modern 64-bit processors are typically limited to supporting fewer than 64 bits for RAM addresses ([Wikipedia](https://en.wikipedia.org/wiki/RAM_limit)). For example, Intel64, AMD64 and ARMv8 has a 52-bit (4PB) physical address limit. So we can safely store type and size into a 64 bits `tag`.
 
 ## Immutable Document
 yyjson document stores all strings in a **contiguous** memory area.<br/> 
