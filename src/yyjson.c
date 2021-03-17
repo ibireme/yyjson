@@ -759,6 +759,30 @@ static_inline void u128_mul_add(u64 a, u64 b, u64 c, u64 *hi, u64 *lo) {
 
 
 /*==============================================================================
+ * File Utils
+ *============================================================================*/
+
+static_inline FILE *fopen_safe(const char *path, const char *mode) {
+#if _MSC_VER >= 1400
+    FILE *file = NULL;
+    if (fopen_s(&file, path, mode) != 0) return NULL;
+    return file;
+#else
+    return fopen(path, mode);
+#endif
+}
+
+static_inline usize fread_safe(void *buf, usize size, FILE *file) {
+#if _MSC_VER >= 1400
+    return fread_s(buf, size, 1, size, file);
+#else
+    return fread(buf, 1, size, file);
+#endif
+}
+
+
+
+/*==============================================================================
  * Default Memory Allocator
  *
  * This is a simple wrapper of libc.
@@ -4894,7 +4918,7 @@ yyjson_doc *yyjson_read_file(const char *path,
     err->msg = _msg; \
     err->code = YYJSON_READ_ERROR_##_code; \
     if (file) fclose(file); \
-    if (hdr) alc.free(alc.ctx, hdr); \
+    if (buf) alc.free(alc.ctx, buf); \
     return NULL; \
 } while(false)
     
@@ -4902,7 +4926,6 @@ yyjson_doc *yyjson_read_file(const char *path,
     yyjson_alc alc;
     yyjson_doc *doc;
     
-    u8 *hdr = NULL;
     FILE *file = NULL;
     long file_size = 0;
     void *buf = NULL;
@@ -4910,65 +4933,75 @@ yyjson_doc *yyjson_read_file(const char *path,
     
     /* validate input parameters */
     if (!err) err = &dummy_err;
-    if (likely(!alc_ptr)) {
-        alc = YYJSON_DEFAULT_ALC;
+    if (unlikely(!path)) return_err(INVALID_PARAMETER, "input path is NULL");
+    alc = alc_ptr ? *alc_ptr : YYJSON_DEFAULT_ALC;
+    
+    /* open file */
+    file = fopen_safe(path, "rb");
+    if (file == NULL) return_err(FILE_OPEN, "file opening failed");
+    
+    /* get file size */
+    if (fseek(file, 0, SEEK_END) == 0) {
+        file_size = ftell(file);
+        if (file_size < 0 || (file_size + 1) < 0) file_size = 0;
+    }
+    rewind(file);
+    
+    /* read file */
+    if (file_size > 0) {
+        /* read the entire file in one call */
+        buf_size = (size_t)file_size + YYJSON_PADDING_SIZE;
+        buf = alc.malloc(alc.ctx, buf_size);
+        if (buf == NULL) {
+            return_err(MEMORY_ALLOCATION, "fail to alloc memory");
+        }
+        if (fread_safe(buf, (usize)file_size, file) != (usize)file_size) {
+            return_err(FILE_READ, "file reading failed");
+        }
     } else {
-        alc = *alc_ptr;
+        /* failed to get file size, read it as a stream */
+        usize chunk_min = (usize)64;
+        usize chunk_max = (usize)512 * 1024 * 1024;
+        usize chunk_now = chunk_min;
+        usize read_size;
+        void *tmp;
+        
+        buf_size = YYJSON_PADDING_SIZE;
+        while (true) {
+            if (buf_size + chunk_now < buf_size) { /* overflow */
+                return_err(MEMORY_ALLOCATION, "fail to alloc memory");
+            }
+            buf_size += chunk_now;
+            if (!buf) {
+                buf = alc.malloc(alc.ctx, buf_size);
+                if (!buf) return_err(MEMORY_ALLOCATION, "fail to alloc memory");
+            } else {
+                tmp = alc.realloc(alc.ctx, buf, buf_size);
+                if (!tmp) return_err(MEMORY_ALLOCATION, "fail to alloc memory");
+                buf = tmp;
+            }
+            tmp = ((u8 *)buf) + buf_size - YYJSON_PADDING_SIZE - chunk_now;
+            read_size = fread_safe(tmp, chunk_now, file);
+            file_size += read_size;
+            if (read_size != chunk_now) break;
+            
+            chunk_now *= 2;
+            if (chunk_now > chunk_max) chunk_now = chunk_max;
+        }
     }
-    if (unlikely(!path)) {
-        return_err(INVALID_PARAMETER, "input path is NULL");
-    }
-    
-#if _MSC_VER >= 1400
-    if (fopen_s(&file, path, "rb") != 0) {
-        return_err(FILE_OPEN, "file opening failed");
-    }
-#else
-    file = fopen(path, "rb");
-#endif
-    if (file == NULL) {
-        return_err(FILE_OPEN, "file opening failed");
-    }
-    if (fseek(file, 0, SEEK_END) != 0) {
-        return_err(FILE_READ, "file seeking failed");
-    }
-    file_size = ftell(file);
-    if (file_size < 0) {
-        return_err(FILE_READ, "file reading failed");
-    }
-    if (file_size == 0) {
-        return_err(EMPTY_CONTENT, "input file is empty");
-    }
-    if (fseek(file, 0, SEEK_SET) != 0) {
-        return_err(FILE_READ, "file seeking failed");
-    }
-    
-    buf_size = (size_t)file_size + YYJSON_PADDING_SIZE;
-    buf = alc.malloc(alc.ctx, buf_size);
-    if (buf == NULL) {
-        return_err(MEMORY_ALLOCATION, "fail to alloc memory");
-    }
-    
-#if _MSC_VER >= 1400
-    if (fread_s(buf, buf_size, file_size, 1, file) != 1) {
-        return_err(FILE_READ, "file reading failed");
-    }
-#else
-    if (fread(buf, file_size, 1, file) != 1) {
-        return_err(FILE_READ, "file reading failed");
-    }
-#endif
     fclose(file);
     
+    /* read JSON */
     memset((u8 *)buf + file_size, 0, YYJSON_PADDING_SIZE);
     flg |= YYJSON_READ_INSITU;
     doc = yyjson_read_opts((char *)buf, file_size, flg, &alc, err);
     if (doc) {
         doc->str_pool = (char *)buf;
+        return doc;
     } else {
         alc.free(alc.ctx, buf);
+        return NULL;
     }
-    return doc;
     
 #undef return_err
 }
@@ -6002,15 +6035,7 @@ static bool write_dat_to_file(const char *path, u8 *dat, usize len,
     return false; \
 } while(false)
     
-    FILE *file = NULL;
-    
-#if _MSC_VER >= 1400
-    if (fopen_s(&file, path, "wb") != 0) {
-        return_err(FILE_OPEN, "file opening failed");
-    }
-#else
-    file = fopen(path, "wb");
-#endif
+    FILE *file = fopen_safe(path, "wb");
     if (file == NULL) {
         return_err(FILE_OPEN, "file opening failed");
     }

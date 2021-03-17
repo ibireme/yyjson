@@ -482,7 +482,7 @@ static const yyjson_read_code YYJSON_READ_ERROR_FILE_READ               = 13;
 
 /** Error information for JSON reader. */
 typedef struct yyjson_read_err {
-    /** Error code, see yyjson_read_code for all available values. */
+    /** Error code, see `yyjson_read_code` for all available values. */
     yyjson_read_code code;
     /** Short error message (NULL for success). */
     const char *msg;
@@ -2002,6 +2002,10 @@ yyjson_api_inline int64_t unsafe_yyjson_get_sint(void *val) {
     return ((yyjson_val *)val)->uni.i64;
 }
 
+yyjson_api_inline int unsafe_yyjson_get_int(void *val) {
+    return (int)((yyjson_val *)val)->uni.i64;
+}
+
 yyjson_api_inline double unsafe_yyjson_get_real(void *val) {
     return ((yyjson_val *)val)->uni.f64;
 }
@@ -2171,7 +2175,7 @@ yyjson_api_inline int64_t yyjson_get_sint(yyjson_val *val) {
 }
 
 yyjson_api_inline int yyjson_get_int(yyjson_val *val) {
-    return yyjson_is_int(val) ? (int)unsafe_yyjson_get_sint(val) : (int)0;
+    return yyjson_is_int(val) ? unsafe_yyjson_get_int(val) : 0;
 }
 
 yyjson_api_inline double yyjson_get_real(yyjson_val *val) {
