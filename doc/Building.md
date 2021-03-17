@@ -134,8 +134,6 @@ but the fp reader may cost lots of binary size.<br/>
 This flag may disable the custom fp reader, and use libc's `strtod()` instead,<br/>
 so this flag may reduce binary size, but slow down floating-point reading speed.<br/>
 
-This flag may also invalidate the `YYJSON_READ_FASTFP` option. 
-
 ●**YYJSON_DISABLE_FP_WRITER**<br/>
 Define it as 1 to disable custom floating-point number writer.<br/>
 `yyjson` implements a high-performance floating-point number writer,<br/>
