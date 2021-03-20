@@ -1321,7 +1321,240 @@ yyjson_api yyjson_mut_val *unsafe_yyjson_mut_get_pointer(yyjson_mut_val *val,
     }
 }
 
+static_inline bool pointer_set_read_index(const char* key_str, size_t key_len, size_t* idx) {
+    if (*key_str == '0') {
+        if (key_len == 1) {
+            *idx = 0;
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
+    size_t num = 0;
+    for (size_t i = 0; i < key_len; i++) {
+        size_t c = *(key_str + i) - '0';
+        if (c > 9) return false;
+        num = num * 10 + c;
+    }
+    *idx = num;
+    return true;
+}
 
+static_inline yyjson_mut_val* pointer_set_obj_add(yyjson_mut_doc* doc, yyjson_mut_val* obj, const char* key_str, size_t key_len) {
+    yyjson_mut_val* key = unsafe_yyjson_mut_val(doc, 2);
+    if (key) {
+        key->tag = YYJSON_TYPE_STR | YYJSON_SUBTYPE_NONE;
+        key->tag |= (uint64_t)key_len << YYJSON_TAG_BIT;
+        key->uni.str = unsafe_yyjson_mut_strncpy(doc, key_str, key_len);
+        unsafe_yyjson_mut_obj_add(obj, key, key + 1, unsafe_yyjson_get_len(obj));
+        return key + 1;
+    }
+    return NULL;
+}
+
+static_inline yyjson_mut_val* pointer_set_arr_count_null(yyjson_mut_doc* doc, yyjson_mut_val* arr, size_t len, bool set_arr) {
+    size_t count;
+    if (set_arr) {
+        arr->tag = YYJSON_TYPE_ARR | YYJSON_SUBTYPE_NONE;
+        count = len;
+    }
+    else {
+        count = len - unsafe_yyjson_get_len(arr);
+    }
+
+    if (count) {
+        yyjson_mut_val* val = unsafe_yyjson_mut_val(doc, count);
+        if (val) {
+            yyjson_mut_val* head;
+            if (unsafe_yyjson_get_len(arr)) {
+                yyjson_mut_val* prev = ((yyjson_mut_val*)arr->uni.ptr);
+                head = prev->next;
+                prev->next = val;
+            }
+            else {
+                head = val;
+            }
+
+            for (size_t i = 0; i < count - 1; i++) {
+                val->tag = YYJSON_TYPE_NULL | YYJSON_SUBTYPE_NONE;
+                val->next = val + 1;
+                val++;
+            }
+
+            val->tag = YYJSON_TYPE_NULL | YYJSON_SUBTYPE_NONE;
+            val->next = head;
+            arr->uni.ptr = val;
+            unsafe_yyjson_set_len(arr, len);
+            return val;
+        }
+    }
+    return NULL;
+}
+
+yyjson_mut_val* unsafe_yyjson_mut_set_pointer(yyjson_mut_doc* doc,
+    yyjson_mut_val* val,
+    const char* ptr,
+    size_t len) {
+    char tmp[512];
+    char* buf;
+    if (len <= sizeof(tmp)) {
+        buf = tmp;
+    }
+    else {
+        buf = (char*)malloc(len);
+        if (!buf) return NULL;
+    }
+    ptr++;
+
+    // verify path
+    const char* verify_ptr = ptr;
+    do {
+        const char* key;
+        size_t key_len;
+        if (!pointer_read_str(verify_ptr, &verify_ptr, buf, &key, &key_len) || !key_len) {
+            if (len > sizeof(tmp)) free(buf);
+            return NULL;
+        }
+        if (*verify_ptr == '\0') {
+            break;
+        }
+        if (*verify_ptr++ != '/') {
+            if (len > sizeof(tmp)) free(buf);
+            return NULL;
+        }
+    } while (true);
+
+    // set path
+    yyjson_mut_val* last_val = val;
+    bool exist = true;
+    do {
+        const char* key_str;
+        size_t key_len;
+        pointer_read_str(ptr, &ptr, buf, &key_str, &key_len);
+        if (exist) {
+            yyjson_type type = yyjson_mut_get_type(val);
+            if (type == YYJSON_TYPE_OBJ) {
+                val = yyjson_mut_obj_getn(val, key_str, key_len);
+                if (!val) {
+                    exist = false;
+                    val = pointer_set_obj_add(doc, last_val, key_str, key_len);
+                }
+            }
+            else if (type == YYJSON_TYPE_ARR && *key_str == '-' && key_len == 1) {
+                exist = false;
+                val = unsafe_yyjson_mut_val(doc, 1);
+                if (!yyjson_mut_arr_append(last_val, val)) break;
+            }
+            else {
+                size_t idx;
+                if (pointer_set_read_index(key_str, key_len, &idx)) {
+                    if (type == YYJSON_TYPE_ARR) {
+                        val = yyjson_mut_arr_get(val, idx);
+                        if (!val) {
+                            exist = false;
+                            val = pointer_set_arr_count_null(doc, last_val, idx + 1, false);
+                        }
+                    }
+                    else {
+                        exist = false;
+                        val = pointer_set_arr_count_null(doc, last_val, idx + 1, true);
+                    }
+                }
+                else {
+                    exist = false;
+                    val->tag = YYJSON_TYPE_OBJ | YYJSON_SUBTYPE_NONE;
+                    val = pointer_set_obj_add(doc, last_val, key_str, key_len);
+                }
+            }
+        }
+        else {
+            size_t idx;
+            if (pointer_set_read_index(key_str, key_len, &idx)) {
+                last_val->tag = YYJSON_TYPE_ARR | YYJSON_SUBTYPE_NONE;
+                val = pointer_set_arr_count_null(doc, last_val, idx + 1, true);
+            }
+            else {
+                last_val->tag = YYJSON_TYPE_OBJ | YYJSON_SUBTYPE_NONE;
+                val = pointer_set_obj_add(doc, last_val, key_str, key_len);
+            }
+        }
+        if (!val) break;
+        if (*ptr++ == '\0') {
+            if (len > sizeof(tmp)) free(buf);
+            return val;
+        }
+        last_val = val;
+    } while (true);
+
+
+    if (len > sizeof(tmp)) free(buf);
+    return NULL;
+}
+
+static_inline bool yyjson_mut_pointer_set_str(yyjson_mut_doc* doc, yyjson_mut_val* val, const char* path_str, size_t len, const char* val_str, size_t val_len) {
+    if (doc && val && path_str && len && *path_str == '/') {
+        if ((val = mut_set_pointer(doc, val, path_str, len))) {
+            val->tag = ((uint64_t)val_len << YYJSON_TAG_BIT) | YYJSON_TYPE_STR;
+            val->uni.str = val_len && val_str ? unsafe_yyjson_mut_strncpy(doc, val_str, val_len) : NULL;
+            return true;
+        }
+    }
+    return false;
+}
+
+static_inline bool yyjson_mut_pointer_set_int(yyjson_mut_doc* doc, yyjson_mut_val* val, const char* path_str, size_t len, int num) {
+    if (doc && val && path_str && len && *path_str == '/') {
+        if ((val = mut_set_pointer(doc, val, path_str, len))) {
+            val->tag = YYJSON_TYPE_NUM | YYJSON_SUBTYPE_SINT;
+            val->uni.i64 = (int64_t)num;
+            return true;
+        }
+    }
+    return false;
+}
+
+static_inline bool yyjson_mut_pointer_set_int64(yyjson_mut_doc* doc, yyjson_mut_val* val, const char* path_str, size_t len, int64_t num) {
+    if (doc && val && path_str && len && *path_str == '/') {
+        if ((val = mut_set_pointer(doc, val, path_str, len))) {
+            val->tag = YYJSON_TYPE_NUM | YYJSON_SUBTYPE_SINT;
+            val->uni.i64 = num;
+            return true;
+        }
+    }
+    return false;
+}
+
+static_inline bool yyjson_mut_pointer_set_duoble(yyjson_mut_doc* doc, yyjson_mut_val* val, const char* path_str, size_t len, double num) {
+    if (doc && val && path_str && len && *path_str == '/') {
+        if ((val = mut_set_pointer(doc, val, path_str, len))) {
+            val->tag = YYJSON_TYPE_NUM | YYJSON_SUBTYPE_REAL;
+            val->uni.f64 = num;
+            return true;
+        }
+    }
+    return false;
+}
+
+static_inline static_inlinebool yyjson_mut_pointer_set_null(yyjson_mut_doc* doc, yyjson_mut_val* val, const char* path_str, size_t len) {
+    if (doc && val && path_str && len && *path_str == '/') {
+        if ((val = mut_set_pointer(doc, val, path_str, len))) {
+            val->tag = YYJSON_TYPE_NULL | YYJSON_SUBTYPE_NONE;
+            return true;
+        }
+    }
+    return false;
+}
+
+static_inline bool yyjson_mut_pointer_set_bool(yyjson_mut_doc* doc, yyjson_mut_val* val, const char* path_str, size_t len, bool num) {
+    if (doc && val && path_str && len && *path_str == '/') {
+        if ((val = mut_set_pointer(doc, val, path_str, len))) {
+            val->tag = YYJSON_TYPE_BOOL | ((uint8_t)_val << 3);
+            return true;
+        }
+    }
+    return false;
+}
 
 /*==============================================================================
  * Power10 Lookup Table
