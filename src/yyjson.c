@@ -248,6 +248,66 @@
 #   undef YYJSON_ENDIAN /* unknown endian */
 #endif
 
+/*
+ Unaligned memory access detection.
+ 
+ Some architectures are unable to perform unaligned memory accesses, and the
+ unaligned access may cause processor exceptions.
+ 
+ Modern compilers can make some optimizations for unaligned access.
+ For example: https://godbolt.org/z/Ejo3Pa
+ 
+    typedef struct { char c[2] } vec2;
+    void copy_vec2(vec2 *dst, vec2 *src) {
+        *dst = *src;
+    }
+ 
+ Compiler may generate `load/store` or `move` instruction if target architecture
+ supports unaligned access, otherwise it may generate `call memcpy` instruction.
+ 
+ We want to avoid `memcpy` calls, so we should disable unaligned access by
+ define `YYJSON_DISABLE_UNALIGNED_MEMORY_ACCESS` as 1 on these architectures.
+ */
+#ifndef YYJSON_DISABLE_UNALIGNED_MEMORY_ACCESS
+#   if defined(i386) || defined(__i386) || defined(__i386__) || \
+        defined(__i486__) || defined(__i586__) || defined(__i686__) || \
+        defined(_X86_) || defined(__X86__) || defined(_M_IX86) || \
+        defined(__I86__) || defined(__IA32__) || \
+        defined(__THW_INTEL) || defined(__THW_INTEL__) || \
+        defined(__x86_64) || defined(__x86_64__) || \
+        defined(__amd64) || defined(__amd64__) || \
+        defined(_M_AMD64) || defined(_M_X64)
+#       define YYJSON_DISABLE_UNALIGNED_MEMORY_ACCESS 0 /* x86 */
+
+#   elif defined(__ia64) || defined(_IA64) || defined(__IA64__) ||  \
+        defined(__ia64__) || defined(_M_IA64) || defined(__itanium__)
+#       define YYJSON_DISABLE_UNALIGNED_MEMORY_ACCESS 1 /* Itanium */
+
+#   elif defined(__arm64) || defined(__arm64__) || \
+        defined(__AARCH64EL__) || defined(__AARCH64EB__) || \
+        defined(__aarch64__) || defined(_M_ARM64)
+#       define YYJSON_DISABLE_UNALIGNED_MEMORY_ACCESS 0 /* ARM64 */
+
+#   elif defined(__ARM_ARCH_4__) || defined(__ARM_ARCH_4T__) || \
+        defined(__ARM_ARCH_5TEJ__) || defined(__ARM_ARCH_5TE__) || \
+        defined(__ARM_ARCH_6T2__) || defined(__ARM_ARCH_6KZ__) || \
+        defined(__ARM_ARCH_6Z__) || defined(__ARM_ARCH_6K__)
+#       define YYJSON_DISABLE_UNALIGNED_MEMORY_ACCESS 1 /* ARM */
+
+#   elif defined(__ppc64__) || defined(__PPC64__) || \
+        defined(__powerpc64__) || defined(_ARCH_PPC64) || \
+        defined(__ppc) || defined(__ppc__) || defined(__PPC__) || \
+        defined(__powerpc) || defined(__powerpc__) || defined(__POWERPC__) || \
+        defined(_ARCH_PPC) || defined(_M_PPC) || \
+        defined(__PPCGECKO__) || defined(__PPCBROADWAY__) || defined(_XENON)
+#       define YYJSON_DISABLE_UNALIGNED_MEMORY_ACCESS 0 /* PowerPC */
+
+#   else
+#       define YYJSON_DISABLE_UNALIGNED_MEMORY_ACCESS 0 /* Unknown */
+#   endif
+
+#endif
+
 /* An estimated initial ratio of the pretty JSON (data_size / value_count). */
 /* This value is used to avoid frequent memory allocation calls for reader. */
 #ifndef YYJSON_READER_ESTIMATED_PRETTY_RATIO
@@ -430,19 +490,61 @@ typedef union { u64 u; f64 f; } f64_uni;
  *============================================================================*/
 
 static_inline void byte_move_2(void *dst, void *src) {
+#if YYJSON_DISABLE_UNALIGNED_MEMORY_ACCESS
+    ((u8 *)dst)[0] = ((u8 *)src)[0];
+    ((u8 *)dst)[1] = ((u8 *)src)[1];
+#else
     memmove(dst, src, 2);
+#endif
 }
 
 static_inline void byte_move_4(void *dst, void *src) {
+#if YYJSON_DISABLE_UNALIGNED_MEMORY_ACCESS
+    ((u8 *)dst)[0] = ((u8 *)src)[0];
+    ((u8 *)dst)[1] = ((u8 *)src)[1];
+    ((u8 *)dst)[2] = ((u8 *)src)[2];
+    ((u8 *)dst)[3] = ((u8 *)src)[3];
+#else
     memmove(dst, src, 4);
+#endif
 }
 
 static_inline void byte_move_8(void *dst, void *src) {
+#if YYJSON_DISABLE_UNALIGNED_MEMORY_ACCESS
+    ((u8 *)dst)[0] = ((u8 *)src)[0];
+    ((u8 *)dst)[1] = ((u8 *)src)[1];
+    ((u8 *)dst)[2] = ((u8 *)src)[2];
+    ((u8 *)dst)[3] = ((u8 *)src)[3];
+    ((u8 *)dst)[4] = ((u8 *)src)[4];
+    ((u8 *)dst)[5] = ((u8 *)src)[5];
+    ((u8 *)dst)[6] = ((u8 *)src)[6];
+    ((u8 *)dst)[7] = ((u8 *)src)[7];
+#else
     memmove(dst, src, 8);
+#endif
 }
 
 static_inline void byte_move_16(void *dst, void *src) {
+#if YYJSON_DISABLE_UNALIGNED_MEMORY_ACCESS
+    ((u8 *)dst)[0] = ((u8 *)src)[0];
+    ((u8 *)dst)[1] = ((u8 *)src)[1];
+    ((u8 *)dst)[2] = ((u8 *)src)[2];
+    ((u8 *)dst)[3] = ((u8 *)src)[3];
+    ((u8 *)dst)[4] = ((u8 *)src)[4];
+    ((u8 *)dst)[5] = ((u8 *)src)[5];
+    ((u8 *)dst)[6] = ((u8 *)src)[6];
+    ((u8 *)dst)[7] = ((u8 *)src)[7];
+    ((u8 *)dst)[8] = ((u8 *)src)[8];
+    ((u8 *)dst)[9] = ((u8 *)src)[9];
+    ((u8 *)dst)[10] = ((u8 *)src)[10];
+    ((u8 *)dst)[11] = ((u8 *)src)[11];
+    ((u8 *)dst)[12] = ((u8 *)src)[12];
+    ((u8 *)dst)[13] = ((u8 *)src)[13];
+    ((u8 *)dst)[14] = ((u8 *)src)[14];
+    ((u8 *)dst)[15] = ((u8 *)src)[15];
+#else
     memmove(dst, src, 16);
+#endif
 }
 
 static_inline bool byte_match_1(void *buf, const char *pat) {
@@ -450,17 +552,31 @@ static_inline bool byte_match_1(void *buf, const char *pat) {
 }
 
 static_inline bool byte_match_2(void *buf, const char *pat) {
+#if YYJSON_DISABLE_UNALIGNED_MEMORY_ACCESS
+    return
+    ((u8 *)buf)[0] == ((u8 *)pat)[0] &&
+    ((u8 *)buf)[1] == ((u8 *)pat)[1];
+#else
     v16_uni u1, u2;
     u1.v = *(v16 *)pat;
     u2.v = *(v16 *)buf;
     return u1.u == u2.u;
+#endif
 }
 
 static_inline bool byte_match_4(void *buf, const char *pat) {
+#if YYJSON_DISABLE_UNALIGNED_MEMORY_ACCESS
+    return
+    ((u8 *)buf)[0] == ((u8 *)pat)[0] &&
+    ((u8 *)buf)[1] == ((u8 *)pat)[1] &&
+    ((u8 *)buf)[2] == ((u8 *)pat)[2] &&
+    ((u8 *)buf)[3] == ((u8 *)pat)[3];
+#else
     v32_uni u1, u2;
     u1.v = *(v32 *)pat;
     u2.v = *(v32 *)buf;
     return u1.u == u2.u;
+#endif
 }
 
 static_inline u16 byte_load_2(void *src) {
@@ -3424,7 +3540,7 @@ read_double:
  @param end The end of string after '"' suffix.
  @param val The string value to be written.
  @param msg The error message pointer.
- @return Whether succeed.
+ @return Whether success.
  */
 static_inline bool read_string(u8 *cur,
                                u8 **end,

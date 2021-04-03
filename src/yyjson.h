@@ -73,6 +73,13 @@
 #ifndef YYJSON_DISABLE_INF_AND_NAN_READER
 #endif
 
+/* Define 1 to disable unaligned memory access if target architecture does not
+   support unaligned memory access (such as some embedded CPU architectures).
+   If this value is not defined, yyjson will perform some automatic detection.
+   Wrong definition of this flag may cause performance degradation. */
+#ifndef YYJSON_DISABLE_UNALIGNED_MEMORY_ACCESS
+#endif
+
 /* Define 1 to export symbols when build library as Windows DLL. */
 #ifndef YYJSON_EXPORTS
 #endif
