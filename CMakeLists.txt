@@ -80,6 +80,16 @@ if(BUILD_SHARED_LIBS)
 endif()
 
 
+# Install
+set(YYJSON_INSTALL_LIB_DIR lib CACHE PATH "Installation directory for yyjson library")
+set(YYJSON_INSTALL_INC_DIR include CACHE PATH "Installation directory for yyjson header")
+
+install(TARGETS yyjson
+        LIBRARY DESTINATION "${YYJSON_INSTALL_LIB_DIR}"
+        ARCHIVE DESTINATION "${YYJSON_INSTALL_LIB_DIR}")
+install(FILES src/yyjson.h DESTINATION "${YYJSON_INSTALL_INC_DIR}")
+
+
 # Testing
 if(YYJSON_BUILD_TESTS)
     enable_testing()
