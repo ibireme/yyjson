@@ -5086,7 +5086,13 @@ yyjson_doc *yyjson_read_file(const char *path,
     alc = alc_ptr ? *alc_ptr : YYJSON_DEFAULT_ALC;
     
     /* open file */
-    file = fopen_safe(path, "rb");
+    file = fopen_safe(path, "rb"
+#if !defined(_MSC_VER) && defined(__GLIBC__) && defined(__GLIBC_PREREQ)
+#   if __GLIBC_PREREQ(2, 7)
+                    "e" /* glibc extension to enable O_CLOEXEC */
+#   endif
+#endif
+                    );
     if (file == NULL) return_err(FILE_OPEN, "file opening failed");
     
     /* get file size */
@@ -6184,7 +6190,13 @@ static bool write_dat_to_file(const char *path, u8 *dat, usize len,
     return false; \
 } while(false)
     
-    FILE *file = fopen_safe(path, "wb");
+    FILE *file = fopen_safe(path, "wb"
+#if !defined(_MSC_VER) && defined(__GLIBC__) && defined(__GLIBC_PREREQ)
+#   if __GLIBC_PREREQ(2, 7)
+                    "e" /* glibc extension to enable O_CLOEXEC */
+#   endif
+#endif
+                    );
     if (file == NULL) {
         return_err(FILE_OPEN, "file opening failed");
     }
