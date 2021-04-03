@@ -102,6 +102,34 @@
  * Compiler Macros
  *============================================================================*/
 
+/* compiler version check (MSVC) */
+#ifdef _MSC_VER
+#   define YYJSON_MSC_VER _MSC_VER
+#else
+#   define YYJSON_MSC_VER 0
+#endif
+
+/* compiler version check (GCC) */
+#ifdef __GNUC__
+#   define YYJSON_GCC_VER __GNUC__
+#else
+#   define YYJSON_GCC_VER 0
+#endif
+
+/* C version check */
+#if defined(__STDC__) && (__STDC__ >= 1) && defined(__STDC_VERSION__)
+#   define YYJSON_STDC_VER __STDC_VERSION__
+#else
+#   define YYJSON_STDC_VER 0
+#endif
+
+/* C++ version check */
+#if defined(__cplusplus)
+#   define YYJSON_CPP_VER __cplusplus
+#else
+#   define YYJSON_CPP_VER 0
+#endif
+
 /* compiler builtin check (clang) */
 #ifndef yyjson_has_builtin
 #   ifdef __has_builtin
@@ -131,15 +159,15 @@
 
 /* inline */
 #ifndef yyjson_inline
-#   if _MSC_VER >= 1200
+#   if YYJSON_MSC_VER >= 1200
 #       define yyjson_inline __forceinline
 #   elif defined(_MSC_VER)
 #       define yyjson_inline __inline
-#   elif yyjson_has_attribute(always_inline) || __GNUC__ >= 4
+#   elif yyjson_has_attribute(always_inline) || YYJSON_GCC_VER >= 4
 #       define yyjson_inline __inline__ __attribute__((always_inline))
 #   elif defined(__clang__) || defined(__GNUC__)
 #       define yyjson_inline __inline__
-#   elif defined(__cplusplus) || (__STDC__ >= 1 && __STDC_VERSION__ >= 199901L)
+#   elif defined(__cplusplus) || YYJSON_STDC_VER >= 199901L
 #       define yyjson_inline inline
 #   else
 #       define yyjson_inline
@@ -148,9 +176,9 @@
 
 /* noinline */
 #ifndef yyjson_noinline
-#   if _MSC_VER >= 1200
+#   if YYJSON_MSC_VER >= 1200
 #       define yyjson_noinline __declspec(noinline)
-#   elif yyjson_has_attribute(noinline) || __GNUC__ >= 4
+#   elif yyjson_has_attribute(noinline) || YYJSON_GCC_VER >= 4
 #       define yyjson_noinline __attribute__((noinline))
 #   else
 #       define yyjson_noinline
@@ -163,7 +191,7 @@
 #       define yyjson_align(x) __declspec(align(x))
 #   elif yyjson_has_attribute(aligned) || defined(__GNUC__)
 #       define yyjson_align(x) __attribute__((aligned(x)))
-#   elif __cplusplus >= 201103L
+#   elif YYJSON_CPP_VER >= 201103L
 #       define yyjson_align(x) alignas(x)
 #   else
 #       define yyjson_align(x)
@@ -172,7 +200,7 @@
 
 /* likely */
 #ifndef yyjson_likely
-#   if yyjson_has_builtin(__builtin_expect) || __GNUC__ >= 4
+#   if yyjson_has_builtin(__builtin_expect) || YYJSON_GCC_VER >= 4
 #       define yyjson_likely(expr) __builtin_expect(!!(expr), 1)
 #   else
 #       define yyjson_likely(expr) (expr)
@@ -181,7 +209,7 @@
 
 /* unlikely */
 #ifndef yyjson_unlikely
-#   if yyjson_has_builtin(__builtin_expect) || __GNUC__ >= 4
+#   if yyjson_has_builtin(__builtin_expect) || YYJSON_GCC_VER >= 4
 #       define yyjson_unlikely(expr) __builtin_expect(!!(expr), 0)
 #   else
 #       define yyjson_unlikely(expr) (expr)
@@ -191,14 +219,14 @@
 /* function export */
 #ifndef yyjson_api
 #   if defined(_WIN32)
-#       if YYJSON_EXPORTS
+#       if defined(YYJSON_EXPORTS) && YYJSON_EXPORTS
 #           define yyjson_api __declspec(dllexport)
-#       elif YYJSON_IMPORTS
+#       elif defined(YYJSON_IMPORTS) && YYJSON_IMPORTS
 #           define yyjson_api __declspec(dllimport)
 #       else
 #           define yyjson_api
 #       endif
-#   elif yyjson_has_attribute(visibility) || __GNUC__ >= 4
+#   elif yyjson_has_attribute(visibility) || YYJSON_GCC_VER >= 4
 #       define yyjson_api __attribute__((visibility("default")))
 #   else
 #       define yyjson_api
@@ -209,10 +237,11 @@
 #endif
 
 /* stdint (C89 compatible) */
-#if YYJSON_HAS_STDINT_H || yyjson_has_include(<stdint.h>) || \
-    _MSC_VER >= 1600 || (__STDC__ >= 1 && __STDC_VERSION__ >= 199901L) || \
-    defined(_STDINT_H) || defined(_STDINT_H_) || defined(__CLANG_STDINT_H) || \
-    defined(_STDINT_H_INCLUDED)
+#if (defined(YYJSON_HAS_STDINT_H) && YYJSON_HAS_STDINT_H) || \
+    YYJSON_MSC_VER >= 1600 || YYJSON_STDC_VER >= 199901L || \
+    defined(_STDINT_H) || defined(_STDINT_H_) || \
+    defined(__CLANG_STDINT_H) || defined(_STDINT_H_INCLUDED) || \
+    yyjson_has_include(<stdint.h>)
 #   include <stdint.h>
 #elif defined(_MSC_VER)
 #   if _MSC_VER < 1300
@@ -272,8 +301,8 @@
         defined(__SUNPRO_C) || defined(__SUNPRO_CC)
         typedef long long           int64_t;
         typedef unsigned long long  uint64_t;
-#   elif __BORLANDC__ > 0x460 || defined(__WATCOM_INT64__) || \
-        defined (__alpha) || defined (__DECC)
+#   elif (defined(__BORLANDC__) && __BORLANDC__ > 0x460) || \
+        defined(__WATCOM_INT64__) || defined (__alpha) || defined (__DECC)
         typedef __int64             int64_t;
         typedef unsigned __int64    uint64_t;
 #   else
@@ -282,9 +311,9 @@
 #endif
 
 /* stdbool (C89 compatible) */
-#if YYJSON_HAS_STDBOOL_H || \
-    (yyjson_has_include(<stdbool.h>) && !__STRICT_ANSI__) || \
-    _MSC_VER >= 1800 || (__STDC__ >= 1 && __STDC_VERSION__ >= 199901L)
+#if (defined(YYJSON_HAS_STDBOOL_H) && YYJSON_HAS_STDBOOL_H) || \
+    (yyjson_has_include(<stdbool.h>) && !defined(__STRICT_ANSI__)) || \
+    YYJSON_MSC_VER >= 1800 || YYJSON_STDC_VER >= 199901L
 #   include <stdbool.h>
 #elif !defined(__bool_true_false_are_defined)
 #   define __bool_true_false_are_defined 1

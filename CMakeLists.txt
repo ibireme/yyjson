@@ -1,5 +1,5 @@
-cmake_minimum_required (VERSION 3.5)
-project (yyjson VERSION 0.1.0)
+cmake_minimum_required(VERSION 3.5)
+project(yyjson VERSION 0.1.0)
 
 
 # Compile Options, see yyjson.h for more explanation.
@@ -20,7 +20,7 @@ option(YYJSON_BUILD_MISC "Build misc" OFF)
 
 
 # Build Type
-if (XCODE OR MSVC)
+if(XCODE OR MSVC)
     set(CMAKE_CONFIGURATION_TYPES "Debug;Release" CACHE STRING "" FORCE)
 endif()
 if(NOT CMAKE_BUILD_TYPE)
@@ -146,7 +146,12 @@ if(YYJSON_BUILD_TESTS)
                 unset(MEMORYCHECK_COMMAND)
             else()
                 message(STATUS "Valgrind found")
-                set(MEMORYCHECK_COMMAND_OPTIONS --tool=memcheck --leak-check=full --trace-children=yes --error-exitcode=1)
+                set(MEMORYCHECK_COMMAND_OPTIONS
+                    --tool=memcheck
+                    --leak-check=full
+                    --trace-children=yes
+                    --error-exitcode=1
+                )
             endif()
         endif()
 
@@ -196,7 +201,9 @@ if(YYJSON_BUILD_TESTS)
                     -fsanitize-recover=all
                     -fno-omit-frame-pointer
                     -fno-optimize-sibling-calls
-                    -O1 -g)
+                    -O1
+                    -g
+                )
                 target_compile_options(yyjson PRIVATE ${COMPILE_FLAGS})
                 target_link_libraries(yyjson INTERFACE ${COMPILE_FLAGS})
             endif()
@@ -222,7 +229,17 @@ if(YYJSON_BUILD_TESTS)
         check_c_compiler_flag("-std=c89" COMPILER_SUPPORTS_C89)
         if(COMPILER_SUPPORTS_C89)
             # check ANSI standard strictly, treat warnings as errors
-            set(YYJSON_STRICT_C_FLAGS -std=c89 -Wall -Wextra -Werror -pedantic -pedantic-errors -Wmissing-prototypes -Wstrict-prototypes)
+            set(YYJSON_STRICT_C_FLAGS
+                -std=c89
+                -Wall
+                -Wextra
+                -Werror
+                -pedantic
+                -pedantic-errors
+                -Wmissing-prototypes
+                -Wstrict-prototypes
+                -Wundef
+            )
             target_compile_options(test_compile_c89 PRIVATE $<$<COMPILE_LANGUAGE:C>:${YYJSON_STRICT_C_FLAGS}>)
         endif()
 
@@ -230,7 +247,14 @@ if(YYJSON_BUILD_TESTS)
         check_cxx_compiler_flag("-std=c++98" COMPILER_SUPPORTS_CXX98)
         if(COMPILER_SUPPORTS_CXX98)
             # check ANSI standard strictly, treat warnings as errors
-            set(YYJSON_STRICT_CXX_FLAGS -std=c++98 -Wall -Wextra -Werror -pedantic -pedantic-errors)
+            set(YYJSON_STRICT_CXX_FLAGS
+                -std=c++98
+                -Wall
+                -Wextra
+                -Werror
+                -pedantic
+                -pedantic-errors
+            )
             target_compile_options(test_compile_cxx98 PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${YYJSON_STRICT_CXX_FLAGS}>)
         endif()
 

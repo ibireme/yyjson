@@ -41,72 +41,93 @@
  *============================================================================*/
 
 /* gcc version check */
-#ifndef yyjson_gcc_available
-#   define yyjson_gcc_available(major, minor, patch) \
-        ((__GNUC__ * 10000 + __GNUC_MINOR__ * 100 + __GNUC_PATCHLEVEL__) >= \
-        (major * 10000 + minor * 100 + patch))
+#if defined(__GNUC__)
+#   if defined(__GNUC_MINOR__) && defined(__GNUC_PATCHLEVEL__)
+#       define yyjson_gcc_available(major, minor, patch) \
+            ((__GNUC__ * 10000 + __GNUC_MINOR__ * 100 + __GNUC_PATCHLEVEL__) \
+            >= (major * 10000 + minor * 100 + patch))
+#   elif defined(__GNUC_MINOR__)
+#       define yyjson_gcc_available(major, minor, patch) \
+            ((__GNUC__ * 10000 + __GNUC_MINOR__ * 100) \
+            >= (major * 10000 + minor * 100 + patch))
+#   else
+#       define yyjson_gcc_available(major, minor, patch) \
+            ((__GNUC__ * 10000) >= (major * 10000 + minor * 100 + patch))
+#   endif
+#else
+#       define yyjson_gcc_available(major, minor, patch) 0
 #endif
 
 /* real gcc check */
-#ifndef yyjson_is_real_gcc
-#   if !defined(__clang__) && !defined(__INTEL_COMPILER) && !defined(__ICC) && \
-        defined(__GNUC__) && defined(__GNUC_MINOR__)
-#       define yyjson_is_real_gcc 1
-#   endif
+#if !defined(__clang__) && !defined(__INTEL_COMPILER) && !defined(__ICC) && \
+    defined(__GNUC__) && defined(__GNUC_MINOR__)
+#   define YYJSON_IS_REAL_GCC 1
+#else
+#   define YYJSON_IS_REAL_GCC 0
 #endif
 
 /* msvc intrinsic */
-#if _MSC_VER >= 1400
+#if YYJSON_MSC_VER >= 1400
 #   include <intrin.h>
 #   if defined(_M_AMD64) || defined(_M_ARM64)
 #       define MSC_HAS_BIT_SCAN_64 1
 #       pragma intrinsic(_BitScanForward64)
 #       pragma intrinsic(_BitScanReverse64)
+#   else
+#       define MSC_HAS_BIT_SCAN_64 0
 #   endif
 #   if defined(_M_AMD64) || defined(_M_ARM64) || \
         defined(_M_IX86) || defined(_M_ARM)
 #       define MSC_HAS_BIT_SCAN 1
 #       pragma intrinsic(_BitScanForward)
 #       pragma intrinsic(_BitScanReverse)
+#   else
+#       define MSC_HAS_BIT_SCAN 0
 #   endif
 #   if defined(_M_AMD64)
 #       define MSC_HAS_UMUL128 1
 #       pragma intrinsic(_umul128)
+#   else
+#       define MSC_HAS_UMUL128 0
 #   endif
+#else
+#   define MSC_HAS_BIT_SCAN_64 0
+#   define MSC_HAS_BIT_SCAN 0
+#   define MSC_HAS_UMUL128 0
 #endif
 
 /* gcc builtin */
 #if yyjson_has_builtin(__builtin_clzll) || yyjson_gcc_available(3, 4, 0)
 #   define GCC_HAS_CLZLL 1
+#else
+#   define GCC_HAS_CLZLL 0
 #endif
 
 #if yyjson_has_builtin(__builtin_ctzll) || yyjson_gcc_available(3, 4, 0)
 #   define GCC_HAS_CTZLL 1
+#else
+#   define GCC_HAS_CTZLL 0
 #endif
 
 /* int128 type */
-#ifndef YYJSON_HAS_INT128
-#   if (__SIZEOF_INT128__ == 16) && \
-       (defined(__GNUC__) || defined(__clang__) || defined(__INTEL_COMPILER))
-#       define YYJSON_HAS_INT128 1
-#   else
-#       define YYJSON_HAS_INT128 0
-#   endif
+#if (__SIZEOF_INT128__ == 16) && \
+    (defined(__GNUC__) || defined(__clang__) || defined(__INTEL_COMPILER))
+#    define YYJSON_HAS_INT128 1
+#else
+#    define YYJSON_HAS_INT128 0
 #endif
 
 /* IEEE 754 floating-point binary representation */
-#ifndef YYJSON_HAS_IEEE_754
-#   if __STDC_IEC_559__
-#       define YYJSON_HAS_IEEE_754 1
-#   elif (FLT_RADIX == 2) && (DBL_MANT_DIG == 53) && \
-         (DBL_MIN_EXP == -1021) && (DBL_MAX_EXP == 1024) && \
-         (DBL_MIN_10_EXP == -307) && (DBL_MAX_10_EXP == 308)
-#       define YYJSON_HAS_IEEE_754 1
-#   else
-#       define YYJSON_HAS_IEEE_754 0
-#       if __FAST_MATH__ || __USE_FAST_MATH__
-#           warning "-ffast-math" may break the nan/inf check
-#       endif
+#if defined(__STDC_IEC_559__) && __STDC_IEC_559__
+#   define YYJSON_HAS_IEEE_754 1
+#elif (FLT_RADIX == 2) && (DBL_MANT_DIG == 53) && \
+     (DBL_MIN_EXP == -1021) && (DBL_MAX_EXP == 1024) && \
+     (DBL_MIN_10_EXP == -307) && (DBL_MAX_10_EXP == 308)
+#   define YYJSON_HAS_IEEE_754 1
+#else
+#   define YYJSON_HAS_IEEE_754 0
+#   if __FAST_MATH__ || __USE_FAST_MATH__
+#       warning "-ffast-math" may break the nan/inf check
 #   endif
 #endif
 
@@ -140,47 +161,47 @@
      }
  
  */
-#ifndef YYJSON_DOUBLE_MATH_CORRECT
-#   if !defined(FLT_EVAL_METHOD) && defined(__FLT_EVAL_METHOD__)
-#       define FLT_EVAL_METHOD __FLT_EVAL_METHOD__
-#   endif
-#   if defined(FLT_EVAL_METHOD) && FLT_EVAL_METHOD != 0 && FLT_EVAL_METHOD != 1
-#       define YYJSON_DOUBLE_MATH_CORRECT 0
-#   elif defined(i386) || defined(__i386) || defined(__i386__) || \
-        defined(_X86_) || defined(__X86__) || defined(_M_IX86) || \
-        defined(__I86__) || defined(__IA32__) || defined(__THW_INTEL)
-#       if (defined(_MSC_VER) && _M_IX86_FP == 2) || __SSE2_MATH__
-#           define YYJSON_DOUBLE_MATH_CORRECT 1
-#       else
-#           define YYJSON_DOUBLE_MATH_CORRECT 0
-#       endif
-#   elif defined(__x86_64) || defined(__x86_64__) || \
-        defined(__amd64) || defined(__amd64__) || \
-        defined(_M_AMD64) || defined(_M_X64) || \
-        defined(__ia64) || defined(_IA64) || defined(__IA64__) ||  \
-        defined(__ia64__) || defined(_M_IA64) || defined(__itanium__) || \
-        defined(__arm64) || defined(__arm64__) || \
-        defined(__aarch64__) || defined(_M_ARM64) || \
-        defined(__arm) || defined(__arm__) || defined(_ARM_) || \
-        defined(_ARM) || defined(_M_ARM) || defined(__TARGET_ARCH_ARM) || \
-        defined(mips) || defined(__mips) || defined(__mips__) || \
-        defined(MIPS) || defined(_MIPS_) || defined(__MIPS__) || \
-        defined(_ARCH_PPC64) || defined(__PPC64__) || \
-        defined(__ppc64__) || defined(__powerpc64__) || \
-        defined(__powerpc) || defined(__powerpc__) || defined(__POWERPC__) || \
-        defined(__ppc__) || defined(__ppc) || defined(__PPC__) || \
-        defined(__sparcv9) || defined(__sparc_v9__) || \
-        defined(__sparc) || defined(__sparc__) || defined(__sparc64__) || \
-        defined(__alpha) || defined(__alpha__) || defined(_M_ALPHA) || \
-        defined(__or1k__) || defined(__OR1K__) || defined(OR1K) || \
-        defined(__hppa) || defined(__hppa__) || defined(__HPPA__) || \
-        defined(__riscv) || defined(__riscv__) || \
-        defined(__s390__) || defined(__avr32__) || defined(__SH4__) || \
-        defined(__e2k__) || defined(__arc__) || defined(__EMSCRIPTEN__)
+#if !defined(FLT_EVAL_METHOD) && defined(__FLT_EVAL_METHOD__)
+#    define FLT_EVAL_METHOD __FLT_EVAL_METHOD__
+#endif
+
+#if defined(FLT_EVAL_METHOD) && FLT_EVAL_METHOD != 0 && FLT_EVAL_METHOD != 1
+#    define YYJSON_DOUBLE_MATH_CORRECT 0
+#elif defined(i386) || defined(__i386) || defined(__i386__) || \
+    defined(_X86_) || defined(__X86__) || defined(_M_IX86) || \
+    defined(__I86__) || defined(__IA32__) || defined(__THW_INTEL)
+#   if (defined(_MSC_VER) && defined(_M_IX86_FP) && _M_IX86_FP == 2) || \
+        (defined(__SSE2_MATH__) && __SSE2_MATH__)
 #       define YYJSON_DOUBLE_MATH_CORRECT 1
 #   else
-#       define YYJSON_DOUBLE_MATH_CORRECT 0 /* unknown */
+#       define YYJSON_DOUBLE_MATH_CORRECT 0
 #   endif
+#elif defined(__x86_64) || defined(__x86_64__) || \
+    defined(__amd64) || defined(__amd64__) || \
+    defined(_M_AMD64) || defined(_M_X64) || \
+    defined(__ia64) || defined(_IA64) || defined(__IA64__) ||  \
+    defined(__ia64__) || defined(_M_IA64) || defined(__itanium__) || \
+    defined(__arm64) || defined(__arm64__) || \
+    defined(__aarch64__) || defined(_M_ARM64) || \
+    defined(__arm) || defined(__arm__) || defined(_ARM_) || \
+    defined(_ARM) || defined(_M_ARM) || defined(__TARGET_ARCH_ARM) || \
+    defined(mips) || defined(__mips) || defined(__mips__) || \
+    defined(MIPS) || defined(_MIPS_) || defined(__MIPS__) || \
+    defined(_ARCH_PPC64) || defined(__PPC64__) || \
+    defined(__ppc64__) || defined(__powerpc64__) || \
+    defined(__powerpc) || defined(__powerpc__) || defined(__POWERPC__) || \
+    defined(__ppc__) || defined(__ppc) || defined(__PPC__) || \
+    defined(__sparcv9) || defined(__sparc_v9__) || \
+    defined(__sparc) || defined(__sparc__) || defined(__sparc64__) || \
+    defined(__alpha) || defined(__alpha__) || defined(_M_ALPHA) || \
+    defined(__or1k__) || defined(__OR1K__) || defined(OR1K) || \
+    defined(__hppa) || defined(__hppa__) || defined(__HPPA__) || \
+    defined(__riscv) || defined(__riscv__) || \
+    defined(__s390__) || defined(__avr32__) || defined(__SH4__) || \
+    defined(__e2k__) || defined(__arc__) || defined(__EMSCRIPTEN__)
+#   define YYJSON_DOUBLE_MATH_CORRECT 1
+#else
+#   define YYJSON_DOUBLE_MATH_CORRECT 0 /* unknown */
 #endif
 
 /* endian */
@@ -245,7 +266,7 @@
 #   define YYJSON_ENDIAN YYJSON_BIG_ENDIAN
 
 #else
-#   undef YYJSON_ENDIAN /* unknown endian */
+#   define YYJSON_ENDIAN 0 /* unknown endian */
 #endif
 
 /*
@@ -310,26 +331,38 @@
 
 /* An estimated initial ratio of the pretty JSON (data_size / value_count). */
 /* This value is used to avoid frequent memory allocation calls for reader. */
-#ifndef YYJSON_READER_ESTIMATED_PRETTY_RATIO
-#   define YYJSON_READER_ESTIMATED_PRETTY_RATIO 16
-#endif
+#define YYJSON_READER_ESTIMATED_PRETTY_RATIO 16
 
 /* An estimated initial ratio of the minify JSON (data_size / value_count). */
 /* This value is used to avoid frequent memory allocation calls for reader. */
-#ifndef YYJSON_READER_ESTIMATED_MINIFY_RATIO
-#   define YYJSON_READER_ESTIMATED_MINIFY_RATIO 6
-#endif
+#define YYJSON_READER_ESTIMATED_MINIFY_RATIO 6
 
 /* An estimated initial ratio of the pretty JSON (data_size / value_count). */
 /* This value is used to avoid frequent memory allocation calls for writer. */
-#ifndef YYJSON_WRITER_ESTIMATED_PRETTY_RATIO
-#   define YYJSON_WRITER_ESTIMATED_PRETTY_RATIO 32
-#endif
+#define YYJSON_WRITER_ESTIMATED_PRETTY_RATIO 32
 
 /* An estimated initial ratio of the minify JSON (data_size / value_count). */
 /* This value is used to avoid frequent memory allocation calls for writer. */
-#ifndef YYJSON_WRITER_ESTIMATED_MINIFY_RATIO
-#   define YYJSON_WRITER_ESTIMATED_MINIFY_RATIO 18
+#define YYJSON_WRITER_ESTIMATED_MINIFY_RATIO 18
+
+/* Default value for public flags. */
+#ifndef YYJSON_DISABLE_READER
+#define YYJSON_DISABLE_READER 0
+#endif
+#ifndef YYJSON_DISABLE_FP_READER
+#define YYJSON_DISABLE_FP_READER 0
+#endif
+#ifndef YYJSON_DISABLE_WRITER
+#define YYJSON_DISABLE_WRITER 0
+#endif
+#ifndef YYJSON_DISABLE_FP_WRITER
+#define YYJSON_DISABLE_FP_WRITER 0
+#endif
+#ifndef YYJSON_DISABLE_INF_AND_NAN_READER
+#define YYJSON_DISABLE_INF_AND_NAN_READER 0
+#endif
+#ifndef YYJSON_DISABLE_COMMENT_READER
+#define YYJSON_DISABLE_COMMENT_READER 0
 #endif
 
 
@@ -597,7 +630,7 @@ static_inline u64 byte_load_8(void *src) {
     return uni.u;
 }
 
-#if (__STDC__ >= 1 && __STDC_VERSION__ >= 199901L)
+#if YYJSON_STDC_VER >= 199901L
 
 #define v16_make(c1, c2) \
     ((v16){c1, c2})
@@ -879,7 +912,7 @@ static_inline void u128_mul_add(u64 a, u64 b, u64 c, u64 *hi, u64 *lo) {
  *============================================================================*/
 
 static_inline FILE *fopen_safe(const char *path, const char *mode) {
-#if _MSC_VER >= 1400
+#if YYJSON_MSC_VER >= 1400
     FILE *file = NULL;
     if (fopen_s(&file, path, mode) != 0) return NULL;
     return file;
@@ -889,7 +922,7 @@ static_inline FILE *fopen_safe(const char *path, const char *mode) {
 }
 
 static_inline usize fread_safe(void *buf, usize size, FILE *file) {
-#if _MSC_VER >= 1400
+#if YYJSON_MSC_VER >= 1400
     return fread_s(buf, size, 1, size, file);
 #else
     return fread(buf, 1, size, file);
@@ -2921,7 +2954,7 @@ static_inline bool read_number(u8 *cur,
             else goto digi_sepr_i;
          }
      */
-#if yyjson_is_real_gcc
+#if YYJSON_IS_REAL_GCC
 #define expr_intg(i) \
     if (likely((num = (u64)(cur[i] - (u8)'0')) <= 9)) sig = num + sig * 10; \
     else { __asm volatile("":"=m"(cur[i])::); goto digi_sepr_##i; }
@@ -2954,7 +2987,7 @@ static_inline bool read_number(u8 *cur,
     
     
     /* read fraction part */
-#if yyjson_is_real_gcc
+#if YYJSON_IS_REAL_GCC
 #define expr_frac(i) \
     digi_frac_##i: \
     if (likely((num = (u64)(cur[i + 1] - (u8)'0')) <= 9)) \
@@ -3718,7 +3751,7 @@ skip_ascii_end:
      This inline asm is a hint for gcc: "the memory has been modified,
      do not cache it".
      */
-#if yyjson_is_real_gcc
+#if YYJSON_IS_REAL_GCC
     __asm volatile("":"=m"(*src)::);
 #endif
     if (likely(*src == '"')) {
@@ -3831,7 +3864,7 @@ copy_ascii:
             *dst++ = *src++;
          });
      */
-#if yyjson_is_real_gcc
+#if YYJSON_IS_REAL_GCC
 #   define expr_jump(i) \
     if (likely(!(char_is_ascii_stop(src[i])))) {} \
     else { __asm volatile("":"=m"(src[i])::); goto copy_ascii_stop_##i; }
@@ -4573,7 +4606,7 @@ arr_begin:
     if (*cur == '\n') cur++;
     
 arr_val_begin:
-#if yyjson_is_real_gcc
+#if YYJSON_IS_REAL_GCC
     while (true) repeat16({
         if (byte_match_2(cur, "  ")) cur += 2;
         else break;
@@ -4707,7 +4740,7 @@ obj_begin:
     if (*cur == '\n') cur++;
     
 obj_key_begin:
-#if yyjson_is_real_gcc
+#if YYJSON_IS_REAL_GCC
     while (true) repeat16({
         if (byte_match_2(cur, "  ")) cur += 2;
         else break;
@@ -5703,7 +5736,7 @@ static_noinline u8 *write_f64_raw(u8 *buf, u64 raw, bool allow_nan_and_inf) {
 static_noinline u8 *write_f64_raw(u8 *buf, u64 raw, bool allow_nan_and_inf) {
     f64 val = f64_from_raw(raw);
     if (f64_isfinite(val)) {
-#if _MSC_VER >= 1400
+#if YYJSON_MSC_VER >= 1400
         int len = sprintf_s((char *)buf, 32, "%.17g", val);
 #else
         int len = sprintf((char *)buf, "%.17g", val);
