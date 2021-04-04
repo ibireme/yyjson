@@ -248,6 +248,7 @@ if(YYJSON_BUILD_TESTS)
                 -pedantic-errors
                 -Wmissing-prototypes
                 -Wstrict-prototypes
+                -Wdouble-promotion
                 -Wundef
             )
             target_compile_options(test_compile_c89 PRIVATE $<$<COMPILE_LANGUAGE:C>:${YYJSON_STRICT_C_FLAGS}>)

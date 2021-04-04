@@ -2992,7 +2992,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_with_float(
     yyjson_mut_doc *doc, float *vals, size_t count) {
     yyjson_mut_arr_with_func({
         val->tag = YYJSON_TYPE_NUM | YYJSON_SUBTYPE_REAL;
-        val->uni.f64 = vals[i];
+        val->uni.f64 = (double)vals[i];
     });
 }
 
