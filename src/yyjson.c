@@ -5072,7 +5072,7 @@ yyjson_doc *yyjson_read_file(const char *path,
 } while(false)
     
     yyjson_read_err dummy_err;
-    yyjson_alc alc;
+    yyjson_alc alc = alc_ptr ? *alc_ptr : YYJSON_DEFAULT_ALC;
     yyjson_doc *doc;
     
     FILE *file = NULL;
@@ -5083,7 +5083,6 @@ yyjson_doc *yyjson_read_file(const char *path,
     /* validate input parameters */
     if (!err) err = &dummy_err;
     if (unlikely(!path)) return_err(INVALID_PARAMETER, "input path is NULL");
-    alc = alc_ptr ? *alc_ptr : YYJSON_DEFAULT_ALC;
     
     /* open file */
     file = fopen_safe(path, "rb"
@@ -5137,7 +5136,7 @@ yyjson_doc *yyjson_read_file(const char *path,
             }
             tmp = ((u8 *)buf) + buf_size - YYJSON_PADDING_SIZE - chunk_now;
             read_size = fread_safe(tmp, chunk_now, file);
-            file_size += read_size;
+            file_size += (long)read_size;
             if (read_size != chunk_now) break;
             
             chunk_now *= 2;
@@ -5718,7 +5717,7 @@ static_noinline u8 *write_f64_raw(u8 *buf, u64 raw, bool allow_nan_and_inf) {
             buf--;
             exp_dec++;
         } while (*buf == '0');
-        exp_dec += buf - hdr - 2;
+        exp_dec += (i32)(buf - hdr - 2);
         buf += (*buf != '.');
         buf[0] = 'e';
         buf++;
