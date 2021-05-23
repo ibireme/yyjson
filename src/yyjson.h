@@ -355,6 +355,7 @@ extern "C" {
 #   pragma GCC diagnostic ignored "-Wunused-parameter"
 #elif defined(_MSC_VER)
 #   pragma warning(push)
+#   pragma warning(disable:4800) /* 'int': forcing value to 'true' or 'false' */
 #endif
 
 
