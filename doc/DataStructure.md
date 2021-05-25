@@ -1,6 +1,6 @@
 # Data Structure
 
-yyjson have 2 types of data structures: immutable and mutable.
+yyjson has 2 types of data structures: immutable and mutable.
 
 When reading a JSON, yyjson returns immutable document and values;<br/>
 When building a JSON, yyjson creates mutable document and values.<br/>
@@ -27,20 +27,19 @@ struct yyjson_val {
 ![yyjson_val](images/struct_ival.svg)
 
 The lower 8 bits of `tag` stores the type of value.<br/>
-The higher 56 bits of `tag` stores the size of value (such as object size, array size, string length).
+The higher 56 bits of `tag` stores the size of value (string length, object size or array size).
 
 Modern 64-bit processors are typically limited to supporting fewer than 64 bits for RAM addresses ([Wikipedia](https://en.wikipedia.org/wiki/RAM_limit)). For example, Intel64, AMD64 and ARMv8 has a 52-bit (4PB) physical address limit. So we can safely store type and size into a 64 bits `tag`.
 
 ## Immutable Document
-yyjson document stores all strings in a **contiguous** memory area.<br/> 
+A JSON document stores all strings in a **contiguous** memory area.<br/> 
 Each string is unescaped in-place and ended with a null-terminator.<br/>
 For example:
 
 ![yyjson_val](images/struct_idoc1.svg)
 
 
-
-yyjson document stores all values in another **contiguous** memory area.<br/>
+A JSON document stores all values in another **contiguous** memory area.<br/>
 The `object` and `array` stores their own memory usage, so we can easily walk through a container's child values.<br/>
 For example:
 
@@ -69,7 +68,7 @@ The `tag` and `uni` field is same as immutable value, the `next` field is used t
 
 
 ## Mutable Document
-A yyjson document is composed of multiple `yyjson_mut_val`.
+A mutable JSON document is composed of multiple `yyjson_mut_val`.
 
 The child values of an `object` or `array` are linked as a cycle,<br/>
 the parent hold the **tail** of the linked list, so yyjson can do `append`, `prepend` and `remove_first` in O(1) time.

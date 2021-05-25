@@ -1188,21 +1188,20 @@ yyjson_type yyjson_mut_get_type(yyjson_mut_val *val);
 See [data structure](https://github.com/ibireme/yyjson/blob/master/doc/DataStructure.md) for more details.
 
 # Null Safe
-yyjson's API is designed to be null safe, which means that public API will check for NULL input to avoid crashes.
+`yyjson`'s public API will do `null check` for every input parameters to avoid crashes.
 
 For example, when reading a JSON, you don't need to do null check or type check on each value:
 ```c
-yyjson_doc *doc = yyjson_read("", 0, 0); // doc is NULL
+yyjson_doc *doc = yyjson_read(NULL, 0, 0); // doc is NULL
 yyjson_val *val = yyjson_doc_get_root(doc); // val is NULL
 const char *str = yyjson_get_str(val); // str is NULL
 if (!str) printf("err!");
 yyjson_doc_free(doc); // do nothing
 ```
 
+But if you are sure that a value is non-null, and the type is matched, you can use the `unsafe` prefix API to avoid the null check.
 
-If you are sure that a value is non-null, and the type is matched, you can use the `unsafe` prefix API to avoid the null check, but be careful because it's `unsafe`.
-
-For example, when traversing an array or object, the value and key must be non-null:
+For example, when iterating over an array or object, the value and key must be non-null:
 ```c
 size_t idx, max;
 yyjson_val *key, *val;

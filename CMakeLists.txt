@@ -4,7 +4,7 @@ project(yyjson VERSION 0.1.0)
 
 # Compile Options, see yyjson.h for more explanation.
 option(YYJSON_DISABLE_READER "Disable JSON reader" OFF)
-option(YYJSON_DISABLE_WRITER "disable JSON writer" OFF)
+option(YYJSON_DISABLE_WRITER "Disable JSON writer" OFF)
 option(YYJSON_DISABLE_FP_READER "Disable custom floating-point number reader" OFF)
 option(YYJSON_DISABLE_FP_WRITER "Disable custom floating-point number writer" OFF)
 option(YYJSON_DISABLE_COMMENT_READER "Disable non-standard comment reader" OFF)

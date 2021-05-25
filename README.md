@@ -9,13 +9,18 @@ A high performance JSON library written in ANSI C.
 
 # Features
 - **Fast**: can read or write gigabytes per second JSON data on modern CPU.
-- **Portable**: compliant with ANSI C (C89).
-- **Standard**: compliant with [RFC 8259](https://tools.ietf.org/html/rfc8259) and [ECMA-404](https://www.ecma-international.org/publications/standards/Ecma-404.htm) standard.
+- **Portable**: compliance with ANSI C (C89).
+- **Standard**: strict compliance with  [RFC 8259](https://tools.ietf.org/html/rfc8259) and [ECMA-404](https://www.ecma-international.org/publications/standards/Ecma-404.htm) standard.
 - **Safe**: complete JSON form, number format and UTF-8 validation.
 - **Accuracy**: can read and write `int64`, `uint64` and `double` number accurately.
-- **No Limit**: support large data size, unlimited JSON level, `\u0000` string.
+- **No Limit**: support unlimited JSON level, `\u0000` string.
 - **Extendable**: options to allow comments, trailing commas, nan/inf, custom memory allocator.
 - **Developer Friendly**: only one `h` and one `c` file, easy to use API.
+
+# Limitations
+- An array or object is stored as some [data structure](https://github.com/ibireme/yyjson/blob/master/doc/DataStructure.md) like linked list, access elements with index or key is slower than iterator.
+- Duplicate keys are allowed in an object, and the order of the keys is preserved.
+- JSON parsing result is immutable, a `mutable copy` is required for modification.
 
 # Performance
 Benchmark project and dataset: [yyjson_benchmark](https://github.com/ibireme/yyjson_benchmark)
@@ -73,11 +78,11 @@ More benchmark reports with interactive charts (update 2020-12-12)
 
 ### Manually
 Just copy `yyjson.h` and `yyjson.c` to your project and start using it.
-Since yyjson is ANSI C compatible, no other configuration is needed typically.
+Since `yyjson` is ANSI C compatible, no other configuration is needed typically.
 
-We have tested `yyjson` with the following compilers: gcc, clang, msvc, icc, tcc. If you find a compile error, please report a bug.
+`yyjson` has been tested with the following compilers: `gcc`, `clang`, `msvc`, `icc`, `tcc`. If you find a compile error, please [report a bug](https://github.com/ibireme/yyjson/issues/new?template=bug_report.md).
 
-yyjson includes all features by default, but you can trim out some of them by adding compile flags to get higher performance and/or smaller binary. See [compile flags](https://github.com/ibireme/yyjson/blob/master/doc/Building.md#compile-flags) for details.
+`yyjson` includes all features by default, but you can trim out some of them by adding compile flags to get higher performance and/or smaller binary. See [compile flags](https://github.com/ibireme/yyjson/blob/master/doc/Building.md#compile-flags) for details.
 
 ### CMake
 Clone repository and create build directory:
@@ -101,8 +106,8 @@ ctest
 
 Supported CMake options:
 
-- `-DYYJSON_BUILD_TESTS=ON` Build all tests.
 - `-DBUILD_SHARED_LIBS=ON` Build shared library instead of static library.
+- `-DYYJSON_BUILD_TESTS=ON` Build all tests.
 - `-DYYJSON_ENABLE_COVERAGE=ON` Enable code coverage for tests.
 - `-DYYJSON_ENABLE_VALGRIND=ON` Enable valgrind memory checker for tests.
 - `-DYYJSON_ENABLE_SANITIZE=ON` Enable sanitizer for tests.

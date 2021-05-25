@@ -9,9 +9,9 @@
 
 ------
 # Import Manually
-`yyjson` aims to provide a cross-platform json library, so it was written in ANSI C (actually C99, but compatible with strict C89). You cay copy `yyjson.h` and `yyjson.c` to your project and start using it without any configuration.
+`yyjson` aims to provide a cross-platform JSON library, so it was written in ANSI C (actually C99, but compatible with strict C89). You can copy `yyjson.h` and `yyjson.c` to your project and start using it without any configuration.
 
-If you get compile error, please [report a bug](https://github.com/ibireme/yyjson/issues/new?assignees=&labels=&template=bug_report.md).
+If you get a compile error, please [report a bug](https://github.com/ibireme/yyjson/issues/new?template=bug_report.md).
 
 # Use CMake to build a library
 Clone repository and create build directory:
@@ -103,7 +103,7 @@ cmake .. -G Xcode -DYYJSON_BUILD_TESTS=ON
 
 ●**YYJSON_DISABLE_READER**<br/>
 Define it as 1 to disable the JSON reader.<br/>
-This may reduce binary size if you don't need read JSON.<br/>
+This flag can reduce binary size if you don't need to read JSON.<br/>
 These functions will be disabled by this flag:
 
 ```
@@ -114,7 +114,7 @@ yyjson_read()
 
 ●**YYJSON_DISABLE_WRITER**<br/>
 Define it as 1 to disable the JSON writer.<br/>
-This may reduce binary size if you don't need write JSON.<br/>
+This flag can reduce binary size if you don't need to write JSON.<br/>
 These functions will be disabled by this flag:
 
 ```
@@ -131,25 +131,25 @@ Define it as 1 to disable custom floating-point number reader.<br/>
 `yyjson` implements a high-performance floating-point number reader,<br/>
 but the fp reader may cost lots of binary size.<br/>
 
-This flag may disable the custom fp reader, and use libc's `strtod()` instead,<br/>
-so this flag may reduce binary size, but slow down floating-point reading speed.<br/>
+This flag will disable the custom fp reader, and use libc's `strtod()` instead,<br/>
+so this flag can reduce binary size, but slow down floating-point reading speed.<br/>
 
 ●**YYJSON_DISABLE_FP_WRITER**<br/>
 Define it as 1 to disable custom floating-point number writer.<br/>
 `yyjson` implements a high-performance floating-point number writer,<br/>
 but the fp writer may cost lots of binary size.<br/>
 
-This flag may disable the custom fp writer, and use libc's `sprintf()` instead,<br/>
-so this flag may reduce binary size, but slow down floating-point writing speed.<br/>
+This flag will disable the custom fp writer, and use libc's `sprintf()` instead,<br/>
+so this flag can reduce binary size, but slow down floating-point writing speed.<br/>
 
 ●**YYJSON_DISABLE_COMMENT_READER**<br/>
 Define it as 1 to disable non-standard comment support in JSON reader at compile time.<br/>
-This flag may reduce binary size, and increase reading speed slightly.<br/>
+This flag can reduce binary size, and increase reading speed slightly.<br/>
 This flag may also invalidate the `YYJSON_READ_ALLOW_TRAILING_COMMAS` option.
 
 ●**YYJSON_DISABLE_INF_AND_NAN_READER**<br/>
 Define it as 1 to disable non-standard inf and nan literal support in JSON reader at compile time.<br/>
-This flag may reduce binary size, and increase reading speed slightly.<br/>
+This flag can reduce binary size, and increase reading speed slightly.<br/>
 This flag may also invalidate the `YYJSON_READ_ALLOW_INF_AND_NAN` option.
 
 ●**YYJSON_EXPORTS**<br/>

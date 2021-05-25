@@ -1906,7 +1906,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_doc_get_pointer(
 
 
 /*==============================================================================
- * JSON Structure (Private)
+ * JSON Structure (Implementation)
  *============================================================================*/
 
 /* Payload of a JSON value (8 bytes). */
@@ -1942,7 +1942,7 @@ struct yyjson_doc {
 
 
 /*==============================================================================
- * Unsafe JSON Value API (Private)
+ * Unsafe JSON Value API (Implementation)
  *============================================================================*/
 
 yyjson_api_inline yyjson_type unsafe_yyjson_get_type(void *val) {
@@ -2085,7 +2085,7 @@ yyjson_api_inline bool unsafe_yyjson_equals_str(void *val, const char *str) {
 
 
 /*==============================================================================
- * JSON Document API (Private)
+ * JSON Document API (Implementation)
  *============================================================================*/
 
 yyjson_api_inline yyjson_val *yyjson_doc_get_root(yyjson_doc *doc) {
@@ -2111,7 +2111,7 @@ yyjson_api_inline void yyjson_doc_free(yyjson_doc *doc) {
 
 
 /*==============================================================================
- * JSON Value Type API (Private)
+ * JSON Value Type API (Implementation)
  *============================================================================*/
 
 yyjson_api_inline bool yyjson_is_null(yyjson_val *val) {
@@ -2169,7 +2169,7 @@ yyjson_api_inline bool yyjson_is_ctn(yyjson_val *val) {
 
 
 /*==============================================================================
- * JSON Value Content API (Private)
+ * JSON Value Content API (Implementation)
  *============================================================================*/
 
 yyjson_api_inline yyjson_type yyjson_get_type(yyjson_val *val) {
@@ -2245,7 +2245,7 @@ yyjson_api_inline bool yyjson_equals_strn(yyjson_val *val, const char *str,
 
 
 /*==============================================================================
- * JSON Array API (Private)
+ * JSON Array API (Implementation)
  *============================================================================*/
 
 yyjson_api_inline size_t yyjson_arr_size(yyjson_val *arr) {
@@ -2295,7 +2295,7 @@ yyjson_api_inline yyjson_val *yyjson_arr_get_last(yyjson_val *arr) {
 
 
 /*==============================================================================
- * JSON Array Iterator API (Private)
+ * JSON Array Iterator API (Implementation)
  *============================================================================*/
 
 struct yyjson_arr_iter {
@@ -2334,7 +2334,7 @@ yyjson_api_inline yyjson_val *yyjson_arr_iter_next(yyjson_arr_iter *iter) {
 
 
 /*==============================================================================
- * JSON Object API (Private)
+ * JSON Object API (Implementation)
  *============================================================================*/
 
 yyjson_api_inline size_t yyjson_obj_size(yyjson_val *obj) {
@@ -2366,7 +2366,7 @@ yyjson_api_inline yyjson_val *yyjson_obj_getn(yyjson_val *obj,
 
 
 /*==============================================================================
- * JSON Object Iterator API (Private)
+ * JSON Object Iterator API (Implementation)
  *============================================================================*/
 
 struct yyjson_obj_iter {
@@ -2409,7 +2409,7 @@ yyjson_api_inline yyjson_val *yyjson_obj_iter_get_val(yyjson_val *key) {
 
 
 /*==============================================================================
- * Mutable JSON Structure (Private)
+ * Mutable JSON Structure (Implementation)
  *============================================================================*/
 
 /*
@@ -2503,7 +2503,7 @@ yyjson_api_inline yyjson_mut_val *unsafe_yyjson_mut_val(yyjson_mut_doc *doc,
 
 
 /*==============================================================================
- * Mutable JSON Document API (Private)
+ * Mutable JSON Document API (Implementation)
  *============================================================================*/
 
 yyjson_api_inline yyjson_mut_val *yyjson_mut_doc_get_root(yyjson_mut_doc *doc) {
@@ -2518,7 +2518,7 @@ yyjson_api_inline void yyjson_mut_doc_set_root(yyjson_mut_doc *doc,
 
 
 /*==============================================================================
- * Mutable JSON Value Type API (Private)
+ * Mutable JSON Value Type API (Implementation)
  *============================================================================*/
 
 yyjson_api_inline bool yyjson_mut_is_null(yyjson_mut_val *val) {
@@ -2576,7 +2576,7 @@ yyjson_api_inline bool yyjson_mut_is_ctn(yyjson_mut_val *val) {
 
 
 /*==============================================================================
- * Mutable JSON Value Content API (Private)
+ * Mutable JSON Value Content API (Implementation)
  *============================================================================*/
 
 yyjson_api_inline yyjson_type yyjson_mut_get_type(yyjson_mut_val *val) {
@@ -2636,7 +2636,7 @@ yyjson_api_inline bool yyjson_mut_equals_strn(yyjson_mut_val *val,
 
 
 /*==============================================================================
- * Mutable JSON Value Creation API (Private)
+ * Mutable JSON Value Creation API (Implementation)
  *============================================================================*/
 
 yyjson_api_inline yyjson_mut_val *yyjson_mut_null(yyjson_mut_doc *doc) {
@@ -2772,7 +2772,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_strncpy(yyjson_mut_doc *doc,
 
 
 /*==============================================================================
- * Mutable JSON Array API (Private)
+ * Mutable JSON Array API (Implementation)
  *============================================================================*/
 
 yyjson_api_inline size_t yyjson_mut_arr_size(yyjson_mut_val *arr) {
@@ -2807,7 +2807,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_get_last(yyjson_mut_val *arr) {
 
 
 /*==============================================================================
- * Mutable JSON Array Iterator API (Private)
+ * Mutable JSON Array Iterator API (Implementation)
  *============================================================================*/
 
 struct yyjson_mut_arr_iter {
@@ -2869,7 +2869,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_iter_remove(
 
 
 /*==============================================================================
- * Mutable JSON Array Creation API (Private)
+ * Mutable JSON Array Creation API (Implementation)
  *============================================================================*/
 
 yyjson_api_inline yyjson_mut_val *yyjson_mut_arr(yyjson_mut_doc *doc) {
@@ -3056,7 +3056,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_with_strncpy(
 
 
 /*==============================================================================
- * Mutable JSON Array Modification API (Private)
+ * Mutable JSON Array Modification API (Implementation)
  *============================================================================*/
 
 
@@ -3254,7 +3254,7 @@ yyjson_api_inline bool yyjson_mut_arr_clear(yyjson_mut_val *arr) {
 
 
 /*==============================================================================
- * Mutable JSON Array Modification Convenience API (Private)
+ * Mutable JSON Array Modification Convenience API (Implementation)
  *============================================================================*/
 
 yyjson_api_inline bool yyjson_mut_arr_add_val(yyjson_mut_val *arr,
@@ -3394,7 +3394,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_add_obj(yyjson_mut_doc *doc,
 
 
 /*==============================================================================
- * Mutable JSON Object API (Private)
+ * Mutable JSON Object API (Implementation)
  *============================================================================*/
 
 
@@ -3426,7 +3426,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_obj_getn(yyjson_mut_val *obj,
 }
 
 /*==============================================================================
- * Mutable JSON Object Iterator API (Private)
+ * Mutable JSON Object Iterator API (Implementation)
  *============================================================================*/
 
 struct yyjson_mut_obj_iter {
@@ -3494,7 +3494,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_obj_iter_remove(
 
 
 /*==============================================================================
- * Mutable JSON Object Creation API (Private)
+ * Mutable JSON Object Creation API (Implementation)
  *============================================================================*/
 
 yyjson_api_inline yyjson_mut_val *yyjson_mut_obj(yyjson_mut_doc *doc) {
@@ -3574,7 +3574,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_obj_with_kv(yyjson_mut_doc *doc,
 
 
 /*==============================================================================
- * Mutable JSON Object Modification API (Private)
+ * Mutable JSON Object Modification API (Implementation)
  *============================================================================*/
 
 yyjson_api_inline void unsafe_yyjson_mut_obj_add(yyjson_mut_val *obj,
@@ -3667,7 +3667,7 @@ yyjson_api_inline bool yyjson_mut_obj_clear(yyjson_mut_val *obj) {
 
 
 /*==============================================================================
- * Mutable JSON Object Modification Convenience API (Private)
+ * Mutable JSON Object Modification Convenience API (Implementation)
  *============================================================================*/
 
 #define yyjson_mut_obj_add_func(func) \
@@ -3845,7 +3845,7 @@ yyjson_api_inline bool yyjson_mut_obj_remove_strn(yyjson_mut_val *obj,
 
 
 /*==============================================================================
- * JSON Pointer API (Private)
+ * JSON Pointer API (Implementation)
  *============================================================================*/
 
 yyjson_api yyjson_val *unsafe_yyjson_get_pointer(yyjson_val *val,
