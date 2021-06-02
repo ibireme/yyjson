@@ -1537,11 +1537,11 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_replace(yyjson_mut_val *arr,
 yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_remove(yyjson_mut_val *arr,
                                                         size_t idx);
 
-/** Returns and returns the first value in this array, returns NULL on error. */
+/** Removes and returns the first value in this array, returns NULL on error. */
 yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_remove_first(
                                                         yyjson_mut_val *arr);
 
-/** Returns and returns the last value in this array, returns NULL on error. */
+/** Removes and returns the last value in this array, returns NULL on error. */
 yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_remove_last(
                                                         yyjson_mut_val *arr);
 
