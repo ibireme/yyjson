@@ -1,7 +1,12 @@
+# Copyright (C) 2019 Yaoyuan <ibireme@gmail.com>.
+# Released under the MIT License:
+# https://github.com/ibireme/yyjson/blob/master/LICENSE
+
 cmake_minimum_required(VERSION 3.5)
-project(yyjson VERSION 0.1.0)
+project(yyjson VERSION 0.3.0)
 
 
+# ------------------------------------------------------------------------------
 # Compile Options, see yyjson.h for more explanation.
 option(YYJSON_DISABLE_READER "Disable JSON reader" OFF)
 option(YYJSON_DISABLE_WRITER "Disable JSON writer" OFF)
@@ -11,14 +16,16 @@ option(YYJSON_DISABLE_COMMENT_READER "Disable non-standard comment reader" OFF)
 option(YYJSON_DISABLE_INF_AND_NAN_READER "Disable non-standard inf and nan reader" OFF)
 
 
+# ------------------------------------------------------------------------------
 # Build Options
 option(YYJSON_BUILD_TESTS "Build all tests" OFF)
+option(YYJSON_BUILD_MISC "Build misc" OFF)
 option(YYJSON_ENABLE_COVERAGE "Enable code coverage for tests" OFF)
 option(YYJSON_ENABLE_VALGRIND "Enable valgrind memory checker for tests" OFF)
 option(YYJSON_ENABLE_SANITIZE "Enable sanitizer for tests" OFF)
-option(YYJSON_BUILD_MISC "Build misc" OFF)
 
 
+# ------------------------------------------------------------------------------
 # Build Type
 if(XCODE OR MSVC)
     set(CMAKE_CONFIGURATION_TYPES "Debug;Release" CACHE STRING "" FORCE)
@@ -29,11 +36,13 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 
 
+# ------------------------------------------------------------------------------
 # Library
 add_library(yyjson src/yyjson.h src/yyjson.c)
 target_include_directories(yyjson PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>)
 
 
+# ------------------------------------------------------------------------------
 # Compiler Flags
 if(YYJSON_DISABLE_READER)
     add_definitions(-DYYJSON_DISABLE_READER=1)
@@ -55,6 +64,7 @@ if(YYJSON_DISABLE_INF_AND_NAN_READER)
 endif()
 
 
+# ------------------------------------------------------------------------------
 # Project Config
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 include(XcodeProperty)
@@ -82,6 +92,7 @@ if(BUILD_SHARED_LIBS)
 endif()
 
 
+# ------------------------------------------------------------------------------
 # Install
 include(GNUInstallDirs)
 
@@ -98,6 +109,7 @@ install(EXPORT yyjson-targets
 install(FILES src/yyjson.h DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}")
 
 
+# ------------------------------------------------------------------------------
 # Testing
 if(YYJSON_BUILD_TESTS)
     enable_testing()
@@ -282,6 +294,7 @@ if(YYJSON_BUILD_TESTS)
 endif()
 
 
+# ------------------------------------------------------------------------------
 # Miscellaneous
 if(YYJSON_BUILD_MISC)
     # jsoninfo

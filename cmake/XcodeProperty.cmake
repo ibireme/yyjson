@@ -1,13 +1,27 @@
-# This module contains some macros for Xcode project
+# Copyright (C) 2019 Yaoyuan <ibireme@gmail.com>.
+# Released under the MIT License:
+# https://github.com/ibireme/yyjson/blob/master/LICENSE
+
+
+# This module contains some macros for Xcode project.
+# For example:
+# if(XCODE)
+#    set_default_xcode_property(yyjson)
+#    set_xcode_deployment_version(yyjson "10.11" "9.0" "9.0" "2.0")
+#    set_xcode_property(yyjson GCC_C_LANGUAGE_STANDARD "c89")
+#    set_xcode_property(yyjson CLANG_CXX_LANGUAGE_STANDARD "c++98")
+# endif()
 
 
 # Set Xcode property to target
+# For example: set_xcode_property(yyjson GCC_C_LANGUAGE_STANDARD "c89")
 macro(set_xcode_property TARGET XCODE_PROPERTY XCODE_VALUE)
     set_property(TARGET ${TARGET} PROPERTY XCODE_ATTRIBUTE_${XCODE_PROPERTY} ${XCODE_VALUE})
 endmacro(set_xcode_property)
 
 
 # Set default Xcode properties to target
+# For example: set_default_xcode_property(yyjson)
 macro(set_default_xcode_property TARGET)     
 
     # Standard   

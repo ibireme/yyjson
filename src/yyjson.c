@@ -679,6 +679,7 @@ static_inline v64 v64_make(char c1, char c2, char c3, char c4,
 
 /*==============================================================================
  * Number Utils
+ * These functions are used to detect and convert NaN and Inf numbers.
  *============================================================================*/
 
 /** Convert raw binary to double. */
@@ -752,6 +753,7 @@ static_inline bool f64_isnan(f64 f) {
 
 /*==============================================================================
  * Size Utils
+ * These functions are used for memory allocation.
  *============================================================================*/
 
 /** Returns whether the size is overflow after increment. */
@@ -797,6 +799,7 @@ static_inline void *mem_align_down(void *mem, usize align) {
 
 /*==============================================================================
  * Bits Utils
+ * These functions are used by the floating-point number reader and writer.
  *============================================================================*/
 
 /** Returns the number of leading 0-bits in value (input should not be 0). */
@@ -860,9 +863,9 @@ static_inline u32 u64_tz_bits(u64 v) {
 
 
 
-
 /*==============================================================================
  * 128-bit Integer Utils
+ * These functions are used by the floating-point number reader and writer.
  *============================================================================*/
 
 /** Multiplies two 64-bit unsigned integers (a * b),
@@ -909,7 +912,16 @@ static_inline void u128_mul_add(u64 a, u64 b, u64 c, u64 *hi, u64 *lo) {
 
 /*==============================================================================
  * File Utils
+ * These functions are used to read and write JSON files.
  *============================================================================*/
+
+#define YYJSON_FOPEN_EXT
+#if !defined(_MSC_VER) && defined(__GLIBC__) && defined(__GLIBC_PREREQ)
+#   if __GLIBC_PREREQ(2, 7)
+#       undef YYJSON_FOPEN_EXT
+#       define YYJSON_FOPEN_EXT "e" /* glibc extension to enable O_CLOEXEC */
+#   endif
+#endif
 
 static_inline FILE *fopen_safe(const char *path, const char *mode) {
 #if YYJSON_MSC_VER >= 1400
@@ -919,6 +931,14 @@ static_inline FILE *fopen_safe(const char *path, const char *mode) {
 #else
     return fopen(path, mode);
 #endif
+}
+
+static_inline FILE *fopen_readonly(const char *path) {
+    return fopen_safe(path, "rb" YYJSON_FOPEN_EXT);
+}
+
+static_inline FILE *fopen_writeonly(const char *path) {
+    return fopen_safe(path, "wb" YYJSON_FOPEN_EXT);
 }
 
 static_inline usize fread_safe(void *buf, usize size, FILE *file) {
@@ -933,8 +953,7 @@ static_inline usize fread_safe(void *buf, usize size, FILE *file) {
 
 /*==============================================================================
  * Default Memory Allocator
- *
- * This is a simple wrapper of libc.
+ * This is a simple libc memory allocator wrapper.
  *============================================================================*/
 
 static void *default_malloc(void *ctx, usize size) {
@@ -960,8 +979,9 @@ const yyjson_alc YYJSON_DEFAULT_ALC = {
 
 /*==============================================================================
  * Pool Memory Allocator
- *
  * This is a simple memory allocator that uses linked list memory chunk.
+ * The following code will be executed only when the library user creates
+ * this allocator manually.
  *============================================================================*/
 
 /** chunk header */
@@ -1474,6 +1494,7 @@ yyjson_api yyjson_mut_val *unsafe_yyjson_mut_get_pointer(yyjson_mut_val *val,
 
 /*==============================================================================
  * Power10 Lookup Table
+ * These data are used by the floating-point number reader and writer.
  *============================================================================*/
 
 #if (!YYJSON_DISABLE_READER && !YYJSON_DISABLE_FP_READER) || \
@@ -2378,6 +2399,7 @@ static_inline bool digi_is_digit_or_fp(u8 d) {
 
 /*==============================================================================
  * Hex Character Reader
+ * This function is used by JSON reader to read escaped characters.
  *============================================================================*/
 
 /**
@@ -2443,6 +2465,7 @@ static_inline bool read_hex_u16(const u8 *cur, u16 *val) {
 
 /*==============================================================================
  * JSON Reader Utils
+ * These functions are used by JSON reader to read literals and comments.
  *============================================================================*/
 
 /** Read 'true' literal, '*cur' should be 't'. */
@@ -2573,9 +2596,9 @@ static_noinline bool skip_spaces_and_comments(u8 *cur, u8 **end) {
 /*==============================================================================
  * BigInt For Floating Point Number Reader
  *
- * The bigint algorithm is used by floating-point number parser to get correctly
+ * The bigint algorithm is used by floating-point number reader to get correctly
  * rounded result for numbers with lots of digits. This part of code is rarely
- * used for normal JSON.
+ * used for normal numbers.
  *============================================================================*/
 
 /** Maximum exponent of exact pow10 */
@@ -3438,7 +3461,7 @@ digi_finish:
 
 /**
  Read a JSON number.
- This is a fallback function if the custom number parser is disabled.
+ This is a fallback function if the custom number reader is disabled.
  This function use libc's strtod() to read floating-point number.
  */
 static_noinline bool read_number(u8 *cur,
@@ -4125,7 +4148,7 @@ fail_garbage:
 #undef return_err
 }
 
-/** Read JSON document (optimized for minify). */
+/** Read JSON document (accept all style, but optimized for minify). */
 static_inline yyjson_doc *read_root_minify(u8 *hdr,
                                            u8 *cur,
                                            u8 *end,
@@ -4511,7 +4534,7 @@ fail_garbage:
 #undef return_err
 }
 
-/** Read JSON document (optimized for pretty). */
+/** Read JSON document (accept all style, but optimized for pretty). */
 static_inline yyjson_doc *read_root_pretty(u8 *hdr,
                                            u8 *cur,
                                            u8 *end,
@@ -4947,7 +4970,7 @@ fail_garbage:
 yyjson_doc *yyjson_read_opts(char *dat,
                              usize len,
                              yyjson_read_flag flg,
-                             yyjson_alc *alc_ptr,
+                             const yyjson_alc *alc_ptr,
                              yyjson_read_err *err) {
     
 #define has_flag(_flag) unlikely((flg & YYJSON_READ_##_flag) != 0)
@@ -4979,7 +5002,7 @@ yyjson_doc *yyjson_read_opts(char *dat,
         return_err(0, INVALID_PARAMETER, "input length is 0");
     }
     
-    /* add 4-byte zero padding for input data */
+    /* add 4-byte zero padding for input data if necessary */
     if (!has_flag(INSITU)) {
         if (unlikely(len >= USIZE_MAX - YYJSON_PADDING_SIZE)) {
             return_err(0, MEMORY_ALLOCATION, "memory allocation failed");
@@ -5036,6 +5059,7 @@ yyjson_doc *yyjson_read_opts(char *dat,
     if (likely(doc)) {
         memset(err, 0, sizeof(yyjson_read_err));
     } else {
+        /* RFC 8259: JSON text MUST be encoded using UTF-8 */
         if (err->pos == 0 && err->code != YYJSON_READ_ERROR_MEMORY_ALLOCATION) {
             if ((hdr[0] == 0xEF && hdr[1] == 0xBB && hdr[2] == 0xBF)) {
                 err->msg = "byte order mark (BOM) is not supported";
@@ -5059,7 +5083,7 @@ yyjson_doc *yyjson_read_opts(char *dat,
 
 yyjson_doc *yyjson_read_file(const char *path,
                              yyjson_read_flag flg,
-                             yyjson_alc *alc_ptr,
+                             const yyjson_alc *alc_ptr,
                              yyjson_read_err *err) {
     
 #define return_err(_code, _msg) do { \
@@ -5085,13 +5109,7 @@ yyjson_doc *yyjson_read_file(const char *path,
     if (unlikely(!path)) return_err(INVALID_PARAMETER, "input path is NULL");
     
     /* open file */
-    file = fopen_safe(path, "rb"
-#if !defined(_MSC_VER) && defined(__GLIBC__) && defined(__GLIBC_PREREQ)
-#   if __GLIBC_PREREQ(2, 7)
-                    "e" /* glibc extension to enable O_CLOEXEC */
-#   endif
-#endif
-                    );
+    file = fopen_readonly(path);
     if (file == NULL) return_err(FILE_OPEN, "file opening failed");
     
     /* get file size */
@@ -5401,7 +5419,8 @@ static_inline u8 *write_u64_len_1_to_17(u64 val, u8 *buf) {
 }
 
 /**
- Write an unsigned integer with a length of 16 to 17 with trailing zero trimmed.
+ Write an unsigned integer with a length of 15 to 17 with trailing zero trimmed.
+ For example, input 1234567890123000, output "1234567890123".
  */
 static_inline u8 *write_u64_len_15_to_17_trim(u8 *buf, u64 sig) {
     /* The decimal digits are named as abbccddeeffgghhii. */
@@ -5583,7 +5602,7 @@ static_inline void f64_bin_to_dec(u64 sig_raw, i32 exp_raw,
 }
 
 /** 
- Write a double number (require 32 bytes). 
+ Write a double number (requires 32 bytes buffer).
  
  We follows the ECMAScript specification to print floating point numbers, 
  but with the following changes:
@@ -5737,7 +5756,7 @@ static_noinline u8 *write_f64_raw(u8 *buf, u64 raw, bool allow_nan_and_inf) {
 
 #else /* FP_WRITER */
 
-/** Write a double number (require 32 bytes). */
+/** Write a double number (requires 32 bytes buffer). */
 static_noinline u8 *write_f64_raw(u8 *buf, u64 raw, bool allow_nan_and_inf) {
     f64 val = f64_from_raw(raw);
     if (f64_isfinite(val)) {
@@ -5769,7 +5788,7 @@ static_noinline u8 *write_f64_raw(u8 *buf, u64 raw, bool allow_nan_and_inf) {
 
 #endif /* FP_WRITER */
 
-/** Write a JSON number (require 32 bytes). */
+/** Write a JSON number (requires 32 bytes buffer). */
 static_inline u8 *write_number(u8 *cur, yyjson_val *val,
                                bool allow_nan_and_inf) {
     if (val->tag & YYJSON_SUBTYPE_REAL) {
@@ -6022,7 +6041,7 @@ static const u8 esc_single_char_table[512] = {
     ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '
 };
 
-/** Returns escape table with options. */
+/** Returns the escape table with options. */
 static_inline const char_esc_type *get_esc_table_with_flag(
     yyjson_read_flag flg) {
     if (unlikely(flg & YYJSON_WRITE_ESCAPE_UNICODE)) {
@@ -6041,7 +6060,7 @@ static_inline const char_esc_type *get_esc_table_with_flag(
 }
 
 /**
- Write UTF-8 string (require len * 6 + 2 bytes).
+ Write UTF-8 string (requires len * 6 + 2 bytes buffer).
  If the input string is not valid UTF-8 encoding, undefined behavior may occur.
  @param cur Buffer cursor.
  @param str A valid UTF-8 string with null-terminator.
@@ -6156,20 +6175,20 @@ copy_end:
  * Writer Utilities
  *============================================================================*/
 
-/** Write null (require 8 bytes). */
+/** Write null (requires 8 bytes buffer). */
 static_inline u8 *write_null(u8 *cur) {
     *(v64 *)cur = v64_make('n', 'u', 'l', 'l', ',', '\n', 0, 0);
     return cur + 4;
 }
 
-/** Write bool (require 8 bytes). */
+/** Write bool (requires 8 bytes buffer). */
 static_inline u8 *write_bool(u8 *cur, bool val) {
     *(v64 *)cur = val ? v64_make('t', 'r', 'u', 'e', ',', '\n', 0, 0) :
                         v64_make('f', 'a', 'l', 's', 'e', ',', '\n', 0);
     return cur + 5 - val;
 }
 
-/** Write indent (require level * 4 bytes). */
+/** Write indent (requires level * 4 bytes buffer). */
 static_inline u8 *write_indent(u8 *cur, usize level) {
     while (level --> 0) {
         *(v32 *)cur = v32_make(' ', ' ', ' ', ' ');
@@ -6189,13 +6208,7 @@ static bool write_dat_to_file(const char *path, u8 *dat, usize len,
     return false; \
 } while(false)
     
-    FILE *file = fopen_safe(path, "wb"
-#if !defined(_MSC_VER) && defined(__GLIBC__) && defined(__GLIBC_PREREQ)
-#   if __GLIBC_PREREQ(2, 7)
-                    "e" /* glibc extension to enable O_CLOEXEC */
-#   endif
-#endif
-                    );
+    FILE *file = fopen_writeonly(path);
     if (file == NULL) {
         return_err(FILE_OPEN, "file opening failed");
     }
@@ -6206,8 +6219,8 @@ static bool write_dat_to_file(const char *path, u8 *dat, usize len,
         file = NULL;
         return_err(FILE_WRITE, "file closing failed");
     }
-    
     return true;
+    
 #undef return_err
 }
 
@@ -6325,9 +6338,9 @@ fail_num:
 
 /** Write JSON document minify.
     The root of this document should be a non-empty container. */
-static_inline u8 *yyjson_write_minify(yyjson_doc *doc,
-                                      yyjson_write_flag flg,
-                                      yyjson_alc alc,
+static_inline u8 *yyjson_write_minify(const yyjson_doc *doc,
+                                      const yyjson_write_flag flg,
+                                      const yyjson_alc alc,
                                       usize *dat_len,
                                       yyjson_write_err *err) {
     
@@ -6485,9 +6498,9 @@ fail_num:
 
 /** Write JSON document pretty.
     The root of this document should be a non-empty container. */
-static_inline u8 *yyjson_write_pretty(yyjson_doc *doc,
-                                      yyjson_write_flag flg,
-                                      yyjson_alc alc,
+static_inline u8 *yyjson_write_pretty(const yyjson_doc *doc,
+                                      const yyjson_write_flag flg,
+                                      const yyjson_alc alc,
                                       usize *dat_len,
                                       yyjson_write_err *err) {
     
@@ -6666,9 +6679,9 @@ fail_num:
 #undef check_str_len
 }
 
-char *yyjson_write_opts(yyjson_doc *doc,
+char *yyjson_write_opts(const yyjson_doc *doc,
                         yyjson_write_flag flg,
-                        yyjson_alc *alc_ptr,
+                        const yyjson_alc *alc_ptr,
                         usize *dat_len,
                         yyjson_write_err *err) {
     
@@ -6698,9 +6711,9 @@ char *yyjson_write_opts(yyjson_doc *doc,
 }
 
 bool yyjson_write_file(const char *path,
-                       yyjson_doc *doc,
+                       const yyjson_doc *doc,
                        yyjson_write_flag flg,
-                       yyjson_alc *alc_ptr,
+                       const yyjson_alc *alc_ptr,
                        yyjson_write_err *err) {
     
 #define return_err(_code, _msg) do { \
@@ -6771,7 +6784,7 @@ static_inline u8 *yyjson_mut_write_single(yyjson_mut_val *val,
 
 /** Write JSON document minify.
     The root of this document should be a non-empty container. */
-static_inline u8 *yyjson_mut_write_minify(yyjson_mut_doc *doc,
+static_inline u8 *yyjson_mut_write_minify(const yyjson_mut_doc *doc,
                                           yyjson_write_flag flg,
                                           yyjson_alc alc,
                                           usize *dat_len,
@@ -6937,7 +6950,7 @@ fail_num:
 
 /** Write JSON document pretty.
     The root of this document should be a non-empty container. */
-static_inline u8 *yyjson_mut_write_pretty(yyjson_mut_doc *doc,
+static_inline u8 *yyjson_mut_write_pretty(const yyjson_mut_doc *doc,
                                           yyjson_write_flag flg,
                                           yyjson_alc alc,
                                           usize *dat_len,
@@ -7124,9 +7137,9 @@ fail_num:
 #undef check_str_len
 }
 
-char *yyjson_mut_write_opts(yyjson_mut_doc *doc,
+char *yyjson_mut_write_opts(const yyjson_mut_doc *doc,
                             yyjson_write_flag flg,
-                            yyjson_alc *alc_ptr,
+                            const yyjson_alc *alc_ptr,
                             usize *dat_len,
                             yyjson_write_err *err) {
     
@@ -7164,9 +7177,9 @@ char *yyjson_mut_write_opts(yyjson_mut_doc *doc,
 }
 
 bool yyjson_mut_write_file(const char *path,
-                           yyjson_mut_doc *doc,
+                           const yyjson_mut_doc *doc,
                            yyjson_write_flag flg,
-                           yyjson_alc *alc_ptr,
+                           const yyjson_alc *alc_ptr,
                            yyjson_write_err *err) {
     
 #define return_err(_code, _msg) do { \

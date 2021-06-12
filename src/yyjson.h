@@ -415,14 +415,14 @@ typedef struct yyjson_alc {
     void *(*realloc)(void *ctx, void *ptr, size_t size);
     /* Same as libc's free(), should not be NULL. */
     void (*free)(void *ctx, void *ptr);
-    /* A context for allocator, can be NULL. */
+    /* A context for malloc/realloc/free, can be NULL. */
     void *ctx;
 } yyjson_alc;
 
 /**
  A pool allocator uses fixed length pre-allocated memory.
  
- This allocator is used to avoid malloc()/memmove() calls.
+ This allocator may used to avoid malloc()/memmove() calls.
  The pre-allocated memory should be held by the caller. This is not
  a general-purpose allocator, and should only be used to read or write
  single JSON document.
@@ -538,7 +538,9 @@ typedef struct yyjson_read_err {
  
  @param dat The JSON data (UTF-8 without BOM).
             If you pass NULL, you will get NULL result.
-            The data will not be modified without the flag `YYJSON_READ_INSITU`.
+            The data will not be modified without the flag `YYJSON_READ_INSITU`,
+            so you can pass a (const char *) string and case it to (char *) iff
+            you don’t use the `YYJSON_READ_INSITU` flag.
  
  @param len The JSON data's length.
             If you pass 0, you will get NULL result.
@@ -559,7 +561,7 @@ typedef struct yyjson_read_err {
 yyjson_api yyjson_doc *yyjson_read_opts(char *dat,
                                         size_t len,
                                         yyjson_read_flag flg,
-                                        yyjson_alc *alc,
+                                        const yyjson_alc *alc,
                                         yyjson_read_err *err);
 
 /**
@@ -587,7 +589,7 @@ yyjson_api yyjson_doc *yyjson_read_opts(char *dat,
  */
 yyjson_api yyjson_doc *yyjson_read_file(const char *path,
                                         yyjson_read_flag flg,
-                                        yyjson_alc *alc,
+                                        const yyjson_alc *alc,
                                         yyjson_read_err *err);
 
 /**
@@ -742,9 +744,9 @@ typedef struct yyjson_write_err {
             You should use free() or alc->free() to release it
             when it's no longer needed.
  */
-yyjson_api char *yyjson_write_opts(yyjson_doc *doc,
+yyjson_api char *yyjson_write_opts(const yyjson_doc *doc,
                                    yyjson_write_flag flg,
-                                   yyjson_alc *alc,
+                                   const yyjson_alc *alc,
                                    size_t *len,
                                    yyjson_write_err *err);
 
@@ -774,9 +776,9 @@ yyjson_api char *yyjson_write_opts(yyjson_doc *doc,
  @return    true for success, false for error.
  */
 yyjson_api bool yyjson_write_file(const char *path,
-                                  yyjson_doc *doc,
+                                  const yyjson_doc *doc,
                                   yyjson_write_flag flg,
-                                  yyjson_alc *alc,
+                                  const yyjson_alc *alc,
                                   yyjson_write_err *err);
 
 /**
@@ -797,7 +799,7 @@ yyjson_api bool yyjson_write_file(const char *path,
             This string is encoded as UTF-8 with a null-terminator.
             You should use free() to release it when it's no longer needed.
  */
-yyjson_api_inline char *yyjson_write(yyjson_doc *doc,
+yyjson_api_inline char *yyjson_write(const yyjson_doc *doc,
                                      yyjson_write_flag flg,
                                      size_t *len) {
     return yyjson_write_opts(doc, flg, NULL, len, NULL);
@@ -832,9 +834,9 @@ yyjson_api_inline char *yyjson_write(yyjson_doc *doc,
             You should use free() or alc->free() to release it
             when it's no longer needed.
  */
-yyjson_api char *yyjson_mut_write_opts(yyjson_mut_doc *doc,
+yyjson_api char *yyjson_mut_write_opts(const yyjson_mut_doc *doc,
                                        yyjson_write_flag flg,
-                                       yyjson_alc *alc,
+                                       const yyjson_alc *alc,
                                        size_t *len,
                                        yyjson_write_err *err);
 
@@ -865,9 +867,9 @@ yyjson_api char *yyjson_mut_write_opts(yyjson_mut_doc *doc,
  @return    true for success, false for error.
  */
 yyjson_api bool yyjson_mut_write_file(const char *path,
-                                      yyjson_mut_doc *doc,
+                                      const yyjson_mut_doc *doc,
                                       yyjson_write_flag flg,
-                                      yyjson_alc *alc,
+                                      const yyjson_alc *alc,
                                       yyjson_write_err *err);
 
 /**
@@ -890,7 +892,7 @@ yyjson_api bool yyjson_mut_write_file(const char *path,
             You should use free() or alc->free() to release it
             when it's no longer needed.
  */
-yyjson_api_inline char *yyjson_mut_write(yyjson_mut_doc *doc,
+yyjson_api_inline char *yyjson_mut_write(const yyjson_mut_doc *doc,
                                          yyjson_write_flag flg,
                                          size_t *len) {
     return yyjson_mut_write_opts(doc, flg, NULL, len, NULL);
