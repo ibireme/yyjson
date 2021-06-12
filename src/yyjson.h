@@ -130,7 +130,7 @@
 #   define YYJSON_CPP_VER 0
 #endif
 
-/* compiler builtin check (clang) */
+/* compiler builtin check (since gcc 10.0, clang 2.6, icc 2021) */
 #ifndef yyjson_has_builtin
 #   ifdef __has_builtin
 #       define yyjson_has_builtin(x) __has_builtin(x)
@@ -139,7 +139,7 @@
 #   endif
 #endif
 
-/* compiler attribute check (gcc/clang) */
+/* compiler attribute check (since gcc 5.0, clang 2.9, icc 17) */
 #ifndef yyjson_has_attribute
 #   ifdef __has_attribute
 #       define yyjson_has_attribute(x) __has_attribute(x)
@@ -148,7 +148,7 @@
 #   endif
 #endif
 
-/* include check (gcc/clang) */
+/* include check (since gcc 5.0, clang 2.7, icc 16) */
 #ifndef yyjson_has_include
 #   ifdef __has_include
 #       define yyjson_has_include(x) __has_include(x)

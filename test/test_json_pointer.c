@@ -153,7 +153,25 @@ yy_test_case(test_json_pointer) {
     }
     
     {
-        // test escaped character
+        // test invalid input
+        const char *json = "[0,1,2]";
+        yyjson_doc *doc = yyjson_read(json, strlen(json), 0);
+        yyjson_mut_doc *mdoc = yyjson_doc_mut_copy(doc, NULL);
+        yy_assert(doc);
+        yy_assert(mdoc);
+        
+        yy_assert(yyjson_get_int(yyjson_doc_get_pointer(doc, "/1")) == 1);
+        yy_assert(yyjson_doc_get_pointer(doc, NULL) == NULL);
+        yy_assert(yyjson_doc_get_pointer(NULL, "/1") == NULL);
+        yy_assert(yyjson_doc_get_pointer(NULL, NULL) == NULL);
+        
+        yy_assert(yyjson_mut_get_int(yyjson_mut_doc_get_pointer(mdoc, "/1")) == 1);
+        yy_assert(yyjson_mut_doc_get_pointer(mdoc, NULL) == NULL);
+        yy_assert(yyjson_mut_doc_get_pointer(NULL, "/1") == NULL);
+        yy_assert(yyjson_mut_doc_get_pointer(NULL, NULL) == NULL);
+        
+        yyjson_doc_free(doc);
+        yyjson_mut_doc_free(mdoc);
     }
     
 #endif

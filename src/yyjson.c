@@ -612,21 +612,9 @@ static_inline bool byte_match_4(void *buf, const char *pat) {
 #endif
 }
 
-static_inline u16 byte_load_2(void *src) {
-    v16_uni uni;
-    uni.v = *(v16 *)src;
-    return uni.u;
-}
-
 static_inline u32 byte_load_4(void *src) {
     v32_uni uni;
     uni.v = *(v32 *)src;
-    return uni.u;
-}
-
-static_inline u64 byte_load_8(void *src) {
-    v64_uni uni;
-    uni.v = *(v64 *)src;
     return uni.u;
 }
 
@@ -5063,14 +5051,16 @@ yyjson_doc *yyjson_read_opts(char *dat,
         if (err->pos == 0 && err->code != YYJSON_READ_ERROR_MEMORY_ALLOCATION) {
             if ((hdr[0] == 0xEF && hdr[1] == 0xBB && hdr[2] == 0xBF)) {
                 err->msg = "byte order mark (BOM) is not supported";
-            } else if ((hdr[0] == 0xFE && hdr[1] == 0xFF) ||
-                       (hdr[0] == 0xFF && hdr[1] == 0xFE)) {
-                err->msg = "UTF-16 encoding is not supported";
-            } else if ((hdr[0] == 0x00 && hdr[1] == 0x00 &&
-                        hdr[2] == 0xFE && hdr[3] == 0xFF) ||
-                       (hdr[0] == 0xFF && hdr[1] == 0xFE &&
-                        hdr[2] == 0x00 && hdr[3] == 0x00)) {
+            } else if (len >= 4 &&
+                       ((hdr[0] == 0x00 && hdr[1] == 0x00 &&
+                         hdr[2] == 0xFE && hdr[3] == 0xFF) ||
+                        (hdr[0] == 0xFF && hdr[1] == 0xFE &&
+                         hdr[2] == 0x00 && hdr[3] == 0x00))) {
                 err->msg = "UTF-32 encoding is not supported";
+            } else if (len >= 2 &&
+                       ((hdr[0] == 0xFE && hdr[1] == 0xFF) ||
+                        (hdr[0] == 0xFF && hdr[1] == 0xFE))) {
+                err->msg = "UTF-16 encoding is not supported";
             }
         }
         if (!has_flag(INSITU) && hdr) alc.free(alc.ctx, (void *)hdr);

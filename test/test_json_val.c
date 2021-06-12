@@ -489,7 +489,7 @@ static void test_json_obj_api(void) {
     yyjson_obj_iter_init(obj, &iter);
     yy_assert(yyjson_obj_iter_has_next(&iter) == true);
     while ((key = yyjson_obj_iter_next(&iter))) {
-        val = key + 1;
+        val = yyjson_obj_iter_get_val(key);
         if (yyjson_equals_str(key, "a")) {
             yy_assert(yyjson_get_int(val) == 1);
             yy_assert(tmp[0] == 0);
