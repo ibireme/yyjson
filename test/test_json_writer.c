@@ -131,7 +131,6 @@ static void validate_json_write(yyjson_mut_doc *doc,
                                 yyjson_alc *alc,
                                 const char *min,
                                 const char *pre) {
-#if !YYJSON_DISABLE_WRITER
     yyjson_write_flag flg;
     bool has_nan_inf = mut_val_has_inf_nan(yyjson_mut_doc_get_root(doc));
     if (!pre) pre = min;
@@ -162,7 +161,6 @@ static void validate_json_write(yyjson_mut_doc *doc,
         for (int i = 1; i < 64; i++) small_alc.malloc(small_alc.ctx, i);
         validate_json_write(doc, &small_alc, NULL, NULL);
     }
-#endif
 }
 
 static void test_json_write(yyjson_alc *alc) {
@@ -570,6 +568,23 @@ yy_test_case(test_json_writer) {
     yyjson_mut_write_file(NULL, NULL, 0, NULL, NULL);
     yyjson_mut_write_file("", NULL, 0, NULL, NULL);
     yyjson_mut_write_file("tmp.json", NULL, 0, NULL, NULL);
+    
+    // test invalid immutable doc
+    yyjson_doc *doc = yyjson_read("[1]", 3, 0);
+    yy_assert(doc);
+    yyjson_val *arr = yyjson_doc_get_root(doc);
+    yy_assert(arr);
+    yyjson_val *one = yyjson_arr_get(arr, 0);
+    yy_assert(one);
+    one->tag = YYJSON_TYPE_NONE;
+    yy_assert(!yyjson_write(doc, 0, NULL));
+    yy_assert(!yyjson_write(doc, YYJSON_WRITE_PRETTY, NULL));
+    one->tag = YYJSON_TYPE_NUM | YYJSON_SUBTYPE_REAL;
+    one->uni.f64 = NAN;
+    yy_assert(!yyjson_write(doc, 0, NULL));
+    yy_assert(!yyjson_write(doc, YYJSON_WRITE_PRETTY, NULL));
+    yyjson_doc_free(doc);
+    
     
 #if !YYJSON_DISABLE_READER
     // test fail
