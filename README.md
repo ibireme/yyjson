@@ -172,7 +172,7 @@ yyjson_mut_doc_free(doc);
 ```c
 yyjson_read_err err;
 yyjson_read_flag flg = YYJSON_READ_ALLOW_COMMENTS | YYJSON_READ_ALLOW_TRAILING_COMMAS;
-yyjson_doc *doc = yyjson_read_file("/tmp/test.json", flg, NULL, &err);
+yyjson_doc *doc = yyjson_read_file("/tmp/config.json", flg, NULL, &err);
 
 if (doc) {
     yyjson_val *obj = yyjson_doc_get_root(doc);
@@ -191,7 +191,7 @@ if (doc) {
 
 ### Write JSON file with options
 ```c
-yyjson_mut_doc *doc = yyjson_mut_read_file("/tmp/test.json", 0, NULL, NULL);
+yyjson_mut_doc *doc = yyjson_mut_read_file("/tmp/config.json", 0, NULL, NULL);
 yyjson_mut_val *obj = yyjson_mut_doc_get_root(doc);
 
 yyjson_mut_obj_iter iter;
@@ -200,13 +200,13 @@ yyjson_mut_val *key, *val;
 while ((key = yyjson_mut_obj_iter_next(&iter))) {
     val = yyjson_mut_obj_iter_get_val(key);
     if (yyjson_mut_is_null(val)) {
-        yyjson_mut_obj_iter_remove(&iter);
+        yyjson_mut_obj_iter_remove(&iter); // remove null
     }
 }
 
 yyjson_write_err err;
 yyjson_write_flag flg = YYJSON_WRITE_PRETTY | YYJSON_WRITE_ESCAPE_UNICODE;
-yyjson_mut_write_file("/tmp/test.json", doc, flg, NULL, &err);
+yyjson_mut_write_file("/tmp/config.json", doc, flg, NULL, &err);
 if (err.code) {
     printf("write error: %d, message: %s\n", err.code, err.msg);
 }
