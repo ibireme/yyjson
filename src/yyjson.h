@@ -39,60 +39,61 @@
  * Compile Flags
  *============================================================================*/
 
-/* Define 1 to disable JSON reader.
+/* Define as 1 to disable JSON reader.
    This may reduce binary size if you don't need JSON reader */
 #ifndef YYJSON_DISABLE_READER
 #endif
 
-/* Define 1 to disable JSON writer.
+/* Define as 1 to disable JSON writer.
    This may reduce binary size if you don't need JSON writer */
 #ifndef YYJSON_DISABLE_WRITER
 #endif
 
-/* Define 1 to use libc's `strtod()` to read floating-point number
+/* Define as 1 to use libc's `strtod()` to read floating-point number
    instead of the custom floating-point number reader in yyjson.
    This may reduce binary size, but slow down floating-point reading speed. */
 #ifndef YYJSON_DISABLE_FP_READER
 #endif
 
-/* Define 1 to use libc's `sprintf()` to write floating-point number
+/* Define as 1 to use libc's `sprintf()` to write floating-point number
    instead of the custom floating-point number writer in yyjson.
-   This may reduce binary size, but slow down floating-point writing speed,. */
+   This may reduce binary size, but slow down floating-point writing speed. */
 #ifndef YYJSON_DISABLE_FP_WRITER
 #endif
 
-/* Define 1 to disable non-standard comment support in JSON reader.
+/* Define as 1 to disable non-standard comment support in JSON reader.
    This may reduce binary size, and increase reading speed slightly.
    This may also invalidate the YYJSON_READ_ALLOW_TRAILING_COMMAS option. */
 #ifndef YYJSON_DISABLE_COMMENT_READER
 #endif
 
-/* Define 1 to disable non-standard inf and nan literal support in JSON reader.
+/* Define as 1 to disable non-standard inf/nan literal support in JSON reader.
    This may reduce binary size, and increase reading speed slightly.
    This may also invalidate the YYJSON_READ_ALLOW_INF_AND_NAN option. */
 #ifndef YYJSON_DISABLE_INF_AND_NAN_READER
 #endif
 
-/* Define 1 to disable unaligned memory access if target architecture does not
-   support unaligned memory access (such as some embedded CPU architectures).
+/* Define as 1 to disable unaligned memory access if target architecture does 
+   not support unaligned memory access (such as some embedded processors).
    If this value is not defined, yyjson will perform some automatic detection.
-   Wrong definition of this flag may cause performance degradation. */
+   Wrong definition of this flag may cause performance degradation, but will not 
+   cause runtime errors. */
 #ifndef YYJSON_DISABLE_UNALIGNED_MEMORY_ACCESS
 #endif
 
-/* Define 1 to export symbols when build library as Windows DLL. */
+/* Define as 1 to export symbols when build library as Windows DLL. */
 #ifndef YYJSON_EXPORTS
 #endif
 
-/* Define 1 to import symbols when use library as Windows DLL. */
+/* Define as 1 to import symbols when use library as Windows DLL. */
 #ifndef YYJSON_IMPORTS
 #endif
 
-/* Define 1 to include <stdint.h> for compiler which doesn't support C99. */
+/* Define as 1 to include <stdint.h> for compiler which doesn't support C99. */
 #ifndef YYJSON_HAS_STDINT_H
 #endif
 
-/* Define 1 to include <stdbool.h> for compiler which doesn't support C99. */
+/* Define as 1 to include <stdbool.h> for compiler which doesn't support C99. */
 #ifndef YYJSON_HAS_STDBOOL_H
 #endif
 
