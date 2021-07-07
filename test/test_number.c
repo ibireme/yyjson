@@ -146,9 +146,6 @@ static void test_sint_write(const char *line, i64 num) {
 #endif
 }
 
-#if defined(__clang__) || defined(__GNUC__)
-__attribute__((no_sanitize("undefined")))
-#endif
 static void test_sint(const char *line, usize len) {
     i64 num = strtoll(line, NULL, 10);
     test_sint_read(line, len, num);
@@ -156,7 +153,7 @@ static void test_sint(const char *line, usize len) {
     char buf[32];
     snprintf(buf, 32, "%lld%c", num, '\0');
     test_sint_write(buf, num);
-    num = ~num + 1;
+    num = (i64)((u64)~num + 1); /* num = -num, avoid ubsan */
     snprintf(buf, 32, "%lld%c", num, '\0');
     test_sint_write(buf, num);
 }

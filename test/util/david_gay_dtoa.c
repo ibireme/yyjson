@@ -31,6 +31,14 @@
 #   pragma warning(disable:4334)
 #endif
 
+#if defined(__clang_major__) && __clang_major__ >= 4
+#   define attribute_no_ubsan __attribute__((no_sanitize("undefined")))
+#elif defined(__GNUC__) && __GNUC__ >= 5
+#   define attribute_no_ubsan __attribute__((no_sanitize_undefined))
+#else
+#   define attribute_no_ubsan
+#endif
+    
 
 /****************************************************************
  *
@@ -3259,10 +3267,9 @@ sulp(U *x, BCinfo *bc)
 
 #ifndef NO_STRTOD_BIGCOMP
     
-#if defined(__clang__) || defined(__GNUC__)
-    __attribute__((no_sanitize("undefined")))
-#endif
- static void
+/* not an error, undefined-behavior: (int) 1 << 31 */
+attribute_no_ubsan
+static void
 bigcomp(U *rv, const char *s0, BCinfo *bc MTd)
 {
 	Bigint *b, *d;
@@ -3466,10 +3473,8 @@ retlow1:
 #endif /* NO_STRTOD_BIGCOMP */
 
     
-#if defined(__clang__) || defined(__GNUC__)
-__attribute__((no_sanitize("undefined")))
-#endif
-
+/* not an error, undefined-behavior: signed integer overflow */
+attribute_no_ubsan
 double
 strtod_gay(const char *s00, char **se)
 {

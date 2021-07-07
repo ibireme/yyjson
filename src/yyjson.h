@@ -2887,7 +2887,8 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_arr(yyjson_mut_doc *doc) {
 }
 
 #define yyjson_mut_arr_with_func(func) \
-    if (yyjson_likely(doc && ((count > 0 && vals) || count == 0))) { \
+    if (yyjson_likely(doc && ((0 < count && count < \
+        (~(size_t)0) / sizeof(yyjson_mut_val) && vals) || count == 0))) { \
         yyjson_mut_val *arr = unsafe_yyjson_mut_val(doc, 1 + count); \
         if (yyjson_likely(arr)) { \
             arr->tag = ((uint64_t)count << YYJSON_TAG_BIT) | YYJSON_TYPE_ARR; \
@@ -2906,7 +2907,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_arr(yyjson_mut_doc *doc) {
     } \
     return NULL;
 
-yyjson_api_inline yyjson_mut_val * yyjson_mut_arr_with_bool(
+yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_with_bool(
     yyjson_mut_doc *doc, bool *vals, size_t count) {
     yyjson_mut_arr_with_func({
         val->tag = YYJSON_TYPE_BOOL | ((uint8_t)vals[i] << 3);
@@ -3834,7 +3835,7 @@ yyjson_api_inline bool yyjson_mut_obj_remove_strn(yyjson_mut_val *obj,
         yyjson_mut_val *key;
         yyjson_mut_obj_iter iter;
         yyjson_mut_obj_iter_init(obj, &iter);
-        while ((key = yyjson_mut_obj_iter_next(&iter))) {
+        while ((key = yyjson_mut_obj_iter_next(&iter)) != NULL) {
             if (unsafe_yyjson_get_len(key) == _len &&
                 memcmp(key->uni.str, _key, _len) == 0) {
                 yyjson_mut_obj_iter_remove(&iter);

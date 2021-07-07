@@ -32,6 +32,7 @@
 #   pragma warning(disable:4100) /* unreferenced formal parameter */
 #   pragma warning(disable:4102) /* unreferenced label */
 #   pragma warning(disable:4127) /* conditional expression is constant */
+#   pragma warning(disable:4706) /* assignment within conditional expression */
 #endif
 
 
@@ -618,16 +619,17 @@ static_inline u32 byte_load_4(void *src) {
     return uni.u;
 }
 
-#if YYJSON_STDC_VER >= 199901L
+/** Compound Literals, C99 only. */
+#if YYJSON_STDC_VER >= 199901L && !defined(__cplusplus)
 
 #define v16_make(c1, c2) \
-    ((v16){c1, c2})
+    ((v16){ c1, c2 })
 
 #define v32_make(c1, c2, c3, c4) \
-    ((v32){c1, c2, c3, c4})
+    ((v32){ c1, c2, c3, c4 })
 
 #define v64_make(c1, c2, c3, c4, c5, c6, c7, c8) \
-    ((v64){c1, c2, c3, c4, c5, c6, c7, c8})
+    ((v64){ c1, c2, c3, c4, c5, c6, c7, c8 })
 
 #else
 
@@ -5183,6 +5185,12 @@ yyjson_doc *yyjson_read_file(const char *path,
  * Although most compilers may convert the "division by constant value" into
  * "multiply and shift", manual conversion can still help some compilers
  * generate fewer and better instructions.
+ *
+ * Reference:
+ * Division by Invariant Integers using Multiplication, 1994.
+ * https://gmplib.org/~tege/divcnst-pldi94.pdf
+ * Improved division by invariant integers, 2011.
+ * https://gmplib.org/~tege/division-paper.pdf
  *============================================================================*/
 
 /** Digit table from 00 to 99. */
