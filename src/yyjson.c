@@ -2848,7 +2848,7 @@ static_inline u64 diy_fp_to_ieee_raw(diy_fp fp) {
     lz_bits = u64_lz_bits(sig);
     sig <<= lz_bits;
     sig >>= F64_BITS - F64_SIG_FULL_BITS;
-    exp -= lz_bits;
+    exp -= (i32)lz_bits;
     exp += F64_BITS - F64_SIG_FULL_BITS;
     exp += F64_SIG_BITS;
     
@@ -3267,7 +3267,7 @@ digi_finish:
         /* normalize and multiply */
         lz = u64_lz_bits(sig);
         sig1 = sig << lz;
-        exp2 -= lz;
+        exp2 -= (i32)lz;
         u128_mul(sig1, sig2, &hi, &lo);
         
         /*
@@ -3316,7 +3316,7 @@ digi_finish:
             /* normalize */
             lz = hi < ((u64)1 << 63);
             hi <<= lz;
-            exp2 -= lz;
+            exp2 -= (i32)lz;
             exp2 += 64;
             
             /* test the bit 54 and get rounding direction */
@@ -3375,7 +3375,7 @@ digi_finish:
         /* normalize */
         bits = u64_lz_bits(fp.sig);
         fp.sig <<= bits;
-        fp.exp -= bits;
+        fp.exp -= (i32)bits;
         fp_err <<= bits;
         
         /* multiply and add error */
@@ -3385,7 +3385,7 @@ digi_finish:
         /* normalize */
         bits = u64_lz_bits(fp.sig);
         fp.sig <<= bits;
-        fp.exp -= bits;
+        fp.exp -= (i32)bits;
         fp_err <<= bits;
         
         /* effective significand */
@@ -3404,15 +3404,15 @@ digi_finish:
             i32 shr = (precision_digits_count + ERR_ULP_LOG) - DIY_SIG_BITS + 1;
             fp.sig >>= shr;
             fp.exp += shr;
-            fp_err = (fp_err >> shr) + 1 + ERR_ULP;
+            fp_err = (fp_err >> shr) + 1 + (u32)ERR_ULP;
             precision_digits_count -= shr;
         }
         
         /* half way */
         precision_bits = fp.sig & (((u64)1 << precision_digits_count) - 1);
-        precision_bits *= ERR_ULP;
+        precision_bits *= (u32)ERR_ULP;
         half_way = (u64)1 << (precision_digits_count - 1);
-        half_way *= ERR_ULP;
+        half_way *= (u32)ERR_ULP;
         
         /* rounding */
         fp.sig >>= precision_digits_count;
@@ -3497,7 +3497,7 @@ static_noinline bool read_number(u8 *cur,
 } while(false)
     
 #define return_i64(_v) do { \
-    val->tag = YYJSON_TYPE_NUM | ((u8)sign << 3); \
+    val->tag = YYJSON_TYPE_NUM | (u64)((u8)sign << 3); \
     val->uni.u64 = (u64)(sign ? (u64)(~(_v) + 1) : (u64)(_v)); \
     *end = cur; return true; \
 } while(false)
