@@ -152,9 +152,9 @@
      gcc/icc -m32 -mfpmath=387
      msvc /arch:SSE or /arch:IA32
  
- If we are sure that there's no similar error described above, we can define the 
+ If we are sure that there's no similar error described above, we can define the
  YYJSON_DOUBLE_MATH_CORRECT as 1 to enable the fast path calculation. This is
- not an accurate detection, it's just try to avoid the error at compiler time. 
+ not an accurate detection, it's just try to avoid the error at compiler time.
  An accurate detection can be done at runtime:
  
      bool is_double_math_correct(void) {
@@ -2785,7 +2785,7 @@ static_noinline void bigint_set_buf(bigint *big, u64 sig, i32 *exp,
         big->bits[0] = sig;
         while (cur < sig_end) {
             if (likely(cur != dot_pos)) {
-                val = val * 10 + (*cur++ - '0');
+                val = val * 10 + (u8)(*cur++ - '0');
                 len++;
                 if (unlikely(cur == sig_end && dig_big_cut)) {
                     /* The last digit must be non-zero,    */
@@ -3059,7 +3059,7 @@ static_inline bool read_number(u8 *cur,
     
     
     /* read more digits in integral part */
-digi_intg_more: 
+digi_intg_more:
     if (digi_is_digit(*cur)) {
         if (!digi_is_digit_or_fp(cur[1])) {
             /* this number is an integer with 20 digits */
@@ -3089,7 +3089,7 @@ digi_intg_more:
     
     
     /* read more digits in fraction part */
-digi_frac_more: 
+digi_frac_more:
     sig_cut = cur; /* too large to fit in u64, excess digits need to be cut */
     sig += (*cur >= '5'); /* round */
     while (digi_is_digit(*++cur));
@@ -3119,7 +3119,7 @@ digi_frac_more:
     
     
     /* fraction part end */
-digi_frac_end: 
+digi_frac_end:
     if (unlikely(dot_pos + 1 == cur)) {
         return_err(cur - 1, "no digit after decimal point");
     }
@@ -3137,7 +3137,7 @@ digi_frac_end:
     
     
     /* read exponent part */
-digi_exp_more: 
+digi_exp_more:
     exp_sign = (*++cur == '-');
     cur += digi_is_sign(*cur);
     if (unlikely(!digi_is_digit(*cur))) {
@@ -3148,7 +3148,7 @@ digi_exp_more:
     /* read exponent literal */
     tmp = cur;
     while (digi_is_digit(*cur)) {
-        exp_lit = (i64)((*cur++ - '0') + (u64)exp_lit * 10);
+        exp_lit = (i64)((u8)(*cur++ - '0') + (u64)exp_lit * 10);
     }
     if (unlikely(cur - tmp >= U64_SAFE_DIG)) {
         if (exp_sign) {
@@ -3161,7 +3161,7 @@ digi_exp_more:
     
     
     /* validate exponent value */
-digi_exp_finish: 
+digi_exp_finish:
     if (unlikely(exp_sig < F64_MIN_DEC_EXP - 19)) {
         return_f64_raw(0); /* underflow */
     }
@@ -3172,7 +3172,7 @@ digi_exp_finish:
     
     
     /* all digit read finished */
-digi_finish: 
+digi_finish:
     
     /*
      Fast path 1:
@@ -5427,7 +5427,7 @@ static_inline u8 *write_u64_len_1_to_17(u64 val, u8 *buf) {
         low = (u32)(val - hgh * 100000000); /* (val % 100000000) */
         one = (u32)(hgh / 100000000);
         mid = (u32)(hgh - (u64)one * 100000000); /* (hgh % 100000000) */
-        *buf = (u8)one + (u8)'0';
+        *buf = (u8)((u8)one + (u8)'0');
         buf += one > 0;
         buf = write_u32_len_8(mid, buf);
         buf = write_u32_len_8(low, buf);
@@ -5531,7 +5531,7 @@ static_inline u8 *write_f64_exp(i32 exp, u8 *buf) {
     } else {
         u32 hi = ((u32)exp * 656) >> 16; /* exp / 100 */
         u32 lo = (u32)exp - hi * 100; /* exp % 100 */
-        buf[0] = (u8)hi + (u8)'0';
+        buf[0] = (u8)((u8)hi + (u8)'0');
         *(v16 *)&buf[1] = *(const v16 *)&digit_table[lo * 2];
         return buf + 3;
     }
@@ -5627,10 +5627,10 @@ static_inline void f64_bin_to_dec(u64 sig_raw, u32 exp_raw,
     *exp_dec = k;
 }
 
-/** 
+/**
  Write a double number (requires 32 bytes buffer).
  
- We follows the ECMAScript specification to print floating point numbers, 
+ We follows the ECMAScript specification to print floating point numbers,
  but with the following changes:
  1. Keep the negative sign of 0.0 to preserve input information.
  2. Keep decimal point to indicate the number is floating point.
@@ -5773,7 +5773,7 @@ static_noinline u8 *write_f64_raw(u8 *buf, u64 raw, bool allow_nan_and_inf) {
         exp_dec = -exp_dec;
         hi = ((u32)exp_dec * 656) >> 16; /* exp / 100 */
         lo = (u32)exp_dec - hi * 100; /* exp % 100 */
-        buf[0] = (u8)hi + (u8)'0';
+        buf[0] = (u8)((u8)hi + (u8)'0');
         *(v16 *)&buf[1] = *(const v16 *)&digit_table[lo * 2];
         buf += 3;
         return buf;
