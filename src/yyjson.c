@@ -3513,7 +3513,7 @@ static_noinline bool read_number(u8 *cur,
     bool sign = (*hdr == '-');
     
     cur += sign;
-    sig = *cur - '0';
+    sig = (u8)(*cur - '0');
     
     /* read first digit, check leading zero */
     if (unlikely(!digi_is_digit(*cur))) {
@@ -3542,7 +3542,7 @@ static_noinline bool read_number(u8 *cur,
     cur += 19;
     if (digi_is_digit(cur[0]) && !digi_is_digit_or_fp(cur[1])) {
         /* this number is an integer consisting of 20 digits */
-        num = *cur - '0';
+        num = (u8)(*cur - '0');
         if ((sig < (U64_MAX / 10)) ||
             (sig == (U64_MAX / 10) && num <= (U64_MAX % 10))) {
             sig = num + sig * 10;
