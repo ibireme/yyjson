@@ -688,7 +688,7 @@ static const yyjson_write_flag YYJSON_WRITE_NOFLAG              = 0 << 0;
 /** Write JSON pretty with 4 space indent. */
 static const yyjson_write_flag YYJSON_WRITE_PRETTY              = 1 << 0;
 
-/** Escape unicode as `\uXXXX`, make the output ASCII only. */
+/** Escape unicode as `uXXXX`, make the output ASCII only. */
 static const yyjson_write_flag YYJSON_WRITE_ESCAPE_UNICODE      = 1 << 1;
 
 /** Escape '/' as '\/'. */
@@ -1173,13 +1173,13 @@ yyjson_api void yyjson_mut_doc_free(yyjson_mut_doc *doc);
 
 /** Creates and returns a new mutable JSON document, returns NULL on error.
     If allocator is NULL, the default allocator will be used. */
-yyjson_api yyjson_mut_doc *yyjson_mut_doc_new(yyjson_alc *alc);
+yyjson_api yyjson_mut_doc *yyjson_mut_doc_new(const yyjson_alc *alc);
 
 /** Copies and returns a new mutable document from input, returns NULL on error.
     This makes a `deep-copy` on the immutable document.
     If allocator is NULL, the default allocator will be used. */
 yyjson_api yyjson_mut_doc *yyjson_doc_mut_copy(yyjson_doc *doc,
-                                               yyjson_alc *alc);
+                                               const yyjson_alc *alc);
 
 /** Copies and returns a new mutable value from input, returns NULL on error.
     This makes a `deep-copy` on the immutable value.
@@ -2072,7 +2072,7 @@ yyjson_api_inline yyjson_val *unsafe_yyjson_get_next(yyjson_val *val) {
     bool is_ctn = unsafe_yyjson_is_ctn(val);
     size_t ctn_ofs = val->uni.ofs;
     size_t ofs = (is_ctn ? ctn_ofs : sizeof(yyjson_val));
-    return (yyjson_val *)((uint8_t *)val + ofs);
+    return (yyjson_val *)(void *)((uint8_t *)val + ofs);
 }
 
 yyjson_api_inline bool unsafe_yyjson_equals_strn(void *val, const char *str,
@@ -2482,7 +2482,7 @@ yyjson_api_inline char *unsafe_yyjson_mut_strncpy(yyjson_mut_doc *doc,
     
     mem = pool->cur;
     pool->cur = mem + len + 1;
-    memcpy((void *)mem, (void *)str, len);
+    memcpy((void *)mem, (const void *)str, len);
     mem[len] = '\0';
     return mem;
 }
@@ -2680,7 +2680,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_bool(yyjson_mut_doc *doc,
     if (yyjson_likely(doc)) {
         yyjson_mut_val *val = unsafe_yyjson_mut_val(doc, 1);
         if (yyjson_likely(val)) {
-            val->tag = YYJSON_TYPE_BOOL | ((uint8_t)_val << 3);
+            val->tag = YYJSON_TYPE_BOOL | (uint8_t)((uint8_t)_val << 3);
             return val;
         }
     }
@@ -2910,7 +2910,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_arr(yyjson_mut_doc *doc) {
 yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_with_bool(
     yyjson_mut_doc *doc, bool *vals, size_t count) {
     yyjson_mut_arr_with_func({
-        val->tag = YYJSON_TYPE_BOOL | ((uint8_t)vals[i] << 3);
+        val->tag = YYJSON_TYPE_BOOL | (uint8_t)((uint8_t)vals[i] << 3);
     });
 }
 
@@ -3720,7 +3720,7 @@ yyjson_api_inline bool yyjson_mut_obj_add_bool(yyjson_mut_doc *doc,
                                                const char *_key,
                                                bool _val) {
     yyjson_mut_obj_add_func({
-        val->tag = YYJSON_TYPE_BOOL | (uint8_t)(_val) << 3;
+        val->tag = YYJSON_TYPE_BOOL | (uint8_t)((uint8_t)(_val) << 3);
     });
 }
 

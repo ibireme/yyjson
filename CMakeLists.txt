@@ -241,52 +241,56 @@ if(YYJSON_BUILD_TESTS)
 
     endif()
 
-    # Test strict C89/C++98 compatibility
-    add_executable(test_compile_c89 test/compile_ansi.c)
-    target_include_directories(test_compile_c89 PRIVATE src)
-    add_executable(test_compile_cxx98 test/compile_ansi.cpp)
-    target_include_directories(test_compile_cxx98 PRIVATE src)
-
+    # Test strict ANSI C/C++ compatibility
+    add_executable(test_compile_ansi_c test/compile_ansi.c)
+    target_include_directories(test_compile_ansi_c PRIVATE src)
+    add_executable(test_compile_ansi_cpp test/compile_ansi.cpp)
+    target_include_directories(test_compile_ansi_cpp PRIVATE src)
+    
     if(MSVC)
         # set warning level 4, treat warnings as errors
         set(YYJSON_STRICT_FLAGS /W4 /WX)
-        target_compile_options(test_compile_c89 PRIVATE $<$<COMPILE_LANGUAGE:C>:${YYJSON_STRICT_FLAGS}>)
-        target_compile_options(test_compile_cxx98 PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${YYJSON_STRICT_FLAGS}>)
+        target_compile_options(test_compile_ansi_c PRIVATE $<$<COMPILE_LANGUAGE:C>:${YYJSON_STRICT_FLAGS}>)
+        target_compile_options(test_compile_ansi_cpp PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${YYJSON_STRICT_FLAGS}>)
 
     elseif(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
 
         include(CheckCCompilerFlag)
-        check_c_compiler_flag("-std=c89" COMPILER_SUPPORTS_C89)
-        if(COMPILER_SUPPORTS_C89)
-            # check ANSI standard strictly, treat warnings as errors
+        check_c_compiler_flag("-ansi" COMPILER_SUPPORTS_ANSI_C)
+        if(COMPILER_SUPPORTS_ANSI_C)
+            # check ANSI C standard strictly, treat warnings as errors
             set(YYJSON_STRICT_C_FLAGS
-                -std=c89
-                -Wall
-                -Wextra
-                -Werror
+                -ansi
                 -pedantic
                 -pedantic-errors
+                -Werror
+                -Wall
+                -Wextra
                 -Wmissing-prototypes
                 -Wstrict-prototypes
                 -Wdouble-promotion
+                -Wconversion
                 -Wundef
             )
-            target_compile_options(test_compile_c89 PRIVATE $<$<COMPILE_LANGUAGE:C>:${YYJSON_STRICT_C_FLAGS}>)
+            target_compile_options(test_compile_ansi_c PRIVATE $<$<COMPILE_LANGUAGE:C>:${YYJSON_STRICT_C_FLAGS}>)
         endif()
 
         include(CheckCXXCompilerFlag)
-        check_cxx_compiler_flag("-std=c++98" COMPILER_SUPPORTS_CXX98)
-        if(COMPILER_SUPPORTS_CXX98)
-            # check ANSI standard strictly, treat warnings as errors
+        check_cxx_compiler_flag("-ansi" COMPILER_SUPPORTS_ANSI_CPP)
+        if(COMPILER_SUPPORTS_ANSI_CPP)
+            # check ANSI C++ standard strictly, treat warnings as errors
             set(YYJSON_STRICT_CXX_FLAGS
-                -std=c++98
-                -Wall
-                -Wextra
-                -Werror
+                -ansi
                 -pedantic
                 -pedantic-errors
+                -Werror
+                -Wall
+                -Wextra
+                -Wdouble-promotion
+                -Wconversion
+                -Wundef
             )
-            target_compile_options(test_compile_cxx98 PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${YYJSON_STRICT_CXX_FLAGS}>)
+            target_compile_options(test_compile_ansi_cpp PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${YYJSON_STRICT_CXX_FLAGS}>)
         endif()
 
     endif()
