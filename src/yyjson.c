@@ -5800,7 +5800,7 @@ static_noinline u8 *write_f64_raw(u8 *buf, u64 raw, yyjson_write_flag flg) {
             *(v32 *)&buf[0] = v32_make('n', 'u', 'l', 'l');
             return buf + 4;
         } else if (flg & YYJSON_WRITE_ALLOW_INF_AND_NAN) {
-            if (sig_raw == 0) {
+            if (f64_isinf(val)) {
                 buf[0] = '-';
                 buf += val < 0;
                 *(v32 *)&buf[0] = v32_make('I', 'n', 'f', 'i');
