@@ -374,11 +374,19 @@ Escape `/` as `\/`, for example:
 ```
 
 ●**YYJSON_WRITE_ALLOW_INF_AND_NAN**<br/>
-Write inf and nan number as 'Infinity' and 'NaN' literal.<br/>
+Write inf/nan number as `Infinity` and `NaN` literals.<br/>
 Note that this output is **NOT** standard JSON and may be rejected by other JSON libraries, for example:
 
 ```js
 {"not a number":NaN,"large number":Infinity}
+```
+
+●**YYJSON_WRITE_INF_AND_NAN_AS_NULL**<br/>
+Write inf/nan number as `null` literal.<br/>
+This flag will override `YYJSON_WRITE_ALLOW_INF_AND_NAN` flag, for example:
+
+```js
+{"not a number":null,"large number":null}
 ```
 
 ---------------
@@ -1058,13 +1066,15 @@ it will write numbers according to these rules by default:<br/>
 * Write positive integer without sign.
 * Write negative integer with a negative sign.
 * Write floating-point number with [ECMAScript format](https://www.ecma-international.org/ecma-262/11.0/index.html#sec-numeric-types-number-tostring), but with the following changes:
-    * If number is `NaN` or `Inf`, report an error.
+    * If number is `Infinity` or `NaN`, report an error.
     * Keep the negative sign of 0.0 to preserve input information.
     * Remove positive sign of exponent part.
 * Floating-point number writer should generate shortest correctly rounded decimal representation.
 
-You can use `YYJSON_WRITE_ALLOW_INF_AND_NAN` flag to write `inf` and `nan` number without error,
+You can use `YYJSON_WRITE_ALLOW_INF_AND_NAN` flag to write inf/nan number as `Infinity` and `NaN` literals without error,
 but this is not standard JSON, see [writer flag](#writer-flag) for details.
+
+You can also use `YYJSON_WRITE_INF_AND_NAN_AS_NULL` to write inf/nan number as `null` without error.
 
 ---------------
 # Memory Allocator

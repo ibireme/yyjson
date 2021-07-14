@@ -5636,7 +5636,7 @@ static_inline void f64_bin_to_dec(u64 sig_raw, u32 exp_raw,
  2. Keep decimal point to indicate the number is floating point.
  3. Remove positive sign of exponent part.
 */
-static_noinline u8 *write_f64_raw(u8 *buf, u64 raw, bool allow_nan_and_inf) {
+static_noinline u8 *write_f64_raw(u8 *buf, u64 raw, yyjson_write_flag flg) {
     u64 sig_bin, sig_dec, sig_raw;
     i32 exp_bin, exp_dec, sig_len, dot_pos, i, max;
     u32 exp_raw, hi, lo;
@@ -5650,7 +5650,10 @@ static_noinline u8 *write_f64_raw(u8 *buf, u64 raw, bool allow_nan_and_inf) {
     
     /* return inf and nan */
     if (unlikely(exp_raw == ((u32)1 << F64_EXP_BITS) - 1)) {
-        if (allow_nan_and_inf) {
+        if (flg & YYJSON_WRITE_INF_AND_NAN_AS_NULL) {
+            *(v32 *)&buf[0] = v32_make('n', 'u', 'l', 'l');
+            return buf + 4;
+        } else if (flg & YYJSON_WRITE_ALLOW_INF_AND_NAN) {
             if (sig_raw == 0) {
                 buf[0] = '-';
                 buf += sign;
@@ -5815,10 +5818,10 @@ static_noinline u8 *write_f64_raw(u8 *buf, u64 raw, bool allow_nan_and_inf) {
 
 /** Write a JSON number (requires 32 bytes buffer). */
 static_inline u8 *write_number(u8 *cur, yyjson_val *val,
-                               bool allow_nan_and_inf) {
+                               yyjson_write_flag flg) {
     if (val->tag & YYJSON_SUBTYPE_REAL) {
         u64 raw = val->uni.u64;
-        return write_f64_raw(cur, raw, allow_nan_and_inf);
+        return write_f64_raw(cur, raw, flg);
     } else {
         u64 pos = val->uni.u64;
         u64 neg = ~pos + 1;
@@ -6300,7 +6303,6 @@ static_inline u8 *yyjson_write_single(yyjson_val *val,
     u8 *hdr = NULL, *cur;
     usize str_len;
     const u8 *str_ptr;
-    bool allow_nan_and_inf = (flg & YYJSON_WRITE_ALLOW_INF_AND_NAN) > 0;
     const char_esc_type *esc_table = get_esc_table_with_flag(flg);
     
     switch (unsafe_yyjson_get_type(val)) {
@@ -6314,7 +6316,7 @@ static_inline u8 *yyjson_write_single(yyjson_val *val,
             
         case YYJSON_TYPE_NUM:
             incr_len(32);
-            cur = write_number(cur, val, allow_nan_and_inf);
+            cur = write_number(cur, val, flg);
             if (unlikely(!cur)) goto fail_num;
             break;
             
@@ -6409,7 +6411,6 @@ static_inline u8 *yyjson_write_minify(const yyjson_doc *doc,
     yyjson_write_ctx *ctx, *ctx_tmp;
     usize alc_len, alc_inc, ctx_len, ext_len, str_len;
     const u8 *str_ptr;
-    bool allow_nan_and_inf = (flg & YYJSON_WRITE_ALLOW_INF_AND_NAN) > 0;
     const char_esc_type *esc_table = get_esc_table_with_flag(flg);
     
     alc_len = doc->val_read * YYJSON_WRITER_ESTIMATED_MINIFY_RATIO + 64;
@@ -6443,7 +6444,7 @@ val_begin:
             
         case YYJSON_TYPE_NUM:
             incr_len(32);
-            cur = write_number(cur, val, allow_nan_and_inf);
+            cur = write_number(cur, val, flg);
             if (unlikely(!cur)) goto fail_num;
             *cur++ = ',';
             break;
@@ -6569,7 +6570,6 @@ static_inline u8 *yyjson_write_pretty(const yyjson_doc *doc,
     yyjson_write_ctx *ctx, *ctx_tmp;
     usize alc_len, alc_inc, ctx_len, ext_len, str_len, level;
     const u8 *str_ptr;
-    bool allow_nan_and_inf = (flg & YYJSON_WRITE_ALLOW_INF_AND_NAN) > 0;
     const char_esc_type *esc_table = get_esc_table_with_flag(flg);
     
     alc_len = doc->val_read * YYJSON_WRITER_ESTIMATED_PRETTY_RATIO + 64;
@@ -6610,7 +6610,7 @@ val_begin:
             no_indent = ((u8)ctn_obj & (u8)ctn_len);
             incr_len(32 + (no_indent ? 0 : level * 4));
             cur = write_indent(cur, no_indent ? 0 : level);
-            cur = write_number(cur, val, allow_nan_and_inf);
+            cur = write_number(cur, val, flg);
             if (unlikely(!cur)) goto fail_num;
             *cur++ = ',';
             *cur++ = '\n';
@@ -6855,7 +6855,6 @@ static_inline u8 *yyjson_mut_write_minify(const yyjson_mut_doc *doc,
     yyjson_mut_write_ctx *ctx, *ctx_tmp;
     usize alc_len, alc_inc, ctx_len, ext_len, str_len;
     const u8 *str_ptr;
-    bool allow_nan_and_inf = (flg & YYJSON_WRITE_ALLOW_INF_AND_NAN) > 0;
     const char_esc_type *esc_table = get_esc_table_with_flag(flg);
     
     alc_len = 0 * YYJSON_WRITER_ESTIMATED_MINIFY_RATIO + 64;
@@ -6891,7 +6890,7 @@ val_begin:
             
         case YYJSON_TYPE_NUM:
             incr_len(32);
-            cur = write_number(cur, (yyjson_val *)val, allow_nan_and_inf);
+            cur = write_number(cur, (yyjson_val *)val, flg);
             if (unlikely(!cur)) goto fail_num;
             *cur++ = ',';
             break;
@@ -7021,7 +7020,6 @@ static_inline u8 *yyjson_mut_write_pretty(const yyjson_mut_doc *doc,
     yyjson_mut_write_ctx *ctx, *ctx_tmp;
     usize alc_len, alc_inc, ctx_len, ext_len, str_len, level;
     const u8 *str_ptr;
-    bool allow_nan_and_inf = (flg & YYJSON_WRITE_ALLOW_INF_AND_NAN) > 0;
     const char_esc_type *esc_table = get_esc_table_with_flag(flg);
     
     alc_len = 0 * YYJSON_WRITER_ESTIMATED_PRETTY_RATIO + 64;
@@ -7064,7 +7062,7 @@ val_begin:
             no_indent = ((u8)ctn_obj & (u8)ctn_len);
             incr_len(32 + (no_indent ? 0 : level * 4));
             cur = write_indent(cur, no_indent ? 0 : level);
-            cur = write_number(cur, (yyjson_val *)val, allow_nan_and_inf);
+            cur = write_number(cur, (yyjson_val *)val, flg);
             if (unlikely(!cur)) goto fail_num;
             *cur++ = ',';
             *cur++ = '\n';

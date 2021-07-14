@@ -697,6 +697,10 @@ static const yyjson_write_flag YYJSON_WRITE_ESCAPE_SLASHES      = 1 << 2;
 /** Write inf and nan number as 'Infinity' and 'NaN' literal (non-standard). */
 static const yyjson_write_flag YYJSON_WRITE_ALLOW_INF_AND_NAN   = 1 << 3;
 
+/** Write inf and nan number as null literal.
+    This flag will override `YYJSON_WRITE_ALLOW_INF_AND_NAN` flag. */
+static const yyjson_write_flag YYJSON_WRITE_INF_AND_NAN_AS_NULL = 1 << 4;
+
 
 
 /** Result code for JSON writer */

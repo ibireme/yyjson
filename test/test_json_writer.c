@@ -127,15 +127,20 @@ static void validate_json_write_with_flag(yyjson_write_flag flg,
 #endif
 }
 
-static void validate_json_write(yyjson_mut_doc *doc,
-                                yyjson_alc *alc,
-                                const char *min,
-                                const char *pre) {
+// @param min Expected minify string
+// @param pre Expected pretty
+// @param min_null Expected minify string with flat NAN_INF_AS_NULL
+// @param pre_null Expected pretty string with flat NAN_INF_AS_NULL
+static void validate_json_write_ex(yyjson_mut_doc *doc,
+                                   yyjson_alc *alc,
+                                   const char *min,
+                                   const char *pre,
+                                   const char *min_null,
+                                   const char *pre_null) {
     yyjson_write_flag flg;
     bool has_nan_inf = mut_val_has_inf_nan(yyjson_mut_doc_get_root(doc));
-    if (!pre) pre = min;
     
-    // nan inf should fail without 'ALLOW_INF_AND_NAN' flag
+    // nan inf should fail without 'INF_AND_NAN' flag
     if (has_nan_inf) {
         flg = YYJSON_WRITE_NOFLAG;
         validate_json_write_with_flag(flg, doc, alc, NULL);
@@ -148,10 +153,28 @@ static void validate_json_write(yyjson_mut_doc *doc,
     if (has_nan_inf) flg |= YYJSON_WRITE_ALLOW_INF_AND_NAN;
     validate_json_write_with_flag(flg, doc, alc, min);
     
+    flg = YYJSON_WRITE_NOFLAG;
+    if (has_nan_inf) flg |= YYJSON_WRITE_INF_AND_NAN_AS_NULL;
+    validate_json_write_with_flag(flg, doc, alc, min_null);
+    
+    flg = YYJSON_WRITE_NOFLAG;
+    if (has_nan_inf) flg |= YYJSON_WRITE_ALLOW_INF_AND_NAN |
+                            YYJSON_WRITE_INF_AND_NAN_AS_NULL;
+    validate_json_write_with_flag(flg, doc, alc, min_null);
+    
     // pretty
     flg = YYJSON_WRITE_PRETTY;
     if (has_nan_inf) flg |= YYJSON_WRITE_ALLOW_INF_AND_NAN;
     validate_json_write_with_flag(flg, doc, alc, pre);
+    
+    flg = YYJSON_WRITE_PRETTY;
+    if (has_nan_inf) flg |= YYJSON_WRITE_INF_AND_NAN_AS_NULL;
+    validate_json_write_with_flag(flg, doc, alc, pre_null);
+    
+    flg = YYJSON_WRITE_PRETTY;
+    if (has_nan_inf) flg |= YYJSON_WRITE_ALLOW_INF_AND_NAN |
+                            YYJSON_WRITE_INF_AND_NAN_AS_NULL;
+    validate_json_write_with_flag(flg, doc, alc, pre_null);
     
     // use small allocator to test allocation failure
     if (min && pre && alc && strlen(min) > 8) {
@@ -159,8 +182,15 @@ static void validate_json_write(yyjson_mut_doc *doc,
         yyjson_alc small_alc;
         yyjson_alc_pool_init(&small_alc, buf, 8 * sizeof(void *));
         for (int i = 1; i < 64; i++) small_alc.malloc(small_alc.ctx, i);
-        validate_json_write(doc, &small_alc, NULL, NULL);
+        validate_json_write_ex(doc, &small_alc, NULL, NULL, NULL, NULL);
     }
+}
+
+static void validate_json_write(yyjson_mut_doc *doc,
+                                yyjson_alc *alc,
+                                const char *min,
+                                const char *pre) {
+    validate_json_write_ex(doc, alc, min, pre, min, pre);
 }
 
 static void test_json_write(yyjson_alc *alc) {
@@ -232,48 +262,52 @@ static void test_json_write(yyjson_alc *alc) {
 #if !YYJSON_DISABLE_INF_AND_NAN_READER
     root = yyjson_mut_real(doc, NAN);
     yyjson_mut_doc_set_root(doc, root);
-    validate_json_write(doc, alc, "NaN", NULL);
+    validate_json_write_ex(doc, alc,
+                           "NaN", "NaN",
+                           "null", "null");
     
     root = yyjson_mut_real(doc, -INFINITY);
     yyjson_mut_doc_set_root(doc, root);
-    validate_json_write(doc, alc, "-Infinity", NULL);
+    validate_json_write_ex(doc, alc,
+                           "-Infinity", "-Infinity",
+                           "null", "null");
 #endif
     
     root = yyjson_mut_null(doc);
     yyjson_mut_doc_set_root(doc, root);
-    validate_json_write(doc, alc, "null", NULL);
+    validate_json_write(doc, alc, "null", "null");
     
     root = yyjson_mut_true(doc);
     yyjson_mut_doc_set_root(doc, root);
-    validate_json_write(doc, alc, "true", NULL);
+    validate_json_write(doc, alc, "true", "true");
     
     root = yyjson_mut_false(doc);
     yyjson_mut_doc_set_root(doc, root);
-    validate_json_write(doc, alc, "false", NULL);
+    validate_json_write(doc, alc, "false", "false");
     
     root = yyjson_mut_uint(doc, 123);
     yyjson_mut_doc_set_root(doc, root);
-    validate_json_write(doc, alc, "123", NULL);
+    validate_json_write(doc, alc, "123", "123");
     
     root = yyjson_mut_sint(doc, -123);
     yyjson_mut_doc_set_root(doc, root);
-    validate_json_write(doc, alc, "-123", NULL);
+    validate_json_write(doc, alc, "-123", "-123");
     
     root = yyjson_mut_real(doc, -1.5);
     yyjson_mut_doc_set_root(doc, root);
-    validate_json_write(doc, alc, "-1.5", NULL);
+    validate_json_write(doc, alc, "-1.5", "-1.5");
     
     root = yyjson_mut_str(doc, "abc");
     yyjson_mut_doc_set_root(doc, root);
-    validate_json_write(doc, alc, "\"abc\"", NULL);
+    validate_json_write(doc, alc, "\"abc\"", "\"abc\"");
     
     root = yyjson_mut_arr(doc);
     yyjson_mut_doc_set_root(doc, root);
-    validate_json_write(doc, alc, "[]", NULL);
+    validate_json_write(doc, alc, "[]", "[]");
     
     root = yyjson_mut_obj(doc);
     yyjson_mut_doc_set_root(doc, root);
-    validate_json_write(doc, alc, "{}", NULL);
+    validate_json_write(doc, alc, "{}", "{}");
 
     
     // array
@@ -301,11 +335,15 @@ static void test_json_write(yyjson_alc *alc) {
     root = yyjson_mut_arr(doc);
     yyjson_mut_doc_set_root(doc, root);
     yyjson_mut_arr_add_real(doc, root, NAN);
-    validate_json_write(doc, alc,
-                        "[NaN]",
-                        "[\n"
-                        "    NaN\n"
-                        "]");
+    validate_json_write_ex(doc, alc,
+                           "[NaN]",
+                           "[\n"
+                           "    NaN\n"
+                           "]",
+                           "[null]",
+                           "[\n"
+                           "    null\n"
+                           "]");
 #endif
     
     root = yyjson_mut_arr(doc);
@@ -445,11 +483,15 @@ static void test_json_write(yyjson_alc *alc) {
     yy_assert(doc->root);
     yyjson_mut_obj_add_real(doc, root, "abc", NAN);
     yy_assert(doc->root);
-    validate_json_write(doc, alc,
-                        "{\"abc\":NaN}",
-                        "{\n"
-                        "    \"abc\": NaN\n"
-                        "}");
+    validate_json_write_ex(doc, alc,
+                           "{\"abc\":NaN}",
+                           "{\n"
+                           "    \"abc\": NaN\n"
+                           "}",
+                           "{\"abc\":null}",
+                           "{\n"
+                           "    \"abc\": null\n"
+                           "}");
 #endif
     
     root = yyjson_mut_obj(doc);
