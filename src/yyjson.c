@@ -1404,7 +1404,7 @@ static_inline bool pointer_read_str(const char *ptr, const char **end,
     dst += distance;
     ptr += 1;
     if (*ptr != '0' && *ptr != '1') return false;
-    *dst++ = (*ptr++ == '0' ? '~' : '/');
+    *dst++ = (char)(*ptr++ == '0' ? '~' : '/');
     while (true) {
         if (pointer_char_table[(u8)*ptr]) {
             *dst++ = *ptr++;
@@ -1416,7 +1416,7 @@ static_inline bool pointer_read_str(const char *ptr, const char **end,
         } else {
             ptr++;
             if (*ptr != '0' && *ptr != '1') return false;
-            *dst++ = (*ptr++ == '0' ? '~' : '/');
+            *dst++ = (char)(*ptr++ == '0' ? '~' : '/');
         }
     }
 }
@@ -2936,7 +2936,7 @@ static_inline bool read_number(u8 *cur,
     u64 sig = 0; /* significant part of the number */
     i32 exp = 0; /* exponent part of the number */
     
-    bool exp_sign = false; /* temporary exponent sign from literal part */
+    bool exp_sign; /* temporary exponent sign from literal part */
     i64 exp_sig = 0; /* temporary exponent number from significant part */
     i64 exp_lit = 0; /* temporary exponent number from exponent literal part */
     u64 num; /* temporary number for reading */
@@ -3242,7 +3242,7 @@ digi_finish:
          `lo2` + `unknown` may get a carry bit and may affect `hi2`, the max
          value of `hi2` is 0xFFFFFFFFFFFFFFFE, so `hi2` will not overflow.
          
-         `lo` + `hi2` may alse get a carry bit and may affect `hi`, but only
+         `lo` + `hi2` may also get a carry bit and may affect `hi`, but only
          the highest significant 53 bits of `hi` is needed. If there is a 0
          in the lower bits of `hi`, then all the following bits can be dropped.
          
@@ -4945,7 +4945,7 @@ doc_end:
 #if !YYJSON_DISABLE_COMMENT_READER
         if (has_flag(ALLOW_COMMENTS)) skip_spaces_and_comments(cur, &cur); else
 #endif
-        while(char_is_space(*cur)) cur++;
+        while (char_is_space(*cur)) cur++;
         if (unlikely(cur < end)) goto fail_garbage;
     }
     
@@ -5689,7 +5689,6 @@ static_noinline u8 *write_f64_raw(u8 *buf, u64 raw, bool allow_nan_and_inf) {
             if (u64_tz_bits(sig_bin) >= (u32)-exp_bin) {
                 /* number is integer in range 1 to 0x1FFFFFFFFFFFFF */
                 sig_dec = sig_bin >> -exp_bin;
-                exp_dec = 0;
                 buf = write_u64_len_1_to_16(sig_dec, buf);
                 *(v16 *)buf = v16_make('.', '0');
                 buf += 2;

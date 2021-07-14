@@ -1073,12 +1073,12 @@ yyjson_api_inline yyjson_val *yyjson_arr_iter_next(yyjson_arr_iter *iter);
      }
  */
 #define yyjson_arr_foreach(arr, idx, max, val) \
-    for (idx = 0, \
-        max = yyjson_arr_size(arr), \
-        val = yyjson_arr_get_first(arr); \
-        idx < max; \
-        idx++, \
-        val = unsafe_yyjson_get_next(val))
+    for ((idx) = 0, \
+        (max) = yyjson_arr_size(arr), \
+        (val) = yyjson_arr_get_first(arr); \
+        (idx) < (max); \
+        (idx)++, \
+        (val) = unsafe_yyjson_get_next(val))
 
 
 
@@ -1146,14 +1146,14 @@ yyjson_api_inline yyjson_val *yyjson_obj_iter_get_val(yyjson_val *key);
      }
  */
 #define yyjson_obj_foreach(obj, idx, max, key, val) \
-    for (idx = 0, \
-        max = yyjson_obj_size(obj), \
-        key = obj ? unsafe_yyjson_get_first(obj) : NULL, \
-        val = key + 1; \
-        idx < max; \
-        idx++, \
-        key = unsafe_yyjson_get_next(val), \
-        val = key + 1)
+    for ((idx) = 0, \
+        (max) = yyjson_obj_size(obj), \
+        (key) = (obj) ? unsafe_yyjson_get_first(obj) : NULL, \
+        (val) = (key) + 1; \
+        (idx) < (max); \
+        (idx)++, \
+        (key) = unsafe_yyjson_get_next(val), \
+        (val) = (key) + 1)
 
 
 
@@ -1418,12 +1418,12 @@ yyjson_mut_val *yyjson_mut_arr_iter_remove(yyjson_mut_arr_iter *iter);
  @warning You should not modify the array while enumerating through it.
  */
 #define yyjson_mut_arr_foreach(arr, idx, max, val) \
-    for (idx = 0, \
-        max = yyjson_mut_arr_size(arr), \
-        val = yyjson_mut_arr_get_first(arr); \
-        idx < max; \
-        idx++, \
-        val = val->next)
+    for ((idx) = 0, \
+        (max) = yyjson_mut_arr_size(arr), \
+        (val) = yyjson_mut_arr_get_first(arr); \
+        (idx) < (max); \
+        (idx)++, \
+        (val) = (val)->next)
 
 
 
@@ -1436,59 +1436,59 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_arr(yyjson_mut_doc *doc);
 
 /** Creates and returns a mutable array with bool. */
 yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_with_bool(
-    yyjson_mut_doc *doc, bool *vals, size_t count);
+    yyjson_mut_doc *doc, const bool *vals, size_t count);
 
 /** Creates and returns a mutable array with sint numbers. */
 yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_with_sint(
-    yyjson_mut_doc *doc, int64_t *vals, size_t count);
+    yyjson_mut_doc *doc, const int64_t *vals, size_t count);
 
 /** Creates and returns a mutable array with uint numbers. */
 yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_with_uint(
-    yyjson_mut_doc *doc, uint64_t *vals, size_t count);
+    yyjson_mut_doc *doc, const uint64_t *vals, size_t count);
 
 /** Creates and returns a mutable array with real numbers. */
 yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_with_real(
-    yyjson_mut_doc *doc, double *vals, size_t count);
+    yyjson_mut_doc *doc, const double *vals, size_t count);
 
 /** Creates and returns a mutable array with int8 numbers. */
 yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_with_sint8(
-    yyjson_mut_doc *doc, int8_t *vals, size_t count);
+    yyjson_mut_doc *doc, const int8_t *vals, size_t count);
 
 /** Creates and returns a mutable array with int16 numbers. */
 yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_with_sint16(
-    yyjson_mut_doc *doc, int16_t *vals, size_t count);
+    yyjson_mut_doc *doc, const int16_t *vals, size_t count);
 
 /** Creates and returns a mutable array with int32 numbers. */
 yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_with_sint32(
-    yyjson_mut_doc *doc, int32_t *vals, size_t count);
+    yyjson_mut_doc *doc, const int32_t *vals, size_t count);
 
 /** Creates and returns a mutable array with int64 numbers. */
 yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_with_sint64(
-    yyjson_mut_doc *doc, int64_t *vals, size_t count);
+    yyjson_mut_doc *doc, const int64_t *vals, size_t count);
 
 /** Creates and returns a mutable array with uint8 numbers. */
 yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_with_uint8(
-    yyjson_mut_doc *doc, uint8_t *vals, size_t count);
+    yyjson_mut_doc *doc, const uint8_t *vals, size_t count);
 
 /** Creates and returns a mutable array with uint16 numbers. */
 yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_with_uint16(
-    yyjson_mut_doc *doc, uint16_t *vals, size_t count);
+    yyjson_mut_doc *doc, const uint16_t *vals, size_t count);
 
 /** Creates and returns a mutable array with uint32 numbers. */
 yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_with_uint32(
-    yyjson_mut_doc *doc, uint32_t *vals, size_t count);
+    yyjson_mut_doc *doc, const uint32_t *vals, size_t count);
 
 /** Creates and returns a mutable array with uint64 numbers. */
 yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_with_uint64(
-    yyjson_mut_doc *doc, uint64_t *vals, size_t count);
+    yyjson_mut_doc *doc, const uint64_t *vals, size_t count);
 
 /** Creates and returns a mutable array with float numbers. */
 yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_with_float(
-    yyjson_mut_doc *doc, float *vals, size_t count);
+    yyjson_mut_doc *doc, const float *vals, size_t count);
 
 /** Creates and returns a mutable array with double numbers. */
 yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_with_double(
-    yyjson_mut_doc *doc, double *vals, size_t count);
+    yyjson_mut_doc *doc, const double *vals, size_t count);
 
 /** Creates and returns a mutable array with strings (no copy).
     The strings should be encoded as UTF-8 with null-terminator. */
@@ -1722,14 +1722,14 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_obj_iter_remove(
  @warning You should not modify the object while enumerating through it.
  */
 #define yyjson_mut_obj_foreach(obj, idx, max, key, val) \
-    for (idx = 0, \
-        max = yyjson_mut_obj_size(obj), \
-        key = max ? ((yyjson_mut_val *)obj->uni.ptr)->next->next : NULL, \
-        val = key ? key->next : NULL; \
-        idx < max; \
-        idx++, \
-        key = val->next, \
-        val = key->next)
+    for ((idx) = 0, \
+        (max) = yyjson_mut_obj_size(obj), \
+        (key) = (max) ? ((yyjson_mut_val *)(obj)->uni.ptr)->next->next : NULL, \
+        (val) = (key) ? (key)->next : NULL; \
+        (idx) < (max); \
+        (idx)++, \
+        (key) = (val)->next, \
+        (val) = (key)->next)
 
 
 
@@ -2905,40 +2905,40 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_arr(yyjson_mut_doc *doc) {
             return arr; \
         } \
     } \
-    return NULL;
+    return NULL
 
 yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_with_bool(
-    yyjson_mut_doc *doc, bool *vals, size_t count) {
+    yyjson_mut_doc *doc, const bool *vals, size_t count) {
     yyjson_mut_arr_with_func({
         val->tag = YYJSON_TYPE_BOOL | (uint8_t)((uint8_t)vals[i] << 3);
     });
 }
 
 yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_with_sint(
-    yyjson_mut_doc *doc, int64_t *vals, size_t count) {
+    yyjson_mut_doc *doc, const int64_t *vals, size_t count) {
     return yyjson_mut_arr_with_sint64(doc, vals, count);
 }
 
 yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_with_uint(
-    yyjson_mut_doc *doc, uint64_t *vals, size_t count) {
+    yyjson_mut_doc *doc, const uint64_t *vals, size_t count) {
     return yyjson_mut_arr_with_uint64(doc, vals, count);
 }
 
 yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_with_real(
-    yyjson_mut_doc *doc, double *vals, size_t count) {
+    yyjson_mut_doc *doc, const double *vals, size_t count) {
     return yyjson_mut_arr_with_double(doc, vals, count);
 }
 
 yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_with_sint8(
-    yyjson_mut_doc *doc, int8_t *vals, size_t count) {
+    yyjson_mut_doc *doc, const int8_t *vals, size_t count) {
     yyjson_mut_arr_with_func({
         val->tag = YYJSON_TYPE_NUM | YYJSON_SUBTYPE_SINT;
-        val->uni.i64 = vals[i];
+        val->uni.i64 = (int64_t)vals[i];
     });
 }
 
 yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_with_sint16(
-    yyjson_mut_doc *doc, int16_t *vals, size_t count) {
+    yyjson_mut_doc *doc, const int16_t *vals, size_t count) {
     yyjson_mut_arr_with_func({
         val->tag = YYJSON_TYPE_NUM | YYJSON_SUBTYPE_SINT;
         val->uni.i64 = vals[i];
@@ -2946,7 +2946,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_with_sint16(
 }
 
 yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_with_sint32(
-    yyjson_mut_doc *doc, int32_t *vals, size_t count) {
+    yyjson_mut_doc *doc, const int32_t *vals, size_t count) {
     yyjson_mut_arr_with_func({
         val->tag = YYJSON_TYPE_NUM | YYJSON_SUBTYPE_SINT;
         val->uni.i64 = vals[i];
@@ -2954,7 +2954,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_with_sint32(
 }
 
 yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_with_sint64(
-    yyjson_mut_doc *doc, int64_t *vals, size_t count) {
+    yyjson_mut_doc *doc, const int64_t *vals, size_t count) {
     yyjson_mut_arr_with_func({
         val->tag = YYJSON_TYPE_NUM | YYJSON_SUBTYPE_SINT;
         val->uni.i64 = vals[i];
@@ -2962,7 +2962,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_with_sint64(
 }
 
 yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_with_uint8(
-    yyjson_mut_doc *doc, uint8_t *vals, size_t count) {
+    yyjson_mut_doc *doc, const uint8_t *vals, size_t count) {
     yyjson_mut_arr_with_func({
         val->tag = YYJSON_TYPE_NUM | YYJSON_SUBTYPE_UINT;
         val->uni.u64 = vals[i];
@@ -2970,7 +2970,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_with_uint8(
 }
 
 yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_with_uint16(
-    yyjson_mut_doc *doc, uint16_t *vals, size_t count) {
+    yyjson_mut_doc *doc, const uint16_t *vals, size_t count) {
     yyjson_mut_arr_with_func({
         val->tag = YYJSON_TYPE_NUM | YYJSON_SUBTYPE_UINT;
         val->uni.u64 = vals[i];
@@ -2978,7 +2978,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_with_uint16(
 }
 
 yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_with_uint32(
-    yyjson_mut_doc *doc, uint32_t *vals, size_t count) {
+    yyjson_mut_doc *doc, const uint32_t *vals, size_t count) {
     yyjson_mut_arr_with_func({
         val->tag = YYJSON_TYPE_NUM | YYJSON_SUBTYPE_UINT;
         val->uni.u64 = vals[i];
@@ -2986,7 +2986,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_with_uint32(
 }
 
 yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_with_uint64(
-    yyjson_mut_doc *doc, uint64_t *vals, size_t count) {
+    yyjson_mut_doc *doc, const uint64_t *vals, size_t count) {
     yyjson_mut_arr_with_func({
         val->tag = YYJSON_TYPE_NUM | YYJSON_SUBTYPE_UINT;
         val->uni.u64 = vals[i];
@@ -2994,7 +2994,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_with_uint64(
 }
 
 yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_with_float(
-    yyjson_mut_doc *doc, float *vals, size_t count) {
+    yyjson_mut_doc *doc, const float *vals, size_t count) {
     yyjson_mut_arr_with_func({
         val->tag = YYJSON_TYPE_NUM | YYJSON_SUBTYPE_REAL;
         val->uni.f64 = (double)vals[i];
@@ -3002,7 +3002,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_with_float(
 }
 
 yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_with_double(
-    yyjson_mut_doc *doc, double *vals, size_t count) {
+    yyjson_mut_doc *doc, const double *vals, size_t count) {
     yyjson_mut_arr_with_func({
         val->tag = YYJSON_TYPE_NUM | YYJSON_SUBTYPE_REAL;
         val->uni.f64 = vals[i];
@@ -3689,7 +3689,7 @@ yyjson_api_inline bool yyjson_mut_obj_clear(yyjson_mut_val *obj) {
             return true; \
         } \
     } \
-    return false;
+    return false
 
 yyjson_api_inline bool yyjson_mut_obj_add_null(yyjson_mut_doc *doc,
                                                yyjson_mut_val *obj,

@@ -17,8 +17,18 @@ _deps
 *.gcda
 *.gcov
 
+# VSCode
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
 # JetBrains
 .idea
+
+# CLion
+cmake-build-*/
 
 # Xcode
 /xcode

@@ -64,7 +64,7 @@ void make_pow10_sig_table(void) {
         mpfr_pow_si(pow2, pow2, e2, MPFR_RNDN); // pow2 = 2^e2
         mpfr_div(div, pow10, pow2, MPFR_RNDN); // div = pow10 / pow2;
         if (mpfr_cmp(div, sigMin) < 0 || mpfr_cmp(div, sigMax) > 0) {
-            printf("err!\n"); // make sure the highest bit is 1 (nomalized)
+            printf("err!\n"); // make sure the highest bit is 1 (normalized)
         }
         
         mpfr_set_d(pow2, 2, MPFR_RNDN);
