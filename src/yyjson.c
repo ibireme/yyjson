@@ -5785,7 +5785,7 @@ static_noinline u8 *write_f64_raw(u8 *buf, u64 raw, yyjson_write_flag flg) {
 #else /* FP_WRITER */
 
 /** Write a double number (requires 32 bytes buffer). */
-static_noinline u8 *write_f64_raw(u8 *buf, u64 raw, bool allow_nan_and_inf) {
+static_noinline u8 *write_f64_raw(u8 *buf, u64 raw, yyjson_write_flag flg) {
     f64 val = f64_from_raw(raw);
     if (f64_isfinite(val)) {
 #if YYJSON_MSC_VER >= 1400
@@ -5796,8 +5796,11 @@ static_noinline u8 *write_f64_raw(u8 *buf, u64 raw, bool allow_nan_and_inf) {
         return buf + len;
     } else {
         /* nan or inf */
-        if (allow_nan_and_inf) {
-            if (f64_isinf(val)) {
+        if (flg & YYJSON_WRITE_INF_AND_NAN_AS_NULL) {
+            *(v32 *)&buf[0] = v32_make('n', 'u', 'l', 'l');
+            return buf + 4;
+        } else if (flg & YYJSON_WRITE_ALLOW_INF_AND_NAN) {
+            if (sig_raw == 0) {
                 buf[0] = '-';
                 buf += val < 0;
                 *(v32 *)&buf[0] = v32_make('I', 'n', 'f', 'i');
