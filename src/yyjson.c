@@ -7168,6 +7168,11 @@ char *yyjson_mut_write_opts(const yyjson_mut_doc *doc,
                             const yyjson_alc *alc_ptr,
                             usize *dat_len,
                             yyjson_write_err *err) {
+#define return_err(_code, _msg) do { \
+    err->msg = _msg; \
+    err->code = YYJSON_WRITE_ERROR_##_code; \
+    return NULL; \
+} while(false)
     
     yyjson_write_err dummy_err;
     usize dummy_dat_len;
@@ -7180,16 +7185,12 @@ char *yyjson_mut_write_opts(const yyjson_mut_doc *doc,
     
     if (unlikely(!doc)) {
         *dat_len = 0;
-        err->msg = "input JSON document is NULL";
-        err->code = YYJSON_READ_ERROR_INVALID_PARAMETER;
-        return NULL;
+        return_err(INVALID_PARAMETER, "input JSON document is NULL");
     }
     root = doc->root;
     if (!root) {
         *dat_len = 0;
-        err->msg = "input JSON document has no root value";
-        err->code = YYJSON_READ_ERROR_INVALID_PARAMETER;
-        return NULL;
+        return_err(INVALID_PARAMETER, "input JSON document has no root value");
     }
     
     if (!unsafe_yyjson_is_ctn(root) || unsafe_yyjson_get_len(root) == 0) {
@@ -7200,6 +7201,7 @@ char *yyjson_mut_write_opts(const yyjson_mut_doc *doc,
     } else {
         return (char *)yyjson_mut_write_minify(doc, flg, alc, dat_len, err);
     }
+#undef return_err
 }
 
 bool yyjson_mut_write_file(const char *path,

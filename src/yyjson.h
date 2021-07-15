@@ -503,19 +503,47 @@ static const yyjson_read_flag YYJSON_READ_ALLOW_INF_AND_NAN     = 1 << 4;
 
 /** Result code for JSON reader. */
 typedef uint32_t yyjson_read_code;
+
+/** Success, no error. */
 static const yyjson_read_code YYJSON_READ_SUCCESS                       = 0;
+
+/** Invalid parameter, such as NULL string or invalid file path. */
 static const yyjson_read_code YYJSON_READ_ERROR_INVALID_PARAMETER       = 1;
+
+/** Memory allocation failure occurs. */
 static const yyjson_read_code YYJSON_READ_ERROR_MEMORY_ALLOCATION       = 2;
+
+/** Input JSON string is empty. */
 static const yyjson_read_code YYJSON_READ_ERROR_EMPTY_CONTENT           = 3;
+
+/** Unexpected content after document, such as "[1],". */
 static const yyjson_read_code YYJSON_READ_ERROR_UNEXPECTED_CONTENT      = 4;
+
+/** Unexpected content at the end of the document. */
 static const yyjson_read_code YYJSON_READ_ERROR_UNEXPECTED_END          = 5;
+
+/** Unexpected character inside the document, such as "[@]". */
 static const yyjson_read_code YYJSON_READ_ERROR_UNEXPECTED_CHARACTER    = 6;
+
+/** Invalid JSON structure, such as "[1,]". */
 static const yyjson_read_code YYJSON_READ_ERROR_JSON_STRUCTURE          = 7;
+
+/** Invalid comment, such as unclosed multi-line comment. */
 static const yyjson_read_code YYJSON_READ_ERROR_INVALID_COMMENT         = 8;
+
+/** Invalid number, such as "123.e12", "000". */
 static const yyjson_read_code YYJSON_READ_ERROR_INVALID_NUMBER          = 9;
+
+/** Invalid string, such as invalid escaped character inside a string. */
 static const yyjson_read_code YYJSON_READ_ERROR_INVALID_STRING          = 10;
+
+/** Invalid JSON literal, such as "truu". */
 static const yyjson_read_code YYJSON_READ_ERROR_LITERAL                 = 11;
+
+/** Failed to open a file. */
 static const yyjson_read_code YYJSON_READ_ERROR_FILE_OPEN               = 12;
+
+/** Failed to read a file. */
 static const yyjson_read_code YYJSON_READ_ERROR_FILE_READ               = 13;
 
 /** Error information for JSON reader. */
@@ -653,7 +681,8 @@ yyjson_api_inline yyjson_doc *yyjson_read(const char *dat,
 yyjson_api_inline size_t yyjson_read_max_memory_usage(size_t len,
                                                       yyjson_read_flag flg) {
     /*
-     1. The max value count is (json_size / 2 + 1), for example: "[1,2,3,4]".
+     1. The max value count is (json_size / 2 + 1),
+        for example: "[1,2,3,4]" size is 9, value count is 5.
      2. Some broken JSON may cost more memory during reading, but fail at end,
         for example: "[[[[[[[[".
      3. yyjson use 16 bytes per value, see struct yyjson_val.
@@ -705,12 +734,26 @@ static const yyjson_write_flag YYJSON_WRITE_INF_AND_NAN_AS_NULL = 1 << 4;
 
 /** Result code for JSON writer */
 typedef uint32_t yyjson_write_code;
+
+/** Success, no error. */
 static const yyjson_write_code YYJSON_WRITE_SUCCESS                     = 0;
+
+/** Invalid parameter, such as NULL document. */
 static const yyjson_write_code YYJSON_WRITE_ERROR_INVALID_PARAMETER     = 1;
+
+/** Memory allocation failure occurs. */
 static const yyjson_write_code YYJSON_WRITE_ERROR_MEMORY_ALLOCATION     = 2;
+
+/** Invalid value type in JSON document. */
 static const yyjson_write_code YYJSON_WRITE_ERROR_INVALID_VALUE_TYPE    = 3;
+
+/** NaN or Infinity number occurs. */
 static const yyjson_write_code YYJSON_WRITE_ERROR_NAN_OR_INF            = 4;
+
+/** Failed to open a file. */
 static const yyjson_write_code YYJSON_WRITE_ERROR_FILE_OPEN             = 5;
+
+/** Failed to write a file. */
 static const yyjson_write_code YYJSON_WRITE_ERROR_FILE_WRITE            = 6;
 
 /** Error information for JSON writer. */
