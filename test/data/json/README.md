@@ -2,7 +2,7 @@
 
 
 ## test_parsing
-Source: https://github.com/nst/JSONTestSuite
+Source: <https://github.com/nst/JSONTestSuite>
 
 A comprehensive test suite for RFC 8259 compliant JSON parsers.
 The name of these files tell if their contents should be accepted or rejected.
@@ -13,7 +13,7 @@ The name of these files tell if their contents should be accepted or rejected.
 
 
 ## test_transform
-Source: https://github.com/nst/JSONTestSuite
+Source: <https://github.com/nst/JSONTestSuite>
 
 These files contain weird structures and characters that parsers may understand differently, eg:
 
@@ -24,20 +24,20 @@ These files contain weird structures and characters that parsers may understand 
 
 
 ## test_checker
-Source: http://www.json.org/JSON_checker/
+Source: <http://www.json.org/JSON_checker/>
 
 If the JSON_checker is working correctly, it must accept all of the pass\*.json files and reject all of the fail\*.json files. (fail01.json is excluded as it is relaxed in RFC7159. fail18.json is excluded as depth of JSON is not specified.)
 
 
 ## test_roundtrip
-Source: https://github.com/miloyip/nativejson-benchmark
+Source: <https://github.com/miloyip/nativejson-benchmark>
 
 27 condensed JSONs are parsed and stringified. The results are compared to the original JSONs.
 
 yyjson add more test case in this directory.
 
 ## test_encoding
-Source: https://github.com/miloyip/nativejson-benchmark
+Source: <https://github.com/miloyip/nativejson-benchmark>
 
 Same JSON encoded as UTF-8/UTF-16/UTF-32 with or without BOM. RFC 8259 only accept UTF-8 without BOM.
 
