@@ -36,9 +36,9 @@
     * [Stack memory allocator](#stack-memory-allocator)
     * [Use third-party allocator library](#use-third-party-allocator-library)
 * [Mutable and Immutable](#mutable-and-immutable)
-* [Null Safe](#null-safe)
+* [Null Check](#null-check)
 * [Thread Safe](#thread-safe)
-
+* [Locale Dependent](#locale-dependent)
 
 
 ---------------
@@ -222,6 +222,7 @@ Allow nan/inf number or literal  (case-insensitive), such as 1e999, NaN, Inf, -I
 }
 ```
 
+
 ---------------
 # Write JSON
 yyjson provides 3 methods for writing JSON,<br/>
@@ -388,6 +389,7 @@ This flag will override `YYJSON_WRITE_ALLOW_INF_AND_NAN` flag, for example:
 ```js
 {"not a number":null,"large number":null}
 ```
+
 
 ---------------
 # Access JSON Document
@@ -1042,6 +1044,7 @@ bool yyjson_mut_obj_remove_str(yyjson_mut_val *obj, const char *key);
 bool yyjson_mut_obj_remove_strn(yyjson_mut_val *obj, const char *key, size_t len);
 ```
 
+
 ---------------
 # Number Processing
 
@@ -1076,7 +1079,8 @@ but this is not standard JSON, see [writer flag](#writer-flag) for details.
 
 You can also use `YYJSON_WRITE_INF_AND_NAN_AS_NULL` to write inf/nan number as `null` without error.
 
----------------
+
+
 # Memory Allocator
 yyjson use libc's `malloc()`, `realloc()` and `free()` as default allocator, but yyjson allows you to customize the memory allocator to achieve better performance or lower memory usage.
 
@@ -1163,7 +1167,8 @@ alc->free(alc->ctx, json);
 
 ```
 
----------------
+
+
 # Mutable and Immutable
 yyjson have 2 types of data structures: immutable and mutable:
 
@@ -1197,7 +1202,9 @@ yyjson_type yyjson_mut_get_type(yyjson_mut_val *val);
 
 See [data structure](https://github.com/ibireme/yyjson/blob/master/doc/DataStructure.md) for more details.
 
-# Null Safe
+
+
+# Null Check
 `yyjson`'s public API will do `null check` for every input parameters to avoid crashes.
 
 For example, when reading a JSON, you don't need to do null check or type check on each value:
@@ -1225,8 +1232,17 @@ yyjson_obj_foreach(obj, idx, max, key, val) {
 }
 ```
 
+
+
 # Thread Safe
 yyjson does not use global variables, so if you can ensure that the input parameters of a function are thread-safe, then the function call is also thread-safe.<br/>
 
 `yyjson_doc` and `yyjson_val` is immutable and thread-safe,<br/>
 `yyjson_mut_doc` and `yyjson_mut_val` is mutable and not thread-safe.
+
+
+
+# Locale Dependent
+yyjson is locale-independent by default.
+
+If you build yyjson with `YYJSON_DISABLE_FP_READER` or `YYJSON_DISABLE_FP_WRITER` flag, yyjson will use `strtod` and `snprintf` to process floating-point numbers, and these two functions are locale-dependent.

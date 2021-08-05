@@ -501,6 +501,8 @@ typedef uint32_t    u32;
 typedef int64_t     i64;
 typedef uint64_t    u64;
 typedef size_t      usize;
+
+/** 128-bit integer, used by floating-point number reader and writer. */
 #if YYJSON_HAS_INT128
 __extension__ typedef __int128          i128;
 __extension__ typedef unsigned __int128 u128;
@@ -2615,7 +2617,7 @@ static_noinline bool skip_spaces_and_comments(u8 *cur, u8 **end) {
  *
  * The bigint algorithm is used by floating-point number reader to get correctly
  * rounded result for numbers with lots of digits. This part of code is rarely
- * used for normal numbers.
+ * used for common numbers.
  *============================================================================*/
 
 /** Maximum exponent of exact pow10 */
@@ -3791,6 +3793,8 @@ skip_ascii_end:
      These instructions are useless and will degrade performance.
      This inline asm is a hint for gcc: "the memory has been modified,
      do not cache it".
+     
+     MSVC, Clang, ICC can generate expected instructions without this hint.
      */
 #if YYJSON_IS_REAL_GCC
     __asm volatile("":"=m"(*src)::);
@@ -4053,7 +4057,7 @@ copy_utf8:
  * JSON Reader Implementation
  *
  * We use goto statements to build the finite state machine (FSM).
- * The FSM's state was hold by program counter (PC) and the 'goto' make the
+ * The FSM's state was held by program counter (PC) and the 'goto' make the
  * state transitions.
  *============================================================================*/
 
@@ -5247,14 +5251,13 @@ static const char digit_table[200] = {
 };
 
 static_inline u8 *write_u32_len_8(u32 val, u8 *buf) {
-    /* 8 digits: aabbccdd */
-    u32 aa, bb, cc, dd, aabb, ccdd;
-    aabb = (u32)(((u64)val * 109951163) >> 40); /* (val / 10000) */
-    ccdd = val - aabb * 10000; /* (val % 10000) */
-    aa = (aabb * 5243) >> 19; /* (aabb / 100) */
-    cc = (ccdd * 5243) >> 19; /* (ccdd / 100) */
-    bb = aabb - aa * 100; /* (aabb % 100) */
-    dd = ccdd - cc * 100; /* (ccdd % 100) */
+    u32 aa, bb, cc, dd, aabb, ccdd;                 /* 8 digits: aabbccdd */
+    aabb = (u32)(((u64)val * 109951163) >> 40);     /* (val / 10000) */
+    ccdd = val - aabb * 10000;                      /* (val % 10000) */
+    aa = (aabb * 5243) >> 19;                       /* (aabb / 100) */
+    cc = (ccdd * 5243) >> 19;                       /* (ccdd / 100) */
+    bb = aabb - aa * 100;                           /* (aabb % 100) */
+    dd = ccdd - cc * 100;                           /* (ccdd % 100) */
     ((v16 *)buf)[0] = ((const v16 *)digit_table)[aa];
     ((v16 *)buf)[1] = ((const v16 *)digit_table)[bb];
     ((v16 *)buf)[2] = ((const v16 *)digit_table)[cc];
@@ -5263,10 +5266,9 @@ static_inline u8 *write_u32_len_8(u32 val, u8 *buf) {
 }
 
 static_inline u8 *write_u32_len_4(u32 val, u8 *buf) {
-    /* 4 digits: aabb */
-    u32 aa, bb;
-    aa = (val * 5243) >> 19; /* (val / 100) */
-    bb = val - aa * 100; /* (val % 100) */
+    u32 aa, bb;                                     /* 4 digits: aabb */
+    aa = (val * 5243) >> 19;                        /* (val / 100) */
+    bb = val - aa * 100;                            /* (val % 100) */
     ((v16 *)buf)[0] = ((const v16 *)digit_table)[aa];
     ((v16 *)buf)[1] = ((const v16 *)digit_table)[bb];
     return buf + 4;
@@ -5275,41 +5277,41 @@ static_inline u8 *write_u32_len_4(u32 val, u8 *buf) {
 static_inline u8 *write_u32_len_1_8(u32 val, u8 *buf) {
     u32 aa, bb, cc, dd, aabb, bbcc, ccdd, lz;
     
-    if (val < 100) { /* 1-2 digits: aa */
-        lz = val < 10;
+    if (val < 100) {                                /* 1-2 digits: aa */
+        lz = val < 10;                              /* leading zero: 0 or 1 */
         ((v16 *)buf)[0] = *(const v16 *)&(digit_table[val * 2 + lz]);
         buf -= lz;
         return buf + 2;
         
-    } else if (val < 10000) { /* 3-4 digits: aabb */
-        aa = (val * 5243) >> 19; /* (val / 100) */
-        bb = val - aa * 100; /* (val % 100) */
-        lz = aa < 10;
+    } else if (val < 10000) {                       /* 3-4 digits: aabb */
+        aa = (val * 5243) >> 19;                    /* (val / 100) */
+        bb = val - aa * 100;                        /* (val % 100) */
+        lz = aa < 10;                               /* leading zero: 0 or 1 */
         ((v16 *)buf)[0] = *(const v16 *)&(digit_table[aa * 2 + lz]);
         buf -= lz;
         ((v16 *)buf)[1] = ((const v16 *)digit_table)[bb];
         return buf + 4;
         
-    } else if (val < 1000000) { /* 5-6 digits: aabbcc */
-        aa = (u32)(((u64)val * 429497) >> 32); /* (val / 10000) */
-        bbcc = val - aa * 10000; /* (val % 10000) */
-        bb = (bbcc * 5243) >> 19; /* (bbcc / 100) */
-        cc = bbcc - bb * 100; /* (bbcc % 100) */
-        lz = aa < 10;
+    } else if (val < 1000000) {                     /* 5-6 digits: aabbcc */
+        aa = (u32)(((u64)val * 429497) >> 32);      /* (val / 10000) */
+        bbcc = val - aa * 10000;                    /* (val % 10000) */
+        bb = (bbcc * 5243) >> 19;                   /* (bbcc / 100) */
+        cc = bbcc - bb * 100;                       /* (bbcc % 100) */
+        lz = aa < 10;                               /* leading zero: 0 or 1 */
         ((v16 *)buf)[0] = *(const v16 *)&(digit_table[aa * 2 + lz]);
         buf -= lz;
         ((v16 *)buf)[1] = ((const v16 *)digit_table)[bb];
         ((v16 *)buf)[2] = ((const v16 *)digit_table)[cc];
         return buf + 6;
         
-    } else { /* 7-8 digits: aabbccdd */
+    } else {                                        /* 7-8 digits: aabbccdd */
         aabb = (u32)(((u64)val * 109951163) >> 40); /* (val / 10000) */
-        ccdd = val - aabb * 10000; /* (val % 10000) */
-        aa = (aabb * 5243) >> 19; /* (aabb / 100) */
-        cc = (ccdd * 5243) >> 19; /* (ccdd / 100) */
-        bb = aabb - aa * 100; /* (aabb % 100) */
-        dd = ccdd - cc * 100; /* (ccdd % 100) */
-        lz = aa < 10;
+        ccdd = val - aabb * 10000;                  /* (val % 10000) */
+        aa = (aabb * 5243) >> 19;                   /* (aabb / 100) */
+        cc = (ccdd * 5243) >> 19;                   /* (ccdd / 100) */
+        bb = aabb - aa * 100;                       /* (aabb % 100) */
+        dd = ccdd - cc * 100;                       /* (ccdd % 100) */
+        lz = aa < 10;                               /* leading zero: 0 or 1 */
         ((v16 *)buf)[0] = *(const v16 *)&(digit_table[aa * 2 + lz]);
         buf -= lz;
         ((v16 *)buf)[1] = ((const v16 *)digit_table)[bb];
@@ -5322,27 +5324,26 @@ static_inline u8 *write_u32_len_1_8(u32 val, u8 *buf) {
 static_inline u8 *write_u64_len_5_8(u32 val, u8 *buf) {
     u32 aa, bb, cc, dd, aabb, bbcc, ccdd, lz;
     
-    if (val < 1000000) { /* 5-6 digits: aabbcc */
-        aa = (u32)(((u64)val * 429497) >> 32); /* (val / 10000) */
-        bbcc = val - aa * 10000; /* (val % 10000) */
-        bb = (bbcc * 5243) >> 19; /* (bbcc / 100) */
-        cc = bbcc - bb * 100; /* (bbcc % 100) */
-        lz = aa < 10;
+    if (val < 1000000) {                            /* 5-6 digits: aabbcc */
+        aa = (u32)(((u64)val * 429497) >> 32);      /* (val / 10000) */
+        bbcc = val - aa * 10000;                    /* (val % 10000) */
+        bb = (bbcc * 5243) >> 19;                   /* (bbcc / 100) */
+        cc = bbcc - bb * 100;                       /* (bbcc % 100) */
+        lz = aa < 10;                               /* leading zero: 0 or 1 */
         ((v16 *)buf)[0] = *(const v16 *)&(digit_table[aa * 2 + lz]);
         buf -= lz;
         ((v16 *)buf)[1] = ((const v16 *)digit_table)[bb];
         ((v16 *)buf)[2] = ((const v16 *)digit_table)[cc];
         return buf + 6;
         
-    } else { /* 7-8 digits: aabbccdd */
-        /* (val / 10000) */
-        aabb = (u32)(((u64)val * 109951163) >> 40);
-        ccdd = val - aabb * 10000; /* (val % 10000) */
-        aa = (aabb * 5243) >> 19; /* (aabb / 100) */
-        cc = (ccdd * 5243) >> 19; /* (ccdd / 100) */
-        bb = aabb - aa * 100; /* (aabb % 100) */
-        dd = ccdd - cc * 100; /* (ccdd % 100) */
-        lz = aa < 10;
+    } else {                                        /* 7-8 digits: aabbccdd */
+        aabb = (u32)(((u64)val * 109951163) >> 40); /* (val / 10000) */
+        ccdd = val - aabb * 10000;                  /* (val % 10000) */
+        aa = (aabb * 5243) >> 19;                   /* (aabb / 100) */
+        cc = (ccdd * 5243) >> 19;                   /* (ccdd / 100) */
+        bb = aabb - aa * 100;                       /* (aabb % 100) */
+        dd = ccdd - cc * 100;                       /* (ccdd % 100) */
+        lz = aa < 10;                               /* leading zero: 0 or 1 */
         ((v16 *)buf)[0] = *(const v16 *)&(digit_table[aa * 2 + lz]);
         buf -= lz;
         ((v16 *)buf)[1] = ((const v16 *)digit_table)[bb];
@@ -5356,22 +5357,22 @@ static_inline u8 *write_u64(u64 val, u8 *buf) {
     u64 tmp, hgh;
     u32 mid, low;
     
-    if (val < 100000000) { /* 1-8 digits */
+    if (val < 100000000) {                          /* 1-8 digits */
         buf = write_u32_len_1_8((u32)val, buf);
         return buf;
         
-    } else if (val < (u64)100000000 * 100000000) { /* 9-16 digits */
-        hgh = val / 100000000;
-        low = (u32)(val - hgh * 100000000); /* (val % 100000000) */
+    } else if (val < (u64)100000000 * 100000000) {  /* 9-16 digits */
+        hgh = val / 100000000;                      /* (val / 100000000) */
+        low = (u32)(val - hgh * 100000000);         /* (val % 100000000) */
         buf = write_u32_len_1_8((u32)hgh, buf);
         buf = write_u32_len_8(low, buf);
         return buf;
         
-    } else { /* 17-20 digits */
-        tmp = val / 100000000;
-        low = (u32)(val - tmp * 100000000); /* (val % 100000000) */
-        hgh = (u32)(tmp / 10000);
-        mid = (u32)(tmp - hgh * 10000); /* (tmp % 10000) */
+    } else {                                        /* 17-20 digits */
+        tmp = val / 100000000;                      /* (val / 100000000) */
+        low = (u32)(val - tmp * 100000000);         /* (val % 100000000) */
+        hgh = (u32)(tmp / 10000);                   /* (tmp / 10000) */
+        mid = (u32)(tmp - hgh * 10000);             /* (tmp % 10000) */
         buf = write_u64_len_5_8((u32)hgh, buf);
         buf = write_u32_len_4(mid, buf);
         buf = write_u32_len_8(low, buf);
@@ -5406,12 +5407,12 @@ static const u8 dec_trailing_zero_table[] = {
 static_inline u8 *write_u64_len_1_to_16(u64 val, u8 *buf) {
     u64 hgh;
     u32 low;
-    if (val < 100000000) { /* 1-8 digits */
+    if (val < 100000000) {                          /* 1-8 digits */
         buf = write_u32_len_1_8((u32)val, buf);
         return buf;
-    } else { /* 9-16 digits */
-        hgh = val / 100000000;
-        low = (u32)(val - hgh * 100000000); /* (val % 100000000) */
+    } else {                                        /* 9-16 digits */
+        hgh = val / 100000000;                      /* (val / 100000000) */
+        low = (u32)(val - hgh * 100000000);         /* (val % 100000000) */
         buf = write_u32_len_1_8((u32)hgh, buf);
         buf = write_u32_len_8(low, buf);
         return buf;
@@ -5422,19 +5423,19 @@ static_inline u8 *write_u64_len_1_to_16(u64 val, u8 *buf) {
 static_inline u8 *write_u64_len_1_to_17(u64 val, u8 *buf) {
     u64 hgh;
     u32 mid, low, one;
-    if (val >= (u64)100000000 * 10000000) { /* len: 16 to 17 */
-        hgh = val / 100000000;
-        low = (u32)(val - hgh * 100000000); /* (val % 100000000) */
-        one = (u32)(hgh / 100000000);
-        mid = (u32)(hgh - (u64)one * 100000000); /* (hgh % 100000000) */
+    if (val >= (u64)100000000 * 10000000) {         /* len: 16 to 17 */
+        hgh = val / 100000000;                      /* (val / 100000000) */
+        low = (u32)(val - hgh * 100000000);         /* (val % 100000000) */
+        one = (u32)(hgh / 100000000);               /* (hgh / 100000000) */
+        mid = (u32)(hgh - (u64)one * 100000000);    /* (hgh % 100000000) */
         *buf = (u8)((u8)one + (u8)'0');
         buf += one > 0;
         buf = write_u32_len_8(mid, buf);
         buf = write_u32_len_8(low, buf);
         return buf;
-    } else if (val >= (u64)100000000){ /* len: 9 to 15 */
-        hgh = val / 100000000;
-        low = (u32)(val - hgh * 100000000); /* (val % 100000000) */
+    } else if (val >= (u64)100000000){              /* len: 9 to 15 */
+        hgh = val / 100000000;                      /* (val / 100000000) */
+        low = (u32)(val - hgh * 100000000);         /* (val % 100000000) */
         buf = write_u32_len_1_8((u32)hgh, buf);
         buf = write_u32_len_8(low, buf);
         return buf;
@@ -5446,21 +5447,21 @@ static_inline u8 *write_u64_len_1_to_17(u64 val, u8 *buf) {
 
 /**
  Write an unsigned integer with a length of 15 to 17 with trailing zero trimmed.
+ These digits are named as "aabbccddeeffgghhii" here.
  For example, input 1234567890123000, output "1234567890123".
  */
 static_inline u8 *write_u64_len_15_to_17_trim(u8 *buf, u64 sig) {
-    /* The decimal digits are named as abbccddeeffgghhii. */
-    bool lz;
-    u32 tz1, tz2, tz;
+    bool lz;                                        /* leading zero */
+    u32 tz1, tz2, tz;                               /* trailing zero */
     
     u32 abbccddee = (u32)(sig / 100000000);
     u32 ffgghhii = (u32)(sig - (u64)abbccddee * 100000000);
-    u32 abbcc = abbccddee / 10000;
-    u32 ddee = abbccddee - abbcc * 10000;
-    u32 abb = (u32)(((u64)abbcc * 167773) >> 24); /* abbcc / 100 */
-    u32 a = (abb * 41) >> 12; /* abb / 100 */
-    u32 bb = abb - a * 100;
-    u32 cc = abbcc - abb * 100;
+    u32 abbcc = abbccddee / 10000;                  /* (abbccddee / 10000) */
+    u32 ddee = abbccddee - abbcc * 10000;           /* (abbccddee % 10000) */
+    u32 abb = (u32)(((u64)abbcc * 167773) >> 24);   /* (abbcc / 100) */
+    u32 a = (abb * 41) >> 12;                       /* (abb / 100) */
+    u32 bb = abb - a * 100;                         /* (abb % 100) */
+    u32 cc = abbcc - abb * 100;                     /* (abbcc % 100) */
     
     /* write abbcc */
     buf[0] = (u8)(a + '0');
@@ -5471,19 +5472,19 @@ static_inline u8 *write_u64_len_15_to_17_trim(u8 *buf, u64 sig) {
     ((v16 *)buf)[1] = ((const v16 *)digit_table)[cc];
     
     if (ffgghhii) {
-        u32 dd = (ddee * 5243) >> 19; /* (ddee / 100) */
-        u32 ee = ddee - dd * 100; /* (ddee % 100) */
+        u32 dd = (ddee * 5243) >> 19;               /* (ddee / 100) */
+        u32 ee = ddee - dd * 100;                   /* (ddee % 100) */
         u32 ffgg = (u32)(((u64)ffgghhii * 109951163) >> 40); /* (val / 10000) */
-        u32 hhii = ffgghhii - ffgg * 10000; /* (val % 10000) */
-        u32 ff = (ffgg * 5243) >> 19; /* (aabb / 100) */
-        u32 gg = ffgg - ff * 100; /* (aabb % 100) */
+        u32 hhii = ffgghhii - ffgg * 10000;         /* (val % 10000) */
+        u32 ff = (ffgg * 5243) >> 19;               /* (aabb / 100) */
+        u32 gg = ffgg - ff * 100;                   /* (aabb % 100) */
         ((v16 *)buf)[2] = ((const v16 *)digit_table)[dd];
         ((v16 *)buf)[3] = ((const v16 *)digit_table)[ee];
         ((v16 *)buf)[4] = ((const v16 *)digit_table)[ff];
         ((v16 *)buf)[5] = ((const v16 *)digit_table)[gg];
         if (hhii) {
-            u32 hh = (hhii * 5243) >> 19; /* (ccdd / 100) */
-            u32 ii = hhii - hh * 100; /* (ccdd % 100) */
+            u32 hh = (hhii * 5243) >> 19;           /* (ccdd / 100) */
+            u32 ii = hhii - hh * 100;               /* (ccdd % 100) */
             ((v16 *)buf)[6] = ((const v16 *)digit_table)[hh];
             ((v16 *)buf)[7] = ((const v16 *)digit_table)[ii];
             tz1 = dec_trailing_zero_table[hh];
@@ -5500,8 +5501,8 @@ static_inline u8 *write_u64_len_15_to_17_trim(u8 *buf, u64 sig) {
         }
     } else {
         if (ddee) {
-            u32 dd = (ddee * 5243) >> 19; /* (ddee / 100) */
-            u32 ee = ddee - dd * 100; /* (ddee % 100) */
+            u32 dd = (ddee * 5243) >> 19;           /* (ddee / 100) */
+            u32 ee = ddee - dd * 100;               /* (ddee % 100) */
             ((v16 *)buf)[2] = ((const v16 *)digit_table)[dd];
             ((v16 *)buf)[3] = ((const v16 *)digit_table)[ee];
             tz1 = dec_trailing_zero_table[dd];
@@ -5529,8 +5530,8 @@ static_inline u8 *write_f64_exp(i32 exp, u8 *buf) {
         *(v16 *)&buf[0] = *(const v16 *)&digit_table[(u32)exp * 2 + lz];
         return buf + 2 - lz;
     } else {
-        u32 hi = ((u32)exp * 656) >> 16; /* exp / 100 */
-        u32 lo = (u32)exp - hi * 100; /* exp % 100 */
+        u32 hi = ((u32)exp * 656) >> 16;            /* exp / 100 */
+        u32 lo = (u32)exp - hi * 100;               /* exp % 100 */
         buf[0] = (u8)((u8)hi + (u8)'0');
         *(v16 *)&buf[1] = *(const v16 *)&digit_table[lo * 2];
         return buf + 3;

@@ -25,7 +25,8 @@ A high performance JSON library written in ANSI C.
 # Performance
 Benchmark project and dataset: [yyjson_benchmark](https://github.com/ibireme/yyjson_benchmark)
 
-The simdjson's new `On Demand` API is not included, the benchmark project needs to be updated.
+The simdjson's new `On Demand` API is faster if most JSON fields is known at compile time.
+This benchmark project only checks the DOM API, new benchmark will be added later.
 
 #### AWS EC2 (AMD EPYC 7R32, gcc 9.3)
 ![ec2_chart](doc/images/perf_reader_ec2.svg)

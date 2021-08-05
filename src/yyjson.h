@@ -490,13 +490,15 @@ static const yyjson_read_flag YYJSON_READ_INSITU                = 1 << 0;
     in larger data, such as NDJSON. */
 static const yyjson_read_flag YYJSON_READ_STOP_WHEN_DONE        = 1 << 1;
 
-/** Allow single trailing comma at the end of an object or array. */
+/** Allow single trailing comma at the end of an object or array,
+    such as [1,2,3] {"a":1,"b":2,}. */
 static const yyjson_read_flag YYJSON_READ_ALLOW_TRAILING_COMMAS = 1 << 2;
 
-/** Allow C-style single line and multiple line comments.*/
+/** Allow C-style single line and multiple line comments. */
 static const yyjson_read_flag YYJSON_READ_ALLOW_COMMENTS        = 1 << 3;
 
-/** Allow nan/inf number or literal, such as 1e999, NaN, Inf, -Infinity. */
+/** Allow inf/nan number and literal, case-insensitive,
+    such as 1e999, NaN, inf, -Infinity. */
 static const yyjson_read_flag YYJSON_READ_ALLOW_INF_AND_NAN     = 1 << 4;
 
 
@@ -516,13 +518,13 @@ static const yyjson_read_code YYJSON_READ_ERROR_MEMORY_ALLOCATION       = 2;
 /** Input JSON string is empty. */
 static const yyjson_read_code YYJSON_READ_ERROR_EMPTY_CONTENT           = 3;
 
-/** Unexpected content after document, such as "[1],". */
+/** Unexpected content after document, such as "[1]#". */
 static const yyjson_read_code YYJSON_READ_ERROR_UNEXPECTED_CONTENT      = 4;
 
-/** Unexpected content at the end of the document. */
+/** Unexpected ending, such as "[123". */
 static const yyjson_read_code YYJSON_READ_ERROR_UNEXPECTED_END          = 5;
 
-/** Unexpected character inside the document, such as "[@]". */
+/** Unexpected character inside the document, such as "[#]". */
 static const yyjson_read_code YYJSON_READ_ERROR_UNEXPECTED_CHARACTER    = 6;
 
 /** Invalid JSON structure, such as "[1,]". */
