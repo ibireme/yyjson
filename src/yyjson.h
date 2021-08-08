@@ -2075,7 +2075,7 @@ yyjson_api_inline bool unsafe_yyjson_arr_is_flat(yyjson_val *val) {
 
 yyjson_api_inline bool unsafe_yyjson_get_bool(void *val) {
     uint8_t tag = unsafe_yyjson_get_tag(val);
-    return (tag & YYJSON_SUBTYPE_MASK) >> YYJSON_TYPE_BIT;
+    return (bool)((tag & YYJSON_SUBTYPE_MASK) >> YYJSON_TYPE_BIT);
 }
 
 yyjson_api_inline uint64_t unsafe_yyjson_get_uint(void *val) {

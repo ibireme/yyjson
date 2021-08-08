@@ -106,6 +106,15 @@ install(FILES src/yyjson.h DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}")
 if(YYJSON_BUILD_TESTS)
     enable_testing()
     
+    # Compiler flag check
+    include(CheckCCompilerFlag)
+    include(CheckCXXCompilerFlag)
+    check_c_compiler_flag("-ansi" COMPILER_SUPPORTS_ANSI_C)
+    check_c_compiler_flag("-std=c99" COMPILER_SUPPORTS_C99)
+    check_c_compiler_flag("-std=c11" COMPILER_SUPPORTS_C11)
+    check_cxx_compiler_flag("-ansi" COMPILER_SUPPORTS_ANSI_CPP)
+    check_cxx_compiler_flag("-std=c++17" COMPILER_SUPPORTS_CPP17)
+
     if(XCODE)
         # Config XCTest
         find_package(XCTest REQUIRED)
@@ -187,7 +196,10 @@ if(YYJSON_BUILD_TESTS)
             test/util/david_gay_dtoa.c
         )
         target_include_directories(yyjson_test_utils PUBLIC test/util)
-        
+        if(COMPILER_SUPPORTS_C99)
+            target_compile_options(yyjson_test_utils PRIVATE $<$<COMPILE_LANGUAGE:C>:-std=c99>)
+        endif()
+
         # Add test cases
         file(GLOB YYJSON_TEST_SOURCE
             "test/test_*.c"
@@ -197,7 +209,11 @@ if(YYJSON_BUILD_TESTS)
             string(REGEX REPLACE "(^.*/|\\.[^.]*$)" "" SRC_NAME ${SRC_FILE})
             add_executable(${SRC_NAME} ${SRC_FILE})
             target_link_libraries(${SRC_NAME} PRIVATE yyjson yyjson_test_utils)
-
+            
+            if(COMPILER_SUPPORTS_C99)
+                target_compile_options(${SRC_NAME} PRIVATE $<$<COMPILE_LANGUAGE:C>:-std=c99>)
+            endif()
+            
             if(MEMORYCHECK_COMMAND)
                 add_test(NAME ${SRC_NAME}
                          COMMAND "${MEMORYCHECK_COMMAND}" ${MEMORYCHECK_COMMAND_OPTIONS} "${CMAKE_CURRENT_BINARY_DIR}/${SRC_NAME}")
@@ -275,10 +291,6 @@ if(YYJSON_BUILD_TESTS)
             -Wundef
         )
         
-        include(CheckCCompilerFlag)
-        include(CheckCXXCompilerFlag)
-        
-        check_c_compiler_flag("-ansi" COMPILER_SUPPORTS_ANSI_C)
         if(COMPILER_SUPPORTS_ANSI_C)
             add_executable(test_compile_ansi_c test/compile_ansi.c)
             target_include_directories(test_compile_ansi_c PRIVATE src)
@@ -286,7 +298,13 @@ if(YYJSON_BUILD_TESTS)
                 $<$<COMPILE_LANGUAGE:C>:-ansi ${YYJSON_STRICT_C_FLAGS}>)
         endif()
         
-        check_cxx_compiler_flag("-ansi" COMPILER_SUPPORTS_ANSI_CPP)
+        if(COMPILER_SUPPORTS_C11)
+            add_executable(test_compile_c11 test/compile_ansi.c)
+            target_include_directories(test_compile_c11 PRIVATE src)
+            target_compile_options(test_compile_c11 PRIVATE
+                $<$<COMPILE_LANGUAGE:C>:-std=c11 ${YYJSON_STRICT_C_FLAGS}>)
+        endif()
+
         if(COMPILER_SUPPORTS_ANSI_CPP)
             add_executable(test_compile_ansi_cpp test/compile_ansi.cpp)
             target_include_directories(test_compile_ansi_cpp PRIVATE src)
@@ -294,15 +312,6 @@ if(YYJSON_BUILD_TESTS)
                 $<$<COMPILE_LANGUAGE:CXX>:-ansi ${YYJSON_STRICT_CXX_FLAGS}>)
         endif()
         
-        check_c_compiler_flag("-std=c11" COMPILER_SUPPORTS_C11)
-        if(COMPILER_SUPPORTS_C11)
-            add_executable(test_compile_c11 test/compile_ansi.c)
-            target_include_directories(test_compile_c11 PRIVATE src)
-            target_compile_options(test_compile_c11 PRIVATE
-                $<$<COMPILE_LANGUAGE:C>:-std=c11 ${YYJSON_STRICT_C_FLAGS}>)
-        endif()
-        
-        check_cxx_compiler_flag("-std=c++17" COMPILER_SUPPORTS_CPP17)
         if(COMPILER_SUPPORTS_CPP17)
             add_executable(test_compile_cpp17 test/compile_ansi.cpp)
             target_include_directories(test_compile_cpp17 PRIVATE src)

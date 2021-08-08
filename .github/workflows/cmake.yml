@@ -117,6 +117,25 @@ jobs:
         cmake --build . --config Release
         ctest -C Release
 
+
+  gcc4.8:
+    runs-on: ubuntu-18.04
+    steps:
+    - uses: actions/checkout@v2
+    
+    - name: Prepare
+      shell: bash
+      run: sudo apt update; sudo apt install g++-4.8
+      
+    - name: Build and Test
+      run: |
+        mkdir build
+        cd build
+        cmake .. -DCMAKE_C_COMPILER=gcc-4.8 -DCMAKE_CXX_COMPILER=g++-4.8 -DYYJSON_BUILD_TESTS=ON
+        cmake --build . --config Release
+        ctest -C Release
+
+
   tinycc:
     runs-on: ubuntu-latest
     steps:
@@ -133,6 +152,7 @@ jobs:
         cmake .. -DCMAKE_C_COMPILER=tcc -DYYJSON_BUILD_TESTS=ON
         cmake --build . --config Release
         ctest -C Release
+
 
   codecov:
     runs-on: ubuntu-latest

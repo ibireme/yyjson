@@ -223,28 +223,28 @@
 #define YYJSON_BIG_ENDIAN       4321
 #define YYJSON_LITTLE_ENDIAN    1234
 
-#if __BYTE_ORDER__
+#if defined(__BYTE_ORDER__) && __BYTE_ORDER__
 #   if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
 #       define YYJSON_ENDIAN YYJSON_BIG_ENDIAN
 #   elif __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
 #       define YYJSON_ENDIAN YYJSON_LITTLE_ENDIAN
 #   endif
 
-#elif __BYTE_ORDER
+#elif defined(__BYTE_ORDER) && __BYTE_ORDER
 #   if __BYTE_ORDER == __BIG_ENDIAN
 #       define YYJSON_ENDIAN YYJSON_BIG_ENDIAN
 #   elif __BYTE_ORDER == __LITTLE_ENDIAN
 #       define YYJSON_ENDIAN YYJSON_LITTLE_ENDIAN
 #   endif
 
-#elif BYTE_ORDER
+#elif defined(BYTE_ORDER) && BYTE_ORDER
 #   if BYTE_ORDER == BIG_ENDIAN
 #       define YYJSON_ENDIAN YYJSON_BIG_ENDIAN
 #   elif BYTE_ORDER == LITTLE_ENDIAN
 #       define YYJSON_ENDIAN YYJSON_LITTLE_ENDIAN
 #   endif
 
-#elif (__LITTLE_ENDIAN__ == 1) || \
+#elif (defined(__LITTLE_ENDIAN__) && __LITTLE_ENDIAN__ == 1) || \
     defined(__i386) || defined(__i386__) || \
     defined(_X86_) || defined(__X86__) || \
     defined(_M_IX86) || defined(__THW_INTEL__) || \
@@ -259,7 +259,7 @@
     defined(_MIPSEL) || defined(__MIPSEL) || defined(__MIPSEL__)
 #   define YYJSON_ENDIAN YYJSON_LITTLE_ENDIAN
 
-#elif (__BIG_ENDIAN__ == 1) || \
+#elif (defined(__BIG_ENDIAN__) && __BIG_ENDIAN__ == 1) || \
     defined(__ARMEB__) || defined(__THUMBEB__) || defined(__AARCH64EB__) || \
     defined(_MIPSEB) || defined(__MIPSEB) || defined(__MIPSEB__) || \
     defined(_ARCH_PPC) || defined(_ARCH_PPC64) || \
@@ -518,7 +518,7 @@ typedef union v64_uni { v64 v; u64 u; } v64_uni;
  * Character Utils
  *============================================================================*/
 
-static_inline void byte_move_2(void *dst, void *src) {
+static_inline void byte_move_2(void *dst, const void *src) {
 #if YYJSON_DISABLE_UNALIGNED_MEMORY_ACCESS
     ((u8 *)dst)[0] = ((u8 *)src)[0];
     ((u8 *)dst)[1] = ((u8 *)src)[1];
@@ -527,7 +527,7 @@ static_inline void byte_move_2(void *dst, void *src) {
 #endif
 }
 
-static_inline void byte_move_4(void *dst, void *src) {
+static_inline void byte_move_4(void *dst, const void *src) {
 #if YYJSON_DISABLE_UNALIGNED_MEMORY_ACCESS
     ((u8 *)dst)[0] = ((u8 *)src)[0];
     ((u8 *)dst)[1] = ((u8 *)src)[1];
@@ -538,7 +538,7 @@ static_inline void byte_move_4(void *dst, void *src) {
 #endif
 }
 
-static_inline void byte_move_8(void *dst, void *src) {
+static_inline void byte_move_8(void *dst, const void *src) {
 #if YYJSON_DISABLE_UNALIGNED_MEMORY_ACCESS
     ((u8 *)dst)[0] = ((u8 *)src)[0];
     ((u8 *)dst)[1] = ((u8 *)src)[1];
@@ -553,7 +553,7 @@ static_inline void byte_move_8(void *dst, void *src) {
 #endif
 }
 
-static_inline void byte_move_16(void *dst, void *src) {
+static_inline void byte_move_16(void *dst, const void *src) {
 #if YYJSON_DISABLE_UNALIGNED_MEMORY_ACCESS
     ((u8 *)dst)[0] = ((u8 *)src)[0];
     ((u8 *)dst)[1] = ((u8 *)src)[1];
@@ -5273,7 +5273,7 @@ static_inline u8 *write_u32_len_1_8(u32 val, u8 *buf) {
     
     if (val < 100) {                                /* 1-2 digits: aa */
         lz = val < 10;                              /* leading zero: 0 or 1 */
-        ((v16 *)buf)[0] = *(const v16 *)&(digit_table[val * 2 + lz]);
+        ((v16 *)buf)[0] = *(const v16 *)(digit_table + (val * 2 + lz));
         buf -= lz;
         return buf + 2;
         
@@ -5281,7 +5281,7 @@ static_inline u8 *write_u32_len_1_8(u32 val, u8 *buf) {
         aa = (val * 5243) >> 19;                    /* (val / 100) */
         bb = val - aa * 100;                        /* (val % 100) */
         lz = aa < 10;                               /* leading zero: 0 or 1 */
-        ((v16 *)buf)[0] = *(const v16 *)&(digit_table[aa * 2 + lz]);
+        ((v16 *)buf)[0] = *(const v16 *)(digit_table + (aa * 2 + lz));
         buf -= lz;
         ((v16 *)buf)[1] = ((const v16 *)digit_table)[bb];
         return buf + 4;
@@ -5292,7 +5292,7 @@ static_inline u8 *write_u32_len_1_8(u32 val, u8 *buf) {
         bb = (bbcc * 5243) >> 19;                   /* (bbcc / 100) */
         cc = bbcc - bb * 100;                       /* (bbcc % 100) */
         lz = aa < 10;                               /* leading zero: 0 or 1 */
-        ((v16 *)buf)[0] = *(const v16 *)&(digit_table[aa * 2 + lz]);
+        ((v16 *)buf)[0] = *(const v16 *)(digit_table + (aa * 2 + lz));
         buf -= lz;
         ((v16 *)buf)[1] = ((const v16 *)digit_table)[bb];
         ((v16 *)buf)[2] = ((const v16 *)digit_table)[cc];
@@ -5306,7 +5306,7 @@ static_inline u8 *write_u32_len_1_8(u32 val, u8 *buf) {
         bb = aabb - aa * 100;                       /* (aabb % 100) */
         dd = ccdd - cc * 100;                       /* (ccdd % 100) */
         lz = aa < 10;                               /* leading zero: 0 or 1 */
-        ((v16 *)buf)[0] = *(const v16 *)&(digit_table[aa * 2 + lz]);
+        ((v16 *)buf)[0] = *(const v16 *)(digit_table + (aa * 2 + lz));
         buf -= lz;
         ((v16 *)buf)[1] = ((const v16 *)digit_table)[bb];
         ((v16 *)buf)[2] = ((const v16 *)digit_table)[cc];
@@ -5324,7 +5324,7 @@ static_inline u8 *write_u64_len_5_8(u32 val, u8 *buf) {
         bb = (bbcc * 5243) >> 19;                   /* (bbcc / 100) */
         cc = bbcc - bb * 100;                       /* (bbcc % 100) */
         lz = aa < 10;                               /* leading zero: 0 or 1 */
-        ((v16 *)buf)[0] = *(const v16 *)&(digit_table[aa * 2 + lz]);
+        ((v16 *)buf)[0] = *(const v16 *)(digit_table + (aa * 2 + lz));
         buf -= lz;
         ((v16 *)buf)[1] = ((const v16 *)digit_table)[bb];
         ((v16 *)buf)[2] = ((const v16 *)digit_table)[cc];
@@ -5338,7 +5338,7 @@ static_inline u8 *write_u64_len_5_8(u32 val, u8 *buf) {
         bb = aabb - aa * 100;                       /* (aabb % 100) */
         dd = ccdd - cc * 100;                       /* (ccdd % 100) */
         lz = aa < 10;                               /* leading zero: 0 or 1 */
-        ((v16 *)buf)[0] = *(const v16 *)&(digit_table[aa * 2 + lz]);
+        ((v16 *)buf)[0] = *(const v16 *)(digit_table + (aa * 2 + lz));
         buf -= lz;
         ((v16 *)buf)[1] = ((const v16 *)digit_table)[bb];
         ((v16 *)buf)[2] = ((const v16 *)digit_table)[cc];
@@ -5461,7 +5461,7 @@ static_inline u8 *write_u64_len_15_to_17_trim(u8 *buf, u64 sig) {
     buf[0] = (u8)(a + '0');
     buf += a > 0;
     lz = bb < 10 && a == 0;
-    ((v16 *)buf)[0] = *(const v16 *)&(digit_table[bb * 2 + lz]);
+    ((v16 *)buf)[0] = *(const v16 *)(digit_table + (bb * 2 + lz));
     buf -= lz;
     ((v16 *)buf)[1] = ((const v16 *)digit_table)[cc];
     
@@ -5521,13 +5521,13 @@ static_inline u8 *write_f64_exp(i32 exp, u8 *buf) {
     exp = exp < 0 ? -exp : exp;
     if (exp < 100) {
         u32 lz = exp < 10;
-        *(v16 *)&buf[0] = *(const v16 *)&digit_table[(u32)exp * 2 + lz];
+        *(v16 *)&buf[0] = *(const v16 *)(digit_table + ((u32)exp * 2 + lz));
         return buf + 2 - lz;
     } else {
         u32 hi = ((u32)exp * 656) >> 16;            /* exp / 100 */
         u32 lo = (u32)exp - hi * 100;               /* exp % 100 */
         buf[0] = (u8)((u8)hi + (u8)'0');
-        *(v16 *)&buf[1] = *(const v16 *)&digit_table[lo * 2];
+        *(v16 *)&buf[1] = *(const v16 *)(digit_table + (lo * 2));
         return buf + 3;
     }
 }
@@ -5641,7 +5641,7 @@ static_noinline u8 *write_f64_raw(u8 *buf, u64 raw, yyjson_write_flag flg) {
     /* decode from raw bytes from IEEE-754 double format. */
     sign = (bool)(raw >> (F64_BITS - 1));
     sig_raw = raw & F64_SIG_MASK;
-    exp_raw = (raw & F64_EXP_MASK) >> F64_SIG_BITS;
+    exp_raw = (u32)((raw & F64_EXP_MASK) >> F64_SIG_BITS);
     
     /* return inf and nan */
     if (unlikely(exp_raw == ((u32)1 << F64_EXP_BITS) - 1)) {
@@ -5771,7 +5771,7 @@ static_noinline u8 *write_f64_raw(u8 *buf, u64 raw, yyjson_write_flag flg) {
         hi = ((u32)exp_dec * 656) >> 16; /* exp / 100 */
         lo = (u32)exp_dec - hi * 100; /* exp % 100 */
         buf[0] = (u8)((u8)hi + (u8)'0');
-        *(v16 *)&buf[1] = *(const v16 *)&digit_table[lo * 2];
+        *(v16 *)&buf[1] = *(const v16 *)(digit_table + (lo * 2));
         buf += 3;
         return buf;
     }
