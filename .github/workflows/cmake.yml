@@ -76,14 +76,14 @@ jobs:
       matrix:
         build_option:
           - Default
-          - DisableCustomFP
+          - DisableFastFPConv
           - DisableNonStandard
     steps:
     - uses: actions/checkout@v2
     - name: CMake
       shell: bash
       run: |
-        if [ "${{matrix.build_flag}}" == "DisableCustomFP" ]; then
+        if [ "${{matrix.build_flag}}" == "DisableFastFPConv" ]; then
           BUILD_OPTIONS="-DYYJSON_DISABLE_FAST_FP_CONV=ON"
         elif [ "${{ matrix.build_flag }}" == "DisableNonStandard" ]; then
           BUILD_OPTIONS="-DYYJSON_DISABLE_NON_STANDARD=ON"
@@ -117,6 +117,22 @@ jobs:
         cmake --build . --config Release
         ctest -C Release
 
+  tinycc:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    
+    - name: Prepare
+      shell: bash
+      run: sudo apt update; sudo apt install tcc
+
+    - name: TinyCC
+      run: |
+        mkdir build
+        cd build
+        cmake .. -DCMAKE_C_COMPILER=tcc -DYYJSON_BUILD_TESTS=ON
+        cmake --build . --config Release
+        ctest -C Release
 
   codecov:
     runs-on: ubuntu-latest

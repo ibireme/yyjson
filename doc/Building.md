@@ -128,9 +128,6 @@ Define as 1 to disable the fast floating-point number conversion in yyjson,<br/>
 and use libc's `strtod/snprintf` instead. This may reduce binary size,<br/>
 but slow down floating-point reading and writing speed.
 
-This flag will disable the custom fp reader, and use libc's `strtod()` instead,<br/>
-so this flag can reduce binary size, but slow down floating-point reading speed.<br/>
-
 ●**YYJSON_DISABLE_NON_STANDARD**<br/>
 Define as 1 to disable non-standard JSON support at compile time:<br/>
     - Reading and writing inf/nan literal, such as 'NaN', '-Infinity'.<br/>
