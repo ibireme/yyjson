@@ -118,7 +118,7 @@ jobs:
         ctest -C Release
 
 
-  gcc4.8:
+  gcc4:
     runs-on: ubuntu-18.04
     steps:
     - uses: actions/checkout@v2
@@ -126,7 +126,7 @@ jobs:
     - name: Prepare
       shell: bash
       run: sudo apt update; sudo apt install g++-4.8
-      
+
     - name: Build and Test
       run: |
         mkdir build
