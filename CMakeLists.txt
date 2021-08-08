@@ -110,7 +110,7 @@ if(YYJSON_BUILD_TESTS)
     include(CheckCCompilerFlag)
     include(CheckCXXCompilerFlag)
     check_c_compiler_flag("-ansi" COMPILER_SUPPORTS_ANSI_C)
-    check_c_compiler_flag("-std=c99" COMPILER_SUPPORTS_C99)
+    check_c_compiler_flag("-std=gnu99" COMPILER_SUPPORTS_GNU99)
     check_c_compiler_flag("-std=c11" COMPILER_SUPPORTS_C11)
     check_cxx_compiler_flag("-ansi" COMPILER_SUPPORTS_ANSI_CPP)
     check_cxx_compiler_flag("-std=c++17" COMPILER_SUPPORTS_CPP17)
@@ -196,8 +196,8 @@ if(YYJSON_BUILD_TESTS)
             test/util/david_gay_dtoa.c
         )
         target_include_directories(yyjson_test_utils PUBLIC test/util)
-        if(COMPILER_SUPPORTS_C99)
-            target_compile_options(yyjson_test_utils PRIVATE $<$<COMPILE_LANGUAGE:C>:-std=c99>)
+        if(COMPILER_SUPPORTS_GNU99)
+            target_compile_options(yyjson_test_utils PRIVATE $<$<COMPILE_LANGUAGE:C>:-std=gnu99>)
         endif()
 
         # Add test cases
@@ -210,10 +210,10 @@ if(YYJSON_BUILD_TESTS)
             add_executable(${SRC_NAME} ${SRC_FILE})
             target_link_libraries(${SRC_NAME} PRIVATE yyjson yyjson_test_utils)
             
-            if(COMPILER_SUPPORTS_C99)
-                target_compile_options(${SRC_NAME} PRIVATE $<$<COMPILE_LANGUAGE:C>:-std=c99>)
+            if(COMPILER_SUPPORTS_GNU99)
+                target_compile_options(${SRC_NAME} PRIVATE $<$<COMPILE_LANGUAGE:C>:-std=gnu99>)
             endif()
-            
+
             if(MEMORYCHECK_COMMAND)
                 add_test(NAME ${SRC_NAME}
                          COMMAND "${MEMORYCHECK_COMMAND}" ${MEMORYCHECK_COMMAND_OPTIONS} "${CMAKE_CURRENT_BINARY_DIR}/${SRC_NAME}")
