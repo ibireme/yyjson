@@ -188,7 +188,7 @@ static void test_real_read(const char *line, usize len, f64 num) {
         u64 ret_raw;
         i64 ulp;
         
-#if !YYJSON_DISABLE_FP_READER
+#if !YYJSON_DISABLE_FAST_FP_CONV
         // 0 ulp error
         doc = yyjson_read(line, len, 0);
         val = yyjson_doc_get_root(doc);
@@ -240,7 +240,7 @@ static void test_real_write(const char *line, usize len, f64 num) {
                    "real number write value not match:\nexpect: %s\nreturn: %s\n",
                    line, str);
         
-#if !YYJSON_DISABLE_FP_WRITER
+#if !YYJSON_DISABLE_FAST_FP_CONV
         yy_assertf(f64_str_get_digits(str) == f64_str_get_digits(line),
                    "real number write value not shortest:\nexpect: %s\nreturn: %s\n",
                    line, str);
@@ -379,7 +379,7 @@ static void test_with_file(const char *name, num_type type) {
             } else if (type == NUM_TYPE_REAL) {
                 test_real(line, len);
             } else if (type == NUM_TYPE_INF_NAN_LITERAL) {
-#if !YYJSON_DISABLE_INF_AND_NAN_READER
+#if !YYJSON_DISABLE_NON_STANDARD
                 test_nan_inf(line, len);
 #endif
             }

@@ -47,10 +47,8 @@ Supported CMake options:
 - `-DYYJSON_ENABLE_SANITIZE=ON` Enable sanitizer for tests.
 - `-DYYJSON_DISABLE_READER=ON` Disable JSON reader if you don't need it.
 - `-DYYJSON_DISABLE_WRITER=ON` Disable JSON writer if you don't need it.
-- `-DYYJSON_DISABLE_FP_READER=ON` Disable custom double number reader to reduce binary size.
-- `-DYYJSON_DISABLE_FP_WRITER=ON` Disable custom double number writer to reduce binary size.
-- `-DYYJSON_DISABLE_COMMENT_READER=ON` Disable non-standard comment support at compile time.
-- `-DYYJSON_DISABLE_INF_AND_NAN_READER=ON` Disable non-standard nan/inf support at compile time.
+- `-DYYJSON_DISABLE_FAST_FP_CONV=ON` Disable fast floating-pointer conversion.
+- `-DYYJSON_DISABLE_NON_STANDARD=ON` Disable non-standard JSON support at compile time.
 
 See [compile flags](#compile-flags) for details.
 
@@ -62,10 +60,9 @@ add_subdirectory(vendor/yyjson)
 target_link_libraries(your_target yyjson)
 ```
 
-You may also add some options for yyjson library:
+You may also add some compile flag for yyjson library:
 ```cmake
-set(YYJSON_DISABLE_COMMENT_READER ON CACHE INTERNAL "")
-set(YYJSON_DISABLE_INF_AND_NAN_READER ON CACHE INTERNAL "")
+set(YYJSON_DISABLE_NON_STANDARD ON CACHE INTERNAL "")
 add_subdirectory(vendor/yyjson)
 target_link_libraries(your_target yyjson)
 ```
@@ -126,31 +123,25 @@ yyjson_mut_write_file()
 yyjson_mut_write()
 ```
 
-●**YYJSON_DISABLE_FP_READER**<br/>
-Define it as 1 to disable custom floating-point number reader.<br/>
-`yyjson` implements a high-performance floating-point number reader,<br/>
-but the fp reader may cost lots of binary size.<br/>
+●**YYJSON_DISABLE_FAST_FP_CONV**<br/>
+Define as 1 to disable the fast floating-point number conversion in yyjson,<br/>
+and use libc's `strtod/snprintf` instead. This may reduce binary size,<br/>
+but slow down floating-point reading and writing speed.
 
 This flag will disable the custom fp reader, and use libc's `strtod()` instead,<br/>
 so this flag can reduce binary size, but slow down floating-point reading speed.<br/>
 
-●**YYJSON_DISABLE_FP_WRITER**<br/>
-Define it as 1 to disable custom floating-point number writer.<br/>
-`yyjson` implements a high-performance floating-point number writer,<br/>
-but the fp writer may cost lots of binary size.<br/>
-
-This flag will disable the custom fp writer, and use libc's `sprintf()` instead,<br/>
-so this flag can reduce binary size, but slow down floating-point writing speed.<br/>
-
-●**YYJSON_DISABLE_COMMENT_READER**<br/>
-Define it as 1 to disable non-standard comment support in JSON reader at compile time.<br/>
-This flag can reduce binary size, and increase reading speed slightly.<br/>
-This flag may also invalidate the `YYJSON_READ_ALLOW_TRAILING_COMMAS` option.
-
-●**YYJSON_DISABLE_INF_AND_NAN_READER**<br/>
-Define it as 1 to disable non-standard inf and nan literal support in JSON reader at compile time.<br/>
-This flag can reduce binary size, and increase reading speed slightly.<br/>
-This flag may also invalidate the `YYJSON_READ_ALLOW_INF_AND_NAN` option.
+●**YYJSON_DISABLE_NON_STANDARD**<br/>
+Define as 1 to disable non-standard JSON support at compile time:<br/>
+    - Reading and writing inf/nan literal, such as 'NaN', '-Infinity'.<br/>
+    - Single line and multiple line comments.<br/>
+    - Single trailing comma at the end of an object or array.<br/>
+This may also invalidate these options:<br/>
+    - YYJSON_READ_ALLOW_INF_AND_NAN<br/>
+    - YYJSON_READ_ALLOW_COMMENTS<br/>
+    - YYJSON_READ_ALLOW_TRAILING_COMMAS<br/>
+    - YYJSON_WRITE_ALLOW_INF_AND_NAN<br/>
+This may reduce binary size, and increase performance slightly.
 
 ●**YYJSON_EXPORTS**<br/>
 Define it as 1 to export symbols when build library as Windows DLL.

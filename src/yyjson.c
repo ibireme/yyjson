@@ -352,20 +352,14 @@
 #ifndef YYJSON_DISABLE_READER
 #define YYJSON_DISABLE_READER 0
 #endif
-#ifndef YYJSON_DISABLE_FP_READER
-#define YYJSON_DISABLE_FP_READER 0
-#endif
 #ifndef YYJSON_DISABLE_WRITER
 #define YYJSON_DISABLE_WRITER 0
 #endif
-#ifndef YYJSON_DISABLE_FP_WRITER
-#define YYJSON_DISABLE_FP_WRITER 0
+#ifndef YYJSON_DISABLE_FAST_FP_CONV
+#define YYJSON_DISABLE_FAST_FP_CONV 0
 #endif
-#ifndef YYJSON_DISABLE_INF_AND_NAN_READER
-#define YYJSON_DISABLE_INF_AND_NAN_READER 0
-#endif
-#ifndef YYJSON_DISABLE_COMMENT_READER
-#define YYJSON_DISABLE_COMMENT_READER 0
+#ifndef YYJSON_DISABLE_NON_STANDARD
+#define YYJSON_DISABLE_NON_STANDARD 0
 #endif
 
 
@@ -1516,8 +1510,8 @@ yyjson_api yyjson_mut_val *unsafe_yyjson_mut_get_pointer(yyjson_mut_val *val,
  * These data are used by the floating-point number reader and writer.
  *============================================================================*/
 
-#if (!YYJSON_DISABLE_READER && !YYJSON_DISABLE_FP_READER) || \
-    (!YYJSON_DISABLE_WRITER && !YYJSON_DISABLE_FP_WRITER)
+#if (!YYJSON_DISABLE_READER || !YYJSON_DISABLE_WRITER) && \
+    (!YYJSON_DISABLE_FAST_FP_CONV)
 
 /** Minimum decimal exponent in pow10_sig_table. */
 #define POW10_SIG_TABLE_MIN_EXP -343
@@ -2519,7 +2513,7 @@ static_inline bool read_null(u8 *cur, u8 **end, yyjson_val *val) {
 
 /** Read 'Inf' or 'Infinity' literal (ignoring case). */
 static_inline bool read_inf(bool sign, u8 *cur, u8 **end, yyjson_val *val) {
-#if !YYJSON_DISABLE_INF_AND_NAN_READER
+#if !YYJSON_DISABLE_NON_STANDARD
     if ((cur[0] == 'I' || cur[0] == 'i') &&
         (cur[1] == 'N' || cur[1] == 'n') &&
         (cur[2] == 'F' || cur[2] == 'f')) {
@@ -2542,7 +2536,7 @@ static_inline bool read_inf(bool sign, u8 *cur, u8 **end, yyjson_val *val) {
 
 /** Read 'NaN' literal (ignoring case). */
 static_inline bool read_nan(bool sign, u8 *cur, u8 **end, yyjson_val *val) {
-#if !YYJSON_DISABLE_INF_AND_NAN_READER
+#if !YYJSON_DISABLE_NON_STANDARD
     if ((cur[0] == 'N' || cur[0] == 'n') &&
         (cur[1] == 'A' || cur[1] == 'a') &&
         (cur[2] == 'N' || cur[2] == 'n')) {
@@ -2558,7 +2552,7 @@ static_inline bool read_nan(bool sign, u8 *cur, u8 **end, yyjson_val *val) {
 /** Read 'Inf', 'Infinity' or 'NaN' literal (ignoring case). */
 static_inline bool read_inf_or_nan(bool sign, u8 *cur, u8 **end,
                                    yyjson_val *val) {
-#if !YYJSON_DISABLE_INF_AND_NAN_READER
+#if !YYJSON_DISABLE_NON_STANDARD
     if (read_inf(sign, cur, end, val)) return true;
     if (read_nan(sign, cur, end, val)) return true;
 #endif
@@ -2610,7 +2604,7 @@ static_noinline bool skip_spaces_and_comments(u8 *cur, u8 **end) {
 
 
 
-#if YYJSON_HAS_IEEE_754 && !YYJSON_DISABLE_FP_READER
+#if YYJSON_HAS_IEEE_754 && !YYJSON_DISABLE_FAST_FP_CONV
 
 /*==============================================================================
  * BigInt For Floating Point Number Reader
@@ -4131,7 +4125,7 @@ static_noinline yyjson_doc *read_root_single(u8 *hdr,
 doc_end:
     /* check invalid contents after json document */
     if (unlikely(cur < end) && !has_flag(STOP_WHEN_DONE)) {
-#if !YYJSON_DISABLE_COMMENT_READER
+#if !YYJSON_DISABLE_NON_STANDARD
         if (has_flag(ALLOW_COMMENTS)) {
             if (!skip_spaces_and_comments(cur, &cur)) {
                 if (byte_match_2(cur, "/*")) goto fail_comment;
@@ -4319,7 +4313,7 @@ arr_val_begin:
         if (read_inf_or_nan(false, cur, &cur, val)) goto arr_val_end;
         goto fail_character;
     }
-#if !YYJSON_DISABLE_COMMENT_READER
+#if !YYJSON_DISABLE_NON_STANDARD
     if (has_flag(ALLOW_COMMENTS)) {
         if (skip_spaces_and_comments(cur, &cur)) goto arr_val_begin;
         if (byte_match_2(cur, "/*")) goto fail_comment;
@@ -4340,7 +4334,7 @@ arr_val_end:
         while(char_is_space(*++cur));
         goto arr_val_end;
     }
-#if !YYJSON_DISABLE_COMMENT_READER
+#if !YYJSON_DISABLE_NON_STANDARD
     if (has_flag(ALLOW_COMMENTS)) {
         if (skip_spaces_and_comments(cur, &cur)) goto arr_val_end;
         if (byte_match_2(cur, "/*")) goto fail_comment;
@@ -4394,7 +4388,7 @@ obj_key_begin:
         while(char_is_space(*++cur));
         goto obj_key_begin;
     }
-#if !YYJSON_DISABLE_COMMENT_READER
+#if !YYJSON_DISABLE_NON_STANDARD
     if (has_flag(ALLOW_COMMENTS)) {
         if (skip_spaces_and_comments(cur, &cur)) goto obj_key_begin;
         if (byte_match_2(cur, "/*")) goto fail_comment;
@@ -4411,7 +4405,7 @@ obj_key_end:
         while(char_is_space(*++cur));
         goto obj_key_end;
     }
-#if !YYJSON_DISABLE_COMMENT_READER
+#if !YYJSON_DISABLE_NON_STANDARD
     if (has_flag(ALLOW_COMMENTS)) {
         if (skip_spaces_and_comments(cur, &cur)) goto obj_key_end;
         if (byte_match_2(cur, "/*")) goto fail_comment;
@@ -4471,7 +4465,7 @@ obj_val_begin:
         if (read_inf_or_nan(false, cur, &cur, val)) goto obj_val_end;
         goto fail_character;
     }
-#if !YYJSON_DISABLE_COMMENT_READER
+#if !YYJSON_DISABLE_NON_STANDARD
     if (has_flag(ALLOW_COMMENTS)) {
         if (skip_spaces_and_comments(cur, &cur)) goto obj_val_begin;
         if (byte_match_2(cur, "/*")) goto fail_comment;
@@ -4492,7 +4486,7 @@ obj_val_end:
         while(char_is_space(*++cur));
         goto obj_val_end;
     }
-#if !YYJSON_DISABLE_COMMENT_READER
+#if !YYJSON_DISABLE_NON_STANDARD
     if (has_flag(ALLOW_COMMENTS)) {
         if (skip_spaces_and_comments(cur, &cur)) goto obj_val_end;
         if (byte_match_2(cur, "/*")) goto fail_comment;
@@ -4519,7 +4513,7 @@ doc_end:
     
     /* check invalid contents after json document */
     if (unlikely(cur < end) && !has_flag(STOP_WHEN_DONE)) {
-#if !YYJSON_DISABLE_COMMENT_READER
+#if !YYJSON_DISABLE_NON_STANDARD
         if (has_flag(ALLOW_COMMENTS)) skip_spaces_and_comments(cur, &cur); else
 #endif
         while(char_is_space(*cur)) cur++;
@@ -4720,7 +4714,7 @@ arr_val_begin:
         if (read_inf_or_nan(false, cur, &cur, val)) goto arr_val_end;
         goto fail_character;
     }
-#if !YYJSON_DISABLE_COMMENT_READER
+#if !YYJSON_DISABLE_NON_STANDARD
     if (has_flag(ALLOW_COMMENTS)) {
         if (skip_spaces_and_comments(cur, &cur)) goto arr_val_begin;
         if (byte_match_2(cur, "/*")) goto fail_comment;
@@ -4745,7 +4739,7 @@ arr_val_end:
         while(char_is_space(*++cur));
         goto arr_val_end;
     }
-#if !YYJSON_DISABLE_COMMENT_READER
+#if !YYJSON_DISABLE_NON_STANDARD
     if (has_flag(ALLOW_COMMENTS)) {
         if (skip_spaces_and_comments(cur, &cur)) goto arr_val_end;
         if (byte_match_2(cur, "/*")) goto fail_comment;
@@ -4812,7 +4806,7 @@ obj_key_begin:
         while(char_is_space(*++cur));
         goto obj_key_begin;
     }
-#if !YYJSON_DISABLE_COMMENT_READER
+#if !YYJSON_DISABLE_NON_STANDARD
     if (has_flag(ALLOW_COMMENTS)) {
         if (skip_spaces_and_comments(cur, &cur)) goto obj_key_begin;
         if (byte_match_2(cur, "/*")) goto fail_comment;
@@ -4833,7 +4827,7 @@ obj_key_end:
         while(char_is_space(*++cur));
         goto obj_key_end;
     }
-#if !YYJSON_DISABLE_COMMENT_READER
+#if !YYJSON_DISABLE_NON_STANDARD
     if (has_flag(ALLOW_COMMENTS)) {
         if (skip_spaces_and_comments(cur, &cur)) goto obj_key_end;
         if (byte_match_2(cur, "/*")) goto fail_comment;
@@ -4893,7 +4887,7 @@ obj_val_begin:
         if (read_inf_or_nan(false, cur, &cur, val)) goto obj_val_end;
         goto fail_character;
     }
-#if !YYJSON_DISABLE_COMMENT_READER
+#if !YYJSON_DISABLE_NON_STANDARD
     if (has_flag(ALLOW_COMMENTS)) {
         if (skip_spaces_and_comments(cur, &cur)) goto obj_val_begin;
         if (byte_match_2(cur, "/*")) goto fail_comment;
@@ -4918,7 +4912,7 @@ obj_val_end:
         while(char_is_space(*++cur));
         goto obj_val_end;
     }
-#if !YYJSON_DISABLE_COMMENT_READER
+#if !YYJSON_DISABLE_NON_STANDARD
     if (has_flag(ALLOW_COMMENTS)) {
         if (skip_spaces_and_comments(cur, &cur)) goto obj_val_end;
         if (byte_match_2(cur, "/*")) goto fail_comment;
@@ -4946,7 +4940,7 @@ doc_end:
     
     /* check invalid contents after json document */
     if (unlikely(cur < end) && !has_flag(STOP_WHEN_DONE)) {
-#if !YYJSON_DISABLE_COMMENT_READER
+#if !YYJSON_DISABLE_NON_STANDARD
         if (has_flag(ALLOW_COMMENTS)) skip_spaces_and_comments(cur, &cur); else
 #endif
         while (char_is_space(*cur)) cur++;
@@ -5045,7 +5039,7 @@ yyjson_doc *yyjson_read_opts(char *dat,
     
     /* skip empty contents before json document */
     if (unlikely(char_is_space_or_comment(*cur))) {
-#if !YYJSON_DISABLE_COMMENT_READER
+#if !YYJSON_DISABLE_NON_STANDARD
         if (has_flag(ALLOW_COMMENTS)) {
             if (!skip_spaces_and_comments(cur, &cur)) {
                 return_err(cur - hdr, INVALID_COMMENT,
@@ -5386,7 +5380,7 @@ static_inline u8 *write_u64(u64 val, u8 *buf) {
  * Number Writer
  *============================================================================*/
 
-#if !YYJSON_DISABLE_FP_WRITER
+#if !YYJSON_DISABLE_FAST_FP_CONV
 
 /** Trailing zero count table for number 0 to 99.
     (generate with misc/make_tables.c) */

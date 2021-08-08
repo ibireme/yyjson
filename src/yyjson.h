@@ -49,28 +49,23 @@
 #ifndef YYJSON_DISABLE_WRITER
 #endif
 
-/* Define as 1 to use libc's `strtod()` to read floating-point number
-   instead of the custom floating-point number reader in yyjson.
-   This may reduce binary size, but slow down floating-point reading speed. */
-#ifndef YYJSON_DISABLE_FP_READER
+/* Define as 1 to disable the fast floating-point number conversion in yyjson,
+   and use libc's `strtod/snprintf` instead. This may reduce binary size,
+   but slow down floating-point reading and writing speed. */
+#ifndef YYJSON_DISABLE_FAST_FP_CONV
 #endif
 
-/* Define as 1 to use libc's `sprintf()` to write floating-point number
-   instead of the custom floating-point number writer in yyjson.
-   This may reduce binary size, but slow down floating-point writing speed. */
-#ifndef YYJSON_DISABLE_FP_WRITER
-#endif
-
-/* Define as 1 to disable non-standard comment support in JSON reader.
-   This may reduce binary size, and increase reading speed slightly.
-   This may also invalidate the YYJSON_READ_ALLOW_TRAILING_COMMAS option. */
-#ifndef YYJSON_DISABLE_COMMENT_READER
-#endif
-
-/* Define as 1 to disable non-standard inf/nan literal support in JSON reader.
-   This may reduce binary size, and increase reading speed slightly.
-   This may also invalidate the YYJSON_READ_ALLOW_INF_AND_NAN option. */
-#ifndef YYJSON_DISABLE_INF_AND_NAN_READER
+/* Define as 1 to disable non-standard JSON support at compile time:
+       Reading and writing inf/nan literal, such as 'NaN', '-Infinity'.
+       Single line and multiple line comments.
+       Single trailing comma at the end of an object or array.
+   This may also invalidate these options:
+       YYJSON_READ_ALLOW_INF_AND_NAN
+       YYJSON_READ_ALLOW_COMMENTS
+       YYJSON_READ_ALLOW_TRAILING_COMMAS
+       YYJSON_WRITE_ALLOW_INF_AND_NAN
+   This may reduce binary size, and increase performance slightly. */
+#ifndef YYJSON_DISABLE_NON_STANDARD
 #endif
 
 /* Define as 1 to disable unaligned memory access if target architecture does 

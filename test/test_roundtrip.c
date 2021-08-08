@@ -29,7 +29,7 @@ yy_test_case(test_roundtrip) {
         char *out_dat = yyjson_write(doc, 0, &out_len);
         yy_assertf(out_dat != NULL, "json write fail: %s\n", path);
         
-#if !YYJSON_DISABLE_FP_WRITER
+#if !YYJSON_DISABLE_FAST_FP_CONV
         yy_assertf(in_len == out_len && memcmp(in_dat, out_dat, in_len) == 0,
                    "roundtrip fail: %s\nin:  %.*s\nout: %.*s\n",
                    path, (int)in_len, in_dat, (int)out_len, out_dat);
@@ -40,7 +40,7 @@ yy_test_case(test_roundtrip) {
         char *mout_dat = yyjson_mut_write(mdoc, 0, &mout_len);
         yy_assertf(mout_dat != NULL, "json mut write fail: %s\n", path);
         
-#if !YYJSON_DISABLE_FP_WRITER
+#if !YYJSON_DISABLE_FAST_FP_CONV
         yy_assertf(in_len == mout_len && memcmp(in_dat, mout_dat, in_len) == 0,
                    "roundtrip (mut) fail: %s\nin:  %.*s\nout: %.*s\n",
                    path, (int)in_len, in_dat, (int)mout_len, mout_dat);

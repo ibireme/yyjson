@@ -259,7 +259,7 @@ static void test_json_write(yyjson_alc *alc) {
     
     
     // single
-#if !YYJSON_DISABLE_INF_AND_NAN_READER
+#if !YYJSON_DISABLE_NON_STANDARD
     root = yyjson_mut_real(doc, NAN);
     yyjson_mut_doc_set_root(doc, root);
     validate_json_write_ex(doc, alc,
@@ -331,7 +331,7 @@ static void test_json_write(yyjson_alc *alc) {
                         "    2\n"
                         "]");
     
-#if !YYJSON_DISABLE_INF_AND_NAN_READER
+#if !YYJSON_DISABLE_NON_STANDARD
     root = yyjson_mut_arr(doc);
     yyjson_mut_doc_set_root(doc, root);
     yyjson_mut_arr_add_real(doc, root, NAN);
@@ -477,7 +477,7 @@ static void test_json_write(yyjson_alc *alc) {
                         "    \"abc\": 123\n"
                         "}");
     
-#if !YYJSON_DISABLE_INF_AND_NAN_READER
+#if !YYJSON_DISABLE_NON_STANDARD
     root = yyjson_mut_obj(doc);
     yyjson_mut_doc_set_root(doc, root);
     yy_assert(doc->root);

@@ -40,10 +40,8 @@ jobs:
       run: |
         BUILD_OPTIONS="-DYYJSON_BUILD_TESTS=ON"
         if [ "${{matrix.build_flag}}" == "ReduceBinary" ]; then
-          BUILD_OPTIONS="${BUILD_OPTIONS} -DYYJSON_DISABLE_FP_READER=ON"
-          BUILD_OPTIONS="${BUILD_OPTIONS} -DYYJSON_DISABLE_FP_WRITER=ON"
-          BUILD_OPTIONS="${BUILD_OPTIONS} -DYYJSON_DISABLE_COMMENT_READER=ON"
-          BUILD_OPTIONS="${BUILD_OPTIONS} -DYYJSON_DISABLE_INF_AND_NAN_READER=ON"
+          BUILD_OPTIONS="${BUILD_OPTIONS} -DYYJSON_DISABLE_FAST_FP_CONV=ON"
+          BUILD_OPTIONS="${BUILD_OPTIONS} -DYYJSON_DISABLE_NON_STANDARD=ON"
         fi
         if [ "${{matrix.checker}}" == "Valgrind" ]; then
           BUILD_OPTIONS="${BUILD_OPTIONS} -DYYJSON_ENABLE_VALGRIND=ON"
@@ -86,9 +84,9 @@ jobs:
       shell: bash
       run: |
         if [ "${{matrix.build_flag}}" == "DisableCustomFP" ]; then
-          BUILD_OPTIONS="-DYYJSON_DISABLE_FP_READER=ON -DYYJSON_DISABLE_FP_WRITER=ON"
+          BUILD_OPTIONS="-DYYJSON_DISABLE_FAST_FP_CONV=ON"
         elif [ "${{ matrix.build_flag }}" == "DisableNonStandard" ]; then
-          BUILD_OPTIONS="-DYYJSON_DISABLE_COMMENT_READER=ON -DYYJSON_DISABLE_INF_AND_NAN_READER=ON"
+          BUILD_OPTIONS="-DYYJSON_DISABLE_NON_STANDARD=ON"
         else
           BUILD_OPTIONS=""
         fi

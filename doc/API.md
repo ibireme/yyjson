@@ -1245,4 +1245,4 @@ yyjson does not use global variables, so if you can ensure that the input parame
 # Locale Dependent
 yyjson is locale-independent by default.
 
-If you build yyjson with `YYJSON_DISABLE_FP_READER` or `YYJSON_DISABLE_FP_WRITER` flag, yyjson will use `strtod` and `snprintf` to process floating-point numbers, and these two functions are locale-dependent.
+If you build yyjson with `YYJSON_DISABLE_FAST_FP_CONV` flag, yyjson will use `strtod` and `snprintf` to convert floating-point numbers, and these two functions are locale-dependent.

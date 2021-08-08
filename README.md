@@ -114,10 +114,8 @@ Supported CMake options:
 - `-DYYJSON_ENABLE_SANITIZE=ON` Enable sanitizer for tests.
 - `-DYYJSON_DISABLE_READER=ON` Disable JSON reader if you don't need it.
 - `-DYYJSON_DISABLE_WRITER=ON` Disable JSON writer if you don't need it.
-- `-DYYJSON_DISABLE_FP_READER=ON` Disable custom double number reader to reduce binary size.
-- `-DYYJSON_DISABLE_FP_WRITER=ON` Disable custom double number writer to reduce binary size.
-- `-DYYJSON_DISABLE_COMMENT_READER=ON` Disable non-standard comment support at compile time.
-- `-DYYJSON_DISABLE_INF_AND_NAN_READER=ON` Disable non-standard nan/inf support at compile time.
+- `-DYYJSON_DISABLE_FAST_FP_CONV=ON` Disable fast floating-point number conversion.
+- `-DYYJSON_DISABLE_NON_STANDARD=ON` Disable non-standard JSON support at compile time.
 
 See [compile flags](https://github.com/ibireme/yyjson/blob/master/doc/Building.md#compile-flags) for details.
 

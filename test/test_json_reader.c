@@ -117,14 +117,14 @@ static void test_json_yyjson(void) {
                     should_fail |= (type & FLAG_COMMA) == 0;
                 }
                 if (yy_str_contains(name, "(comment)")) {
-#if !YYJSON_DISABLE_COMMENT_READER
+#if !YYJSON_DISABLE_NON_STANDARD
                     should_fail |= (type & FLAG_COMMENT) == 0;
 #else
                     should_fail = true;
 #endif
                 }
                 if (yy_str_contains(name, "(inf)") || yy_str_contains(name, "(nan)")) {
-#if !YYJSON_DISABLE_INF_AND_NAN_READER
+#if !YYJSON_DISABLE_NON_STANDARD
                     should_fail |= (type & FLAG_INF_NAN) == 0;
 #else
                     should_fail = true;
