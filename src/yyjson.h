@@ -1826,7 +1826,11 @@ yyjson_api_inline bool yyjson_mut_obj_remove(yyjson_mut_val *obj,
 /** Removes all key-value pairs in this object. */
 yyjson_api_inline bool yyjson_mut_obj_clear(yyjson_mut_val *obj);
 
-
+/** Replace value from the object with given key.
+    @warning This function takes a linear search time. */
+yyjson_api_inline bool yyjson_mut_obj_replace(yyjson_mut_val *obj,
+                                              yyjson_mut_val *key,
+                                              yyjson_mut_val *val);
 
 /*==============================================================================
  * Mutable JSON Object Modification Convenience API
@@ -3668,6 +3672,37 @@ yyjson_api_inline void unsafe_yyjson_mut_obj_remove(yyjson_mut_val *obj,
     }
 }
 
+yyjson_api_inline bool unsafe_yyjson_mut_obj_replace(yyjson_mut_val *obj,
+                                                     yyjson_mut_val *key,
+                                                     yyjson_mut_val *val) {
+    size_t key_len = unsafe_yyjson_get_len(key);
+    size_t obj_len = unsafe_yyjson_get_len(obj);
+    if (obj_len) {
+        yyjson_mut_val *pre_key = (yyjson_mut_val *)obj->uni.ptr;
+        yyjson_mut_val *cur_key = pre_key->next->next;
+        size_t i;
+        for (i = 0; i < obj_len; i++) {
+            if (key->tag == cur_key->tag &&
+            memcmp(key->uni.str, cur_key->uni.ptr, key_len) == 0) {
+                size_t cpy_len = sizeof(*key) - sizeof(key->next);
+                yyjson_mut_val tmp;
+                memcpy(&tmp, cur_key, cpy_len);
+                memcpy(cur_key, key, cpy_len);
+                memcpy(key, &tmp, cpy_len);
+
+                memcpy(&tmp, cur_key->next, cpy_len);
+                memcpy(cur_key->next, val, cpy_len);
+                memcpy(val, &tmp, cpy_len);
+                return true;
+            } else {
+                pre_key = cur_key;
+                cur_key = cur_key->next->next;
+            }
+        }
+    }
+    return false;
+}
+
 yyjson_api_inline bool yyjson_mut_obj_add(yyjson_mut_val *obj,
                                           yyjson_mut_val *key,
                                           yyjson_mut_val *val) {
@@ -3713,6 +3748,15 @@ yyjson_api_inline bool yyjson_mut_obj_clear(yyjson_mut_val *obj) {
     return false;
 }
 
+yyjson_api_inline bool yyjson_mut_obj_replace(yyjson_mut_val *obj,
+                                              yyjson_mut_val *key,
+                                              yyjson_mut_val *val) {
+    if (yyjson_likely(yyjson_mut_is_obj(obj) &&
+    yyjson_mut_is_str(key) && val)) {
+        return unsafe_yyjson_mut_obj_replace(obj, key, val);
+    }
+    return false;
+}
 
 /*==============================================================================
  * Mutable JSON Object Modification Convenience API (Implementation)
