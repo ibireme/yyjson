@@ -1,9 +1,6 @@
 #include "yyjson.h"
 #include "yy_test_utils.h"
 
-#include <fcntl.h>
-#include <stdio.h>
-
 /* TODO: Move something like this into yyjson.h */
 bool mut_val_eq(yyjson_mut_val* lhs, yyjson_mut_val* rhs) {
     if (yyjson_mut_get_type(lhs) != yyjson_mut_get_type(rhs)) {

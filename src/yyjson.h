@@ -181,6 +181,16 @@
 #   endif
 #endif
 
+/* unused */
+#ifndef yyjson_unused
+#   ifdef __GNUC__
+#       define yyjson_unused __attribute__ ((unused))
+#   else
+#       define yyjson_unused
+#   endif
+#endif
+
+
 /* align */
 #ifndef yyjson_align
 #   if defined(_MSC_VER)
@@ -1964,7 +1974,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_doc_get_pointer(
     Returns NULL if the patch could not be applied. */
 static yyjson_mut_val *yyjson_merge_patch(yyjson_mut_doc *doc,
                                           yyjson_val *orig,
-                                          yyjson_val *patch);
+                                          yyjson_val *patch) yyjson_unused;
 
 
 
