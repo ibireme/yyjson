@@ -181,6 +181,16 @@
 #   endif
 #endif
 
+/* unused */
+#ifndef yyjson_unused
+#   ifdef __GNUC__
+#       define yyjson_unused __attribute__ ((unused))
+#   else
+#       define yyjson_unused
+#   endif
+#endif
+
+
 /* align */
 #ifndef yyjson_align
 #   if defined(_MSC_VER)
@@ -1953,6 +1963,18 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_get_pointer(yyjson_mut_val *val,
     Returns NULL if there's no matched value. */
 yyjson_api_inline yyjson_mut_val *yyjson_mut_doc_get_pointer(
                                     yyjson_mut_doc *doc, const char *pointer);
+
+
+
+/*==============================================================================
+ * JSON Merge-Patch API
+ *============================================================================*/
+
+/** Creates and returns a merge-patched JSON value: https://tools.ietf.org/html/rfc7386
+    Returns NULL if the patch could not be applied. */
+static yyjson_mut_val *yyjson_merge_patch(yyjson_mut_doc *doc,
+                                          yyjson_val *orig,
+                                          yyjson_val *patch) yyjson_unused;
 
 
 
@@ -3978,6 +4000,66 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_doc_get_pointer(
     yyjson_mut_doc *doc, const char *ptr) {
     if (doc) return yyjson_mut_get_pointer(doc->root, ptr);
     return NULL;
+}
+
+
+
+/*==============================================================================
+ * JSON Merge-Patch API (Implementation)
+ *============================================================================*/
+
+static yyjson_mut_val *yyjson_merge_patch(yyjson_mut_doc *doc,
+                                          yyjson_val *orig,
+                                          yyjson_val *patch) {
+    size_t idx, max;
+    yyjson_val *key, *orig_val, *patch_val, local_orig;
+    yyjson_mut_val *builder, *mut_key, *mut_val, *merged_val;
+
+    if (!yyjson_is_obj(patch)) {
+        return yyjson_val_mut_copy(doc, patch);
+    }
+
+    builder = yyjson_mut_obj(doc);
+    if (!yyjson_is_obj(orig)) {
+        /* TODO: is there a way to convert mut to immut? */
+        orig = &local_orig;
+        orig->tag = builder->tag;
+        orig->uni = builder->uni;
+    }
+
+    /* Merge items modified by the patch. */
+    yyjson_obj_foreach(patch, idx, max, key, patch_val) {
+        /* null indicates the field is removed. */
+        if (yyjson_is_null(patch_val)) {
+            continue;
+        }
+        mut_key = yyjson_val_mut_copy(doc, key);
+
+        orig_val = yyjson_obj_get(orig, yyjson_get_str(key));
+        merged_val = yyjson_merge_patch(doc, orig_val, patch_val);
+        if (!yyjson_mut_obj_add(builder, mut_key, merged_val)) {
+            return NULL;
+        }
+    }
+
+    /* Exit early, if orig is not contributing to the final result. */
+    if (orig == &local_orig) {
+        return builder;
+    }
+
+    /* Copy over any items that weren't modified by the patch. */
+    yyjson_obj_foreach(orig, idx, max, key, orig_val) {
+        patch_val = yyjson_obj_get(patch, yyjson_get_str(key));
+        if (!patch_val) {
+            mut_key = yyjson_val_mut_copy(doc, key);
+            mut_val = yyjson_val_mut_copy(doc, orig_val);
+            if (!yyjson_mut_obj_add(builder, mut_key, mut_val)) {
+                return NULL;
+            }
+        }
+    }
+
+    return builder;
 }
 
 

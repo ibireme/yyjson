@@ -24,6 +24,11 @@
     test_json_pointer();
 }
 
+- (void)test_json_merge_patch {
+    extern void test_json_merge_patch(void);
+    test_json_merge_patch();
+}
+
 - (void)test_json_reader {
     extern void test_json_reader(void);
     test_json_reader();
