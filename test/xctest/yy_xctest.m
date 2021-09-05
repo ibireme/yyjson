@@ -14,6 +14,11 @@
     test_allocator();
 }
 
+- (void)test_json_merge_patch {
+    extern void test_json_merge_patch(void);
+    test_json_merge_patch();
+}
+
 - (void)test_json_mut_val {
     extern void test_json_mut_val(void);
     test_json_mut_val();
@@ -22,11 +27,6 @@
 - (void)test_json_pointer {
     extern void test_json_pointer(void);
     test_json_pointer();
-}
-
-- (void)test_json_merge_patch {
-    extern void test_json_merge_patch(void);
-    test_json_merge_patch();
 }
 
 - (void)test_json_reader {

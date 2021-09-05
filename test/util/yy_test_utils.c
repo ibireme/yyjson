@@ -43,7 +43,7 @@ bool yy_cpu_setup_priority(void) {
 
 void yy_cpu_spin(f64 second) {
     f64 end = yy_time_get_seconds() + second;
-    while(yy_time_get_seconds() < end) {
+    while (yy_time_get_seconds() < end) {
         volatile int x = 0;
         while (x < 1000) x++;
     }
@@ -69,7 +69,7 @@ void yy_cpu_run_seq_a(void) {
     do {
         REPEAT_32( v1 += v4; v2 += v1; v3 += v2; v4 += v3; )
         REPEAT_64( v1 += v4; v2 += v1; v3 += v2; v4 += v3; )
-    } while(--loop);
+    } while (--loop);
     yy_cpu_run_seq_vals[0] = v1;
 }
 
@@ -81,7 +81,7 @@ void yy_cpu_run_seq_b(void) {
     u32 v4 = yy_cpu_run_seq_vals[4];
     do {
         REPEAT_128( v1 += v4; v2 += v1; v3 += v2; v4 += v3; )
-    } while(--loop);
+    } while (--loop);
     yy_cpu_run_seq_vals[0] = v1;
 }
 
@@ -916,7 +916,7 @@ bool yy_buf_grow(yy_buf *buf, usize len) {
     do {
         if (alc * 2 < alc) return false; /* overflow */
         alc *= 2;
-    } while(alc - use < len);
+    } while (alc - use < len);
     u8 *tmp = (u8 *)realloc(buf->hdr, alc);
     if (!tmp) return false;
     

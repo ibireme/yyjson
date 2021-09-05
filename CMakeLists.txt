@@ -144,7 +144,7 @@ if(YYJSON_BUILD_TESTS)
         unset(YYJSON_TEST_LINES)
         
         # Add source files and search path to XCTest
-        file(GLOB YYJSON_TEST_SOURCE 
+        file(GLOB YYJSON_TEST_SOURCE
             "test/test_*.c"
             "test/test_*.cpp"
             "test/util/*.h"
@@ -159,7 +159,7 @@ if(YYJSON_BUILD_TESTS)
             MACOSX_BUNDLE_INFO_PLIST ${CMAKE_CURRENT_SOURCE_DIR}/test/xctest/Info.plist
             RESOURCE ${YYJSON_TEST_DATA}
         )
-        target_include_directories(yyjson_tests PRIVATE 
+        target_include_directories(yyjson_tests PRIVATE
             ${CMAKE_CURRENT_SOURCE_DIR}/test/util
             ${CMAKE_CURRENT_SOURCE_DIR}/test/xctest
         )
@@ -233,7 +233,7 @@ if(YYJSON_BUILD_TESTS)
                 target_link_libraries(yyjson INTERFACE ${COMPILE_FLAGS})
             endif()
             if (YYJSON_ENABLE_SANITIZE)
-                set(COMPILE_FLAGS 
+                set(COMPILE_FLAGS
                     -fsanitize=address
                     -fsanitize=undefined
                     -fsanitize=leak
@@ -260,7 +260,7 @@ if(YYJSON_BUILD_TESTS)
         
         # set warning level 4, treat warnings as errors
         set(YYJSON_STRICT_FLAGS /W4 /WX)
-        target_compile_options(test_compile_ansi_c PRIVATE 
+        target_compile_options(test_compile_ansi_c PRIVATE
             $<$<COMPILE_LANGUAGE:C>:${YYJSON_STRICT_FLAGS}>)
         target_compile_options(test_compile_ansi_cpp PRIVATE
             $<$<COMPILE_LANGUAGE:CXX>:${YYJSON_STRICT_FLAGS}>)
@@ -338,7 +338,7 @@ if(YYJSON_BUILD_MISC)
     find_package(GMP REQUIRED)
     find_package(MPFR REQUIRED)
     add_executable(make_tables "misc/make_tables.c")
-    target_include_directories(make_tables PRIVATE 
+    target_include_directories(make_tables PRIVATE
         ${GMP_INCLUDE_DIR}
         ${MPFR_INCLUDES}
     )

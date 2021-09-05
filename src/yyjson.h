@@ -68,10 +68,10 @@
 #ifndef YYJSON_DISABLE_NON_STANDARD
 #endif
 
-/* Define as 1 to disable unaligned memory access if target architecture does 
+/* Define as 1 to disable unaligned memory access if target architecture does
    not support unaligned memory access (such as some embedded processors).
    If this value is not defined, yyjson will perform some automatic detection.
-   Wrong definition of this flag may cause performance degradation, but will not 
+   Wrong definition of this flag may cause performance degradation, but will not
    cause runtime errors. */
 #ifndef YYJSON_DISABLE_UNALIGNED_MEMORY_ACCESS
 #endif
@@ -189,7 +189,6 @@
 #       define yyjson_unused
 #   endif
 #endif
-
 
 /* align */
 #ifndef yyjson_align
@@ -491,7 +490,7 @@ static const yyjson_read_flag YYJSON_READ_NOFLAG                = 0 << 0;
 static const yyjson_read_flag YYJSON_READ_INSITU                = 1 << 0;
 
 /** Stop when done instead of issues an error if there's additional content
-    after a JSON document. This option may used to parse small pieces of JSON 
+    after a JSON document. This option may used to parse small pieces of JSON
     in larger data, such as NDJSON. */
 static const yyjson_read_flag YYJSON_READ_STOP_WHEN_DONE        = 1 << 1;
 
@@ -1970,7 +1969,8 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_doc_get_pointer(
  * JSON Merge-Patch API
  *============================================================================*/
 
-/** Creates and returns a merge-patched JSON value: https://tools.ietf.org/html/rfc7386
+/** Creates and returns a merge-patched JSON value:
+    https://tools.ietf.org/html/rfc7386
     Returns NULL if the patch could not be applied. */
 static yyjson_mut_val *yyjson_merge_patch(yyjson_mut_doc *doc,
                                           yyjson_val *orig,
@@ -2426,7 +2426,7 @@ yyjson_api_inline yyjson_val *yyjson_obj_getn(yyjson_val *obj,
     if (yyjson_likely(yyjson_is_obj(obj) && key_str)) {
         size_t len = unsafe_yyjson_get_len(obj);
         yyjson_val *key = unsafe_yyjson_get_first(obj);
-        while(len-- > 0) {
+        while (len-- > 0) {
             if (key->tag == tag &&
                 memcmp(key->uni.ptr, key_str, key_len) == 0) {
                 return key + 1;
@@ -3212,7 +3212,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_replace(yyjson_mut_val *arr,
             if (yyjson_likely(len > 1)) {
                 yyjson_mut_val *prev = ((yyjson_mut_val *)arr->uni.ptr);
                 yyjson_mut_val *next = prev->next;
-                while(idx-- > 0) {
+                while (idx-- > 0) {
                     prev = next;
                     next = next->next;
                 }
@@ -3240,7 +3240,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_remove(yyjson_mut_val *arr,
             if (yyjson_likely(len > 1)) {
                 yyjson_mut_val *prev = ((yyjson_mut_val *)arr->uni.ptr);
                 yyjson_mut_val *next = prev->next;
-                while(idx-- > 0) {
+                while (idx-- > 0) {
                     prev = next;
                     next = next->next;
                 }
@@ -3308,9 +3308,9 @@ yyjson_api_inline bool yyjson_mut_arr_remove_range(yyjson_mut_val *arr,
         if (yyjson_unlikely(len == _len)) return true;
         tail_removed = (_idx + _len == len);
         prev = ((yyjson_mut_val *)arr->uni.ptr);
-        while(_idx-- > 0) prev = prev->next;
+        while (_idx-- > 0) prev = prev->next;
         next = prev->next;
-        while(_len-- > 0) next = next->next;
+        while (_len-- > 0) next = next->next;
         prev->next = next;
         if (yyjson_unlikely(tail_removed)) arr->uni.ptr = prev;
         return true;
@@ -3488,7 +3488,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_obj_getn(yyjson_mut_val *obj,
     size_t len = yyjson_mut_obj_size(obj);
     if (yyjson_likely(len && key_str)) {
         yyjson_mut_val *key = ((yyjson_mut_val *)obj->uni.ptr)->next->next;
-        while(len-- > 0) {
+        while (len-- > 0) {
             if (key->tag == tag &&
                 memcmp(key->uni.ptr, key_str, key_len) == 0) {
                 return key->next;
@@ -4014,11 +4014,11 @@ static yyjson_mut_val *yyjson_merge_patch(yyjson_mut_doc *doc,
     size_t idx, max;
     yyjson_val *key, *orig_val, *patch_val, local_orig;
     yyjson_mut_val *builder, *mut_key, *mut_val, *merged_val;
-
+    
     if (!yyjson_is_obj(patch)) {
         return yyjson_val_mut_copy(doc, patch);
     }
-
+    
     builder = yyjson_mut_obj(doc);
     if (!yyjson_is_obj(orig)) {
         /* TODO: is there a way to convert mut to immut? */
@@ -4026,7 +4026,7 @@ static yyjson_mut_val *yyjson_merge_patch(yyjson_mut_doc *doc,
         orig->tag = builder->tag;
         orig->uni = builder->uni;
     }
-
+    
     /* Merge items modified by the patch. */
     yyjson_obj_foreach(patch, idx, max, key, patch_val) {
         /* null indicates the field is removed. */
@@ -4041,12 +4041,12 @@ static yyjson_mut_val *yyjson_merge_patch(yyjson_mut_doc *doc,
             return NULL;
         }
     }
-
+    
     /* Exit early, if orig is not contributing to the final result. */
     if (orig == &local_orig) {
         return builder;
     }
-
+    
     /* Copy over any items that weren't modified by the patch. */
     yyjson_obj_foreach(orig, idx, max, key, orig_val) {
         patch_val = yyjson_obj_get(patch, yyjson_get_str(key));
@@ -4058,7 +4058,7 @@ static yyjson_mut_val *yyjson_merge_patch(yyjson_mut_doc *doc,
             }
         }
     }
-
+    
     return builder;
 }
 
