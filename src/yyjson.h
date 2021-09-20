@@ -3650,7 +3650,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_obj_iter_getn(
             if (idx == iter->max) {
                 idx = 0;
                 max = iter->idx;
-                iter->cur = iter->obj->uni.ptr;
+                iter->cur = (yyjson_mut_val *)iter->obj->uni.ptr;
                 iter->pre = NULL;
             }
         }
