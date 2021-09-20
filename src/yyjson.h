@@ -3643,8 +3643,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_obj_iter_getn(
     if (iter && key) {
         size_t idx = 0;
         size_t max = iter->max;
-        yyjson_mut_val *pre = iter->pre;
-        yyjson_mut_val *cur = iter->cur;
+        yyjson_mut_val *pre, *cur = iter->cur;
         while (idx++ < max) {
             pre = cur;
             cur = cur->next->next;
