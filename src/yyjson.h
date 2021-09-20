@@ -3651,8 +3651,8 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_obj_iter_getn(
                 memcmp(cur->uni.str, key, key_len) == 0) {
                 iter->idx+= idx;
                 if (iter->idx > max) iter->idx -= max + 1;
-                iter->pre = cur;
-                iter->cur = cur->next->next;
+                iter->pre = pre;
+                iter->cur = cur;
                 return cur->next;
             }
         }
