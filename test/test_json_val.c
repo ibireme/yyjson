@@ -404,6 +404,10 @@ static void test_json_obj_api(void) {
         yy_assert(false);
     }
     
+    // iter get
+    yy_assert(yyjson_obj_iter_init(obj, &iter));
+    yy_assert(!yyjson_obj_get(obj, "x"));
+    
     // foreach
     yyjson_obj_foreach(obj, idx, max, key, val) {
         yy_assert(false);
@@ -447,6 +451,19 @@ static void test_json_obj_api(void) {
     }
     yy_assert(yyjson_obj_iter_has_next(&iter) == false);
     yy_assert(tmp[0]);
+    
+    // iter get
+    yy_assert(yyjson_obj_iter_init(obj, &iter));
+    yy_assert(yyjson_get_int(yyjson_obj_get(obj, "a")) == 1);
+    yy_assert(!yyjson_obj_get(obj, "x"));
+    yy_assert(yyjson_get_int(yyjson_obj_get(obj, "a")) == 1);
+    yy_assert(!yyjson_obj_get(obj, "x"));
+    
+    yy_assert(yyjson_obj_iter_init(obj, &iter));
+    yy_assert(!yyjson_obj_get(obj, "x"));
+    yy_assert(yyjson_get_int(yyjson_obj_get(obj, "a")) == 1);
+    yy_assert(!yyjson_obj_get(obj, "x"));
+    yy_assert(yyjson_get_int(yyjson_obj_get(obj, "a")) == 1);
     
     // foreach
     memset(tmp, 0, sizeof(tmp));
@@ -507,6 +524,31 @@ static void test_json_obj_api(void) {
     yy_assert(yyjson_obj_iter_has_next(&iter) == false);
     yy_assert(tmp[0]);
     yy_assert(tmp[1]);
+    
+    // iter get
+    yy_assert(yyjson_obj_iter_init(obj, &iter));
+    yy_assert(yyjson_get_int(yyjson_obj_get(obj, "a")) == 1);
+    yy_assert(!yyjson_obj_get(obj, "x"));
+    yy_assert(yyjson_get_int(yyjson_obj_get(obj, "a")) == 1);
+    yy_assert(!yyjson_obj_get(obj, "x"));
+    
+    yy_assert(yyjson_obj_iter_init(obj, &iter));
+    yy_assert(!yyjson_obj_get(obj, "x"));
+    yy_assert(yyjson_get_int(yyjson_obj_get(obj, "a")) == 1);
+    yy_assert(!yyjson_obj_get(obj, "x"));
+    yy_assert(yyjson_get_int(yyjson_obj_get(obj, "a")) == 1);
+    
+    yy_assert(yyjson_obj_iter_init(obj, &iter));
+    yy_assert(yyjson_get_int(yyjson_obj_get(obj, "a")) == 1);
+    yy_assert(yyjson_get_int(yyjson_obj_get(obj, "b")) == 2);
+    yy_assert(!yyjson_obj_get(obj, "x"));
+    yy_assert(yyjson_get_int(yyjson_obj_get(obj, "b")) == 2);
+    
+    yy_assert(yyjson_obj_iter_init(obj, &iter));
+    yy_assert(yyjson_get_int(yyjson_obj_get(obj, "b")) == 2);
+    yy_assert(yyjson_get_int(yyjson_obj_get(obj, "a")) == 1);
+    yy_assert(!yyjson_obj_get(obj, "x"));
+    yy_assert(yyjson_get_int(yyjson_obj_get(obj, "b")) == 2);
     
     // foreach
     memset(tmp, 0, sizeof(tmp));
@@ -580,6 +622,53 @@ static void test_json_obj_api(void) {
     yy_assert(tmp[0]);
     yy_assert(tmp[1]);
     yy_assert(tmp[2]);
+    
+    // iter get
+    yy_assert(yyjson_obj_iter_init(obj, &iter));
+    yy_assert(yyjson_get_int(yyjson_obj_get(obj, "a")) == 1);
+    yy_assert(!yyjson_obj_get(obj, "x"));
+    yy_assert(yyjson_get_int(yyjson_obj_get(obj, "a")) == 1);
+    yy_assert(!yyjson_obj_get(obj, "x"));
+    
+    yy_assert(yyjson_obj_iter_init(obj, &iter));
+    yy_assert(!yyjson_obj_get(obj, "x"));
+    yy_assert(yyjson_get_int(yyjson_obj_get(obj, "a")) == 1);
+    yy_assert(!yyjson_obj_get(obj, "x"));
+    yy_assert(yyjson_get_int(yyjson_obj_get(obj, "a")) == 1);
+    
+    yy_assert(yyjson_obj_iter_init(obj, &iter));
+    yy_assert(yyjson_get_int(yyjson_obj_get(obj, "a")) == 1);
+    yy_assert(yyjson_get_int(yyjson_obj_get(obj, "b")) == 2);
+    yy_assert(!yyjson_obj_get(obj, "x"));
+    yy_assert(yyjson_get_int(yyjson_obj_get(obj, "b")) == 2);
+    
+    yy_assert(yyjson_obj_iter_init(obj, &iter));
+    yy_assert(yyjson_get_int(yyjson_obj_get(obj, "b")) == 2);
+    yy_assert(yyjson_get_int(yyjson_obj_get(obj, "a")) == 1);
+    yy_assert(!yyjson_obj_get(obj, "x"));
+    yy_assert(yyjson_get_int(yyjson_obj_get(obj, "b")) == 2);
+    
+    yy_assert(yyjson_obj_iter_init(obj, &iter));
+    yy_assert(yyjson_get_int(yyjson_obj_get(obj, "c")) == 3);
+    yy_assert(yyjson_get_int(yyjson_obj_get(obj, "b")) == 2);
+    yy_assert(!yyjson_obj_get(obj, "x"));
+    yy_assert(yyjson_get_int(yyjson_obj_get(obj, "b")) == 2);
+    
+    yy_assert(yyjson_obj_iter_init(obj, &iter));
+    yy_assert(yyjson_get_int(yyjson_obj_get(obj, "a")) == 1);
+    yy_assert(yyjson_get_int(yyjson_obj_get(obj, "b")) == 2);
+    yy_assert(yyjson_get_int(yyjson_obj_get(obj, "c")) == 3);
+    yy_assert(yyjson_get_int(yyjson_obj_get(obj, "a")) == 1);
+    yy_assert(yyjson_get_int(yyjson_obj_get(obj, "b")) == 2);
+    yy_assert(yyjson_get_int(yyjson_obj_get(obj, "c")) == 3);
+    
+    yy_assert(yyjson_obj_iter_init(obj, &iter));
+    yy_assert(yyjson_get_int(yyjson_obj_get(obj, "c")) == 3);
+    yy_assert(yyjson_get_int(yyjson_obj_get(obj, "b")) == 2);
+    yy_assert(yyjson_get_int(yyjson_obj_get(obj, "a")) == 1);
+    yy_assert(yyjson_get_int(yyjson_obj_get(obj, "c")) == 3);
+    yy_assert(yyjson_get_int(yyjson_obj_get(obj, "b")) == 2);
+    yy_assert(yyjson_get_int(yyjson_obj_get(obj, "a")) == 1);
     
     // foreach
     memset(tmp, 0, sizeof(tmp));

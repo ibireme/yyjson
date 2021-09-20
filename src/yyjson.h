@@ -1179,6 +1179,25 @@ yyjson_api_inline yyjson_val *yyjson_obj_iter_next(yyjson_obj_iter *iter);
 yyjson_api_inline yyjson_val *yyjson_obj_iter_get_val(yyjson_val *key);
 
 /**
+ Iterates to a specified key and returns the value.
+ If the key exists in the object, then the iterator will stop at the next key,
+ otherwise the iterator will not change and NULL is returned.
+ @warning This function takes a linear search time if the key is not nearby.
+ */
+yyjson_api_inline yyjson_val *yyjson_obj_iter_get(yyjson_obj_iter *iter,
+                                                  const char *key);
+
+/**
+ Iterates to a specified key and returns the value.
+ If the key exists in the object, then the iterator will stop at the next key,
+ otherwise the iterator will not change and NULL is returned.
+ @warning This function takes a linear search time if the key is not nearby.
+ */
+yyjson_api_inline yyjson_val *yyjson_obj_iter_getn(yyjson_obj_iter *iter,
+                                                   const char *key,
+                                                   size_t key_len);
+
+/**
  Macro for iterating over an object.
  
  Sample code:
@@ -1751,6 +1770,27 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_obj_iter_get_val(
     accessed by key->next. */
 yyjson_api_inline yyjson_mut_val *yyjson_mut_obj_iter_remove(
                                                     yyjson_mut_obj_iter *iter);
+
+/**
+ Iterates to a specified key and returns the value.
+ If the key exists in the object, then the iterator will stop at the next key,
+ otherwise the iterator will not change and NULL is returned.
+ @warning This function takes a linear search time if the key is not nearby.
+ */
+yyjson_api_inline yyjson_mut_val *yyjson_mut_obj_iter_get(
+                                                    yyjson_mut_obj_iter *iter,
+                                                    const char *key);
+
+/**
+ Iterates to a specified key and returns the value.
+ If the key exists in the object, then the iterator will stop at the next key,
+ otherwise the iterator will not change and NULL is returned.
+ @warning This function takes a linear search time if the key is not nearby.
+ */
+yyjson_api_inline yyjson_mut_val *yyjson_mut_obj_iter_getn(
+                                                    yyjson_mut_obj_iter *iter,
+                                                    const char *key,
+                                                    size_t key_len);
 
 /**
  Macro for iterating over an object.
@@ -2437,7 +2477,7 @@ struct yyjson_obj_iter {
     size_t idx;
     size_t max;
     yyjson_val *cur;
-    yyjson_val *pre;
+    yyjson_val *obj;
 };
 
 yyjson_api_inline bool yyjson_obj_iter_init(yyjson_val *obj,
@@ -2446,10 +2486,13 @@ yyjson_api_inline bool yyjson_obj_iter_init(yyjson_val *obj,
         iter->idx = 0;
         iter->max = unsafe_yyjson_get_len(obj);
         iter->cur = unsafe_yyjson_get_first(obj);
-        iter->pre = iter->cur;
+        iter->obj = obj;
         return true;
     }
-    if (iter) memset(iter, 0, sizeof(yyjson_obj_iter));
+    if (iter) {
+        iter->idx = 0;
+        iter->max = 0;
+    }
     return false;
 }
 
@@ -2459,10 +2502,10 @@ yyjson_api_inline bool yyjson_obj_iter_has_next(yyjson_obj_iter *iter) {
 
 yyjson_api_inline yyjson_val *yyjson_obj_iter_next(yyjson_obj_iter *iter) {
     if (iter && iter->idx < iter->max) {
-        iter->pre = iter->cur;
+        yyjson_val *key = iter->cur;
         iter->idx++;
-        iter->cur = unsafe_yyjson_get_next(iter->cur + 1);
-        return iter->pre;
+        iter->cur = unsafe_yyjson_get_next(key + 1);
+        return key;
     }
     return NULL;
 }
@@ -2470,6 +2513,37 @@ yyjson_api_inline yyjson_val *yyjson_obj_iter_next(yyjson_obj_iter *iter) {
 yyjson_api_inline yyjson_val *yyjson_obj_iter_get_val(yyjson_val *key) {
     return key + 1;
 }
+
+yyjson_api_inline yyjson_val *yyjson_obj_iter_get(yyjson_obj_iter *iter,
+                                                  const char *key) {
+    return yyjson_obj_iter_getn(iter, key, key ? strlen(key) : 0);
+}
+
+yyjson_api_inline yyjson_val *yyjson_obj_iter_getn(yyjson_obj_iter *iter,
+                                                   const char *key,
+                                                   size_t key_len) {
+    if (iter && key) {
+        size_t idx = iter->idx;
+        size_t max = iter->max;
+        yyjson_val *cur = iter->cur;
+        while (idx++ < max) {
+            yyjson_val *next = unsafe_yyjson_get_next(cur + 1);
+            if (unsafe_yyjson_get_len(cur) == key_len &&
+                memcmp(cur->uni.str, key, key_len) == 0) {
+                iter->idx = idx;
+                iter->cur = next;
+                return cur;
+            }
+            if (idx == iter->max) {
+                idx = 0;
+                max = iter->idx;
+                cur = unsafe_yyjson_get_first(iter->obj);
+            }
+        }
+    }
+    return NULL;
+}
+
 
 
 /*==============================================================================
@@ -3497,21 +3571,19 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_obj_getn(yyjson_mut_val *obj,
 struct yyjson_mut_obj_iter {
     size_t idx;
     size_t max;
-    yyjson_mut_val *obj;
-    yyjson_mut_val *prev;
     yyjson_mut_val *cur;
+    yyjson_mut_val *pre;
+    yyjson_mut_val *obj;
 };
 
 yyjson_api_inline bool yyjson_mut_obj_iter_init(yyjson_mut_val *obj,
                                                 yyjson_mut_obj_iter *iter) {
     if (yyjson_likely(yyjson_mut_is_obj(obj) && iter)) {
-        iter->obj = obj;
         iter->idx = 0;
         iter->max = unsafe_yyjson_get_len(obj);
-        if (iter->max) {
-            iter->prev = NULL;
-            iter->cur = (yyjson_mut_val *)obj->uni.ptr;
-        }
+        iter->cur = (yyjson_mut_val *)obj->uni.ptr;
+        iter->pre = NULL;
+        iter->obj = obj;
         return true;
     }
     if (iter) memset(iter, 0, sizeof(yyjson_mut_obj_iter));
@@ -3526,7 +3598,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_obj_iter_next(
     yyjson_mut_obj_iter *iter) {
     if (iter && iter->idx < iter->max) {
         yyjson_mut_val *key = iter->cur;
-        iter->prev = key;
+        iter->pre = key;
         iter->cur = key->next->next;
         iter->idx++;
         return iter->cur;
@@ -3542,7 +3614,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_obj_iter_get_val(
 yyjson_api_inline yyjson_mut_val *yyjson_mut_obj_iter_remove(
     yyjson_mut_obj_iter *iter) {
     if (yyjson_likely(iter && 0 < iter->idx && iter->idx <= iter->max)) {
-        yyjson_mut_val *prev = iter->prev;
+        yyjson_mut_val *prev = iter->pre;
         yyjson_mut_val *cur = iter->cur;
         yyjson_mut_val *next = cur->next->next;
         if (yyjson_unlikely(iter->idx == iter->max)) iter->obj->uni.ptr = prev;
@@ -3556,7 +3628,35 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_obj_iter_remove(
     return NULL;
 }
 
+yyjson_api_inline yyjson_mut_val *yyjson_mut_obj_iter_get(
+    yyjson_mut_obj_iter *iter, const char *key) {
+    return yyjson_mut_obj_iter_getn(iter, key, key ? strlen(key) : 0);
+}
 
+yyjson_api_inline yyjson_mut_val *yyjson_mut_obj_iter_getn(
+    yyjson_mut_obj_iter *iter, const char *key, size_t key_len) {
+    if (iter && key) {
+        size_t idx = iter->idx;
+        size_t max = iter->max;
+        while (idx++ < max) {
+            yyjson_mut_val *pre = iter->cur;
+            iter->pre = pre;
+            iter->cur = pre->next->next;
+            if (unsafe_yyjson_get_len(iter->cur) == key_len &&
+                memcmp(iter->cur->uni.str, key, key_len) == 0) {
+                iter->idx = idx;
+                return iter->cur;
+            }
+            if (idx == iter->max) {
+                idx = 0;
+                max = iter->idx;
+                iter->cur = iter->obj->uni.ptr;
+                iter->pre = NULL;
+            }
+        }
+    }
+    return NULL;
+}
 
 /*==============================================================================
  * Mutable JSON Object Creation API (Implementation)
