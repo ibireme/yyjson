@@ -1499,6 +1499,66 @@ yyjson_api yyjson_mut_val *unsafe_yyjson_mut_get_pointer(yyjson_mut_val *val,
 
 
 /*==============================================================================
+ * JSON Merge-Patch
+ *============================================================================*/
+
+yyjson_api yyjson_mut_val *yyjson_merge_patch(yyjson_mut_doc *doc,
+                                              yyjson_val *orig,
+                                              yyjson_val *patch) {
+    size_t idx, max;
+    yyjson_val *key, *orig_val, *patch_val, local_orig;
+    yyjson_mut_val *builder, *mut_key, *mut_val, *merged_val;
+    
+    if (!yyjson_is_obj(patch)) {
+        return yyjson_val_mut_copy(doc, patch);
+    }
+    
+    builder = yyjson_mut_obj(doc);
+    if (!yyjson_is_obj(orig)) {
+        /* TODO: is there a way to convert mut to immut? */
+        orig = &local_orig;
+        orig->tag = builder->tag;
+        orig->uni = builder->uni;
+    }
+    
+    /* Merge items modified by the patch. */
+    yyjson_obj_foreach(patch, idx, max, key, patch_val) {
+        /* null indicates the field is removed. */
+        if (yyjson_is_null(patch_val)) {
+            continue;
+        }
+        mut_key = yyjson_val_mut_copy(doc, key);
+
+        orig_val = yyjson_obj_get(orig, yyjson_get_str(key));
+        merged_val = yyjson_merge_patch(doc, orig_val, patch_val);
+        if (!yyjson_mut_obj_add(builder, mut_key, merged_val)) {
+            return NULL;
+        }
+    }
+    
+    /* Exit early, if orig is not contributing to the final result. */
+    if (orig == &local_orig) {
+        return builder;
+    }
+    
+    /* Copy over any items that weren't modified by the patch. */
+    yyjson_obj_foreach(orig, idx, max, key, orig_val) {
+        patch_val = yyjson_obj_get(patch, yyjson_get_str(key));
+        if (!patch_val) {
+            mut_key = yyjson_val_mut_copy(doc, key);
+            mut_val = yyjson_val_mut_copy(doc, orig_val);
+            if (!yyjson_mut_obj_add(builder, mut_key, mut_val)) {
+                return NULL;
+            }
+        }
+    }
+    
+    return builder;
+}
+
+
+
+/*==============================================================================
  * Power10 Lookup Table
  * These data are used by the floating-point number reader and writer.
  *============================================================================*/
