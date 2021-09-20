@@ -2526,15 +2526,20 @@ yyjson_api_inline yyjson_val *yyjson_obj_iter_getn(yyjson_obj_iter *iter,
         size_t idx = iter->idx;
         size_t max = iter->max;
         yyjson_val *cur = iter->cur;
+        if (yyjson_unlikely(idx == max)) {
+            idx = 0;
+            cur = unsafe_yyjson_get_first(iter->obj);
+        }
         while (idx++ < max) {
             yyjson_val *next = unsafe_yyjson_get_next(cur + 1);
             if (unsafe_yyjson_get_len(cur) == key_len &&
                 memcmp(cur->uni.str, key, key_len) == 0) {
                 iter->idx = idx;
                 iter->cur = next;
-                return cur;
+                return cur + 1;
             }
-            if (idx == iter->max) {
+            cur = next;
+            if (idx == iter->max && iter->idx < iter->max) {
                 idx = 0;
                 max = iter->idx;
                 cur = unsafe_yyjson_get_first(iter->obj);
@@ -3636,22 +3641,20 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_obj_iter_get(
 yyjson_api_inline yyjson_mut_val *yyjson_mut_obj_iter_getn(
     yyjson_mut_obj_iter *iter, const char *key, size_t key_len) {
     if (iter && key) {
-        size_t idx = iter->idx;
+        size_t idx = 0;
         size_t max = iter->max;
+        yyjson_mut_val *pre = iter->pre;
+        yyjson_mut_val *cur = iter->cur;
         while (idx++ < max) {
-            yyjson_mut_val *pre = iter->cur;
-            iter->pre = pre;
-            iter->cur = pre->next->next;
-            if (unsafe_yyjson_get_len(iter->cur) == key_len &&
-                memcmp(iter->cur->uni.str, key, key_len) == 0) {
-                iter->idx = idx;
-                return iter->cur;
-            }
-            if (idx == iter->max) {
-                idx = 0;
-                max = iter->idx;
-                iter->cur = (yyjson_mut_val *)iter->obj->uni.ptr;
-                iter->pre = NULL;
+            pre = cur;
+            cur = cur->next->next;
+            if (unsafe_yyjson_get_len(cur) == key_len &&
+                memcmp(cur->uni.str, key, key_len) == 0) {
+                iter->idx+= idx;
+                if (iter->idx > max) iter->idx -= max + 1;
+                iter->pre = cur;
+                iter->cur = cur->next->next;
+                return cur->next;
             }
         }
     }
