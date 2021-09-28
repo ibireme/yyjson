@@ -1851,12 +1851,20 @@ yyjson_api_inline bool yyjson_mut_obj_add(yyjson_mut_val *obj,
                                           yyjson_mut_val *key,
                                           yyjson_mut_val *val);
 
-/** Adds a key-value pair to the object, The key must be a string.
+/** Adds a key-value pair to the object. The key must be a string.
     This function may remove all key-value pairs for the given key before add.
     @warning This function takes a linear search time. */
 yyjson_api_inline bool yyjson_mut_obj_put(yyjson_mut_val *obj,
                                           yyjson_mut_val *key,
                                           yyjson_mut_val *val);
+
+/** Inserts a key-value pair to the object at the given position.
+    The key must be a string. This function allows duplicated key in one object.
+    @warning This function takes a linear search time. */
+yyjson_api_inline bool yyjson_mut_obj_insert(yyjson_mut_val *obj,
+                                             yyjson_mut_val *key,
+                                             yyjson_mut_val *val,
+                                             size_t idx);
 
 /** Removes key-value pair from the object with given key.
     @warning This function takes a linear search time. */
@@ -1866,11 +1874,16 @@ yyjson_api_inline bool yyjson_mut_obj_remove(yyjson_mut_val *obj,
 /** Removes all key-value pairs in this object. */
 yyjson_api_inline bool yyjson_mut_obj_clear(yyjson_mut_val *obj);
 
-/** Replace value from the object with given key.
+/** Replaces value from the object with given key.
     @warning This function takes a linear search time. */
 yyjson_api_inline bool yyjson_mut_obj_replace(yyjson_mut_val *obj,
                                               yyjson_mut_val *key,
                                               yyjson_mut_val *val);
+
+/** Rotates key-value pairs in the object for the given number of times.
+    @warning This function takes a linear search time. */
+yyjson_api_inline bool yyjson_mut_obj_rotate(yyjson_mut_val *obj,
+                                             size_t idx);
 
 /*==============================================================================
  * Mutable JSON Object Modification Convenience API
@@ -3818,6 +3831,13 @@ yyjson_api_inline bool unsafe_yyjson_mut_obj_replace(yyjson_mut_val *obj,
     return false;
 }
 
+yyjson_api_inline void unsafe_yyjson_mut_obj_rotate(yyjson_mut_val *obj,
+                                                    size_t idx) {
+    yyjson_mut_val *key = (yyjson_mut_val *)obj->uni.ptr;
+    while (idx-- > 0) key = key->next->next;
+    obj->uni.ptr = (void *)key;
+}
+
 yyjson_api_inline bool yyjson_mut_obj_add(yyjson_mut_val *obj,
                                           yyjson_mut_val *key,
                                           yyjson_mut_val *val) {
@@ -3841,6 +3861,22 @@ yyjson_api_inline bool yyjson_mut_obj_put(yyjson_mut_val *obj,
                                       unsafe_yyjson_get_len(obj));
         }
         return true;
+    }
+    return false;
+}
+
+yyjson_api_inline bool yyjson_mut_obj_insert(yyjson_mut_val *obj,
+                                             yyjson_mut_val *key,
+                                             yyjson_mut_val *val,
+                                             size_t idx) {
+    if (yyjson_likely(yyjson_mut_is_obj(obj) &&
+                      yyjson_mut_is_str(key) && val)) {
+        size_t len = unsafe_yyjson_get_len(obj);
+        if (yyjson_likely(len >= idx)) {
+            unsafe_yyjson_mut_obj_add(obj, key, val, len);
+            unsafe_yyjson_mut_obj_rotate(obj, len - idx);
+            return true;
+        }
     }
     return false;
 }
@@ -3869,6 +3905,16 @@ yyjson_api_inline bool yyjson_mut_obj_replace(yyjson_mut_val *obj,
     if (yyjson_likely(yyjson_mut_is_obj(obj) &&
     yyjson_mut_is_str(key) && val)) {
         return unsafe_yyjson_mut_obj_replace(obj, key, val);
+    }
+    return false;
+}
+
+yyjson_api_inline bool yyjson_mut_obj_rotate(yyjson_mut_val *obj,
+                                             size_t idx) {
+    if (yyjson_likely(yyjson_mut_is_obj(obj) &&
+                      unsafe_yyjson_get_len(obj) > idx)) {
+        unsafe_yyjson_mut_obj_rotate(obj, idx);
+        return true;
     }
     return false;
 }
