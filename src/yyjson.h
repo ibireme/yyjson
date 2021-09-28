@@ -1619,6 +1619,10 @@ yyjson_api_inline bool yyjson_mut_arr_remove_range(yyjson_mut_val *arr,
 /** Removes all values in this array. */
 yyjson_api_inline bool yyjson_mut_arr_clear(yyjson_mut_val *arr);
 
+/** Rotates values in this array for the given number of times.
+    @warning This function takes a linear search time. */
+yyjson_api_inline bool yyjson_mut_arr_rotate(yyjson_mut_val *arr,
+                                             size_t idx);
 
 
 /*==============================================================================
@@ -3391,6 +3395,18 @@ yyjson_api_inline bool yyjson_mut_arr_remove_range(yyjson_mut_val *arr,
 yyjson_api_inline bool yyjson_mut_arr_clear(yyjson_mut_val *arr) {
     if (yyjson_likely(yyjson_mut_is_arr(arr))) {
         unsafe_yyjson_set_len(arr, 0);
+        return true;
+    }
+    return false;
+}
+
+yyjson_api_inline bool yyjson_mut_arr_rotate(yyjson_mut_val *arr,
+                                             size_t idx) {
+    if (yyjson_likely(yyjson_mut_is_arr(arr) &&
+                      unsafe_yyjson_get_len(arr) > idx)) {
+        yyjson_mut_val *val = (yyjson_mut_val *)arr->uni.ptr;
+        while (idx-- > 0) val = val->next;
+        arr->uni.ptr = (void *)val;
         return true;
     }
     return false;
