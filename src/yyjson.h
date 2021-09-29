@@ -3893,8 +3893,15 @@ yyjson_api_inline bool yyjson_mut_obj_insert(yyjson_mut_val *obj,
                       yyjson_mut_is_str(key) && val)) {
         size_t len = unsafe_yyjson_get_len(obj);
         if (yyjson_likely(len >= idx)) {
+            void *ptr = obj->uni.ptr;
             unsafe_yyjson_mut_obj_add(obj, key, val, len);
-            unsafe_yyjson_mut_obj_rotate(obj, len - idx);
+            if (yyjson_likely(len > 0)) {
+                if (idx > 0) {
+                    unsafe_yyjson_mut_obj_rotate(obj, len - idx);
+                } else {
+                    obj->uni.ptr = ptr;
+                }
+            }
             return true;
         }
     }
