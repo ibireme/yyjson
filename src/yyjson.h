@@ -2956,21 +2956,19 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_get_last(yyjson_mut_val *arr) {
 struct yyjson_mut_arr_iter {
     size_t idx;
     size_t max;
-    yyjson_mut_val *arr;
-    yyjson_mut_val *prev;
     yyjson_mut_val *cur;
+    yyjson_mut_val *pre;
+    yyjson_mut_val *arr;
 };
 
 yyjson_api_inline bool yyjson_mut_arr_iter_init(yyjson_mut_val *arr,
                                                 yyjson_mut_arr_iter *iter) {
     if (yyjson_likely(yyjson_mut_is_arr(arr) && iter)) {
-        iter->arr = arr;
         iter->idx = 0;
         iter->max = unsafe_yyjson_get_len(arr);
-        if (iter->max) {
-            iter->prev = NULL;
-            iter->cur = (yyjson_mut_val *)arr->uni.ptr;
-        }
+        iter->cur = iter->max ? (yyjson_mut_val *)arr->uni.ptr : NULL;
+        iter->pre = NULL;
+        iter->arr = arr;
         return true;
     }
     if (iter) memset(iter, 0, sizeof(yyjson_mut_arr_iter));
@@ -2985,7 +2983,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_iter_next(
     yyjson_mut_arr_iter *iter) {
     if (iter && iter->idx < iter->max) {
         yyjson_mut_val *val = iter->cur;
-        iter->prev = val;
+        iter->pre = val;
         iter->cur = val->next;
         iter->idx++;
         return iter->cur;
@@ -2996,7 +2994,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_iter_next(
 yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_iter_remove(
     yyjson_mut_arr_iter *iter) {
     if (yyjson_likely(iter && 0 < iter->idx && iter->idx <= iter->max)) {
-        yyjson_mut_val *prev = iter->prev;
+        yyjson_mut_val *prev = iter->pre;
         yyjson_mut_val *cur = iter->cur;
         yyjson_mut_val *next = cur->next;
         if (yyjson_unlikely(iter->idx == iter->max)) iter->arr->uni.ptr = prev;
@@ -3586,7 +3584,7 @@ yyjson_api_inline bool yyjson_mut_obj_iter_init(yyjson_mut_val *obj,
     if (yyjson_likely(yyjson_mut_is_obj(obj) && iter)) {
         iter->idx = 0;
         iter->max = unsafe_yyjson_get_len(obj);
-        iter->cur = (yyjson_mut_val *)obj->uni.ptr;
+        iter->cur = iter->max ? (yyjson_mut_val *)obj->uni.ptr : NULL;
         iter->pre = NULL;
         iter->obj = obj;
         return true;
