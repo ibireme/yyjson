@@ -2936,7 +2936,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_strncpy(yyjson_mut_doc *doc,
  *============================================================================*/
 
 yyjson_api_inline size_t yyjson_mut_arr_size(yyjson_mut_val *arr) {
-    return arr ? unsafe_yyjson_get_len(arr) : 0;
+    return yyjson_mut_is_arr(arr) ? unsafe_yyjson_get_len(arr) : 0;
 }
 
 yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_get(yyjson_mut_val *arr,
@@ -3221,7 +3221,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_with_strncpy(
 
 yyjson_api_inline bool yyjson_mut_arr_insert(yyjson_mut_val *arr,
                                              yyjson_mut_val *val, size_t idx) {
-    if (yyjson_likely(arr && val)) {
+    if (yyjson_likely(yyjson_mut_is_arr(arr) && val)) {
         size_t len = unsafe_yyjson_get_len(arr);
         if (yyjson_likely(idx <= len)) {
             unsafe_yyjson_set_len(arr, len + 1);
@@ -3252,7 +3252,7 @@ yyjson_api_inline bool yyjson_mut_arr_insert(yyjson_mut_val *arr,
 
 yyjson_api_inline bool yyjson_mut_arr_append(yyjson_mut_val *arr,
                                              yyjson_mut_val *val) {
-    if (yyjson_likely(arr && val)) {
+    if (yyjson_likely(yyjson_mut_is_arr(arr) && val)) {
         size_t len = unsafe_yyjson_get_len(arr);
         unsafe_yyjson_set_len(arr, len + 1);
         if (len == 0) {
@@ -3271,7 +3271,7 @@ yyjson_api_inline bool yyjson_mut_arr_append(yyjson_mut_val *arr,
 
 yyjson_api_inline bool yyjson_mut_arr_prepend(yyjson_mut_val *arr,
                                               yyjson_mut_val *val) {
-    if (yyjson_likely(arr && val)) {
+    if (yyjson_likely(yyjson_mut_is_arr(arr) && val)) {
         size_t len = unsafe_yyjson_get_len(arr);
         unsafe_yyjson_set_len(arr, len + 1);
         if (len == 0) {
@@ -3291,7 +3291,7 @@ yyjson_api_inline bool yyjson_mut_arr_prepend(yyjson_mut_val *arr,
 yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_replace(yyjson_mut_val *arr,
                                                          size_t idx,
                                                          yyjson_mut_val *val) {
-    if (yyjson_likely(arr && val)) {
+    if (yyjson_likely(yyjson_mut_is_arr(arr) && val)) {
         size_t len = unsafe_yyjson_get_len(arr);
         if (yyjson_likely(idx < len)) {
             if (yyjson_likely(len > 1)) {
@@ -3318,7 +3318,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_replace(yyjson_mut_val *arr,
 
 yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_remove(yyjson_mut_val *arr,
                                                         size_t idx) {
-    if (yyjson_likely(arr)) {
+    if (yyjson_likely(yyjson_mut_is_arr(arr))) {
         size_t len = unsafe_yyjson_get_len(arr);
         if (yyjson_likely(idx < len)) {
             unsafe_yyjson_set_len(arr, len - 1);
@@ -3342,7 +3342,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_remove(yyjson_mut_val *arr,
 
 yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_remove_first(
     yyjson_mut_val *arr) {
-    if (yyjson_likely(arr)) {
+    if (yyjson_likely(yyjson_mut_is_arr(arr))) {
         size_t len = unsafe_yyjson_get_len(arr);
         if (len > 1) {
             yyjson_mut_val *prev = ((yyjson_mut_val *)arr->uni.ptr);
@@ -3361,7 +3361,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_remove_first(
 
 yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_remove_last(
     yyjson_mut_val *arr) {
-    if (yyjson_likely(arr)) {
+    if (yyjson_likely(yyjson_mut_is_arr(arr))) {
         size_t len = unsafe_yyjson_get_len(arr);
         if (yyjson_likely(len > 1)) {
             yyjson_mut_val *prev = ((yyjson_mut_val *)arr->uni.ptr);
@@ -3383,7 +3383,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_remove_last(
 
 yyjson_api_inline bool yyjson_mut_arr_remove_range(yyjson_mut_val *arr,
                                                    size_t _idx, size_t _len) {
-    if (yyjson_likely(arr)) {
+    if (yyjson_likely(yyjson_mut_is_arr(arr))) {
         yyjson_mut_val *prev, *next;
         bool tail_removed;
         size_t len = unsafe_yyjson_get_len(arr);
@@ -3435,7 +3435,7 @@ yyjson_api_inline bool yyjson_mut_arr_add_val(yyjson_mut_val *arr,
 
 yyjson_api_inline bool yyjson_mut_arr_add_null(yyjson_mut_doc *doc,
                                                yyjson_mut_val *arr) {
-    if (yyjson_likely(doc && arr)) {
+    if (yyjson_likely(doc && yyjson_mut_is_arr(arr))) {
         yyjson_mut_val *val = yyjson_mut_null(doc);
         return yyjson_mut_arr_append(arr, val);
     }
@@ -3444,7 +3444,7 @@ yyjson_api_inline bool yyjson_mut_arr_add_null(yyjson_mut_doc *doc,
 
 yyjson_api_inline bool yyjson_mut_arr_add_true(yyjson_mut_doc *doc,
                                                yyjson_mut_val *arr) {
-    if (yyjson_likely(doc && arr)) {
+    if (yyjson_likely(doc && yyjson_mut_is_arr(arr))) {
         yyjson_mut_val *val = yyjson_mut_true(doc);
         return yyjson_mut_arr_append(arr, val);
     }
@@ -3453,7 +3453,7 @@ yyjson_api_inline bool yyjson_mut_arr_add_true(yyjson_mut_doc *doc,
 
 yyjson_api_inline bool yyjson_mut_arr_add_false(yyjson_mut_doc *doc,
                                                 yyjson_mut_val *arr) {
-    if (yyjson_likely(doc && arr)) {
+    if (yyjson_likely(doc && yyjson_mut_is_arr(arr))) {
         yyjson_mut_val *val = yyjson_mut_false(doc);
         return yyjson_mut_arr_append(arr, val);
     }
@@ -3463,7 +3463,7 @@ yyjson_api_inline bool yyjson_mut_arr_add_false(yyjson_mut_doc *doc,
 yyjson_api_inline bool yyjson_mut_arr_add_bool(yyjson_mut_doc *doc,
                                                yyjson_mut_val *arr,
                                                bool _val) {
-    if (yyjson_likely(doc && arr)) {
+    if (yyjson_likely(doc && yyjson_mut_is_arr(arr))) {
         yyjson_mut_val *val = yyjson_mut_bool(doc, _val);
         return yyjson_mut_arr_append(arr, val);
     }
@@ -3473,7 +3473,7 @@ yyjson_api_inline bool yyjson_mut_arr_add_bool(yyjson_mut_doc *doc,
 yyjson_api_inline bool yyjson_mut_arr_add_uint(yyjson_mut_doc *doc,
                                                yyjson_mut_val *arr,
                                                uint64_t num) {
-    if (yyjson_likely(doc && arr)) {
+    if (yyjson_likely(doc && yyjson_mut_is_arr(arr))) {
         yyjson_mut_val *val = yyjson_mut_uint(doc, num);
         return yyjson_mut_arr_append(arr, val);
     }
@@ -3483,7 +3483,7 @@ yyjson_api_inline bool yyjson_mut_arr_add_uint(yyjson_mut_doc *doc,
 yyjson_api_inline bool yyjson_mut_arr_add_sint(yyjson_mut_doc *doc,
                                                yyjson_mut_val *arr,
                                                int64_t num) {
-    if (yyjson_likely(doc && arr)) {
+    if (yyjson_likely(doc && yyjson_mut_is_arr(arr))) {
         yyjson_mut_val *val = yyjson_mut_sint(doc, num);
         return yyjson_mut_arr_append(arr, val);
     }
@@ -3493,7 +3493,7 @@ yyjson_api_inline bool yyjson_mut_arr_add_sint(yyjson_mut_doc *doc,
 yyjson_api_inline bool yyjson_mut_arr_add_int(yyjson_mut_doc *doc,
                                               yyjson_mut_val *arr,
                                               int64_t num) {
-    if (yyjson_likely(doc && arr)) {
+    if (yyjson_likely(doc && yyjson_mut_is_arr(arr))) {
         yyjson_mut_val *val = yyjson_mut_sint(doc, num);
         return yyjson_mut_arr_append(arr, val);
     }
@@ -3503,7 +3503,7 @@ yyjson_api_inline bool yyjson_mut_arr_add_int(yyjson_mut_doc *doc,
 yyjson_api_inline bool yyjson_mut_arr_add_real(yyjson_mut_doc *doc,
                                                yyjson_mut_val *arr,
                                                double num) {
-    if (yyjson_likely(doc && arr)) {
+    if (yyjson_likely(doc && yyjson_mut_is_arr(arr))) {
         yyjson_mut_val *val = yyjson_mut_real(doc, num);
         return yyjson_mut_arr_append(arr, val);
     }
@@ -3513,7 +3513,7 @@ yyjson_api_inline bool yyjson_mut_arr_add_real(yyjson_mut_doc *doc,
 yyjson_api_inline bool yyjson_mut_arr_add_str(yyjson_mut_doc *doc,
                                               yyjson_mut_val *arr,
                                               const char *str) {
-    if (yyjson_likely(doc && arr)) {
+    if (yyjson_likely(doc && yyjson_mut_is_arr(arr))) {
         yyjson_mut_val *val = yyjson_mut_str(doc, str);
         return yyjson_mut_arr_append(arr, val);
     }
@@ -3523,7 +3523,7 @@ yyjson_api_inline bool yyjson_mut_arr_add_str(yyjson_mut_doc *doc,
 yyjson_api_inline bool yyjson_mut_arr_add_strn(yyjson_mut_doc *doc,
                                                yyjson_mut_val *arr,
                                                const char *str, size_t len) {
-    if (yyjson_likely(doc && arr)) {
+    if (yyjson_likely(doc && yyjson_mut_is_arr(arr))) {
         yyjson_mut_val *val = yyjson_mut_strn(doc, str, len);
         return yyjson_mut_arr_append(arr, val);
     }
@@ -3533,7 +3533,7 @@ yyjson_api_inline bool yyjson_mut_arr_add_strn(yyjson_mut_doc *doc,
 yyjson_api_inline bool yyjson_mut_arr_add_strcpy(yyjson_mut_doc *doc,
                                                  yyjson_mut_val *arr,
                                                  const char *str) {
-    if (yyjson_likely(doc && arr)) {
+    if (yyjson_likely(doc && yyjson_mut_is_arr(arr))) {
         yyjson_mut_val *val = yyjson_mut_strcpy(doc, str);
         return yyjson_mut_arr_append(arr, val);
     }
@@ -3543,7 +3543,7 @@ yyjson_api_inline bool yyjson_mut_arr_add_strcpy(yyjson_mut_doc *doc,
 yyjson_api_inline bool yyjson_mut_arr_add_strncpy(yyjson_mut_doc *doc,
                                                   yyjson_mut_val *arr,
                                                   const char *str, size_t len) {
-    if (yyjson_likely(doc && arr)) {
+    if (yyjson_likely(doc && yyjson_mut_is_arr(arr))) {
         yyjson_mut_val *val = yyjson_mut_strncpy(doc, str, len);
         return yyjson_mut_arr_append(arr, val);
     }
@@ -3552,14 +3552,20 @@ yyjson_api_inline bool yyjson_mut_arr_add_strncpy(yyjson_mut_doc *doc,
 
 yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_add_arr(yyjson_mut_doc *doc,
                                                          yyjson_mut_val *arr) {
-    yyjson_mut_val *val = yyjson_mut_arr(doc);
-    return yyjson_mut_arr_append(arr, val) ? val : NULL;
+    if (yyjson_likely(doc && yyjson_mut_is_arr(arr))) {
+        yyjson_mut_val *val = yyjson_mut_arr(doc);
+        return yyjson_mut_arr_append(arr, val) ? val : NULL;
+    }
+    return NULL;
 }
 
 yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_add_obj(yyjson_mut_doc *doc,
                                                          yyjson_mut_val *arr) {
-    yyjson_mut_val *val = yyjson_mut_obj(doc);
-    return yyjson_mut_arr_append(arr, val) ? val : NULL;
+    if (yyjson_likely(doc && yyjson_mut_is_arr(arr))) {
+        yyjson_mut_val *val = yyjson_mut_obj(doc);
+        return yyjson_mut_arr_append(arr, val) ? val : NULL;
+    }
+    return NULL;
 }
 
 
