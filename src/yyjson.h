@@ -3885,7 +3885,6 @@ yyjson_api_inline bool yyjson_mut_obj_replace(yyjson_mut_val *obj,
             key->tag |= (uint64_t)strlen(_key) << YYJSON_TAG_BIT; \
             key->uni.str = _key; \
             func \
-            unsafe_yyjson_set_len(obj, len + 1); \
             unsafe_yyjson_mut_obj_add(obj, key, val, len); \
             return true; \
         } \
