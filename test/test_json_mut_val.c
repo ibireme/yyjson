@@ -326,6 +326,48 @@ static void test_json_mut_arr_api(void) {
     
     
     //---------------------------------------------
+    // rotate(idx)
+    
+    yy_assert(!yyjson_mut_arr_rotate(arr, 0));
+    
+    cmp[0] = 2;
+    cmp[1] = 1;
+    
+    yy_assert(yyjson_mut_arr_append(arr, num1));
+    yy_assert(yyjson_mut_arr_append(arr, num2));
+    
+    yy_assert(yyjson_mut_arr_rotate(arr, 1));
+    validate_mut_arr(arr, cmp, 2);
+    
+    yy_assert(yyjson_mut_arr_rotate(arr, 0));
+    yy_assert(!yyjson_mut_arr_rotate(arr, 2));
+    
+    validate_mut_arr(arr, cmp, 2);
+    yyjson_mut_arr_clear(arr);
+    
+    cmp[0] = 3;
+    cmp[1] = 4;
+    cmp[2] = 1;
+    cmp[3] = 2;
+    
+    yy_assert(yyjson_mut_arr_append(arr, num1));
+    yy_assert(yyjson_mut_arr_append(arr, num2));
+    yy_assert(yyjson_mut_arr_append(arr, num3));
+    yy_assert(yyjson_mut_arr_append(arr, num4));
+    
+    yy_assert(yyjson_mut_arr_rotate(arr, 2));
+    validate_mut_arr(arr, cmp, 4);
+    
+    yy_assert(yyjson_mut_arr_rotate(arr, 0));
+    yy_assert(yyjson_mut_arr_rotate(arr, 1));
+    yy_assert(yyjson_mut_arr_rotate(arr, 3));
+    yy_assert(!yyjson_mut_arr_rotate(arr, 4));
+    
+    validate_mut_arr(arr, cmp, 4);
+    yyjson_mut_arr_clear(arr);
+    
+    
+    //---------------------------------------------
     // insert(idx)
     
     yy_assert(yyjson_mut_arr_insert(NULL, num1, 0) == false);
@@ -1348,6 +1390,136 @@ static void test_json_mut_obj_api(void) {
     validate_mut_obj(obj, keys, key_lens, vals, 0);
     
     yyjson_mut_obj_clear(obj);
+    
+    
+    //---------------------------------------------
+    // rotate(idx)
+
+    yy_assert(!yyjson_mut_obj_rotate(obj, 0));
+    
+    set_validate(0, "c", 1, 30);
+    set_validate(1, "d", 1, 40);
+    set_validate(2, "a", 1, 10);
+    set_validate(3, "b", 1, 20);
+    
+    new_key_val(1); // d
+    yy_assert(yyjson_mut_obj_add(obj, key, val));
+    new_key_val(0); // c
+    yy_assert(yyjson_mut_obj_add(obj, key, val));
+    // {"d":40,"c":30}
+    
+    yy_assert(yyjson_mut_obj_rotate(obj, 1));
+    // {"c":30,"d":40}
+    
+    validate_mut_obj(obj, keys, key_lens, vals, 2);
+    
+    yy_assert(yyjson_mut_obj_rotate(obj, 0));
+    yy_assert(!yyjson_mut_obj_rotate(obj, 2));
+    
+    validate_mut_obj(obj, keys, key_lens, vals, 2);
+    yyjson_mut_obj_clear(obj);
+    
+    new_key_val(2); // a
+    yy_assert(yyjson_mut_obj_add(obj, key, val));
+    new_key_val(3); // b
+    yy_assert(yyjson_mut_obj_add(obj, key, val));
+    new_key_val(0); // c
+    yy_assert(yyjson_mut_obj_add(obj, key, val));
+    new_key_val(1); // d
+    yy_assert(yyjson_mut_obj_add(obj, key, val));
+    // {"a":10,"b":20,"c":30,"d":40}
+    
+    yy_assert(yyjson_mut_obj_rotate(obj, 2));
+    // {"c":30,"d":40,"a":10,"b":20}
+    
+    validate_mut_obj(obj, keys, key_lens, vals, 4);
+    
+    yy_assert(yyjson_mut_obj_rotate(obj, 0));
+    yy_assert(yyjson_mut_obj_rotate(obj, 1));
+    yy_assert(yyjson_mut_obj_rotate(obj, 3));
+    yy_assert(!yyjson_mut_obj_rotate(obj, 4));
+    
+    validate_mut_obj(obj, keys, key_lens, vals, 4);
+    yyjson_mut_obj_clear(obj);
+    
+    
+    //---------------------------------------------
+    // insert(idx)
+    
+    set_validate(0, "b", 1, 20); // insert at 0
+    set_validate(1, "d", 1, 40); // insert at 1
+    set_validate(2, "a", 1, 10); // insert at 0
+    set_validate(3, "e", 1, 50); // insert at 3
+    set_validate(4, "c", 1, 30); // insert at 2
+    set_validate(5, "g", 1, 70); // insert at 5
+    set_validate(6, "f", 1, 60); // insert at 5
+    
+    new_key_val(2); // a
+    yy_assert(!yyjson_mut_obj_insert(obj, key, val, 1));
+    yy_assert(yyjson_mut_obj_insert(obj, key, val, 0));
+    yy_assert(yyjson_mut_obj_size(obj) == 1);
+    val = yyjson_mut_obj_get(obj, "a");
+    yy_assert(yyjson_mut_get_int(val) == 10);
+    // {"a":10}
+    
+    new_key_val(0); // b
+    yy_assert(!yyjson_mut_obj_insert(obj, key, val, 2));
+    yy_assert(yyjson_mut_obj_insert(obj, key, val, 0));
+    yy_assert(yyjson_mut_obj_size(obj) == 2);
+    val = yyjson_mut_obj_get(obj, "b");
+    yy_assert(yyjson_mut_get_int(val) == 20);
+    // {"b":20,"a":10}
+    
+    new_key_val(4); // c
+    yy_assert(!yyjson_mut_obj_insert(obj, key, val, 3));
+    yy_assert(yyjson_mut_obj_insert(obj, key, val, 2));
+    yy_assert(yyjson_mut_obj_size(obj) == 3);
+    val = yyjson_mut_obj_get(obj, "c");
+    yy_assert(yyjson_mut_get_int(val) == 30);
+    // {"b":20,"a":10,"c":30}
+    
+    new_key_val(1); // d
+    yy_assert(!yyjson_mut_obj_insert(obj, key, val, 4));
+    yy_assert(yyjson_mut_obj_insert(obj, key, val, 1));
+    yy_assert(yyjson_mut_obj_size(obj) == 4);
+    val = yyjson_mut_obj_get(obj, "d");
+    yy_assert(yyjson_mut_get_int(val) == 40);
+    // {"b":20,"d":40,"a":10,"c":30}
+    
+    new_key_val(3); // e
+    yy_assert(!yyjson_mut_obj_insert(obj, key, val, 5));
+    yy_assert(yyjson_mut_obj_insert(obj, key, val, 3));
+    yy_assert(yyjson_mut_obj_size(obj) == 5);
+    val = yyjson_mut_obj_get(obj, "e");
+    yy_assert(yyjson_mut_get_int(val) == 50);
+    // {"b":20,"d":40,"a":10,"e":50,"c":30}
+    
+    new_key_val(6); // f
+    yy_assert(!yyjson_mut_obj_insert(obj, key, val, 6));
+    yy_assert(yyjson_mut_obj_insert(obj, key, val, 5));
+    yy_assert(yyjson_mut_obj_size(obj) == 6);
+    val = yyjson_mut_obj_get(obj, "f");
+    yy_assert(yyjson_mut_get_int(val) == 60);
+    // {"b":20,"d":40,"a":10,"e":50,"c":30,"f":60}
+    
+    new_key_val(5); // g
+    yy_assert(!yyjson_mut_obj_insert(obj, key, val, 7));
+    yy_assert(yyjson_mut_obj_insert(obj, key, val, 5));
+    yy_assert(yyjson_mut_obj_size(obj) == 7);
+    val = yyjson_mut_obj_get(obj, "g");
+    yy_assert(yyjson_mut_get_int(val) == 70);
+    // {"b":20,"d":40,"a":10,"e":50,"c":30,"g":70,"f":60}
+    
+    validate_mut_obj(obj, keys, key_lens, vals, 7);
+    yyjson_mut_obj_clear(obj);
+    
+    yy_assert(!yyjson_mut_obj_insert(NULL, key, val, 0));
+    yy_assert(!yyjson_mut_obj_insert(obj, NULL, val, 0));
+    yy_assert(!yyjson_mut_obj_insert(obj, key, NULL, 0));
+    yy_assert(!yyjson_mut_obj_insert(obj, NULL, NULL, 0));
+    yy_assert(!yyjson_mut_obj_insert(NULL, NULL, NULL, 0));
+    yy_assert(!yyjson_mut_obj_insert(obj, key, val, 1));
+    yy_assert(yyjson_mut_obj_size(obj) == 0);
     
     
     //---------------------------------------------
