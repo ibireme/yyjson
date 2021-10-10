@@ -228,6 +228,8 @@
 #       define yyjson_api
 #   endif
 #endif
+
+/* inline function export */
 #ifndef yyjson_api_inline
 #   define yyjson_api_inline static yyjson_inline
 #endif
@@ -1625,6 +1627,7 @@ yyjson_api_inline bool yyjson_mut_arr_rotate(yyjson_mut_val *arr,
                                              size_t idx);
 
 
+
 /*==============================================================================
  * Mutable JSON Array Modification Convenience API
  *============================================================================*/
@@ -1888,6 +1891,8 @@ yyjson_api_inline bool yyjson_mut_obj_replace(yyjson_mut_val *obj,
     @warning This function takes a linear search time. */
 yyjson_api_inline bool yyjson_mut_obj_rotate(yyjson_mut_val *obj,
                                              size_t idx);
+
+
 
 /*==============================================================================
  * Mutable JSON Object Modification Convenience API
@@ -2205,6 +2210,7 @@ yyjson_api_inline bool unsafe_yyjson_equals_str(void *val, const char *str) {
 }
 
 
+
 /*==============================================================================
  * JSON Document API (Implementation)
  *============================================================================*/
@@ -2484,6 +2490,7 @@ yyjson_api_inline yyjson_val *yyjson_obj_getn(yyjson_val *obj,
     }
     return NULL;
 }
+
 
 
 /*==============================================================================
@@ -3026,6 +3033,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_iter_remove(
 }
 
 
+
 /*==============================================================================
  * Mutable JSON Array Creation API (Implementation)
  *============================================================================*/
@@ -3217,7 +3225,6 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_with_strncpy(
 /*==============================================================================
  * Mutable JSON Array Modification API (Implementation)
  *============================================================================*/
-
 
 yyjson_api_inline bool yyjson_mut_arr_insert(yyjson_mut_val *arr,
                                              yyjson_mut_val *val, size_t idx) {
@@ -3424,6 +3431,7 @@ yyjson_api_inline bool yyjson_mut_arr_rotate(yyjson_mut_val *arr,
 }
 
 
+
 /*==============================================================================
  * Mutable JSON Array Modification Convenience API (Implementation)
  *============================================================================*/
@@ -3574,7 +3582,6 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_add_obj(yyjson_mut_doc *doc,
  * Mutable JSON Object API (Implementation)
  *============================================================================*/
 
-
 yyjson_api_inline size_t yyjson_mut_obj_size(yyjson_mut_val *obj) {
     return yyjson_mut_is_obj(obj) ? unsafe_yyjson_get_len(obj) : 0;
 }
@@ -3601,6 +3608,8 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_obj_getn(yyjson_mut_val *obj,
     }
     return NULL;
 }
+
+
 
 /*==============================================================================
  * Mutable JSON Object Iterator API (Implementation)
@@ -3682,7 +3691,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_obj_iter_getn(
             cur = cur->next->next;
             if (unsafe_yyjson_get_len(cur) == key_len &&
                 memcmp(cur->uni.str, key, key_len) == 0) {
-                iter->idx+= idx;
+                iter->idx += idx;
                 if (iter->idx > max) iter->idx -= max + 1;
                 iter->pre = pre;
                 iter->cur = cur;
@@ -3692,6 +3701,8 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_obj_iter_getn(
     }
     return NULL;
 }
+
+
 
 /*==============================================================================
  * Mutable JSON Object Creation API (Implementation)
@@ -3944,6 +3955,8 @@ yyjson_api_inline bool yyjson_mut_obj_rotate(yyjson_mut_val *obj,
     }
     return false;
 }
+
+
 
 /*==============================================================================
  * Mutable JSON Object Modification Convenience API (Implementation)

@@ -808,8 +808,7 @@ static_inline void *mem_align_down(void *mem, usize align) {
  *============================================================================*/
 
 /** Returns the number of leading 0-bits in value (input should not be 0). */
-static_inline
-u32 u64_lz_bits(u64 v) {
+static_inline u32 u64_lz_bits(u64 v) {
 #if GCC_HAS_CLZLL
     return (u32)__builtin_clzll(v);
 #elif MSC_HAS_BIT_SCAN_64
@@ -1339,7 +1338,8 @@ static const bool pointer_char_table[] = {
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1
 };
 
-static_inline bool pointer_read_index(const char *ptr, const char **end,
+static_inline bool pointer_read_index(const char *ptr,
+                                      const char **end,
                                       usize *idx) {
     u64 num;
     u32 i;
