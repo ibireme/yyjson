@@ -1910,6 +1910,7 @@ static void validate_equals(const char *lhs_json, const char *rhs_json, bool equ
     yyjson_mut_doc *mut_rhs_doc = yyjson_doc_mut_copy(rhs_doc, NULL);
 
     yy_assert(yyjson_mut_equals(mut_lhs_doc->root, mut_rhs_doc->root) == equals);
+    yy_assert(yyjson_mut_equals(mut_rhs_doc->root, mut_lhs_doc->root) == equals);
 
     yyjson_mut_doc_free(mut_rhs_doc);
     yyjson_mut_doc_free(mut_lhs_doc);
@@ -1919,14 +1920,24 @@ static void validate_equals(const char *lhs_json, const char *rhs_json, bool equ
 }
 
 static void test_json_mut_equals_api(void) {
+    validate_equals("true", "true", true);
     validate_equals("1", "1", true);
     validate_equals("1", "2", false);
+    validate_equals("-1", "-1", true);
+    validate_equals("-1", "1", false);
     validate_equals("1", "\"hello\"", false);
     validate_equals("\"hello\"", "\"hello\"", true);
     validate_equals("\"hello\"", "\"world\"", false);
     validate_equals("[]", "[]", true);
+    validate_equals("[]", "[1]", false);
     validate_equals("[1]", "[1]", true);
     validate_equals("[1]", "[2]", false);
+    validate_equals("[1]", "[1, 2]", false);
+    validate_equals("{}", "{\"a\":0}", false);
+    validate_equals("{\"a\":0}", "{\"a\":0}", true);
+    validate_equals("{\"a\":0}", "{\"a\":1}", true);
+    validate_equals("{\"a\":0}", "{\"b\":0}", false);
+    validate_equals("{\"a\":0}", "{\"a\":0,\"b\":0}", false);
     validate_equals("{\"a\":{\"b\":[1.0, 2.0]}}",
                     "{\"a\":{\"b\":[1.0, 2.0]}}",
                     true);
