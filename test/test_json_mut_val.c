@@ -1935,7 +1935,7 @@ static void test_json_mut_equals_api(void) {
     validate_equals("[1]", "[1, 2]", false);
     validate_equals("{}", "{\"a\":0}", false);
     validate_equals("{\"a\":0}", "{\"a\":0}", true);
-    validate_equals("{\"a\":0}", "{\"a\":1}", true);
+    validate_equals("{\"a\":0}", "{\"a\":1}", false);
     validate_equals("{\"a\":0}", "{\"b\":0}", false);
     validate_equals("{\"a\":0}", "{\"a\":0,\"b\":0}", false);
     validate_equals("{\"a\":{\"b\":[1.0, 2.0]}}",
