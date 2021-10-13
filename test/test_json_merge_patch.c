@@ -1,85 +1,6 @@
 #include "yyjson.h"
 #include "yy_test_utils.h"
 
-/* TODO: Move something like this into yyjson.h */
-bool mut_val_eq(yyjson_mut_val* lhs, yyjson_mut_val* rhs) {
-    if (yyjson_mut_get_type(lhs) != yyjson_mut_get_type(rhs)) {
-        return false;
-    }
-    if (yyjson_mut_is_null(lhs)) {
-        return true;
-    }
-    if (yyjson_mut_is_bool(lhs)) {
-        return yyjson_mut_get_bool(lhs) == yyjson_mut_get_bool(rhs);
-    }
-    if (yyjson_mut_is_uint(lhs)) {
-        return yyjson_mut_get_uint(lhs) == yyjson_mut_get_uint(rhs);
-    }
-    if (yyjson_mut_is_sint(lhs)) {
-        return yyjson_mut_get_sint(lhs) == yyjson_mut_get_sint(rhs);
-    }
-    if (yyjson_mut_is_int(lhs)) {
-        return yyjson_mut_get_int(lhs) == yyjson_mut_get_int(rhs);
-    }
-    if (yyjson_mut_is_real(lhs)) {
-        return yyjson_mut_get_real(lhs) == yyjson_mut_get_real(rhs);
-    }
-    if (yyjson_mut_is_str(lhs)) {
-        return !strcmp(yyjson_mut_get_str(lhs), yyjson_mut_get_str(rhs));
-    }
-    if (yyjson_mut_is_arr(lhs)) {
-        size_t len = yyjson_mut_arr_size(lhs);
-        if (yyjson_mut_arr_size(rhs) != len) {
-            return false;
-        }
-        if (!len) {
-            return true;
-        }
-
-        yyjson_mut_arr_iter lhs_iter;
-        yyjson_mut_arr_iter_init(lhs, &lhs_iter);
-
-        yyjson_mut_arr_iter rhs_iter;
-        yyjson_mut_arr_iter_init(rhs, &rhs_iter);
-
-        yyjson_mut_val *lhs_val, *rhs_val;
-        while ((lhs_val = yyjson_mut_arr_iter_next(&lhs_iter)) &&
-               (rhs_val = yyjson_mut_arr_iter_next(&rhs_iter))) {
-            if (!mut_val_eq(lhs_val, rhs_val)) {
-                return false;
-            }
-        }
-        return true;
-    }
-    if (yyjson_mut_is_obj(lhs)) {
-        size_t len = yyjson_mut_obj_size(lhs);
-        if (yyjson_mut_obj_size(rhs) != len) {
-            return false;
-        }
-        if (!len) {
-            return true;
-        }
-
-        yyjson_mut_obj_iter lhs_iter;
-        yyjson_mut_obj_iter_init(lhs, &lhs_iter);
-        
-        yyjson_mut_val *key;
-        while ((key = yyjson_mut_obj_iter_next(&lhs_iter))) {
-            yyjson_mut_val *lhs_val = yyjson_mut_obj_iter_get_val(key);
-            yyjson_mut_val *rhs_val = yyjson_mut_obj_get(rhs, yyjson_mut_get_str(key));
-            if (!rhs_val) {
-                return false;
-            }
-            if (!mut_val_eq(lhs_val, rhs_val)) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    return false;
-}
-
 static
 void test_one(const char *original_json,
               const char *patch_json,
@@ -92,7 +13,7 @@ void test_one(const char *original_json,
     yyjson_mut_doc *result_doc = yyjson_mut_doc_new(NULL);
     yyjson_mut_val *result = yyjson_merge_patch(result_doc, original_doc->root, patch_doc->root);
 
-    yy_assert(mut_val_eq(mut_want_result_doc->root, result));
+    yy_assert(yyjson_mut_equals(mut_want_result_doc->root, result));
 
     yyjson_mut_doc_free(result_doc);
     yyjson_mut_doc_free(mut_want_result_doc);

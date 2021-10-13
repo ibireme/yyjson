@@ -1317,6 +1317,11 @@ yyjson_api_inline uint8_t yyjson_mut_get_tag(yyjson_mut_val *val);
     "array", "object", "true", "false", "uint", "sint", "real", "unknown". */
 yyjson_api_inline const char *yyjson_mut_get_type_desc(yyjson_mut_val *val);
 
+/** Returns whether two JSON values are equal.
+    @warning This function takes a quadratic time. */
+yyjson_api bool yyjson_mut_equals(yyjson_mut_val *lhs,
+                                  yyjson_mut_val *rhs);
+
 /** Returns the content if the value is bool, or false on error. */
 yyjson_api_inline bool yyjson_mut_get_bool(yyjson_mut_val *val);
 

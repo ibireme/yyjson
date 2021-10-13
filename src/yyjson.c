@@ -1312,7 +1312,80 @@ yyjson_api yyjson_mut_val *yyjson_val_mut_copy(yyjson_mut_doc *m_doc,
     return m_vals;
 }
 
+bool yyjson_mut_equals(yyjson_mut_val* lhs, yyjson_mut_val* rhs) {
+    yyjson_mut_val *key, *lhs_val, *rhs_val;
+    yyjson_mut_arr_iter lhs_arr_iter, rhs_arr_iter;
+    yyjson_mut_obj_iter lhs_obj_iter;
+    size_t size;
 
+    if (yyjson_mut_get_type(lhs) != yyjson_mut_get_type(rhs)) {
+        return false;
+    }
+    if (yyjson_mut_is_null(lhs)) {
+        return true;
+    }
+    if (yyjson_mut_is_bool(lhs)) {
+        return yyjson_mut_get_bool(lhs) == yyjson_mut_get_bool(rhs);
+    }
+    if (yyjson_mut_is_uint(lhs)) {
+        return yyjson_mut_get_uint(lhs) == yyjson_mut_get_uint(rhs);
+    }
+    if (yyjson_mut_is_sint(lhs)) {
+        return yyjson_mut_get_sint(lhs) == yyjson_mut_get_sint(rhs);
+    }
+    if (yyjson_mut_is_int(lhs)) {
+        return yyjson_mut_get_int(lhs) == yyjson_mut_get_int(rhs);
+    }
+    if (yyjson_mut_is_real(lhs)) {
+        return yyjson_mut_get_real(lhs) == yyjson_mut_get_real(rhs);
+    }
+    if (yyjson_mut_is_str(lhs)) {
+        return !strcmp(yyjson_mut_get_str(lhs), yyjson_mut_get_str(rhs));
+    }
+    if (yyjson_mut_is_arr(lhs)) {
+        size = yyjson_mut_arr_size(lhs);
+        if (yyjson_mut_arr_size(rhs) != size) {
+            return false;
+        }
+        if (!size) {
+            return true;
+        }
+
+        yyjson_mut_arr_iter_init(lhs, &lhs_arr_iter);
+        yyjson_mut_arr_iter_init(rhs, &rhs_arr_iter);
+        while ((lhs_val = yyjson_mut_arr_iter_next(&lhs_arr_iter)) &&
+               (rhs_val = yyjson_mut_arr_iter_next(&rhs_arr_iter))) {
+            if (!yyjson_mut_equals(lhs_val, rhs_val)) {
+                return false;
+            }
+        }
+        return true;
+    }
+    if (yyjson_mut_is_obj(lhs)) {
+        size = yyjson_mut_obj_size(lhs);
+        if (yyjson_mut_obj_size(rhs) != size) {
+            return false;
+        }
+        if (!size) {
+            return true;
+        }
+
+        yyjson_mut_obj_iter_init(lhs, &lhs_obj_iter);
+        while ((key = yyjson_mut_obj_iter_next(&lhs_obj_iter))) {
+            lhs_val = yyjson_mut_obj_iter_get_val(key);
+            rhs_val = yyjson_mut_obj_get(rhs, yyjson_mut_get_str(key));
+            if (!rhs_val) {
+                return false;
+            }
+            if (!yyjson_mut_equals(lhs_val, rhs_val)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    return false;
+}
 
 /*==============================================================================
  * JSON Pointer
