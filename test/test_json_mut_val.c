@@ -1901,9 +1901,57 @@ static void test_json_mut_doc_api(void) {
     yyjson_doc_free(idoc);
 }
 
+
+static void validate_equals(const char *lhs_json, const char *rhs_json, bool equals) {
+    yyjson_doc *lhs_doc = yyjson_read(lhs_json, strlen(lhs_json), 0);
+    yyjson_doc *rhs_doc = yyjson_read(rhs_json, strlen(rhs_json), 0);
+
+    yyjson_mut_doc *mut_lhs_doc = yyjson_doc_mut_copy(lhs_doc, NULL);
+    yyjson_mut_doc *mut_rhs_doc = yyjson_doc_mut_copy(rhs_doc, NULL);
+
+    yy_assert(yyjson_mut_equals(mut_lhs_doc->root, mut_rhs_doc->root) == equals);
+    yy_assert(yyjson_mut_equals(mut_rhs_doc->root, mut_lhs_doc->root) == equals);
+
+    yyjson_mut_doc_free(mut_rhs_doc);
+    yyjson_mut_doc_free(mut_lhs_doc);
+
+    yyjson_doc_free(rhs_doc);
+    yyjson_doc_free(lhs_doc);
+}
+
+static void test_json_mut_equals_api(void) {
+    validate_equals("true", "true", true);
+    validate_equals("1", "1", true);
+    validate_equals("1", "2", false);
+    validate_equals("-1", "-1", true);
+    validate_equals("-1", "1", false);
+    validate_equals("1", "\"hello\"", false);
+    validate_equals("\"hello\"", "\"hello\"", true);
+    validate_equals("\"hello\"", "\"world\"", false);
+    validate_equals("[]", "[]", true);
+    validate_equals("[]", "[1]", false);
+    validate_equals("[1]", "[1]", true);
+    validate_equals("[1]", "[2]", false);
+    validate_equals("[1]", "[1, 2]", false);
+    validate_equals("{}", "{\"a\":0}", false);
+    validate_equals("{\"a\":0}", "{\"a\":0}", true);
+    validate_equals("{\"a\":0}", "{\"a\":1}", false);
+    validate_equals("{\"a\":0}", "{\"b\":0}", false);
+    validate_equals("{\"a\":0}", "{\"a\":0,\"b\":0}", false);
+    validate_equals("{\"a\":{\"b\":[1.0, 2.0]}}",
+                    "{\"a\":{\"b\":[1.0, 2.0]}}",
+                    true);
+    // Note: The following false because of type mismatch 2 != 2.0
+    //       Should numeric equality ignore type?
+    validate_equals("{\"a\":{\"b\":[1.0, 2.0]}}",
+                    "{\"a\":{\"b\":[1.0, 2]}}",
+                    false);
+}
+
 yy_test_case(test_json_mut_val) {
     test_json_mut_val_api();
     test_json_mut_arr_api();
     test_json_mut_obj_api();
     test_json_mut_doc_api();
+    test_json_mut_equals_api();
 }
