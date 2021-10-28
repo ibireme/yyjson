@@ -293,7 +293,9 @@
         typedef __INT64_TYPE__  int64_t;
         typedef __UINT64_TYPE__ uint64_t;
 #   elif defined(__GNUC__) || defined(__clang__)
+#       if !defined(_SYS_TYPES_H) && !defined(__int8_t_defined)
         __extension__ typedef long long             int64_t;
+#       endif
         __extension__ typedef unsigned long long    uint64_t;
 #   elif defined(_LONG_LONG) || defined(__MWERKS__) || defined(_CRAYC) || \
         defined(__SUNPRO_C) || defined(__SUNPRO_CC)
@@ -348,7 +350,9 @@ extern "C" {
 #   pragma clang diagnostic ignored "-Wunused-function"
 #   pragma clang diagnostic ignored "-Wunused-parameter"
 #elif defined(__GNUC__)
+#   if (__GNUC__ > 4) || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
 #   pragma GCC diagnostic push
+#   endif
 #   pragma GCC diagnostic ignored "-Wunused-function"
 #   pragma GCC diagnostic ignored "-Wunused-parameter"
 #elif defined(_MSC_VER)
@@ -4193,7 +4197,9 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_doc_get_pointer(
 #if defined(__clang__)
 #   pragma clang diagnostic pop
 #elif defined(__GNUC__)
+#   if (__GNUC__ > 4) || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
 #   pragma GCC diagnostic pop
+#   endif
 #elif defined(_MSC_VER)
 #   pragma warning(pop)
 #endif /* warning suppress end */

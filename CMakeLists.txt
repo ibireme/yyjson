@@ -60,7 +60,6 @@ endif()
 # Project Config
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 include(XcodeProperty)
-
 if(XCODE)
     set_default_xcode_property(yyjson)
     set_xcode_deployment_version(yyjson "10.11" "9.0" "9.0" "2.0")
@@ -74,6 +73,10 @@ elseif(MSVC)
     target_compile_options(yyjson PRIVATE $<$<C_COMPILER_ID:MSVC>:/permissive- /utf-8>)
     target_compile_options(yyjson PRIVATE $<$<CXX_COMPILER_ID:MSVC>:/permissive- /utf-8>)
 endif()
+
+include(CheckIncludeFile)
+check_include_file(stdint.h YYJSON_HAS_STDINT_H)
+check_include_file(stdbool.h YYJSON_HAS_STDBOOL_H)
 
 if(BUILD_SHARED_LIBS)
     if(WIN32)
@@ -304,7 +307,7 @@ if(YYJSON_BUILD_TESTS)
             target_compile_options(test_compile_c11 PRIVATE
                 $<$<COMPILE_LANGUAGE:C>:-std=c11 ${YYJSON_STRICT_C_FLAGS}>)
         endif()
-
+        
         if(COMPILER_SUPPORTS_ANSI_CPP)
             add_executable(test_compile_ansi_cpp test/compile_ansi.cpp)
             target_include_directories(test_compile_ansi_cpp PRIVATE src)

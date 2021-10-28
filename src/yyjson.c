@@ -24,7 +24,9 @@
 #   pragma clang diagnostic ignored "-Wunused-label"
 #   pragma clang diagnostic ignored "-Wunused-macros"
 #elif defined(__GNUC__)
+#   if (__GNUC__ > 4) || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
 #   pragma GCC diagnostic push
+#   endif
 #   pragma GCC diagnostic ignored "-Wunused-function"
 #   pragma GCC diagnostic ignored "-Wunused-parameter"
 #   pragma GCC diagnostic ignored "-Wunused-label"
@@ -7372,7 +7374,9 @@ bool yyjson_mut_write_file(const char *path,
 #if defined(__clang__)
 #   pragma clang diagnostic pop
 #elif defined(__GNUC__)
+#   if (__GNUC__ > 4) || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
 #   pragma GCC diagnostic pop
+#   endif
 #elif defined(_MSC_VER)
 #   pragma warning(pop)
 #endif /* warning suppress end */
