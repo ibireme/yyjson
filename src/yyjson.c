@@ -137,7 +137,7 @@
 #endif
 
 /*
- Currect rounding in double number computations.
+ Correct rounding in double number computations.
  
  On the x86 architecture, some compilers may use x87 FPU instructions for
  floating-point arithmetic. The x87 FPU loads all floating point number as
@@ -337,7 +337,7 @@
 #endif
 
 /* Some estimated initial ratio of the JSON data (data_size / value_count).
-   These values is used to avoid frequent memory allocation calls. */
+   These values are used to avoid frequent memory allocation calls. */
 #define YYJSON_READER_ESTIMATED_PRETTY_RATIO 16
 #define YYJSON_READER_ESTIMATED_MINIFY_RATIO 6
 #define YYJSON_WRITER_ESTIMATED_PRETTY_RATIO 32
@@ -2891,7 +2891,7 @@ static_noinline void bigint_set_buf(bigint *big, u64 sig, i32 *exp,
         return;
         
     } else {
-        /* some digits was cut, read them from 'sig_cut' to 'sig_end' */
+        /* some digits were cut, read them from 'sig_cut' to 'sig_end' */
         u8 *hdr = sig_cut;
         u8 *cur = hdr;
         u32 len = 0;
@@ -3421,7 +3421,7 @@ digi_finish:
             /*
              (bits == 0 || bits == 0x1FF)
              The `bits` is filled with all `0` or all `1`, so we need to check
-             more lower bits with another 64-bit multiplication.
+             lower bits with another 64-bit multiplication.
              */
             u128_mul(sig1, sig2_ext, &hi2, &lo2);
             

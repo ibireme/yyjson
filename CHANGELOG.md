@@ -23,7 +23,7 @@ All notable changes to this project will be documented in this file.
 #### Changed
 - Improve JSON reader performance for gcc.
 - Improve double number reader performance with a fast path.
-- Rewrite double number writer with Schubfach algrithm: #4.
+- Rewrite double number writer with Schubfach algorithm: #4.
 - Strict UTF-8 validation for JSON reader.
 
 #### Removed
