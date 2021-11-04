@@ -9,12 +9,19 @@ void test_one(const char *original_json,
     yyjson_doc *patch_doc = yyjson_read(patch_json, strlen(patch_json), 0);
     yyjson_doc *want_result_doc = yyjson_read(want_result_json, strlen(want_result_json), 0);
     yyjson_mut_doc *mut_want_result_doc = yyjson_doc_mut_copy(want_result_doc, NULL);
-
+    
     yyjson_mut_doc *result_doc = yyjson_mut_doc_new(NULL);
     yyjson_mut_val *result = yyjson_merge_patch(result_doc, original_doc->root, patch_doc->root);
-
+    
     yy_assert(yyjson_mut_equals(mut_want_result_doc->root, result));
-
+    
+    yy_assert(yyjson_merge_patch(NULL, NULL, NULL) == NULL);
+    yy_assert(yyjson_merge_patch(NULL, original_doc->root, NULL) == NULL);
+    yy_assert(yyjson_merge_patch(NULL, NULL, patch_doc->root) == NULL);
+    yy_assert(yyjson_merge_patch(NULL, original_doc->root, patch_doc->root) == NULL);
+    yy_assert(yyjson_merge_patch(result_doc, original_doc->root, NULL) == NULL);
+    yy_assert(yyjson_merge_patch(result_doc, NULL, patch_doc->root) != NULL);
+    
     yyjson_mut_doc_free(result_doc);
     yyjson_mut_doc_free(mut_want_result_doc);
     yyjson_doc_free(want_result_doc);
@@ -41,6 +48,5 @@ yy_test_case(test_json_merge_patch) {
     test_one("{\"e\":null}", "{\"a\":1}", "{\"e\":null,\"a\":1}");
     test_one("[1,2]", "{\"a\":\"b\",\"c\":null}", "{\"a\":\"b\"}");
     test_one("{}", "{\"a\":{\"bb\":{\"ccc\":null}}}", "{\"a\":{\"bb\":{}}}");
-
 #endif
 }
