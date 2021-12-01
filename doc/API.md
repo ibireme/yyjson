@@ -28,6 +28,7 @@
     * [Mutable JSON Object Creation](#mutable-json-object-creation-api)
     * [Mutable JSON Object Modification](#mutable-json-object-modification-api)
     * [Mutable JSON Object Modification (Convenience)](#mutable-json-object-modification-convenience-api)
+    * [JSON Merge Path](#json-merge-path)
 * [Number Processing](#number-processing)
     * [Number Reader](#number-reader)
     * [Number Writer](#number-writer)
@@ -1042,6 +1043,16 @@ Note that this function takes a **linear search time**.
 ```c
 bool yyjson_mut_obj_remove_str(yyjson_mut_val *obj, const char *key);
 bool yyjson_mut_obj_remove_strn(yyjson_mut_val *obj, const char *key, size_t len);
+```
+
+### JSON Merge Path
+Creates and returns a merge-patched JSON value (RFC 7386).
+Returns NULL if the patch could not be applied.
+Specification and example: <https://tools.ietf.org/html/rfc7386>
+```c
+yyjson_mut_val *yyjson_merge_patch(yyjson_mut_doc *doc,
+                                   yyjson_val *orig,
+                                   yyjson_val *patch);
 ```
 
 
