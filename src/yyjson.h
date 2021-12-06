@@ -172,7 +172,7 @@
 
 /* noinline */
 #ifndef yyjson_noinline
-#   if YYJSON_MSC_VER >= 1200
+#   if YYJSON_MSC_VER >= 1400
 #       define yyjson_noinline __declspec(noinline)
 #   elif yyjson_has_attribute(noinline) || YYJSON_GCC_VER >= 4
 #       define yyjson_noinline __attribute__((noinline))
@@ -183,7 +183,7 @@
 
 /* align */
 #ifndef yyjson_align
-#   if defined(_MSC_VER)
+#   if YYJSON_MSC_VER >= 1300
 #       define yyjson_align(x) __declspec(align(x))
 #   elif yyjson_has_attribute(aligned) || defined(__GNUC__)
 #       define yyjson_align(x) __attribute__((aligned(x)))
@@ -572,7 +572,7 @@ typedef struct yyjson_read_err {
             If you pass NULL, you will get NULL result.
             The data will not be modified without the flag `YYJSON_READ_INSITU`,
             so you can pass a (const char *) string and case it to (char *) iff
-            you don’t use the `YYJSON_READ_INSITU` flag.
+            you don't use the `YYJSON_READ_INSITU` flag.
  
  @param len The JSON data's length.
             If you pass 0, you will get NULL result.
