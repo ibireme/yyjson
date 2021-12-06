@@ -211,6 +211,18 @@
 #   define YYJSON_DOUBLE_MATH_CORRECT 0 /* unknown */
 #endif
 
+/*
+ Visual Studio 6.0 doesn't support convert number from u64 to f64:
+ error C2520: conversion from unsigned __int64 to double not implemented.
+ */
+#ifndef YYJSON_U64_TO_F64_NO_IMPL
+#   if (0 < YYJSON_MSC_VER) && (YYJSON_MSC_VER <= 1200)
+#       define YYJSON_U64_TO_F64_NO_IMPL 1
+#   else
+#       define YYJSON_U64_TO_F64_NO_IMPL 0
+#   endif
+#endif
+
 /* endian */
 #if yyjson_has_include(<sys/types.h>)
 #    include <sys/types.h>
@@ -2429,32 +2441,33 @@ static_inline bool char_is_type(u8 c, char_type type) {
 
 /** Match a whitespace: ' ', '\\t', '\\n', '\\r'. */
 static_inline bool char_is_space(u8 c) {
-    return char_is_type(c, CHAR_TYPE_SPACE);
+    return char_is_type(c, (char_type)CHAR_TYPE_SPACE);
 }
 
 /** Match a whitespace or comment: ' ', '\\t', '\\n', '\\r', '/'. */
 static_inline bool char_is_space_or_comment(u8 c) {
-    return char_is_type(c, CHAR_TYPE_SPACE | CHAR_TYPE_COMMENT);
+    return char_is_type(c, (char_type)(CHAR_TYPE_SPACE | CHAR_TYPE_COMMENT));
 }
 
 /** Match a JSON number: '-', [0-9]. */
 static_inline bool char_is_number(u8 c) {
-    return char_is_type(c, CHAR_TYPE_NUMBER);
+    return char_is_type(c, (char_type)CHAR_TYPE_NUMBER);
 }
 
 /** Match a JSON container: '{', '['. */
 static_inline bool char_is_container(u8 c) {
-    return char_is_type(c, CHAR_TYPE_CONTAINER);
+    return char_is_type(c, (char_type)CHAR_TYPE_CONTAINER);
 }
 
 /** Match a stop character in ASCII string: '"', '\', [0x00-0x1F], [0x80-0xFF]*/
 static_inline bool char_is_ascii_stop(u8 c) {
-    return char_is_type(c, CHAR_TYPE_ESC_ASCII | CHAR_TYPE_NON_ASCII);
+    return char_is_type(c, (char_type)(CHAR_TYPE_ESC_ASCII |
+                                       CHAR_TYPE_NON_ASCII));
 }
 
 /** Match a line end character: '\\n', '\\r', '\0'*/
 static_inline bool char_is_line_end(u8 c) {
-    return char_is_type(c, CHAR_TYPE_LINE_END);
+    return char_is_type(c, (char_type)CHAR_TYPE_LINE_END);
 }
 
 
@@ -2511,33 +2524,33 @@ static_inline bool digi_is_type(u8 d, digi_type type) {
 
 /** Match a sign: '+', '-' */
 static_inline bool digi_is_sign(u8 d) {
-    return digi_is_type(d, DIGI_TYPE_POS | DIGI_TYPE_NEG);
+    return digi_is_type(d, (digi_type)(DIGI_TYPE_POS | DIGI_TYPE_NEG));
 }
 
 /** Match a none zero digit: [1-9] */
 static_inline bool digi_is_nonzero(u8 d) {
-    return digi_is_type(d, DIGI_TYPE_NONZERO);
+    return digi_is_type(d, (digi_type)DIGI_TYPE_NONZERO);
 }
 
 /** Match a digit: [0-9] */
 static_inline bool digi_is_digit(u8 d) {
-    return digi_is_type(d, DIGI_TYPE_ZERO | DIGI_TYPE_NONZERO);
+    return digi_is_type(d, (digi_type)(DIGI_TYPE_ZERO | DIGI_TYPE_NONZERO));
 }
 
 /** Match an exponent sign: 'e', 'E'. */
 static_inline bool digi_is_exp(u8 d) {
-    return digi_is_type(d, DIGI_TYPE_EXP);
+    return digi_is_type(d, (digi_type)DIGI_TYPE_EXP);
 }
 
 /** Match a floating point indicator: '.', 'e', 'E'. */
 static_inline bool digi_is_fp(u8 d) {
-    return digi_is_type(d, DIGI_TYPE_DOT | DIGI_TYPE_EXP);
+    return digi_is_type(d, (digi_type)(DIGI_TYPE_DOT | DIGI_TYPE_EXP));
 }
 
 /** Match a digit or floating point indicator: [0-9], '.', 'e', 'E'. */
 static_inline bool digi_is_digit_or_fp(u8 d) {
-    return digi_is_type(d, DIGI_TYPE_ZERO | DIGI_TYPE_NONZERO |
-                           DIGI_TYPE_DOT | DIGI_TYPE_EXP);
+    return digi_is_type(d, (digi_type)(DIGI_TYPE_ZERO | DIGI_TYPE_NONZERO |
+                                       DIGI_TYPE_DOT | DIGI_TYPE_EXP));
 }
 
 
@@ -2733,6 +2746,23 @@ static_noinline bool skip_spaces_and_comments(u8 *cur, u8 **end) {
     *end = cur;
     return hdr != cur;
 }
+
+/** Convert u64 (larger than 0x8000000000000000) to f64 raw. */
+#if YYJSON_U64_TO_F64_NO_IMPL
+static_inline u64 normalized_u64_to_f64_raw(u64 val) {
+    u64 sig = val >> F64_EXP_BITS;
+    u64 cut = val & (((u64)1 << F64_EXP_BITS) - 1);
+    u64 cut_cmp = (u64)1 << (F64_EXP_BITS - 1);
+    u64 exp = 0;
+    if ((cut > cut_cmp) || (cut == cut_cmp && (sig & 1))) {
+        sig++;
+        if (sig == ((u64)1 << F64_SIG_FULL_BITS)) { sig >>= 1; exp += 1; }
+    }
+    exp += F64_BITS - F64_SIG_FULL_BITS + F64_SIG_BITS;
+    exp += F64_EXP_BIAS;
+    return ((u64)exp << F64_SIG_BITS) | (sig & F64_SIG_MASK);;
+}
+#endif
 
 
 
@@ -3138,7 +3168,14 @@ static_inline bool read_number(u8 *cur,
     
     cur += 19; /* skip continuous 19 digits */
     if (!digi_is_digit_or_fp(*cur)) {
-        if (sign && (sig > ((u64)1 << 63))) return_f64(sig); /* overflow */
+        /* this number is an integer consisting of 19 digits */
+        if (sign && (sig > ((u64)1 << 63))) { /* overflow */
+#if YYJSON_U64_TO_F64_NO_IMPL
+            return_f64_raw(normalized_u64_to_f64_raw(sig));
+#else
+            return_f64(sig);
+#endif
+        }
         return_i64(sig);
     }
     goto digi_intg_more; /* read more digits in integral part */
@@ -3190,14 +3227,20 @@ static_inline bool read_number(u8 *cur,
 digi_intg_more:
     if (digi_is_digit(*cur)) {
         if (!digi_is_digit_or_fp(cur[1])) {
-            /* this number is an integer with 20 digits */
+            /* this number is an integer consisting of 20 digits */
             num = (u64)(*cur - '0');
             if ((sig < (U64_MAX / 10)) ||
                 (sig == (U64_MAX / 10) && num <= (U64_MAX % 10))) {
                 sig = num + sig * 10;
                 cur++;
                 /* convert to double if overflow */
-                if (sign && (sig > ((u64)1 << 63))) return_f64(sig);
+                if (sign) {
+#if YYJSON_U64_TO_F64_NO_IMPL
+                    return_f64_raw(normalized_u64_to_f64_raw(sig));
+#else
+                    return_f64(sig);
+#endif
+                }
                 else return_i64(sig);
             }
         }
@@ -3636,6 +3679,12 @@ static_noinline bool read_number(u8 *cur,
     *end = cur; return true; \
 } while (false)
     
+#define return_f64_raw(_v) do { \
+    val->tag = YYJSON_TYPE_NUM | YYJSON_SUBTYPE_REAL; \
+    val->uni.u64 = ((u64)sign << 63) | (u64)(_v); \
+    *end = cur; return true; \
+} while (false)
+    
     u64 sig, num;
     u8 *hdr = cur;
     bool sign = (*hdr == '-');
@@ -3675,7 +3724,13 @@ static_noinline bool read_number(u8 *cur,
             (sig == (U64_MAX / 10) && num <= (U64_MAX % 10))) {
             sig = num + sig * 10;
             cur++;
-            if (sign && (sig > ((u64)1 << 63))) return_f64(sig);
+            if (sign) {
+#if YYJSON_U64_TO_F64_NO_IMPL
+                return_f64_raw(normalized_u64_to_f64_raw(sig));
+#else
+                return_f64(sig);
+#endif
+            }
             else return_i64(sig);
         }
     }
@@ -3684,7 +3739,13 @@ intg_end:
     /* continuous digits ended */
     if (!digi_is_digit_or_fp(*cur)) {
         /* this number is an integer consisting of 1 to 19 digits */
-        if (sign && (sig > ((u64)1 << 63))) return_f64(sig);
+        if (sign && (sig > ((u64)1 << 63))) {
+#if YYJSON_U64_TO_F64_NO_IMPL
+            return_f64_raw(normalized_u64_to_f64_raw(sig));
+#else
+            return_f64(sig);
+#endif
+        }
         return_i64(sig);
     }
     
