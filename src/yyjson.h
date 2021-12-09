@@ -310,6 +310,12 @@
 #   endif
 #endif
 
+#if defined(CHAR_BIT)
+#   if CHAR_BIT != 8
+#       error non 8-bit char is not supported
+#   endif
+#endif
+
 /* stdbool (C89 compatible) */
 #if (defined(YYJSON_HAS_STDBOOL_H) && YYJSON_HAS_STDBOOL_H) || \
     (yyjson_has_include(<stdbool.h>) && !defined(__STRICT_ANSI__)) || \
@@ -492,7 +498,7 @@ static const yyjson_read_flag YYJSON_READ_INSITU                = 1 << 0;
 static const yyjson_read_flag YYJSON_READ_STOP_WHEN_DONE        = 1 << 1;
 
 /** Allow single trailing comma at the end of an object or array,
-    such as [1,2,3] {"a":1,"b":2,}. */
+    such as [1,2,3,] {"a":1,"b":2,}. */
 static const yyjson_read_flag YYJSON_READ_ALLOW_TRAILING_COMMAS = 1 << 2;
 
 /** Allow C-style single line and multiple line comments. */

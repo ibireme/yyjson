@@ -205,14 +205,15 @@
     defined(__hppa) || defined(__hppa__) || defined(__HPPA__) || \
     defined(__riscv) || defined(__riscv__) || \
     defined(__s390__) || defined(__avr32__) || defined(__SH4__) || \
-    defined(__e2k__) || defined(__arc__) || defined(__EMSCRIPTEN__)
+    defined(__e2k__) || defined(__arc__) || defined(__loongarch__) || \
+    defined(__EMSCRIPTEN__) || defined(__wasm__)
 #   define YYJSON_DOUBLE_MATH_CORRECT 1
 #else
-#   define YYJSON_DOUBLE_MATH_CORRECT 0 /* unknown */
+#   define YYJSON_DOUBLE_MATH_CORRECT 0 /* unknown, disable fast path */
 #endif
 
 /*
- Visual Studio 6.0 doesn't support convert number from u64 to f64:
+ Microsoft Visual C++ 6.0 doesn't support converting number from u64 to f64:
  error C2520: conversion from unsigned __int64 to double not implemented.
  */
 #ifndef YYJSON_U64_TO_F64_NO_IMPL
@@ -272,7 +273,8 @@
     defined(__ARMEL__) || defined(__THUMBEL__) || defined(__AARCH64EL__) || \
     defined(__alpha) || defined(__alpha__) || defined(_M_ALPHA) || \
     defined(__riscv) || defined(__riscv__) || \
-    defined(_MIPSEL) || defined(__MIPSEL) || defined(__MIPSEL__)
+    defined(_MIPSEL) || defined(__MIPSEL) || defined(__MIPSEL__) || \
+    defined(__EMSCRIPTEN__) || defined(__wasm__)
 #   define YYJSON_ENDIAN YYJSON_LITTLE_ENDIAN
 
 #elif (defined(__BIG_ENDIAN__) && __BIG_ENDIAN__ == 1) || \
@@ -285,7 +287,7 @@
 #   define YYJSON_ENDIAN YYJSON_BIG_ENDIAN
 
 #else
-#   define YYJSON_ENDIAN 0 /* unknown endian */
+#   define YYJSON_ENDIAN 0 /* unknown endian, detect at runtime */
 #endif
 
 /*
