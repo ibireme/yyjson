@@ -39,6 +39,11 @@
 #   pragma warning(disable:4706) /* assignment within conditional expression */
 #endif
 
+/* version, same as YYJSON_VERSION_HEX */
+yyjson_api uint32_t yyjson_version(void) {
+    return YYJSON_VERSION_HEX;
+}
+
 
 
 /*==============================================================================

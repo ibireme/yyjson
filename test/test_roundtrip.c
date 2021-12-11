@@ -2,6 +2,22 @@
 #include "yy_test_utils.h"
 
 yy_test_case(test_roundtrip) {
+    
+    // Check version
+    yy_assert(yyjson_version() == YYJSON_VERSION_HEX);
+    
+    uint32_t ver = (YYJSON_VERSION_MAJOR << 16) +
+                   (YYJSON_VERSION_MINOR << 8) +
+                   (YYJSON_VERSION_PATCH);
+    yy_assert(yyjson_version() == ver);
+    
+    char buf[16];
+    snprintf(buf, sizeof(buf), "%d.%d.%d",
+             YYJSON_VERSION_MAJOR, YYJSON_VERSION_MINOR, YYJSON_VERSION_PATCH);
+    yy_assert(strcmp(YYJSON_VERSION_STRING, buf) == 0);
+    ver = YYJSON_VERSION_MAJOR << 16;
+    
+    // Check JSON file roundtrip
 #if !YYJSON_DISABLE_READER && !YYJSON_DISABLE_WRITER
     
     char dir[YY_MAX_PATH];

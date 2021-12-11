@@ -28,10 +28,10 @@
  *============================================================================*/
 
 #define YYJSON_VERSION_MAJOR  0
-#define YYJSON_VERSION_MINOR  3
+#define YYJSON_VERSION_MINOR  4
 #define YYJSON_VERSION_PATCH  0
-#define YYJSON_VERSION_HEX    0x000300
-#define YYJSON_VERSION_STRING "0.3.0"
+#define YYJSON_VERSION_HEX    0x000400
+#define YYJSON_VERSION_STRING "0.4.0"
 
 
 
@@ -365,6 +365,9 @@ extern "C" {
 #   pragma warning(push)
 #   pragma warning(disable:4800) /* 'int': forcing value to 'true' or 'false' */
 #endif
+
+/* version, same as YYJSON_VERSION_HEX */
+yyjson_api uint32_t yyjson_version(void);
 
 
 
