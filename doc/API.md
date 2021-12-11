@@ -613,6 +613,18 @@ Same as `yyjson_obj_get(), but you can pass an explicit string length.
 yyjson_val *yyjson_obj_getn(yyjson_val *obj, const char *key, size_t key_len);
 ```
 
+If the order of object's key is known at compile time, you can use this method to avoid searching the entire object:
+```c
+// { "x":1, "y":2, "z":3 }
+yyjson_val *obj = ...;
+yyjson_obj_iter iter;
+if (yyjson_obj_iter_init(obj, &iter)) {
+    yyjson_val *x = yyjson_obj_iter_get(&iter, "x");
+    yyjson_val *y = yyjson_obj_iter_get(&iter, "y");
+    yyjson_val *z = yyjson_obj_iter_get(&iter, "z");
+}
+```
+
 ### JSON Object Iterator API
 You can use two methods to traverse an object:<br/>
 
