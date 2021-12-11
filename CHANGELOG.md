@@ -2,6 +2,23 @@
 All notable changes to this project will be documented in this file.
 
 
+## 0.4.0 (2021-12-12)
+#### Added
+- Add `YYJSON_WRITE_INF_AND_NAN_AS_NULL` flag for JSON writer.
+- Add `merge_path()` function for JSON Merge-Path API (RFC 7386).
+- Add `obj_replace()` and `obj_insert()` function for object modification.
+- Add `obj_iter_get()` function for faster object query.
+- Add `yyjson_version()` function.
+
+#### Changed
+- Replace `YYJSON_DISABLE_COMMENT_READER` and `YYJSON_DISABLE_INF_AND_NAN_READER` with `YYJSON_DISABLE_NON_STANDARD` compiler flag.
+- Replace `YYJSON_DISABLE_FP_READER` and `YYJSON_DISABLE_FP_WRITER` with `YYJSON_DISABLE_FAST_FP_CONV` compiler flag.
+
+#### Fixed
+- Fix compiler warning with `-Wconversion`
+- Fix compiler error for GCC 4.4 (#53) and MSVC 6.0 (#55)
+
+
 ## 0.3.0 (2021-05-25)
 #### Added
 - Add `JSON Pointer` support.
@@ -27,7 +44,7 @@ All notable changes to this project will be documented in this file.
 - Strict UTF-8 validation for JSON reader.
 
 #### Removed
-- Remove `YYJSON_READ_FASTFP` flag.
+- Remove `YYJSON_READ_FASTFP` compiler flag.
 
 #### Fixed
 - Fix a compile error for old version gcc on linux: #7.
