@@ -310,12 +310,6 @@
 #   endif
 #endif
 
-#if defined(CHAR_BIT)
-#   if CHAR_BIT != 8
-#       error non 8-bit char is not supported
-#   endif
-#endif
-
 /* stdbool (C89 compatible) */
 #if (defined(YYJSON_HAS_STDBOOL_H) && YYJSON_HAS_STDBOOL_H) || \
     (yyjson_has_include(<stdbool.h>) && !defined(__STRICT_ANSI__)) || \
@@ -336,6 +330,13 @@
 #       define bool unsigned char
 #       define true 1
 #       define false 0
+#   endif
+#endif
+
+/* char bit check */
+#if defined(CHAR_BIT)
+#   if CHAR_BIT != 8
+#       error non 8-bit char is not supported
 #   endif
 #endif
 

@@ -153,6 +153,18 @@ jobs:
         cmake --build . --config Release
         ctest -C Release
 
+  fastmath:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    
+    - name: FastMath
+      run: |
+        mkdir build
+        cd build
+        cmake .. -DCMAKE_C_FLAGS="-ffast-math" -DCMAKE_BUILD_TYPE=Release -DYYJSON_BUILD_TESTS=ON
+        cmake --build . --config Release
+        ctest -C Release
 
   codecov:
     runs-on: ubuntu-latest

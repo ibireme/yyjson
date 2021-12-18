@@ -10,6 +10,7 @@
  */
 
 #define IEEE_8087
+#undef USE_LOCALE
 
 /* warning suppress begin */
 #if defined(__clang__)

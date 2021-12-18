@@ -1258,7 +1258,7 @@ yyjson_obj_foreach(obj, idx, max, key, val) {
 
 
 # Thread Safe
-yyjson does not use global variables, so if you can ensure that the input parameters of a function are thread-safe, then the function call is also thread-safe.<br/>
+yyjson does not use global variables, so if you can ensure that the input parameters of a function are immutable, then the function call is thread-safe.<br/>
 
 `yyjson_doc` and `yyjson_val` is immutable and thread-safe,<br/>
 `yyjson_mut_doc` and `yyjson_mut_val` is mutable and not thread-safe.
@@ -1266,6 +1266,11 @@ yyjson does not use global variables, so if you can ensure that the input parame
 
 
 # Locale Dependent
-yyjson is locale-independent by default.
+yyjson is locale-independent.
 
-If you build yyjson with `YYJSON_DISABLE_FAST_FP_CONV` flag, yyjson will use `strtod` and `snprintf` to convert floating-point numbers, and these two functions are locale-dependent.
+However, there are some special conditions that you need to be aware of:
+
+1. You use libc's `setlocale()` function to change locale.
+2. Your environment does not use IEEE 754 floating-point (e.g. some IBM mainframes) or you explicitly specified the `YYJSON_DISABLE_FAST_FP_CONV` flag at build time.
+
+When you meet both of these conditions, you should avoid call `setlocale()` while other thread is parsing JSON, otherwise an error may be returned for JSON floating point number parsing.

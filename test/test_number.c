@@ -1,5 +1,6 @@
 #include "yyjson.h"
 #include "yy_test_utils.h"
+#include <locale.h>
 
 #if defined(__clang__)
 #   pragma clang diagnostic push
@@ -454,7 +455,7 @@ static void test_random_real(void) {
  * Test all
  *============================================================================*/
 
-yy_test_case(test_number) {
+static void test_number_locale(void) {
     test_with_file("num_fail.txt", NUM_TYPE_FAIL);
     test_with_file("uint_pass.txt", NUM_TYPE_UINT);
     test_with_file("sint_pass.txt", NUM_TYPE_SINT);
@@ -470,6 +471,13 @@ yy_test_case(test_number) {
     test_with_file("nan_inf_literal_fail.txt", NUM_TYPE_FAIL);
     test_random_int();
     test_random_real();
+}
+
+yy_test_case(test_number) {
+    setlocale(LC_ALL, "C");
+    test_number_locale();
+    setlocale(LC_ALL, "fr_FR");
+    test_number_locale();
 }
 
 

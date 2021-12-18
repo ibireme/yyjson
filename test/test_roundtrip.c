@@ -1,7 +1,10 @@
 #include "yyjson.h"
 #include "yy_test_utils.h"
+#include <locale.h>
 
-yy_test_case(test_roundtrip) {
+
+
+void test_roundtrip_locale(void) {
     
     // Check version
     yy_assert(yyjson_version() == YYJSON_VERSION_HEX);
@@ -72,4 +75,12 @@ yy_test_case(test_roundtrip) {
     yy_dir_free(names);
     
 #endif
+}
+
+
+yy_test_case(test_roundtrip) {
+    setlocale(LC_ALL, "C");
+    test_roundtrip_locale();
+    setlocale(LC_ALL, "fr_FR");
+    test_roundtrip_locale();
 }

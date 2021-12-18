@@ -120,7 +120,7 @@ yyjson_api uint32_t yyjson_version(void) {
 #endif
 
 /* int128 type */
-#if (__SIZEOF_INT128__ == 16) && \
+#if defined(__SIZEOF_INT128__) && (__SIZEOF_INT128__ == 16) && \
     (defined(__GNUC__) || defined(__clang__) || defined(__INTEL_COMPILER))
 #    define YYJSON_HAS_INT128 1
 #else
@@ -128,17 +128,14 @@ yyjson_api uint32_t yyjson_version(void) {
 #endif
 
 /* IEEE 754 floating-point binary representation */
-#if defined(__STDC_IEC_559__) && __STDC_IEC_559__
+#if defined(__STDC_IEC_559__) || defined(__STDC_IEC_60559_BFP__)
 #   define YYJSON_HAS_IEEE_754 1
-#elif (FLT_RADIX == 2) && (DBL_MANT_DIG == 53) && \
+#elif (FLT_RADIX == 2) && (DBL_MANT_DIG == 53) && (DBL_DIG == 15) && \
      (DBL_MIN_EXP == -1021) && (DBL_MAX_EXP == 1024) && \
      (DBL_MIN_10_EXP == -307) && (DBL_MAX_10_EXP == 308)
 #   define YYJSON_HAS_IEEE_754 1
 #else
 #   define YYJSON_HAS_IEEE_754 0
-#   if __FAST_MATH__ || __USE_FAST_MATH__
-#       warning "-ffast-math" may break the nan/inf check
-#   endif
 #endif
 
 /*
@@ -736,34 +733,19 @@ static_inline u64 f64_raw_get_nan(bool sign) {
 #endif
 }
 
-/** Checks if the given double has finite value. */
-static_inline bool f64_isfinite(f64 f) {
-#if defined(isfinite)
-    return !!isfinite(f);
+/**
+ Convert normalized u64 (highest bit is 1) to f64 raw.
+ 
+ Some compiler (such as Microsoft Visual C++ 6.0) do not support converting
+ number from u64 to f64. This function will first convert u64 to i64 and then
+ to f64, with `to nearest` rounding mode.
+ */
+static_inline f64 normalized_u64_to_f64(u64 val) {
+#if YYJSON_U64_TO_F64_NO_IMPL
+    i64 sig = (i64)((val >> 1) | (val & 1));
+    return ((f64)sig) * (f64)2.0;
 #else
-    f64 f1 = f;
-    f64 f2 = f - f;
-    return (f1 == f1) && (f2 == f2);
-#endif
-}
-
-/** Checks if the given double is infinite. */
-static_inline bool f64_isinf(f64 f) {
-#if defined(isinf)
-    return !!isinf(f);
-#else
-    f64 f1 = f;
-    f64 f2 = f - f;
-    return (f1 == f1) && (f2 != f2);
-#endif
-}
-
-/** Checks if the given double is nan. */
-static_inline bool f64_isnan(f64 f) {
-#if defined(isnan)
-    return !!isnan(f);
-#else
-    return f != f;
+    return (f64)val;
 #endif
 }
 
@@ -2754,23 +2736,6 @@ static_noinline bool skip_spaces_and_comments(u8 *cur, u8 **end) {
     return hdr != cur;
 }
 
-/** Convert u64 (larger than 0x8000000000000000) to f64 raw. */
-#if YYJSON_U64_TO_F64_NO_IMPL
-static_inline u64 normalized_u64_to_f64_raw(u64 val) {
-    u64 sig = val >> F64_EXP_BITS;
-    u64 cut = val & (((u64)1 << F64_EXP_BITS) - 1);
-    u64 cut_cmp = (u64)1 << (F64_EXP_BITS - 1);
-    u64 exp = 0;
-    if ((cut > cut_cmp) || (cut == cut_cmp && (sig & 1))) {
-        sig++;
-        if (sig == ((u64)1 << F64_SIG_FULL_BITS)) { sig >>= 1; exp += 1; }
-    }
-    exp += F64_BITS - F64_SIG_FULL_BITS + F64_SIG_BITS;
-    exp += F64_EXP_BIAS;
-    return ((u64)exp << F64_SIG_BITS) | (sig & F64_SIG_MASK);;
-}
-#endif
-
 
 
 #if YYJSON_HAS_IEEE_754 && !YYJSON_DISABLE_FAST_FP_CONV
@@ -3177,11 +3142,7 @@ static_inline bool read_number(u8 *cur,
     if (!digi_is_digit_or_fp(*cur)) {
         /* this number is an integer consisting of 19 digits */
         if (sign && (sig > ((u64)1 << 63))) { /* overflow */
-#if YYJSON_U64_TO_F64_NO_IMPL
-            return_f64_raw(normalized_u64_to_f64_raw(sig));
-#else
-            return_f64(sig);
-#endif
+            return_f64(normalized_u64_to_f64(sig));
         }
         return_i64(sig);
     }
@@ -3241,14 +3202,8 @@ digi_intg_more:
                 sig = num + sig * 10;
                 cur++;
                 /* convert to double if overflow */
-                if (sign) {
-#if YYJSON_U64_TO_F64_NO_IMPL
-                    return_f64_raw(normalized_u64_to_f64_raw(sig));
-#else
-                    return_f64(sig);
-#endif
-                }
-                else return_i64(sig);
+                if (sign) return_f64(normalized_u64_to_f64(sig));
+                return_i64(sig);
             }
         }
     }
@@ -3694,6 +3649,8 @@ static_noinline bool read_number(u8 *cur,
     
     u64 sig, num;
     u8 *hdr = cur;
+    u8 *dot = NULL;
+    u8 *f64_end = NULL;
     bool sign = (*hdr == '-');
     
     cur += sign;
@@ -3731,14 +3688,8 @@ static_noinline bool read_number(u8 *cur,
             (sig == (U64_MAX / 10) && num <= (U64_MAX % 10))) {
             sig = num + sig * 10;
             cur++;
-            if (sign) {
-#if YYJSON_U64_TO_F64_NO_IMPL
-                return_f64_raw(normalized_u64_to_f64_raw(sig));
-#else
-                return_f64(sig);
-#endif
-            }
-            else return_i64(sig);
+            if (sign) return_f64(normalized_u64_to_f64(sig));
+            return_i64(sig);
         }
     }
     
@@ -3747,11 +3698,7 @@ intg_end:
     if (!digi_is_digit_or_fp(*cur)) {
         /* this number is an integer consisting of 1 to 19 digits */
         if (sign && (sig > ((u64)1 << 63))) {
-#if YYJSON_U64_TO_F64_NO_IMPL
-            return_f64_raw(normalized_u64_to_f64_raw(sig));
-#else
-            return_f64(sig);
-#endif
+            return_f64(normalized_u64_to_f64(sig));
         }
         return_i64(sig);
     }
@@ -3761,6 +3708,7 @@ read_double:
     while (digi_is_digit(*cur)) cur++;
     if (*cur == '.') {
         /* skip fraction part */
+        dot = cur;
         cur++;
         if (!digi_is_digit(*cur++)) {
             return_err(cur - 1, "no digit after decimal point");
@@ -3777,14 +3725,32 @@ read_double:
     }
     
     /*
-     We use libc's strtod() to read the number as a double value.
-     The format of this number has been verified, so we don't need the endptr.
+     libc's strtod() is used to parse the floating-point number.
+     
      Note that the decimal point character used by strtod() is locale-dependent,
      and the rounding direction may affected by fesetround().
+     
+     For currently known locales, (en, zh, ja, ko, am, he, hi) use '.' as the
+     decimal point, while other locales use ',' as the decimal point.
+     
+     Here strtod() is called twice for different locales, but if another thread
+     happens calls setlocale() between two strtod(), parsing may still fail.
      */
-    val->uni.f64 = strtod((const char *)hdr, NULL);
-    if (unlikely(!f64_isfinite(val->uni.f64)) && !has_flag(ALLOW_INF_AND_NAN)) {
-        return_err(hdr, "number is infinity when parsed as double");
+    val->uni.f64 = strtod((const char *)hdr, (char **)&f64_end);
+    if (unlikely(f64_end != cur)) {
+        bool cut = (*cur == ',');
+        if (dot) *dot = ',';
+        if (cut) *cur = ' ';
+        val->uni.f64 = strtod((const char *)hdr, (char **)&f64_end);
+        if (cut) *cur = ',';
+        if (unlikely(f64_end != cur)) {
+            return_err(hdr, "strtod() failed to parse the number");
+        }
+    }
+    if (unlikely(val->uni.f64 == HUGE_VAL || val->uni.f64 == -HUGE_VAL)) {
+        if (!has_flag(ALLOW_INF_AND_NAN)) {
+            return_err(hdr, "number is infinity when parsed as double");
+        }
     }
     val->tag = YYJSON_TYPE_NUM | YYJSON_SUBTYPE_REAL;
     *end = cur;
@@ -5580,7 +5546,7 @@ static_inline u8 *write_u64(u64 val, u8 *buf) {
  * Number Writer
  *============================================================================*/
 
-#if !YYJSON_DISABLE_FAST_FP_CONV
+#if YYJSON_HAS_IEEE_754 && !YYJSON_DISABLE_FAST_FP_CONV
 
 /** Trailing zero count table for number 0 to 99.
     (generate with misc/make_tables.c) */
@@ -5981,35 +5947,63 @@ static_noinline u8 *write_f64_raw(u8 *buf, u64 raw, yyjson_write_flag flg) {
 
 /** Write a double number (requires 32 bytes buffer). */
 static_noinline u8 *write_f64_raw(u8 *buf, u64 raw, yyjson_write_flag flg) {
-    f64 val = f64_from_raw(raw);
-    if (f64_isfinite(val)) {
-#if YYJSON_MSC_VER >= 1400
-        int len = sprintf_s((char *)buf, 32, "%.17g", val);
+    /*
+     For IEEE 754, `DBL_DECIMAL_DIG` is 17 for round-trip.
+     For non-IEEE formats, 17 is used to avoid buffer overflow,
+     round-trip is not guaranteed.
+     */
+#if defined(DBL_DECIMAL_DIG)
+    int dig = DBL_DECIMAL_DIG > 17 ? 17 : DBL_DECIMAL_DIG;
 #else
-        int len = sprintf((char *)buf, "%.17g", val);
+    int dig = 17;
 #endif
-        return buf + len;
-    } else {
-        /* nan or inf */
+    
+    /*
+     The snprintf() function is locale-dependent. For currently known locales,
+     (en, zh, ja, ko, am, he, hi) use '.' as the decimal point, while other
+     locales use ',' as the decimal point. we need to replace ',' with '.'
+     to avoid the locale setting.
+     */
+    f64 val = f64_from_raw(raw);
+#if YYJSON_MSC_VER >= 1400
+    int len = sprintf_s((char *)buf, 32, "%.*g", dig, val);
+#elif defined(snprintf) || (YYJSON_STDC_VER >= 199901L)
+    int len = snprintf((char *)buf, 32, "%.*g", dig, val);
+#else
+    int len = sprintf((char *)buf, "%.*g", dig, val);
+#endif
+    
+    u8 *cur = buf;
+    if (unlikely(len < 1)) return NULL;
+    cur += (*cur == '-');
+    if (unlikely(!digi_is_digit(*cur))) {
+        /* nan, inf, or bad output */
         if (flg & YYJSON_WRITE_INF_AND_NAN_AS_NULL) {
             *(v32 *)&buf[0] = v32_make('n', 'u', 'l', 'l');
             return buf + 4;
         } else if (flg & YYJSON_WRITE_ALLOW_INF_AND_NAN) {
-            if (f64_isinf(val)) {
-                buf[0] = '-';
-                buf += val < 0;
-                *(v32 *)&buf[0] = v32_make('I', 'n', 'f', 'i');
-                *(v32 *)&buf[4] = v32_make('n', 'i', 't', 'y');
-                buf += 8;
-                return buf;
-            } else {
+            if (*cur == 'i') {
+                *(v32 *)&cur[0] = v32_make('I', 'n', 'f', 'i');
+                *(v32 *)&cur[4] = v32_make('n', 'i', 't', 'y');
+                cur += 8;
+                return cur;
+            } else if (*cur == 'n') {
                 *(v32 *)&buf[0] = v32_make('N', 'a', 'N', '\0');
                 return buf + 3;
             }
-        } else {
-            return NULL;
+        }
+        return NULL;
+    } else {
+        /* finite number */
+        int i = 0;
+        for (; i < len; i++) {
+            if (buf[i] == ',') {
+                buf[i] = '.';
+                break;
+            }
         }
     }
+    return buf + len;
 }
 
 #endif /* FP_WRITER */
