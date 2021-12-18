@@ -21,6 +21,7 @@ option(YYJSON_BUILD_MISC "Build misc" OFF)
 option(YYJSON_ENABLE_COVERAGE "Enable code coverage for tests" OFF)
 option(YYJSON_ENABLE_VALGRIND "Enable valgrind memory checker for tests" OFF)
 option(YYJSON_ENABLE_SANITIZE "Enable sanitizer for tests" OFF)
+option(YYJSON_ENABLE_FASTMATH "Enable fast-math for tests" OFF)
 
 
 # ------------------------------------------------------------------------------
@@ -60,18 +61,40 @@ endif()
 # Project Config
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 include(XcodeProperty)
+
 if(XCODE)
+    set(YYJSON_FLAGS "-Wall -Wextra -Werror -pedantic -pedantic-errors")
+    if(YYJSON_ENABLE_FASTMATH)
+        set(YYJSON_FLAGS "${YYJSON_FLAGS} -ffast-math")
+    endif()
+    
     set_default_xcode_property(yyjson)
     set_xcode_deployment_version(yyjson "10.11" "9.0" "9.0" "2.0")
 
     set_xcode_property(yyjson GCC_C_LANGUAGE_STANDARD "c89")
     set_xcode_property(yyjson CLANG_CXX_LANGUAGE_STANDARD "c++98")
     
-    set_xcode_property(yyjson OTHER_CFLAGS[variant=Debug] "-Wall -Wextra -Werror -pedantic -pedantic-errors")
-    set_xcode_property(yyjson OTHER_CFLAGS[variant=Release] "-Wall -Wextra -Werror -pedantic -pedantic-errors")
+    set_xcode_property(yyjson OTHER_CFLAGS[variant=Debug] ${YYJSON_FLAGS})
+    set_xcode_property(yyjson OTHER_CFLAGS[variant=Release] ${YYJSON_FLAGS})
+    
 elseif(MSVC)
-    target_compile_options(yyjson PRIVATE $<$<C_COMPILER_ID:MSVC>:/permissive- /utf-8>)
-    target_compile_options(yyjson PRIVATE $<$<CXX_COMPILER_ID:MSVC>:/permissive- /utf-8>)
+    set(YYJSON_FLAGS "/permissive- /utf-8")
+    if(YYJSON_ENABLE_FASTMATH)
+        set(YYJSON_FLAGS "${YYJSON_FLAGS} /fp:fast")
+    endif()
+    
+    target_compile_options(yyjson PRIVATE $<$<C_COMPILER_ID:MSVC>:${YYJSON_FLAGS}>)
+    target_compile_options(yyjson PRIVATE $<$<CXX_COMPILER_ID:MSVC>:${YYJSON_FLAGS}>)
+    
+elseif(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
+    set(YYJSON_FLAGS "")
+    if(YYJSON_ENABLE_FASTMATH)
+        set(YYJSON_FLAGS "-ffast-math")
+    endif()
+    
+    target_compile_options(yyjson PRIVATE $<$<COMPILE_LANGUAGE:C>:${YYJSON_FLAGS}>)
+    target_compile_options(yyjson PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${YYJSON_FLAGS}>)
+    
 endif()
 
 include(CheckIncludeFile)
@@ -118,6 +141,10 @@ if(YYJSON_BUILD_TESTS)
     check_cxx_compiler_flag("-ansi" COMPILER_SUPPORTS_ANSI_CPP)
     check_cxx_compiler_flag("-std=c++17" COMPILER_SUPPORTS_CPP17)
 
+    if(YYJSON_ENABLE_FASTMATH)
+    
+    endif()
+    
     if(XCODE)
         # Config XCTest
         find_package(XCTest REQUIRED)
@@ -223,7 +250,7 @@ if(YYJSON_BUILD_TESTS)
             else()
                 add_test(${SRC_NAME} ${SRC_NAME})
             endif()
-
+            
             set_tests_properties(${SRC_NAME} PROPERTIES TIMEOUT 300)
             message(STATUS "Add test: ${SRC_NAME}")
         endforeach()

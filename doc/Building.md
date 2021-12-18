@@ -45,6 +45,7 @@ Supported CMake options:
 - `-DYYJSON_ENABLE_COVERAGE=ON` Enable code coverage for tests.
 - `-DYYJSON_ENABLE_VALGRIND=ON` Enable valgrind memory checker for tests.
 - `-DYYJSON_ENABLE_SANITIZE=ON` Enable sanitizer for tests.
+- `-DYYJSON_ENABLE_FASTMATH=ON` Enable fast-math for tests.
 - `-DYYJSON_DISABLE_READER=ON` Disable JSON reader if you don't need it.
 - `-DYYJSON_DISABLE_WRITER=ON` Disable JSON writer if you don't need it.
 - `-DYYJSON_DISABLE_FAST_FP_CONV=ON` Disable fast floating-pointer conversion.

@@ -66,7 +66,7 @@ jobs:
     - name: Test
       shell: bash
       working-directory: ${{runner.workspace}}/build
-      run: ctest -C ${{matrix.build_type}}
+      run: ctest -C ${{matrix.build_type}} --output-on-failure
 
 
   macos:
@@ -102,7 +102,7 @@ jobs:
     - name: Test
       shell: bash
       working-directory: ${{runner.workspace}}/build
-      run: ctest -C Release
+      run: ctest -C Release --output-on-failure
 
 
   windows:
@@ -115,7 +115,7 @@ jobs:
         cd build
         cmake .. -DCMAKE_BUILD_TYPE=Release -DYYJSON_BUILD_TESTS=ON
         cmake --build . --config Release
-        ctest -C Release
+        ctest -C Release --output-on-failure
 
 
   gcc4:
@@ -133,7 +133,7 @@ jobs:
         cd build
         cmake .. -DCMAKE_C_COMPILER=gcc-4.8 -DCMAKE_CXX_COMPILER=g++-4.8 -DYYJSON_BUILD_TESTS=ON
         cmake --build . --config Release
-        ctest -C Release
+        ctest -C Release --output-on-failure
 
 
   tinycc:
@@ -151,7 +151,7 @@ jobs:
         cd build
         cmake .. -DCMAKE_C_COMPILER=tcc -DYYJSON_BUILD_TESTS=ON
         cmake --build . --config Release
-        ctest -C Release
+        ctest -C Release --output-on-failure
 
   fastmath:
     runs-on: ubuntu-latest
@@ -162,9 +162,9 @@ jobs:
       run: |
         mkdir build
         cd build
-        cmake .. -DCMAKE_C_FLAGS="-ffast-math" -DCMAKE_BUILD_TYPE=Release -DYYJSON_BUILD_TESTS=ON
+        cmake .. -DYYJSON_ENABLE_FASTMATH=ON -DCMAKE_BUILD_TYPE=Release -DYYJSON_BUILD_TESTS=ON
         cmake --build . --config Release
-        ctest -C Release
+        ctest -C Release --output-on-failure
 
   codecov:
     runs-on: ubuntu-latest

@@ -199,15 +199,15 @@ typedef unsigned __int64    uint64_t;
 /* assert */
 #define yy_assert(expr) \
     if (!(expr)) { \
-        printf("Assertion failed: %s (%s: %d)\n", #expr, __FILE__, __LINE__); \
+        fprintf(stderr, "Assertion failed: %s (%s: %d)\n", #expr, __FILE__, __LINE__); \
         abort(); \
     };
 
 #define yy_assertf(expr, ...) \
     if (!(expr)) { \
-        printf("Assertion failed: %s (%s: %d)\n", #expr, __FILE__, __LINE__); \
-        printf(__VA_ARGS__); \
-        printf("\n"); \
+        fprintf(stderr, "Assertion failed: %s (%s: %d)\n", #expr, __FILE__, __LINE__); \
+        fprintf(stderr, __VA_ARGS__); \
+        fprintf(stderr, "\n"); \
         abort(); \
     };
 
