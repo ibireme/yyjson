@@ -734,7 +734,7 @@ static_inline u64 f64_raw_get_nan(bool sign) {
 }
 
 /**
- Convert normalized u64 (highest bit is 1) to f64 raw.
+ Convert normalized u64 (highest bit is 1) to f64.
  
  Some compiler (such as Microsoft Visual C++ 6.0) do not support converting
  number from u64 to f64. This function will first convert u64 to i64 and then
@@ -5804,7 +5804,7 @@ static_noinline u8 *write_f64_raw(u8 *buf, u64 raw, yyjson_write_flag flg) {
     u8 *hdr, *num_hdr, *num_end, *dot_end;
     bool sign;
     
-    /* decode from raw bytes from IEEE-754 double format. */
+    /* decode raw bytes from IEEE-754 double format. */
     sign = (bool)(raw >> (F64_BITS - 1));
     sig_raw = raw & F64_SIG_MASK;
     exp_raw = (u32)((raw & F64_EXP_MASK) >> F64_SIG_BITS);
@@ -5831,7 +5831,7 @@ static_noinline u8 *write_f64_raw(u8 *buf, u64 raw, yyjson_write_flag flg) {
         }
     }
     
-    /* add sign for all finite double value, include -0.0 */
+    /* add sign for all finite double value, including 0.0 and inf */
     buf[0] = '-';
     buf += sign;
     hdr = buf;

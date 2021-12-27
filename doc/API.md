@@ -519,7 +519,7 @@ size_t yyjson_arr_size(yyjson_val *arr);
 ```
 
 Returns the element at the specified position in this array, or NULL if array is empty or the index is out of bounds.<br/>
-Note that his function takes a **linear search time** if array is not flat.
+Note that this function takes a **linear search time** if array is not flat.
 ```c
 yyjson_val *yyjson_arr_get(yyjson_val *arr, size_t idx);
 ```
@@ -910,7 +910,7 @@ bool yyjson_mut_arr_prepend(yyjson_mut_val *arr, yyjson_mut_val *val);
 ```
 
 Replaces a value at index and returns old value, returns NULL on error.<br/>
-Note that his function takes a **linear search time**.
+Note that this function takes a **linear search time**.
 ```c
 yyjson_mut_val *yyjson_mut_arr_replace(yyjson_mut_val *arr, size_t idx, yyjson_mut_val *val);
 ```

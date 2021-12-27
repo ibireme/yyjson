@@ -140,10 +140,6 @@ if(YYJSON_BUILD_TESTS)
     check_c_compiler_flag("-std=c11" COMPILER_SUPPORTS_C11)
     check_cxx_compiler_flag("-ansi" COMPILER_SUPPORTS_ANSI_CPP)
     check_cxx_compiler_flag("-std=c++17" COMPILER_SUPPORTS_CPP17)
-
-    if(YYJSON_ENABLE_FASTMATH)
-    
-    endif()
     
     if(XCODE)
         # Config XCTest
