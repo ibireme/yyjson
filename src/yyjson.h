@@ -1260,11 +1260,24 @@ yyjson_api yyjson_mut_doc *yyjson_mut_doc_new(const yyjson_alc *alc);
 yyjson_api yyjson_mut_doc *yyjson_doc_mut_copy(yyjson_doc *doc,
                                                const yyjson_alc *alc);
 
+/** Copies and returns a new mutable document from input, returns NULL on error.
+    This makes a `deep-copy` on the mutable document.
+    If allocator is NULL, the default allocator will be used. */
+yyjson_api yyjson_mut_doc *yyjson_mut_doc_duplicate(yyjson_doc *doc,
+                                               const yyjson_alc *alc);
+
 /** Copies and returns a new mutable value from input, returns NULL on error.
     This makes a `deep-copy` on the immutable value.
     The memory was managed by mutable document. */
 yyjson_api yyjson_mut_val *yyjson_val_mut_copy(yyjson_mut_doc *doc,
                                                yyjson_val *val);
+
+/** Copies and return a new mutable value from input, returns NULL on error,
+    this makes a `deep-copy` on the mutable value.
+    the memory was managed by mutable document.*/
+yyjson_api yyjson_mut_val *yyjson_mut_val_duplicate(yyjson_mut_doc *doc,
+                                                    yyjson_mut_val *val
+);
 
 
 

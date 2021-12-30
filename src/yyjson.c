@@ -1246,6 +1246,23 @@ yyjson_api yyjson_mut_doc *yyjson_doc_mut_copy(yyjson_doc *i_doc,
     return m_doc;
 }
 
+yyjson_api yyjson_mut_doc *yyjson_mut_doc_duplicate(yyjson_mut_doc *i_doc,
+                                                    const yyjson_alc *alc) {
+    yyjson_mut_doc *m_doc;
+    yyjson_mut_val *m_val;
+    
+    if (!i_doc) return NULL;
+    m_doc = yyjson_mut_doc_new(alc);
+    if (!m_doc) return NULL;
+    m_val = yyjson_val_mut_copy(m_doc, i_doc->root);
+    if (!m_val) {
+        yyjson_mut_doc_free(m_doc);
+        return NULL;
+    }
+    yyjson_mut_doc_set_root(m_doc, m_val);
+    return m_doc;
+}
+
 yyjson_api yyjson_mut_val *yyjson_val_mut_copy(yyjson_mut_doc *m_doc,
                                                yyjson_val *i_vals) {
     /*
@@ -1313,6 +1330,56 @@ yyjson_api yyjson_mut_val *yyjson_val_mut_copy(yyjson_mut_doc *m_doc,
     }
     
     return m_vals;
+}
+
+yyjson_api yyjson_mut_val *yyjson_mut_val_duplicate(yyjson_mut_doc *m_doc,
+                                                    yyjson_mut_val *i_vals) {
+    if (yyjson_mut_is_obj(i_vals)) {
+        yyjson_mut_val *new_obj = fson_mut_obj(m_doc);
+        yyjson_mut_val *key, *val;
+        yyjson_mut_obj_iter iter;
+        yyjson_mut_obj_iter_init(i_vals, &iter);
+        while ((key = yyjson_mut_obj_iter_next(&iter))) {
+            val = yyjson_Mut_obj_iter_get_val(key);
+            yyjson_mut_val *key_cp = yyjson_mut_val_duplicate(m_doc, key);
+            yyjson_mut_val *val_cp = yyjson_mut_val_duplicate(m_doc, val);
+            yyjson_mut_obj_add(new_obj, key_cp, val_cp);
+        }
+        return new_obj;
+    } else if (fson_mut_is_arr(i_vals)) {
+        yyjson_mut_val *new_arr = yyjson_mut_arr(m_doc);
+        yyjson_mut_val *val;
+        yyjson_mut_arr_iter iter;
+        yyjson_mut_arr_iter_init(i_vals, &iter);
+        while ((val = yyjson_mut_arr_iter_next(&iter))) {
+            yyjson_mut_val *val_cp = yyjson_mut_val_duplicate(m_doc, val);
+            yyjson_mut_arr_add_val(new_arr, val_cp);
+        }
+        return new_arr;
+    } else if (yyjson_mut_is_num(i_vals)) {
+        yyjson_mut_val *val;
+        if (yyjson_mut_is_real(i_vals)) {
+            val = yyjson_mut_real(m_doc, yyjson_mut_get_real(i_vals));
+        } else if (yyjson_mut_is_int(i_vals)) {
+            if (yyjson_mut_is_sint(i_vals)) {
+                val = yyjson_mut_sint(m_doc, yyjson_mut_get_sint(i_vals));
+            } else {
+                val = yyjson_mut_uint(m_doc, yyjson_mut_get_uint(i_vals));
+            }
+        }
+        return val;
+    } else if (yyjson_mut_is_str(i_vals)) {
+        yyjson_mut_val *val = yyjson_mut_strcpy(m_doc, yyjson_mut_get_str(i_vals));
+        return val;
+    } else if (yyjson_mut_is_bool(i_vals)) {
+        yyjson_mut_val *val = yyjson_mut_bool(m_doc, yyjson_mut_get_bool(i_vals));
+        return val;
+    } else if (yyjson_mut_is_null(i_vals)) {
+        yyjson_mut_val *val = yyjson_mut_null(m_doc);
+        return val;
+    } else {
+        return NULL;
+    }
 }
 
 bool yyjson_mut_equals(yyjson_mut_val* lhs, yyjson_mut_val* rhs) {
