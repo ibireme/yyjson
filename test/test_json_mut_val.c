@@ -1899,6 +1899,15 @@ static void test_json_mut_doc_api(void) {
     idoc->root = NULL;
     yy_assert(!yyjson_doc_mut_copy(idoc, NULL));
     yyjson_doc_free(idoc);
+
+    const char* json_str = "{\"a\":{\"b\":[1.0, 2.0]}}";
+    yyjson_doc *json = yyjson_read(json_str, strlen(json_str), 0);
+    yyjson_mut_doc *json_cp = yyjson_doc_mut_copy(json, NULL);
+    yyjson_mut_doc *json_mut_cp = yyjson_mut_doc_mut_copy(json_cp, NULL);
+    yy_assert(yyjson_mut_equals(json_cp->root, json_mut_cp->root) == true);
+    yyjson_doc_free(json);
+    yyjson_mut_doc_free(json_cp);
+    yyjson_mut_doc_free(json_mut_cp);
 }
 
 
