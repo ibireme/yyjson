@@ -1247,7 +1247,7 @@ yyjson_api yyjson_mut_doc *yyjson_doc_mut_copy(yyjson_doc *i_doc,
 }
 
 yyjson_api yyjson_mut_doc *yyjson_mut_doc_mut_copy(yyjson_mut_doc *i_doc,
-                                                    const yyjson_alc *alc) {
+                                                   const yyjson_alc *alc) {
     yyjson_mut_doc *m_doc;
     yyjson_mut_val *m_val;
     
@@ -1332,128 +1332,127 @@ yyjson_api yyjson_mut_val *yyjson_val_mut_copy(yyjson_mut_doc *m_doc,
     return m_vals;
 }
 
-yyjson_api yyjson_mut_val *yyjson_mut_val_mut_copy(yyjson_mut_doc *m_doc,
-                                                    yyjson_mut_val *i_vals) {
-    if (yyjson_mut_is_obj(i_vals)) {
-        yyjson_mut_val *new_obj = yyjson_mut_obj(m_doc);
-        yyjson_mut_val *key, *val, *key_cp, *val_cp;
-        yyjson_mut_obj_iter iter;
-        yyjson_mut_obj_iter_init(i_vals, &iter);
-        while ((key = yyjson_mut_obj_iter_next(&iter))) {
-            val = yyjson_mut_obj_iter_get_val(key);
-            key_cp = yyjson_mut_val_mut_copy(m_doc, key);
-            val_cp = yyjson_mut_val_mut_copy(m_doc, val);
-            yyjson_mut_obj_add(new_obj, key_cp, val_cp);
-        }
-        return new_obj;
-    } else if(yyjson_mut_is_arr(i_vals)) {
-        yyjson_mut_val *new_arr = yyjson_mut_arr(m_doc);
-        yyjson_mut_val *val;
+static yyjson_mut_val *unsafe_yyjson_mut_ctn_mut_copy(yyjson_mut_doc *m_doc,
+                                                      yyjson_mut_val *i_val) {
+    yyjson_type type = unsafe_yyjson_get_type(i_val);
+    yyjson_mut_val *m_val = unsafe_yyjson_mut_val(m_doc, 1);
+    if (unlikely(!m_val)) return NULL;
+    
+    if (type == YYJSON_TYPE_ARR) {
+        yyjson_mut_val *val, *new_val;
         yyjson_mut_arr_iter iter;
-        yyjson_mut_arr_iter_init(i_vals, &iter);
+        yyjson_mut_arr_iter_init(i_val, &iter);
+        m_val->tag = YYJSON_TYPE_ARR;
         while ((val = yyjson_mut_arr_iter_next(&iter))) {
-            yyjson_mut_val *val_cp = yyjson_mut_val_mut_copy(m_doc, val);
-            yyjson_mut_arr_add_val(new_arr, val_cp);
+            new_val = unsafe_yyjson_mut_ctn_mut_copy(m_doc, val);
+            if (unlikely(!yyjson_mut_arr_append(m_val, new_val))) return NULL;
         }
-        return new_arr;
-    } else if (yyjson_mut_is_num(i_vals)) {
-        yyjson_mut_val *val = NULL;
-        if (yyjson_mut_is_real(i_vals)) {
-            val = yyjson_mut_real(m_doc, yyjson_mut_get_real(i_vals));
-        } else if (yyjson_mut_is_int(i_vals)) {
-            if (yyjson_mut_is_sint(i_vals)) {
-                val = yyjson_mut_sint(m_doc, yyjson_mut_get_sint(i_vals));
-            } else {
-                val = yyjson_mut_uint(m_doc, yyjson_mut_get_uint(i_vals));
-            }
+        return m_val;
+        
+    } else if (type == YYJSON_TYPE_OBJ) {
+        yyjson_mut_val *key, *val, *new_key, *new_val;
+        yyjson_mut_obj_iter iter;
+        yyjson_mut_obj_iter_init(i_val, &iter);
+        m_val->tag = YYJSON_TYPE_OBJ;
+        while ((key = yyjson_mut_obj_iter_next(&iter))) {
+            val = key->next;
+            new_key = unsafe_yyjson_mut_ctn_mut_copy(m_doc, key);
+            if (unlikely(!new_key)) return NULL;
+            new_val = unsafe_yyjson_mut_ctn_mut_copy(m_doc, val);
+            if (unlikely(!new_val)) return NULL;
+            unsafe_yyjson_mut_obj_add(m_val, new_key, new_val,
+                                      unsafe_yyjson_get_len(m_val));
         }
-        return val;
-    } else if (yyjson_mut_is_str(i_vals)) {
-        yyjson_mut_val *val = yyjson_mut_strcpy(m_doc, yyjson_mut_get_str(i_vals));
-        return val;
-    } else if (yyjson_mut_is_bool(i_vals)) {
-        yyjson_mut_val *val = yyjson_mut_bool(m_doc, yyjson_mut_get_bool(i_vals));
-        return val;
-    } else if (yyjson_mut_is_null(i_vals)) {
-        yyjson_mut_val *val = yyjson_mut_null(m_doc);
-        return val;
+        return m_val;
+        
+    } else if (type == YYJSON_TYPE_STR){
+        usize len = unsafe_yyjson_get_len(i_val);
+        const char *str = unsafe_yyjson_mut_strncpy(m_doc, i_val->uni.str, len);
+        if (unlikely(!str)) return NULL;
+        m_val->tag = i_val->tag;
+        m_val->uni.str = str;
+        return m_val;
+        
     } else {
-        return NULL;
+        m_val->tag = i_val->tag;
+        m_val->uni.u64 = i_val->uni.u64;
+        return m_val;
     }
 }
 
-bool yyjson_mut_equals(yyjson_mut_val* lhs, yyjson_mut_val* rhs) {
-    yyjson_mut_val *key, *lhs_val, *rhs_val;
-    yyjson_mut_arr_iter lhs_arr_iter, rhs_arr_iter;
-    yyjson_mut_obj_iter lhs_obj_iter;
-    size_t size;
+yyjson_api yyjson_mut_val *yyjson_mut_val_mut_copy(yyjson_mut_doc *m_doc,
+                                                   yyjson_mut_val *i_vals) {
+    if (m_doc && i_vals) {
+        return unsafe_yyjson_mut_ctn_mut_copy(m_doc, i_vals);
+    }
+    return NULL;
+}
 
-    if (yyjson_mut_get_type(lhs) != yyjson_mut_get_type(rhs)) {
+bool yyjson_mut_equals(yyjson_mut_val *lhs, yyjson_mut_val *rhs) {
+    yyjson_type type = yyjson_mut_get_type(lhs);
+    if (type != yyjson_mut_get_type(rhs)) return false;
+    
+    if (type == YYJSON_TYPE_NULL) {
+        return true;
+    }
+    if (type == YYJSON_TYPE_BOOL) {
+        return unsafe_yyjson_get_bool(lhs) == unsafe_yyjson_get_bool(rhs);
+    }
+    if (type == YYJSON_TYPE_NUM) {
+        yyjson_subtype lt, rt;
+        lt = unsafe_yyjson_get_subtype(lhs);
+        rt = unsafe_yyjson_get_subtype(rhs);
+        if (lt == rt) return lhs->uni.u64 == rhs->uni.u64;
+        if (lt == YYJSON_SUBTYPE_SINT && rt == YYJSON_SUBTYPE_UINT) {
+            if (lhs->uni.i64 >= 0 && lhs->uni.i64 == rhs->uni.i64) return true;
+            else return false;
+        }
+        if (lt == YYJSON_SUBTYPE_UINT && rt == YYJSON_SUBTYPE_SINT) {
+            if (rhs->uni.i64 >= 0 && lhs->uni.i64 == rhs->uni.i64) return true;
+            else return false;
+        }
         return false;
     }
-    if (yyjson_mut_is_null(lhs)) {
-        return true;
+    if (type == YYJSON_TYPE_STR) {
+        usize len = unsafe_yyjson_get_len(lhs);
+        if (len != unsafe_yyjson_get_len(rhs)) return false;
+        return memcmp(lhs->uni.str, rhs->uni.str, len) == 0;
     }
-    if (yyjson_mut_is_bool(lhs)) {
-        return yyjson_mut_get_bool(lhs) == yyjson_mut_get_bool(rhs);
-    }
-    if (yyjson_mut_is_uint(lhs)) {
-        return yyjson_mut_get_uint(lhs) == yyjson_mut_get_uint(rhs);
-    }
-    if (yyjson_mut_is_sint(lhs)) {
-        return yyjson_mut_get_sint(lhs) == yyjson_mut_get_sint(rhs);
-    }
-    if (yyjson_mut_is_int(lhs)) {
-        return yyjson_mut_get_int(lhs) == yyjson_mut_get_int(rhs);
-    }
-    if (yyjson_mut_is_real(lhs)) {
-        return yyjson_mut_get_real(lhs) == yyjson_mut_get_real(rhs);
-    }
-    if (yyjson_mut_is_str(lhs)) {
-        return !strcmp(yyjson_mut_get_str(lhs), yyjson_mut_get_str(rhs));
-    }
-    if (yyjson_mut_is_arr(lhs)) {
-        size = yyjson_mut_arr_size(lhs);
-        if (yyjson_mut_arr_size(rhs) != size) {
-            return false;
-        }
-        if (!size) {
-            return true;
-        }
-
-        yyjson_mut_arr_iter_init(lhs, &lhs_arr_iter);
-        yyjson_mut_arr_iter_init(rhs, &rhs_arr_iter);
-        while ((lhs_val = yyjson_mut_arr_iter_next(&lhs_arr_iter)) &&
-               (rhs_val = yyjson_mut_arr_iter_next(&rhs_arr_iter))) {
-            if (!yyjson_mut_equals(lhs_val, rhs_val)) {
-                return false;
-            }
+    if (type == YYJSON_TYPE_ARR) {
+        yyjson_mut_val *lhs_val, *rhs_val;
+        yyjson_mut_arr_iter lhs_iter, rhs_iter;
+        usize len = unsafe_yyjson_get_len(lhs);
+        if (len != unsafe_yyjson_get_len(rhs)) return false;
+        if (len == 0) return true;
+        
+        yyjson_mut_arr_iter_init(lhs, &lhs_iter);
+        yyjson_mut_arr_iter_init(rhs, &rhs_iter);
+        while ((lhs_val = yyjson_mut_arr_iter_next(&lhs_iter)) &&
+               (rhs_val = yyjson_mut_arr_iter_next(&rhs_iter))) {
+            if (!yyjson_mut_equals(lhs_val, rhs_val)) return false;
         }
         return true;
     }
-    if (yyjson_mut_is_obj(lhs)) {
-        size = yyjson_mut_obj_size(lhs);
-        if (yyjson_mut_obj_size(rhs) != size) {
-            return false;
+    if (type == YYJSON_TYPE_OBJ) {
+        yyjson_mut_val *key, *lhs_val, *rhs_val;
+        yyjson_mut_obj_iter lhs_iter, rhs_iter;
+        usize len = unsafe_yyjson_get_len(lhs);
+        if (len != unsafe_yyjson_get_len(rhs)) return false;
+        if (len == 0) return true;
+        
+        yyjson_mut_obj_iter_init(lhs, &lhs_iter);
+        yyjson_mut_obj_iter_init(rhs, &rhs_iter);
+        while ((key = yyjson_mut_obj_iter_next(&lhs_iter))) {
+            lhs_val = key->next;
+            rhs_val = yyjson_mut_obj_iter_getn(&rhs_iter, key->uni.str,
+                                               unsafe_yyjson_get_len(key));
+            if (!rhs_val)  return false;
+            if (!yyjson_mut_equals(lhs_val, rhs_val)) return false;
         }
-        if (!size) {
-            return true;
-        }
-
-        yyjson_mut_obj_iter_init(lhs, &lhs_obj_iter);
-        while ((key = yyjson_mut_obj_iter_next(&lhs_obj_iter))) {
-            lhs_val = yyjson_mut_obj_iter_get_val(key);
-            rhs_val = yyjson_mut_obj_get(rhs, yyjson_mut_get_str(key));
-            if (!rhs_val) {
-                return false;
-            }
-            if (!yyjson_mut_equals(lhs_val, rhs_val)) {
-                return false;
-            }
-        }
+        /* yyjson allows duplicate keys, so the check may be inaccurate */
         return true;
     }
-
+    
     return false;
 }
 
@@ -1676,9 +1675,7 @@ yyjson_api yyjson_mut_val *yyjson_merge_patch(yyjson_mut_doc *doc,
                                    unsafe_yyjson_get_str(key),
                                    unsafe_yyjson_get_len(key));
         merged_val = yyjson_merge_patch(doc, orig_val, patch_val);
-        if (unlikely(!yyjson_mut_obj_add(builder, mut_key, merged_val))) {
-            return NULL;
-        }
+        if (!yyjson_mut_obj_add(builder, mut_key, merged_val)) return NULL;
     }
     
     /* Exit early, if orig is not contributing to the final result. */
@@ -1694,9 +1691,7 @@ yyjson_api yyjson_mut_val *yyjson_merge_patch(yyjson_mut_doc *doc,
         if (!patch_val) {
             mut_key = yyjson_val_mut_copy(doc, key);
             mut_val = yyjson_val_mut_copy(doc, orig_val);
-            if (unlikely(!yyjson_mut_obj_add(builder, mut_key, mut_val))) {
-                return NULL;
-            }
+            if (!yyjson_mut_obj_add(builder, mut_key, mut_val)) return NULL;
         }
     }
     
@@ -7513,4 +7508,3 @@ bool yyjson_mut_write_file(const char *path,
 #elif defined(_MSC_VER)
 #   pragma warning(pop)
 #endif /* warning suppress end */
-

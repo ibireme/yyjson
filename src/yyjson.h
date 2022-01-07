@@ -1264,7 +1264,7 @@ yyjson_api yyjson_mut_doc *yyjson_doc_mut_copy(yyjson_doc *doc,
     This makes a `deep-copy` on the mutable document.
     If allocator is NULL, the default allocator will be used. */
 yyjson_api yyjson_mut_doc *yyjson_mut_doc_mut_copy(yyjson_mut_doc *doc,
-                                               const yyjson_alc *alc);
+                                                   const yyjson_alc *alc);
 
 /** Copies and returns a new mutable value from input, returns NULL on error.
     This makes a `deep-copy` on the immutable value.
@@ -1274,10 +1274,11 @@ yyjson_api yyjson_mut_val *yyjson_val_mut_copy(yyjson_mut_doc *doc,
 
 /** Copies and return a new mutable value from input, returns NULL on error,
     This makes a `deep-copy` on the mutable value.
-    The memory was managed by mutable document.*/
+    The memory was managed by mutable document.
+    @warning This function is recursive and may cause a stack overflow
+    if the object level is too deep. */
 yyjson_api yyjson_mut_val *yyjson_mut_val_mut_copy(yyjson_mut_doc *doc,
-                                                    yyjson_mut_val *val
-);
+                                                   yyjson_mut_val *val);
 
 
 
@@ -1344,7 +1345,7 @@ yyjson_api_inline uint8_t yyjson_mut_get_tag(yyjson_mut_val *val);
     "array", "object", "true", "false", "uint", "sint", "real", "unknown". */
 yyjson_api_inline const char *yyjson_mut_get_type_desc(yyjson_mut_val *val);
 
-/** Returns whether two JSON values are equal.
+/** Returns whether two JSON values are equal (deep compare).
     @warning This function takes a quadratic time. */
 yyjson_api bool yyjson_mut_equals(yyjson_mut_val *lhs,
                                   yyjson_mut_val *rhs);

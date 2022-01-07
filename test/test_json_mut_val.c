@@ -1882,32 +1882,44 @@ static void test_json_mut_obj_api(void) {
 }
 
 static void test_json_mut_doc_api(void) {
-    yyjson_mut_doc_set_root(NULL, NULL);
-    yy_assert(yyjson_mut_doc_get_root(NULL) == NULL);
-    
-    yyjson_mut_doc *doc = yyjson_mut_doc_new(NULL);
-    yy_assert(yyjson_mut_doc_get_root(doc) == NULL);
-    
-    yyjson_mut_val *val = yyjson_mut_str(doc, "abc");
-    yy_assert(yyjson_mut_is_str(val));
-    yyjson_mut_doc_set_root(doc, val);
-    yy_assert(yyjson_mut_doc_get_root(doc) == val);
-
-    yyjson_mut_doc_free(doc);
-    
-    yyjson_doc *idoc = yyjson_read("1", 1, 0);
-    idoc->root = NULL;
-    yy_assert(!yyjson_doc_mut_copy(idoc, NULL));
-    yyjson_doc_free(idoc);
-
-    const char* json_str = "{\"a\":{\"b\":[1.0, 2.0]}}";
-    yyjson_doc *json = yyjson_read(json_str, strlen(json_str), 0);
-    yyjson_mut_doc *json_cp = yyjson_doc_mut_copy(json, NULL);
-    yyjson_mut_doc *json_mut_cp = yyjson_mut_doc_mut_copy(json_cp, NULL);
-    yy_assert(yyjson_mut_equals(json_cp->root, json_mut_cp->root) == true);
-    yyjson_doc_free(json);
-    yyjson_mut_doc_free(json_cp);
-    yyjson_mut_doc_free(json_mut_cp);
+    {
+        yyjson_mut_doc_set_root(NULL, NULL);
+        yy_assert(yyjson_mut_doc_get_root(NULL) == NULL);
+    }
+    {
+        yyjson_mut_doc *doc = yyjson_mut_doc_new(NULL);
+        yy_assert(yyjson_mut_doc_get_root(doc) == NULL);
+        yy_assert(yyjson_mut_doc_mut_copy(doc, NULL) == NULL);
+        
+        yyjson_mut_val *val = yyjson_mut_str(doc, "abc");
+        yy_assert(yyjson_mut_is_str(val));
+        yyjson_mut_doc_set_root(doc, val);
+        yy_assert(yyjson_mut_doc_get_root(doc) == val);
+        
+        yyjson_mut_val *v1 = yyjson_mut_int(doc, 0);
+        yyjson_mut_val *v2 = yyjson_mut_int(doc, 0);
+        v1->tag = 0;
+        v2->tag = 0;
+        yy_assert(yyjson_mut_equals(v1, v2) == false);
+        
+        yyjson_mut_doc_free(doc);
+    }
+    {
+        yyjson_doc *idoc = yyjson_read("1", 1, 0);
+        idoc->root = NULL;
+        yy_assert(!yyjson_doc_mut_copy(idoc, NULL));
+        yyjson_doc_free(idoc);
+    }
+    {
+        const char *json_str = "{\"a\":{\"b\":[-1,2,1.0,2.0,true,false,null]}}";
+        yyjson_doc *json = yyjson_read(json_str, strlen(json_str), 0);
+        yyjson_mut_doc *json_cp = yyjson_doc_mut_copy(json, NULL);
+        yyjson_mut_doc *json_mut_cp = yyjson_mut_doc_mut_copy(json_cp, NULL);
+        yy_assert(yyjson_mut_equals(json_cp->root, json_mut_cp->root) == true);
+        yyjson_doc_free(json);
+        yyjson_mut_doc_free(json_cp);
+        yyjson_mut_doc_free(json_mut_cp);
+    }
 }
 
 
@@ -1950,8 +1962,6 @@ static void test_json_mut_equals_api(void) {
     validate_equals("{\"a\":{\"b\":[1.0, 2.0]}}",
                     "{\"a\":{\"b\":[1.0, 2.0]}}",
                     true);
-    // Note: The following false because of type mismatch 2 != 2.0
-    //       Should numeric equality ignore type?
     validate_equals("{\"a\":{\"b\":[1.0, 2.0]}}",
                     "{\"a\":{\"b\":[1.0, 2]}}",
                     false);
