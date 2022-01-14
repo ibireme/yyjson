@@ -1907,8 +1907,9 @@ yyjson_api_inline bool yyjson_mut_obj_insert(yyjson_mut_val *obj,
                                              size_t idx);
 
 /** Removes key-value pair from the object with given key.
+ *  And return the first match one.
     @warning This function takes a linear search time. */
-yyjson_api_inline bool yyjson_mut_obj_remove(yyjson_mut_val *obj,
+yyjson_api_inline yyjson_mut_val* yyjson_mut_obj_remove(yyjson_mut_val *obj,
                                              yyjson_mut_val *key);
 
 /** Removes all key-value pairs in this object. */
@@ -3838,7 +3839,7 @@ yyjson_api_inline void unsafe_yyjson_mut_obj_add(yyjson_mut_val *obj,
     unsafe_yyjson_set_len(obj, len + 1);
 }
 
-yyjson_api_inline void unsafe_yyjson_mut_obj_remove(yyjson_mut_val *obj,
+yyjson_api_inline yyjson_mut_val* unsafe_yyjson_mut_obj_remove(yyjson_mut_val *obj,
                                                     const char *key,
                                                     size_t key_len,
                                                     uint64_t key_tag) {
@@ -3846,10 +3847,12 @@ yyjson_api_inline void unsafe_yyjson_mut_obj_remove(yyjson_mut_val *obj,
     if (obj_len) {
         yyjson_mut_val *pre_key = (yyjson_mut_val *)obj->uni.ptr;
         yyjson_mut_val *cur_key = pre_key->next->next;
+        yyjson_mut_val *detach_item;
         size_t i;
         for (i = 0; i < obj_len; i++) {
             if (key_tag == cur_key->tag &&
                 memcmp(key, cur_key->uni.ptr, key_len) == 0) {
+                detach_item = cur_key->next;
                 cur_key = cur_key->next->next;
                 pre_key->next->next = cur_key;
                 if (i + 1 == obj_len) obj->uni.ptr = pre_key;
@@ -3861,6 +3864,9 @@ yyjson_api_inline void unsafe_yyjson_mut_obj_remove(yyjson_mut_val *obj,
             }
         }
         unsafe_yyjson_set_len(obj, obj_len);
+        return detach_item;
+    } else {
+        return NULL;
     }
 }
 
@@ -3951,14 +3957,13 @@ yyjson_api_inline bool yyjson_mut_obj_insert(yyjson_mut_val *obj,
     return false;
 }
 
-yyjson_api_inline bool yyjson_mut_obj_remove(yyjson_mut_val *obj,
+yyjson_api_inline yyjson_mut_val* yyjson_mut_obj_remove(yyjson_mut_val *obj,
                                              yyjson_mut_val *key) {
     if (yyjson_likely(yyjson_mut_is_obj(obj) && yyjson_mut_is_str(key))) {
-        unsafe_yyjson_mut_obj_remove(obj, key->uni.str,
+        return unsafe_yyjson_mut_obj_remove(obj, key->uni.str,
                                      unsafe_yyjson_get_len(key), key->tag);
-        return true;
     }
-    return false;
+    return NULL;
 }
 
 yyjson_api_inline bool yyjson_mut_obj_clear(yyjson_mut_val *obj) {
