@@ -1318,9 +1318,11 @@ static void test_json_mut_obj_api(void) {
     
     yy_assert(!yyjson_mut_obj_remove(NULL, key));
     yy_assert(!yyjson_mut_obj_remove(obj, NULL));
-    yy_assert(yyjson_mut_obj_remove(obj, key));
+    // validate the return val 
+    yy_assert(yyjson_mut_equals(yyjson_mut_obj_remove(obj, key), val));
+
+
     validate_mut_obj(obj, keys, key_lens, vals, 4);
-    
     yyjson_mut_obj_clear(obj);
     validate_mut_obj(obj, keys, key_lens, vals, 0);
     
