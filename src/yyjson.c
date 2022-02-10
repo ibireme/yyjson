@@ -4535,7 +4535,8 @@ arr_val_begin:
         while (char_is_space(*++cur));
         goto arr_val_begin;
     }
-    if (has_flag(ALLOW_INF_AND_NAN) && *cur == 'N') {
+    if (has_flag(ALLOW_INF_AND_NAN) &&
+        (*cur == 'i' || *cur == 'I' || *cur == 'N')) {
         val_incr();
         ctn_len++;
         if (read_inf_or_nan(false, cur, &cur, val)) goto arr_val_end;
@@ -4687,7 +4688,8 @@ obj_val_begin:
         while (char_is_space(*++cur));
         goto obj_val_begin;
     }
-    if (has_flag(ALLOW_INF_AND_NAN) && *cur == 'N') {
+    if (has_flag(ALLOW_INF_AND_NAN) &&
+        (*cur == 'i' || *cur == 'I' || *cur == 'N')) {
         val++;
         ctn_len++;
         if (read_inf_or_nan(false, cur, &cur, val)) goto obj_val_end;
@@ -4936,7 +4938,8 @@ arr_val_begin:
         while (char_is_space(*++cur));
         goto arr_val_begin;
     }
-    if (has_flag(ALLOW_INF_AND_NAN) && *cur == 'N') {
+    if (has_flag(ALLOW_INF_AND_NAN) &&
+        (*cur == 'i' || *cur == 'I' || *cur == 'N')) {
         val_incr();
         ctn_len++;
         if (read_inf_or_nan(false, cur, &cur, val)) goto arr_val_end;
@@ -5109,7 +5112,8 @@ obj_val_begin:
         while (char_is_space(*++cur));
         goto obj_val_begin;
     }
-    if (has_flag(ALLOW_INF_AND_NAN) && *cur == 'N') {
+    if (has_flag(ALLOW_INF_AND_NAN) &&
+        (*cur == 'i' || *cur == 'I' || *cur == 'N')) {
         val++;
         ctn_len++;
         if (read_inf_or_nan(false, cur, &cur, val)) goto obj_val_end;
