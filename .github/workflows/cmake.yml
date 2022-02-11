@@ -153,6 +153,7 @@ jobs:
         cmake --build . --config Release
         ctest -C Release --output-on-failure
 
+
   fastmath:
     runs-on: ubuntu-latest
     steps:
@@ -165,6 +166,21 @@ jobs:
         cmake .. -DYYJSON_ENABLE_FASTMATH=ON -DCMAKE_BUILD_TYPE=Release -DYYJSON_BUILD_TESTS=ON
         cmake --build . --config Release
         ctest -C Release --output-on-failure
+
+
+  fuzzing:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    
+    - name: Fuzzing
+      run: |
+        mkdir build
+        cd build
+        cmake .. -DYYJSON_BUILD_FUZZER=ON -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
+        cmake --build . --config Release
+        ctest -C Release --output-on-failure
+
 
   codecov:
     runs-on: ubuntu-latest

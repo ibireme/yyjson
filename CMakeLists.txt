@@ -17,6 +17,7 @@ option(YYJSON_DISABLE_NON_STANDARD "Disable non-standard JSON support" OFF)
 # ------------------------------------------------------------------------------
 # Build Options
 option(YYJSON_BUILD_TESTS "Build all tests" OFF)
+option(YYJSON_BUILD_FUZZER "Build fuzzer" OFF)
 option(YYJSON_BUILD_MISC "Build misc" OFF)
 option(YYJSON_ENABLE_COVERAGE "Enable code coverage for tests" OFF)
 option(YYJSON_ENABLE_VALGRIND "Enable valgrind memory checker for tests" OFF)
@@ -273,7 +274,7 @@ if(YYJSON_BUILD_TESTS)
                 target_link_libraries(yyjson INTERFACE ${COMPILE_FLAGS})
             endif()
         endif()
-    
+
     endif()
     
     
@@ -347,6 +348,29 @@ if(YYJSON_BUILD_TESTS)
 
     endif()
 
+endif()
+
+
+# ------------------------------------------------------------------------------
+# Fuzzing
+if (YYJSON_BUILD_FUZZER)
+    if(CMAKE_C_COMPILER_ID STREQUAL "Clang")
+        enable_testing()
+        file(COPY "${CMAKE_CURRENT_SOURCE_DIR}/fuzz/fuzzer.dict" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}")
+        file(GLOB YYJSON_FILES "${CMAKE_CURRENT_SOURCE_DIR}/test/data/json/**/*.json")
+        file(COPY ${YYJSON_FILES} DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/corpus")
+        
+        set(COMPILE_FLAGS -fsanitize=fuzzer,address -O1 -g)
+        target_compile_options(yyjson PRIVATE ${COMPILE_FLAGS})
+        target_link_libraries(yyjson INTERFACE ${COMPILE_FLAGS})
+
+        add_executable(fuzzer "fuzz/fuzzer.c")
+        target_link_libraries(fuzzer yyjson)
+        add_test(test_fuzzer ${CMAKE_CURRENT_BINARY_DIR}/fuzzer -dict=fuzzer.dict -max_total_time=300 ${CMAKE_CURRENT_BINARY_DIR}/corpus)
+        set_tests_properties(test_fuzzer PROPERTIES TIMEOUT 600)
+    else()
+        message(WARNING "LibFuzzer requires LLVM Clang as compiler")
+    endif()
 endif()
 
 
