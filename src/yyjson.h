@@ -1416,13 +1416,15 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_real(yyjson_mut_doc *doc,
 
 /** Creates and returns a string value, returns NULL on error.
     The input value should be a valid UTF-8 encoded string with null-terminator.
-    @warning The input string is not copied. */
+    @warning The input string is not copied, you should keep this string
+    unmodified for the lifetime of this document. */
 yyjson_api_inline yyjson_mut_val *yyjson_mut_str(yyjson_mut_doc *doc,
                                                  const char *str);
 
 /** Creates and returns a string value, returns NULL on error.
     The input value should be a valid UTF-8 encoded string.
-    @warning The input string is not copied. */
+    @warning The input string is not copied, you should keep this string
+    unmodified for the lifetime of this document. */
 yyjson_api_inline yyjson_mut_val *yyjson_mut_strn(yyjson_mut_doc *doc,
                                                   const char *str,
                                                   size_t len);

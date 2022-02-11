@@ -6349,7 +6349,7 @@ static_inline const char_esc_type *get_esc_table_with_flag(
  Write UTF-8 string (requires len * 6 + 2 bytes buffer).
  If the input string is not valid UTF-8 encoding, undefined behavior may occur.
  @param cur Buffer cursor.
- @param str A valid UTF-8 string with null-terminator.
+ @param str A valid UTF-8 string, null-terminator is not required.
  @param str_len Length of string in bytes.
  @param esc_table Escape type table for character escaping.
  @return The buffer cursor after string.
@@ -6365,10 +6365,10 @@ copy_char:
     /*
      Copy continuous unescaped char, loop unrolling, same as the following code:
      
-         while (true) repeat16({
+         while (str < end) (
             if (unlikely(esc_table[*str] != CHAR_ESC_NONE)) break;
             *cur++ = *str++;
-         });
+         );
      */
 #define expr_jump(i) \
     if (unlikely(esc_table[str[i]] != CHAR_ESC_NONE)) goto stop_char_##i;
@@ -6378,10 +6378,27 @@ copy_char:
     memcpy(cur, str, i); \
     cur += i; str += i; goto copy_next;
     
-    repeat16_incr(expr_jump);
-    memcpy(cur, str, 16);
-    cur += 16; str += 16;
-    goto copy_char;
+    while (end - str >= 16) {
+        repeat16_incr(expr_jump);
+        memcpy(cur, str, 16);
+        cur += 16; str += 16;
+        goto copy_char;
+    }
+    
+    while (end - str >= 4) {
+        repeat4_incr(expr_jump);
+        memcpy(cur, str, 4);
+        cur += 4; str += 4;
+        goto copy_char;
+    }
+    
+    while (str < end) {
+        expr_jump(0);
+        *cur++ = *str++;
+    }
+    *cur++ = '"';
+    return cur;
+    
     repeat16_incr(expr_stop);
     
 #undef expr_jump

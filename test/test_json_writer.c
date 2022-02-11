@@ -308,7 +308,29 @@ static void test_json_write(yyjson_alc *alc) {
     root = yyjson_mut_obj(doc);
     yyjson_mut_doc_set_root(doc, root);
     validate_json_write(doc, alc, "{}", "{}");
-
+    
+    
+    // string without null-terminator
+    for (len = 0; len <= 128; len++) {
+        char *str = len ? malloc(len) : (char *)1;
+        for (usize i = 0; i < len; i++) {
+            str[i] = 'a' + (yy_random32() % 26);
+        }
+        
+        char *json = malloc(len + 3);
+        json[0] = '"';
+        memcpy((void *)(json + 1), (void *)str, len);
+        json[len + 1] = '"';
+        json[len + 2] = '\0';
+        
+        root = yyjson_mut_strn(doc, str, len);
+        yyjson_mut_doc_set_root(doc, root);
+        validate_json_write(doc, alc, json, json);
+        
+        if (len) free((void *)str);
+        free((void *)json);
+    }
+    
     
     // array
     root = yyjson_mut_arr(doc);
