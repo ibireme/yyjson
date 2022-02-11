@@ -10,12 +10,12 @@ A high performance JSON library written in ANSI C.
 # Features
 - **Fast**: can read or write gigabytes per second JSON data on modern CPU.
 - **Portable**: compliance with ANSI C (C89).
-- **Standard**: strict compliance with  [RFC 8259](https://tools.ietf.org/html/rfc8259) and [ECMA-404](https://www.ecma-international.org/publications/standards/Ecma-404.htm) standard.
+- **Standard**: strict compliance with [RFC 8259](https://tools.ietf.org/html/rfc8259) standard.
 - **Safe**: complete JSON form, number format and UTF-8 validation.
 - **Accuracy**: can read and write `int64`, `uint64` and `double` number accurately.
-- **No Limit**: support unlimited JSON level, `\u0000` string.
+- **Less Restriction**: support unlimited JSON level, `\u0000` string.
 - **Extendable**: options to allow comments, trailing commas, nan/inf, custom memory allocator.
-- **Developer Friendly**: only one `h` and one `c` file, easy to use API.
+- **Developer Friendly**: only one `h` and one `c` file, easy to integrate.
 
 # Limitations
 - An array or object is stored as some [data structure](https://github.com/ibireme/yyjson/blob/master/doc/DataStructure.md) like linked list, access elements with index or key is slower than iterator.
@@ -83,7 +83,7 @@ Since `yyjson` is ANSI C compatible, no other configuration is needed typically.
 
 `yyjson` has been tested with the following compilers: `gcc`, `clang`, `msvc`, `icc`, `tcc`. If you find a compile error, please [report a bug](https://github.com/ibireme/yyjson/issues/new?template=bug_report.md).
 
-`yyjson` includes all features by default, but you can trim out some of them by adding compile flags to get higher performance and/or smaller binary. See [compile flags](https://github.com/ibireme/yyjson/blob/master/doc/Building.md#compile-flags) for details.
+`yyjson` has all features enabled by default, but you can trim out some of them by adding compile flags. For example, disable JSON writer to reduce the binary size when you don't need serialization, or disable comments support to improve parsing performance. See [compile flags](https://github.com/ibireme/yyjson/blob/master/doc/Building.md#compile-flags) for details.
 
 ### CMake
 Clone repository and create build directory:
@@ -240,7 +240,7 @@ yyjson_mut_doc_free(doc);
 * [x] Add GitHub workflow for CI and codecov.
 * [x] Add more tests: valgrind, sanitizer.
 * [x] Support JSON Pointer to query value from document.
-* [ ] Add fuzzer.
+* [x] Add fuzzer.
 * [ ] Add `RAW` type for JSON reader and writer.
 * [ ] Add streaming API for JSON reader and writer.
 * [ ] Add documentation about performance.
