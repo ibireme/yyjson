@@ -6382,14 +6382,12 @@ copy_char:
         repeat16_incr(expr_jump);
         memcpy(cur, str, 16);
         cur += 16; str += 16;
-        goto copy_char;
     }
     
     while (end - str >= 4) {
         repeat4_incr(expr_jump);
         memcpy(cur, str, 4);
         cur += 4; str += 4;
-        goto copy_char;
     }
     
     while (str < end) {
