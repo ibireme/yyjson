@@ -5292,6 +5292,12 @@ yyjson_doc *yyjson_read_opts(char *dat,
         }
     }
     
+#if YYJSON_DISABLE_NON_STANDARD
+    flg &= ~YYJSON_READ_ALLOW_TRAILING_COMMAS;
+    flg &= ~YYJSON_READ_ALLOW_COMMENTS;
+    flg &= ~YYJSON_READ_ALLOW_INF_AND_NAN;
+#endif
+    
     /* read json document */
     if (likely(char_is_container(*cur))) {
         if (char_is_space(cur[1]) && char_is_space(cur[2])) {

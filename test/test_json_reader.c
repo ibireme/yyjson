@@ -114,7 +114,11 @@ static void test_json_yyjson(void) {
             if (yy_str_has_prefix(name, "pass_")) {
                 bool should_fail = false;
                 if (yy_str_contains(name, "(comma)")) {
+#if !YYJSON_DISABLE_NON_STANDARD
                     should_fail |= (type & FLAG_COMMA) == 0;
+#else
+                    should_fail = true;
+#endif
                 }
                 if (yy_str_contains(name, "(comment)")) {
 #if !YYJSON_DISABLE_NON_STANDARD

@@ -176,6 +176,7 @@ static void test_real_read(const char *line, usize len, f64 num) {
         yy_assertf(!doc, "num %s should fail, but returns %.17g\n",
                    line, yyjson_get_real(val));
         
+#if !YYJSON_DISABLE_NON_STANDARD
         doc = yyjson_read(line, len, YYJSON_READ_ALLOW_INF_AND_NAN);
         val = yyjson_doc_get_root(doc);
         ret = yyjson_get_real(val);
@@ -183,6 +184,7 @@ static void test_real_read(const char *line, usize len, f64 num) {
                    "num %s should be read as inf, but returns %.17g\n",
                    line, ret);
         yyjson_doc_free(doc);
+#endif
         
     } else {
         u64 num_raw = f64_to_u64_raw(num);
