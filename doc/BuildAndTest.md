@@ -1,9 +1,10 @@
 # Table of Contents
 
 * [Import Manually](#import-manually)
-* [Use CMake to build a library](#use-cmake-to-build-a-library)
+* [Use CMake to build library](#use-cmake-to-build-library)
 * [Use CMake as a dependency](#use-cmake-as-a-dependency)
 * [Use CMake to generate project](#use-cmake-to-generate-project)
+* [Testing With CMake and CTest](#testing-with-cmake-and-ctest)
 * [Compile Flags](#compile-flags)
 
 
@@ -13,8 +14,8 @@
 
 If you get a compile error, please [report a bug](https://github.com/ibireme/yyjson/issues/new?template=bug_report.md).
 
-# Use CMake to build a library
-Clone repository and create build directory:
+# Use CMake to build library
+Clone the repository and create build directory:
 ```shell
 git clone https://github.com/ibireme/yyjson.git
 mkdir build
@@ -26,13 +27,6 @@ cmake ..
 cmake --build .
 ```
 
-Build static library and run tests:
-```shell
-cmake .. -DYYJSON_BUILD_TESTS=ON
-cmake --build .
-ctest
-```
-
 Build shared library:
 ```shell
 cmake .. -DBUILD_SHARED_LIBS=ON
@@ -42,6 +36,8 @@ cmake --build .
 Supported CMake options:
 
 - `-DYYJSON_BUILD_TESTS=ON` Build all tests.
+- `-DYYJSON_BUILD_FUZZER=ON` Build fuzzer with LibFuzzing.
+- `-DYYJSON_BUILD_MISC=ON` Build misc.
 - `-DYYJSON_ENABLE_COVERAGE=ON` Enable code coverage for tests.
 - `-DYYJSON_ENABLE_VALGRIND=ON` Enable valgrind memory checker for tests.
 - `-DYYJSON_ENABLE_SANITIZE=ON` Enable sanitizer for tests.
@@ -69,7 +65,7 @@ target_link_libraries(your_target yyjson)
 ```
 
 # Use CMake to generate project
-If you want to build or debug `yyjson` with other compiler or IDE, try these commands:
+If you want to build or debug `yyjson` with another compiler or IDE, try these commands:
 ```shell
 # Clang for Linux/Unix:
 cmake .. -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
@@ -96,12 +92,53 @@ cmake .. -G Xcode -DYYJSON_BUILD_TESTS=ON
 ```
 
 
+# Testing With CMake and CTest
+
+Build and run all tests.
+```shell
+cmake .. -DYYJSON_BUILD_TESTS=ON
+cmake --build .
+ctest --output-on-failure
+```
+
+Build and run tests with valgrind memory checker, you must have `valgrind` installed.
+```shell
+cmake .. -DYYJSON_BUILD_TESTS=ON -DYYJSON_ENABLE_VALGRIND=ON
+cmake --build .
+ctest --output-on-failure
+```
+
+Build and run tests with sanitizer, compiler should be `gcc` or `clang`.
+```shell
+cmake .. -DYYJSON_BUILD_TESTS=ON -DYYJSON_ENABLE_SANITIZE=ON
+cmake --build .
+ctest --output-on-failure
+```
+
+Build and run code coverage, compiler should be `gcc`.
+```shell
+cmake .. -DCMAKE_BUILD_TYPE=Debug -DYYJSON_BUILD_TESTS=ON -DYYJSON_ENABLE_COVERAGE=ON
+cmake --build . --config Debug
+ctest --output-on-failure
+
+lcov -c -d ./CMakeFiles/yyjson.dir/src -o cov.info
+genhtml cov.info -o ./cov_report
+```
+
+Build and run fuzz test with LibFuzzer, compiler should be `LLVM Clang`, `Apple Clang` or `gcc` is not supported.
+```shell
+cmake .. -DYYJSON_BUILD_FUZZER=ON -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
+cmake --build .
+./fuzzer -dict=fuzzer.dict ./corpus
+```
+
+
 # Compile Flags
-`yyjson` support some compile flags:
+`yyjson` supports some compile flags, you can define these macros as `1` to disable some features at compile time.
 
 ●**YYJSON_DISABLE_READER**<br/>
 Define it as 1 to disable the JSON reader.<br/>
-This flag can reduce binary size if you don't need to read JSON.<br/>
+This flag can reduce the binary size if you don't need to read JSON.<br/>
 These functions will be disabled by this flag:
 
 ```
@@ -112,7 +149,7 @@ yyjson_read()
 
 ●**YYJSON_DISABLE_WRITER**<br/>
 Define it as 1 to disable the JSON writer.<br/>
-This flag can reduce binary size if you don't need to write JSON.<br/>
+This flag can reduce the binary size if you don't need to write JSON.<br/>
 These functions will be disabled by this flag:
 
 ```
@@ -142,7 +179,7 @@ This may also invalidate these options:<br/>
 This may reduce binary size, and increase performance slightly.
 
 ●**YYJSON_EXPORTS**<br/>
-Define it as 1 to export symbols when build library as Windows DLL.
+Define it as 1 to export symbols when building the library as Windows DLL.
 
 ●**YYJSON_IMPORTS**<br/>
-Define it as 1 to import symbols when use library as Windows DLL.
+Define it as 1 to import symbols when using the library as Windows DLL.

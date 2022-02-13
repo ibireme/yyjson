@@ -12,7 +12,7 @@ A high performance JSON library written in ANSI C.
 - **Portable**: compliance with ANSI C (C89).
 - **Standard**: strict compliance with [RFC 8259](https://tools.ietf.org/html/rfc8259) standard.
 - **Safe**: complete JSON form, number format and UTF-8 validation.
-- **Accuracy**: can read and write `int64`, `uint64` and `double` number accurately.
+- **Accuracy**: can read and write `int64`, `uint64` and `double` numbers accurately.
 - **Less Restriction**: support unlimited JSON level, `\u0000` string.
 - **Extendable**: options to allow comments, trailing commas, nan/inf, custom memory allocator.
 - **Developer Friendly**: only one `h` and one `c` file, easy to integrate.
@@ -25,8 +25,8 @@ A high performance JSON library written in ANSI C.
 # Performance
 Benchmark project and dataset: [yyjson_benchmark](https://github.com/ibireme/yyjson_benchmark)
 
-The simdjson's new `On Demand` API is faster if most JSON fields is known at compile time.
-This benchmark project only checks the DOM API, new benchmark will be added later.
+The simdjson's new `On Demand` API is faster if most JSON fields are known at compile time.
+This benchmark project only checks the DOM API, a new benchmark will be added later.
 
 #### AWS EC2 (AMD EPYC 7R32, gcc 9.3)
 ![ec2_chart](doc/images/perf_reader_ec2.svg)
@@ -73,9 +73,9 @@ More benchmark reports with interactive charts (update 2020-12-12)
     * high instruction level parallelism
     * excellent branch predictor
     * low penalty for misaligned memory access
-* A modern compiler with good optimization.
+* A modern compiler with good optimizer.
 
-# Building
+# Build and test
 
 ### Manually
 Just copy `yyjson.h` and `yyjson.c` to your project and start using it.
@@ -86,7 +86,7 @@ Since `yyjson` is ANSI C compatible, no other configuration is needed typically.
 `yyjson` has all features enabled by default, but you can trim out some of them by adding compile flags. For example, disable JSON writer to reduce the binary size when you don't need serialization, or disable comments support to improve parsing performance. See [compile flags](https://github.com/ibireme/yyjson/blob/master/doc/Building.md#compile-flags) for details.
 
 ### CMake
-Clone repository and create build directory:
+Clone the repository and create build directory:
 ```shell
 git clone https://github.com/ibireme/yyjson.git
 mkdir build
@@ -114,7 +114,7 @@ Supported CMake options:
 - `-DYYJSON_DISABLE_FAST_FP_CONV=ON` Disable fast floating-point number conversion.
 - `-DYYJSON_DISABLE_NON_STANDARD=ON` Disable non-standard JSON support at compile time.
 
-See [compile flags](https://github.com/ibireme/yyjson/blob/master/doc/Building.md#compile-flags) for details.
+[More details](https://github.com/ibireme/yyjson/blob/master/doc/BuildAndTest.md)
 
 # Sample Code
 
@@ -231,7 +231,7 @@ yyjson_mut_doc_free(doc);
 ```
 
 # Documentation
-* [Building](https://github.com/ibireme/yyjson/blob/master/doc/Building.md)
+* [Build and test](https://github.com/ibireme/yyjson/blob/master/doc/BuildAndTest.md)
 * [API and sample code](https://github.com/ibireme/yyjson/blob/master/doc/API.md)
 * [Data structure](https://github.com/ibireme/yyjson/blob/master/doc/DataStructure.md)
 
