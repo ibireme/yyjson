@@ -13,7 +13,7 @@ A high performance JSON library written in ANSI C.
 - **Standard**: strict compliance with [RFC 8259](https://tools.ietf.org/html/rfc8259) standard.
 - **Safe**: complete JSON form, number format and UTF-8 validation.
 - **Accuracy**: can read and write `int64`, `uint64` and `double` numbers accurately.
-- **Less Restriction**: support unlimited JSON level, `\u0000` string.
+- **Less Restriction**: support unlimited JSON level, `\u0000` and non null-terminated string.
 - **Extendable**: options to allow comments, trailing commas, nan/inf, custom memory allocator.
 - **Developer Friendly**: only one `h` and one `c` file, easy to integrate.
 
@@ -204,7 +204,8 @@ yyjson_doc_free(doc);
 ### Write JSON file with options
 ```c
 // Read the JSON file as a mutable doc
-yyjson_mut_doc *doc = yyjson_mut_read_file("/tmp/config.json", 0, NULL, NULL);
+yyjson_doc *idoc = yyjson_read_file("/tmp/config.json", 0, NULL, NULL);
+yyjson_mut_doc *doc = yyjson_doc_mut_copy(idoc, NULL);
 yyjson_mut_val *obj = yyjson_mut_doc_get_root(doc);
 
 // Remove null values in root object
