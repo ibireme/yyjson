@@ -39,6 +39,7 @@ endif()
 # ------------------------------------------------------------------------------
 # Library
 add_library(yyjson src/yyjson.h src/yyjson.c)
+set_target_properties(yyjson PROPERTIES VERSION ${PROJECT_VERSION})
 target_include_directories(yyjson PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>)
 
 
