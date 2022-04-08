@@ -138,9 +138,9 @@ static void test_json_yyjson(void) {
                 }
                 if (yy_str_contains(name, "(big)")) {
 #if !YYJSON_DISABLE_NON_STANDARD
-                    should_fail |= (type & (FLAG_INF_NAN | FLAG_NUM_RAW)) == 0 ;
+                    should_fail |= (type & (FLAG_INF_NAN | FLAG_NUM_RAW)) == 0;
 #else
-                    should_fail = true;
+                    should_fail |= (type & (FLAG_NUM_RAW)) == 0;
 #endif
                 }
                 if (yy_str_contains(name, "(extra)")) {
