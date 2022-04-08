@@ -513,8 +513,8 @@ static const yyjson_read_flag YYJSON_READ_ALLOW_COMMENTS        = 1 << 3;
     such as 1e999, NaN, inf, -Infinity. */
 static const yyjson_read_flag YYJSON_READ_ALLOW_INF_AND_NAN     = 1 << 4;
 
-/** Allow inf/nan number and literal, case-insensitive,
-    such as 1e999, NaN, inf, -Infinity. */
+/** Read number as raw string (value with YYJSON_TYPE_RAW type),
+    inf/nan literal is also read as raw with `ALLOW_INF_AND_NAN` flag. */
 static const yyjson_read_flag YYJSON_READ_NUMBER_AS_RAW         = 1 << 5;
 
 
