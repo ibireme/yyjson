@@ -49,6 +49,7 @@ JSON files used by yyjson testing.
 - `fail_` content must be rejected
 - `(comma)` content has trailing commas
 - `(comment)` content has comments
-- `(inf)` content has infinity number
-- `(nan)` content has nan number
+- `(inf)` content has infinity literal
+- `(nan)` content has nan literal
+- `(big)` content has large number (infinity for double)
 - `(extra)` content has extra bytes after document

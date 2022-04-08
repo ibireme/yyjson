@@ -15,6 +15,8 @@ typedef enum {
     FLAG_COMMENT    = 1 << 1,
     FLAG_INF_NAN    = 1 << 2,
     FLAG_EXTRA      = 1 << 3,
+    FLAG_NUM_RAW    = 1 << 4,
+    FLAG_MAX        = 1 << 5,
 } flag_type;
 
 static void test_read_file(const char *path, flag_type type, expect_type expect) {
@@ -23,7 +25,7 @@ static void test_read_file(const char *path, flag_type type, expect_type expect)
     if (type & FLAG_COMMENT) flag |= YYJSON_READ_ALLOW_COMMENTS;
     if (type & FLAG_INF_NAN) flag |= YYJSON_READ_ALLOW_INF_AND_NAN;
     if (type & FLAG_EXTRA) flag |= YYJSON_READ_STOP_WHEN_DONE;
-    
+    if (type & FLAG_NUM_RAW) flag |= YYJSON_READ_NUMBER_AS_RAW;
     
     // test read from file
     yyjson_read_err err;
@@ -110,7 +112,7 @@ static void test_json_yyjson(void) {
         char path[YY_MAX_PATH];
         yy_path_combine(path, dir, name, NULL);
      
-        for (flag_type type = 0; type < (1 << 4); type++) {
+        for (flag_type type = 0; type < FLAG_MAX; type++) {
             if (yy_str_has_prefix(name, "pass_")) {
                 bool should_fail = false;
                 if (yy_str_contains(name, "(comma)")) {
@@ -130,6 +132,13 @@ static void test_json_yyjson(void) {
                 if (yy_str_contains(name, "(inf)") || yy_str_contains(name, "(nan)")) {
 #if !YYJSON_DISABLE_NON_STANDARD
                     should_fail |= (type & FLAG_INF_NAN) == 0;
+#else
+                    should_fail = true;
+#endif
+                }
+                if (yy_str_contains(name, "(big)")) {
+#if !YYJSON_DISABLE_NON_STANDARD
+                    should_fail |= (type & (FLAG_INF_NAN | FLAG_NUM_RAW)) == 0 ;
 #else
                     should_fail = true;
 #endif
