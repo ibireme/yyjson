@@ -6808,7 +6808,7 @@ fail_num:
 
 /** Write JSON document minify.
     The root of this document should be a non-empty container. */
-static_inline u8 *yyjson_write_minify(const yyjson_doc *doc,
+static_inline u8 *yyjson_write_minify(const yyjson_val *root,
                                       const yyjson_write_flag flg,
                                       const yyjson_alc alc,
                                       usize *dat_len,
@@ -6856,7 +6856,8 @@ static_inline u8 *yyjson_write_minify(const yyjson_doc *doc,
     const u8 *str_ptr;
     const char_esc_type *esc_table = get_esc_table_with_flag(flg);
     
-    alc_len = doc->val_read * YYJSON_WRITER_ESTIMATED_MINIFY_RATIO + 64;
+    alc_len = root->uni.ofs / sizeof(yyjson_val);
+    alc_len = alc_len * YYJSON_WRITER_ESTIMATED_MINIFY_RATIO + 64;
     alc_len = size_align_up(alc_len, sizeof(yyjson_write_ctx));
     hdr = (u8 *)alc.malloc(alc.ctx, alc_len);
     if (!hdr) goto fail_alloc;
@@ -6865,7 +6866,7 @@ static_inline u8 *yyjson_write_minify(const yyjson_doc *doc,
     ctx = (yyjson_write_ctx *)(void *)end;
     
 doc_begin:
-    val = doc->root;
+    val = (yyjson_val *)root;
     val_type = unsafe_yyjson_get_type(val);
     ctn_obj = (val_type == YYJSON_TYPE_OBJ);
     ctn_len = unsafe_yyjson_get_len(val) << (u8)ctn_obj;
@@ -6976,7 +6977,7 @@ fail_num:
 
 /** Write JSON document pretty.
     The root of this document should be a non-empty container. */
-static_inline u8 *yyjson_write_pretty(const yyjson_doc *doc,
+static_inline u8 *yyjson_write_pretty(const yyjson_val *root,
                                       const yyjson_write_flag flg,
                                       const yyjson_alc alc,
                                       usize *dat_len,
@@ -7024,7 +7025,8 @@ static_inline u8 *yyjson_write_pretty(const yyjson_doc *doc,
     const u8 *str_ptr;
     const char_esc_type *esc_table = get_esc_table_with_flag(flg);
     
-    alc_len = doc->val_read * YYJSON_WRITER_ESTIMATED_PRETTY_RATIO + 64;
+    alc_len = root->uni.ofs / sizeof(yyjson_val);
+    alc_len = alc_len * YYJSON_WRITER_ESTIMATED_PRETTY_RATIO + 64;
     alc_len = size_align_up(alc_len, sizeof(yyjson_write_ctx));
     hdr = (u8 *)alc.malloc(alc.ctx, alc_len);
     if (!hdr) goto fail_alloc;
@@ -7033,7 +7035,7 @@ static_inline u8 *yyjson_write_pretty(const yyjson_doc *doc,
     ctx = (yyjson_write_ctx *)(void *)end;
     
 doc_begin:
-    val = doc->root;
+    val = (yyjson_val *)root;
     val_type = unsafe_yyjson_get_type(val);
     ctn_obj = (val_type == YYJSON_TYPE_OBJ);
     ctn_len = unsafe_yyjson_get_len(val) << (u8)ctn_obj;
@@ -7166,35 +7168,68 @@ fail_num:
 #undef check_str_len
 }
 
+char *yyjson_val_write_opts(const yyjson_val *val,
+                            yyjson_write_flag flg,
+                            const yyjson_alc *alc_ptr,
+                            usize *dat_len,
+                            yyjson_write_err *err) {
+    yyjson_write_err dummy_err;
+    usize dummy_dat_len;
+    yyjson_alc alc = alc_ptr ? *alc_ptr : YYJSON_DEFAULT_ALC;
+    yyjson_val *root = (yyjson_val *)val;
+    
+    err = err ? err : &dummy_err;
+    dat_len = dat_len ? dat_len : &dummy_dat_len;
+    
+    if (unlikely(!root)) {
+        *dat_len = 0;
+        err->msg = "input JSON is NULL";
+        err->code = YYJSON_READ_ERROR_INVALID_PARAMETER;
+        return NULL;
+    }
+    
+    if (!unsafe_yyjson_is_ctn(root) || unsafe_yyjson_get_len(root) == 0) {
+        return (char *)yyjson_write_single(root, flg, alc, dat_len, err);
+    } else if (flg & YYJSON_WRITE_PRETTY) {
+        return (char *)yyjson_write_pretty(root, flg, alc, dat_len, err);
+    } else {
+        return (char *)yyjson_write_minify(root, flg, alc, dat_len, err);
+    }
+}
+
 char *yyjson_write_opts(const yyjson_doc *doc,
                         yyjson_write_flag flg,
                         const yyjson_alc *alc_ptr,
                         usize *dat_len,
                         yyjson_write_err *err) {
-    
+    yyjson_val *root = doc ? doc->root : NULL;
+    return yyjson_val_write_opts(root, flg, alc_ptr, dat_len, err);
+}
+
+bool yyjson_val_write_file(const char *path,
+                           const yyjson_val *val,
+                           yyjson_write_flag flg,
+                           const yyjson_alc *alc_ptr,
+                           yyjson_write_err *err) {
     yyjson_write_err dummy_err;
-    usize dummy_dat_len;
-    yyjson_alc alc;
+    u8 *dat;
+    usize dat_len = 0;
+    yyjson_val *root = (yyjson_val *)val;
+    bool suc;
     
     err = err ? err : &dummy_err;
-    dat_len = dat_len ? dat_len : &dummy_dat_len;
-    alc = alc_ptr ? *alc_ptr : YYJSON_DEFAULT_ALC;
-    
-    if (unlikely(!doc)) {
-        *dat_len = 0;
-        err->msg = "input JSON document is NULL";
+    if (unlikely(!path || !*path)) {
+        err->msg = "input path is invalid";
         err->code = YYJSON_READ_ERROR_INVALID_PARAMETER;
-        return NULL;
+        return false;
     }
     
-    if (doc->val_read == 1) {
-        return (char *)yyjson_write_single(doc->root, flg, alc, dat_len, err);
-    }
-    if (flg & YYJSON_WRITE_PRETTY) {
-        return (char *)yyjson_write_pretty(doc, flg, alc, dat_len, err);
-    } else {
-        return (char *)yyjson_write_minify(doc, flg, alc, dat_len, err);
-    }
+    dat = (u8 *)yyjson_val_write_opts(root, flg, alc_ptr, &dat_len, err);
+    if (unlikely(!dat)) return false;
+    suc = write_dat_to_file(path, dat, dat_len, err);
+    if (alc_ptr) alc_ptr->free(alc_ptr->ctx, dat);
+    else free(dat);
+    return suc;
 }
 
 bool yyjson_write_file(const char *path,
@@ -7202,35 +7237,8 @@ bool yyjson_write_file(const char *path,
                        yyjson_write_flag flg,
                        const yyjson_alc *alc_ptr,
                        yyjson_write_err *err) {
-    
-#define return_err(_code, _msg) do { \
-    err->msg = _msg; \
-    err->code = YYJSON_WRITE_ERROR_##_code; \
-    return false; \
-} while (false)
-    
-    yyjson_write_err dummy_err;
-    u8 *dat;
-    usize dat_len = 0;
-    bool suc;
-    
-    /* validate input parameters */
-    if (!err) err = &dummy_err;
-    if (unlikely(!path)) {
-        return_err(INVALID_PARAMETER, "input path is NULL");
-    }
-    if (unlikely(*path == 0)) {
-        return_err(INVALID_PARAMETER, "input path is empty");
-    }
-    
-    dat = (u8 *)yyjson_write_opts(doc, flg, alc_ptr, &dat_len, err);
-    if (unlikely(!dat)) return false;
-    suc = write_dat_to_file(path, dat, dat_len, err);
-    if (alc_ptr) alc_ptr->free(alc_ptr->ctx, dat);
-    else free(dat);
-    return suc;
-    
-#undef return_err
+    yyjson_val *root = doc ? doc->root : NULL;
+    return yyjson_val_write_file(path, root, flg, alc_ptr, err);
 }
 
 
@@ -7271,7 +7279,7 @@ static_inline u8 *yyjson_mut_write_single(yyjson_mut_val *val,
 
 /** Write JSON document minify.
     The root of this document should be a non-empty container. */
-static_inline u8 *yyjson_mut_write_minify(const yyjson_mut_doc *doc,
+static_inline u8 *yyjson_mut_write_minify(const yyjson_mut_val *root,
                                           yyjson_write_flag flg,
                                           yyjson_alc alc,
                                           usize *dat_len,
@@ -7328,7 +7336,7 @@ static_inline u8 *yyjson_mut_write_minify(const yyjson_mut_doc *doc,
     ctx = (yyjson_mut_write_ctx *)(void *)end;
     
 doc_begin:
-    val = doc->root;
+    val = (yyjson_mut_val *)root;
     val_type = unsafe_yyjson_get_type(val);
     ctn_obj = (val_type == YYJSON_TYPE_OBJ);
     ctn_len = unsafe_yyjson_get_len(val) << (u8)ctn_obj;
@@ -7436,7 +7444,7 @@ fail_num:
 
 /** Write JSON document pretty.
     The root of this document should be a non-empty container. */
-static_inline u8 *yyjson_mut_write_pretty(const yyjson_mut_doc *doc,
+static_inline u8 *yyjson_mut_write_pretty(const yyjson_mut_val *root,
                                           yyjson_write_flag flg,
                                           yyjson_alc alc,
                                           usize *dat_len,
@@ -7493,7 +7501,7 @@ static_inline u8 *yyjson_mut_write_pretty(const yyjson_mut_doc *doc,
     ctx = (yyjson_mut_write_ctx *)(void *)end;
     
 doc_begin:
-    val = doc->root;
+    val = (yyjson_mut_val *)root;
     val_type = unsafe_yyjson_get_type(val);
     ctn_obj = (val_type == YYJSON_TYPE_OBJ);
     ctn_len = unsafe_yyjson_get_len(val) << (u8)ctn_obj;
@@ -7622,45 +7630,69 @@ fail_num:
 #undef check_str_len
 }
 
+char *yyjson_mut_val_write_opts(const yyjson_mut_val *val,
+                                yyjson_write_flag flg,
+                                const yyjson_alc *alc_ptr,
+                                usize *dat_len,
+                                yyjson_write_err *err) {
+    yyjson_write_err dummy_err;
+    usize dummy_dat_len;
+    yyjson_alc alc = alc_ptr ? *alc_ptr : YYJSON_DEFAULT_ALC;
+    yyjson_mut_val *root = (yyjson_mut_val *)val;
+    
+    err = err ? err : &dummy_err;
+    dat_len = dat_len ? dat_len : &dummy_dat_len;
+    
+    if (unlikely(!root)) {
+        *dat_len = 0;
+        err->msg = "input JSON is NULL";
+        err->code = YYJSON_WRITE_ERROR_INVALID_PARAMETER;
+        return NULL;
+    }
+    
+    if (!unsafe_yyjson_is_ctn(root) || unsafe_yyjson_get_len(root) == 0) {
+        return (char *)yyjson_mut_write_single(root, flg, alc, dat_len, err);
+    } else if (flg & YYJSON_WRITE_PRETTY) {
+        return (char *)yyjson_mut_write_pretty(root, flg, alc, dat_len, err);
+    } else {
+        return (char *)yyjson_mut_write_minify(root, flg, alc, dat_len, err);
+    }
+}
+
 char *yyjson_mut_write_opts(const yyjson_mut_doc *doc,
                             yyjson_write_flag flg,
                             const yyjson_alc *alc_ptr,
                             usize *dat_len,
                             yyjson_write_err *err) {
-#define return_err(_code, _msg) do { \
-    err->msg = _msg; \
-    err->code = YYJSON_WRITE_ERROR_##_code; \
-    return NULL; \
-} while (false)
-    
+    yyjson_mut_val *root = doc ? doc->root : NULL;
+    return yyjson_mut_val_write_opts(root, flg, alc_ptr, dat_len, err);
+}
+
+bool yyjson_mut_val_write_file(const char *path,
+                               const yyjson_mut_val *val,
+                               yyjson_write_flag flg,
+                               const yyjson_alc *alc_ptr,
+                               yyjson_write_err *err) {
     yyjson_write_err dummy_err;
-    usize dummy_dat_len;
-    yyjson_alc alc;
-    yyjson_mut_val *root;
+    u8 *dat;
+    usize dat_len = 0;
+    yyjson_mut_val *root = (yyjson_mut_val *)val;
+    bool suc;
     
     err = err ? err : &dummy_err;
-    dat_len = dat_len ? dat_len : &dummy_dat_len;
-    alc = alc_ptr ? *alc_ptr : YYJSON_DEFAULT_ALC;
-    
-    if (unlikely(!doc)) {
-        *dat_len = 0;
-        return_err(INVALID_PARAMETER, "input JSON document is NULL");
-    }
-    root = doc->root;
-    if (!root) {
-        *dat_len = 0;
-        return_err(INVALID_PARAMETER, "input JSON document has no root value");
+    if (unlikely(!path || !*path)) {
+        err->msg = "input path is invalid";
+        err->code = YYJSON_WRITE_ERROR_INVALID_PARAMETER;
+        return false;
     }
     
-    if (!unsafe_yyjson_is_ctn(root) || unsafe_yyjson_get_len(root) == 0) {
-        return (char *)yyjson_mut_write_single(root, flg, alc, dat_len, err);
-    }
-    if (flg & YYJSON_WRITE_PRETTY) {
-        return (char *)yyjson_mut_write_pretty(doc, flg, alc, dat_len, err);
-    } else {
-        return (char *)yyjson_mut_write_minify(doc, flg, alc, dat_len, err);
-    }
-#undef return_err
+    dat = (u8 *)yyjson_mut_val_write_opts(root, flg, alc_ptr, &dat_len, err);
+    if (unlikely(!dat)) return false;
+    suc = write_dat_to_file(path, dat, dat_len, err);
+    if (alc_ptr) alc_ptr->free(alc_ptr->ctx, dat);
+    else free(dat);
+    return suc;
+    
 }
 
 bool yyjson_mut_write_file(const char *path,
@@ -7668,35 +7700,8 @@ bool yyjson_mut_write_file(const char *path,
                            yyjson_write_flag flg,
                            const yyjson_alc *alc_ptr,
                            yyjson_write_err *err) {
-    
-#define return_err(_code, _msg) do { \
-    err->msg = _msg; \
-    err->code = YYJSON_WRITE_ERROR_##_code; \
-    return false; \
-} while (false)
-    
-    yyjson_write_err dummy_err;
-    u8 *dat;
-    usize dat_len = 0;
-    bool suc;
-    
-    /* validate input parameters */
-    if (!err) err = &dummy_err;
-    if (unlikely(!path)) {
-        return_err(INVALID_PARAMETER, "input path is NULL");
-    }
-    if (unlikely(*path == 0)) {
-        return_err(INVALID_PARAMETER, "input path is empty");
-    }
-    
-    dat = (u8 *)yyjson_mut_write_opts(doc, flg, alc_ptr, &dat_len, err);
-    if (unlikely(!dat)) return false;
-    suc = write_dat_to_file(path, dat, dat_len, err);
-    if (alc_ptr) alc_ptr->free(alc_ptr->ctx, dat);
-    else free(dat);
-    return suc;
-    
-#undef return_err
+    yyjson_mut_val *root = doc ? doc->root : NULL;
+    return yyjson_mut_val_write_file(path, root, flg, alc_ptr, err);
 }
 
 #endif /* YYJSON_DISABLE_WRITER */

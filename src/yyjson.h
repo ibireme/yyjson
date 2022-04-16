@@ -784,8 +784,12 @@ typedef struct yyjson_write_err {
 
 
 
+/*==============================================================================
+ * JSON Document Writer API
+ *============================================================================*/
+
 /**
- Write JSON with options.
+ Write a document to JSON string with options.
  
  This function is thread-safe if you make sure that:
  1. The `alc` is thread-safe or NULL.
@@ -817,7 +821,7 @@ yyjson_api char *yyjson_write_opts(const yyjson_doc *doc,
                                    yyjson_write_err *err);
 
 /**
- Write JSON file with options.
+ Write a document to JSON file with options.
  
  This function is thread-safe if you make sure that:
  1. The file is not accessed by other threads.
@@ -848,7 +852,7 @@ yyjson_api bool yyjson_write_file(const char *path,
                                   yyjson_write_err *err);
 
 /**
- Write JSON.
+ Write a document to JSON string.
  
  This function is thread-safe.
  
@@ -874,7 +878,7 @@ yyjson_api_inline char *yyjson_write(const yyjson_doc *doc,
 
 
 /**
- Write JSON with options.
+ Write a document to JSON string with options.
  
  This function is thread-safe if you make sure that:
  1. The `doc` is not modified by other threads.
@@ -907,7 +911,7 @@ yyjson_api char *yyjson_mut_write_opts(const yyjson_mut_doc *doc,
                                        yyjson_write_err *err);
 
 /**
- Write JSON file with options.
+ Write a document to JSON file with options.
  
  This function is thread-safe if you make sure that:
  1. The file is not accessed by other threads.
@@ -939,7 +943,7 @@ yyjson_api bool yyjson_mut_write_file(const char *path,
                                       yyjson_write_err *err);
 
 /**
- Write JSON.
+ Write a document to JSON string.
  
  This function is thread-safe if you make sure that:
  1. The `doc` is not is not modified by other threads.
@@ -962,6 +966,190 @@ yyjson_api_inline char *yyjson_mut_write(const yyjson_mut_doc *doc,
                                          yyjson_write_flag flg,
                                          size_t *len) {
     return yyjson_mut_write_opts(doc, flg, NULL, len, NULL);
+}
+
+
+
+/*==============================================================================
+ * JSON Value Writer API
+ *============================================================================*/
+
+/**
+ Write a value to JSON string with options.
+ 
+ This function is thread-safe if you make sure that:
+ 1. The `alc` is thread-safe or NULL.
+
+ @param val The JSON root value.
+            If you pass NULL, you will get NULL result.
+ 
+ @param flg The JSON write options.
+            You can combine multiple options using bitwise `|` operator.
+ 
+ @param alc The memory allocator used by JSON writer.
+            Pass NULL to use the libc's default allocator (thread-safe).
+ 
+ @param len A pointer to receive output length in bytes.
+            Pass NULL if you don't need length information.
+
+ @param err A pointer to receive error information.
+            Pass NULL if you don't need error information.
+ 
+ @return    A new JSON string, or NULL if error occurs.
+            This string is encoded as UTF-8 with a null-terminator.
+            You should use free() or alc->free() to release it
+            when it's no longer needed.
+ */
+yyjson_api char *yyjson_val_write_opts(const yyjson_val *val,
+                                       yyjson_write_flag flg,
+                                       const yyjson_alc *alc,
+                                       size_t *len,
+                                       yyjson_write_err *err);
+
+/**
+ Write a value to JSON file with options.
+ 
+ This function is thread-safe if you make sure that:
+ 1. The file is not accessed by other threads.
+ 2. The `alc` is thread-safe or NULL.
+
+ @param path The JSON file's path.
+             If you pass an invalid path, you will get an error.
+             If the file is not empty, the content will be discarded.
+ 
+ @param val The JSON root value.
+            If you pass NULL or empty document, you will get an error.
+ 
+ @param flg The JSON write options.
+            You can combine multiple options using bitwise `|` operator.
+ 
+ @param alc The memory allocator used by JSON writer.
+            Pass NULL to use the libc's default allocator (thread-safe).
+ 
+ @param err A pointer to receive error information.
+            Pass NULL if you don't need error information.
+ 
+ @return    true for success, false for error.
+ */
+yyjson_api bool yyjson_val_write_file(const char *path,
+                                      const yyjson_val *val,
+                                      yyjson_write_flag flg,
+                                      const yyjson_alc *alc,
+                                      yyjson_write_err *err);
+
+/**
+ Write a value to JSON string.
+ 
+ This function is thread-safe.
+ 
+ @param val The JSON root value.
+            If you pass NULL, you will get NULL result.
+ 
+ @param flg The JSON write options.
+            You can combine multiple options using bitwise `|` operator.
+ 
+ @param len A pointer to receive output length in bytes.
+            Pass NULL if you don't need length information.
+ 
+ @return    A new JSON string, or NULL if error occurs.
+            This string is encoded as UTF-8 with a null-terminator.
+            You should use free() to release it when it's no longer needed.
+ */
+yyjson_api_inline char *yyjson_val_write(const yyjson_val *val,
+                                         yyjson_write_flag flg,
+                                         size_t *len) {
+    return yyjson_val_write_opts(val, flg, NULL, len, NULL);
+}
+
+/**
+ Write a value to JSON string with options.
+ 
+ This function is thread-safe if you make sure that:
+ 1. The `val` is not modified by other threads.
+ 2. The `alc` is thread-safe or NULL.
+
+ @param val The mutable JSON root value.
+            If you pass NULL or empty document, you will get NULL result.
+ 
+ @param flg The JSON write options.
+            You can combine multiple options using bitwise `|` operator.
+ 
+ @param alc The memory allocator used by JSON writer.
+            Pass NULL to use the libc's default allocator (thread-safe).
+ 
+ @param len A pointer to receive output length in bytes.
+            Pass NULL if you don't need length information.
+
+ @param err A pointer to receive error information.
+            Pass NULL if you don't need error information.
+ 
+ @return    A new JSON string, or NULL if error occurs.
+            This string is encoded as UTF-8 with a null-terminator.
+            You should use free() or alc->free() to release it
+            when it's no longer needed.
+ */
+yyjson_api char *yyjson_mut_val_write_opts(const yyjson_mut_val *val,
+                                           yyjson_write_flag flg,
+                                           const yyjson_alc *alc,
+                                           size_t *len,
+                                           yyjson_write_err *err);
+
+/**
+ Write a value to JSON file with options.
+ 
+ This function is thread-safe if you make sure that:
+ 1. The file is not accessed by other threads.
+ 2. The `val` is not modified by other threads.
+ 3. The `alc` is thread-safe or NULL.
+ 
+ @param path The JSON file's path.
+             If you pass an invalid path, you will get an error.
+             If the file is not empty, the content will be discarded.
+ 
+ @param val The mutable JSON root value.
+            If you pass NULL or empty document, you will get an error.
+ 
+ @param flg The JSON write options.
+            You can combine multiple options using bitwise `|` operator.
+ 
+ @param alc The memory allocator used by JSON writer.
+            Pass NULL to use the libc's default allocator (thread-safe).
+ 
+ @param err A pointer to receive error information.
+            Pass NULL if you don't need error information.
+ 
+ @return    true for success, false for error.
+ */
+yyjson_api bool yyjson_mut_val_write_file(const char *path,
+                                          const yyjson_mut_val *val,
+                                          yyjson_write_flag flg,
+                                          const yyjson_alc *alc,
+                                          yyjson_write_err *err);
+
+/**
+ Write a value to JSON string.
+ 
+ This function is thread-safe if you make sure that:
+ 1. The `val` is not is not modified by other threads.
+
+ @param val The JSON root value.
+            If you pass NULL, you will get NULL result.
+ 
+ @param flg The JSON write options.
+            You can combine multiple options using bitwise `|` operator.
+ 
+ @param len A pointer to receive output length in bytes.
+            Pass NULL if you don't need length information.
+
+ @return    A new JSON string, or NULL if error occurs.
+            This string is encoded as UTF-8 with a null-terminator.
+            You should use free() or alc->free() to release it
+            when it's no longer needed.
+ */
+yyjson_api_inline char *yyjson_mut_val_write(const yyjson_mut_val *val,
+                                             yyjson_write_flag flg,
+                                             size_t *len) {
+    return yyjson_mut_val_write_opts(val, flg, NULL, len, NULL);
 }
 
 

@@ -228,6 +228,7 @@ if (err.code) {
 }
 
 // Free the doc
+yyjson_doc_free(idoc);
 yyjson_mut_doc_free(doc);
 ```
 

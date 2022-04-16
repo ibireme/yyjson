@@ -94,6 +94,12 @@ static void validate_json_write_with_flag(yyjson_write_flag flg,
     char *ret2 = yyjson_write_opts(idoc, flg, NULL, &len2, NULL);
     yy_assert(len == len2 && ret2);
     yy_assert(memcmp(ret, ret2, len) == 0);
+    free(ret2);
+    
+    ret2 = yyjson_val_write_opts(idoc->root, flg, NULL, &len2, NULL);
+    yy_assert(len == len2 && ret2);
+    yy_assert(memcmp(ret, ret2, len) == 0);
+    free(ret2);
     
     
     // write immutable doc to file
@@ -101,6 +107,13 @@ static void validate_json_write_with_flag(yyjson_write_flag flg,
     yy_assert(yyjson_write_file(tmp_file_path, idoc, flg, alc, NULL));
     u8 *dat2;
     usize dat2_len;
+    yy_assert(yy_file_read(tmp_file_path, &dat2, &dat2_len));
+    yy_assert(dat2_len == len);
+    yy_assert(memcmp(dat2, ret, len) == 0);
+    free(dat2);
+    yy_file_delete(tmp_file_path);
+    
+    yy_assert(yyjson_val_write_file(tmp_file_path, idoc->root, flg, alc, NULL));
     yy_assert(yy_file_read(tmp_file_path, &dat2, &dat2_len));
     yy_assert(dat2_len == len);
     yy_assert(memcmp(dat2, ret, len) == 0);
@@ -115,12 +128,17 @@ static void validate_json_write_with_flag(yyjson_write_flag flg,
     char *ret3 = yyjson_mut_write_opts(doc, flg, NULL, &len3, NULL);
     yy_assert(len == len3 && ret3);
     yy_assert(memcmp(ret, ret3, len) == 0);
+    free(ret3);
+    
+    ret3 = yyjson_mut_val_write_opts(doc->root, flg, NULL, &len3, NULL);
+    yy_assert(len == len3 && ret3);
+    yy_assert(memcmp(ret, ret3, len) == 0);
+    free(ret3);
     
     
     yyjson_doc_free(idoc);
-    free(ret2);
     yyjson_mut_doc_free(mdoc);
-    free(ret3);
+    
     
     if (alc) alc->free(alc->ctx, (void *)ret);
     else free((void *)ret);
@@ -587,6 +605,7 @@ static void test_json_write(yyjson_alc *alc) {
                         "    }\n"
                         "}");
     
+    // large object with same key
     cur1 = str1 = malloc(1024 * 6 + 32);
     cur2 = str2 = malloc(1024 * 12 + 32);
     root = yyjson_mut_obj(doc);

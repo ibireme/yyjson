@@ -238,11 +238,10 @@ size_t yyjson_get_len(yyjson_val *val)
 ---------------
 # Write JSON
 yyjson provides 3 methods for writing JSON,<br/>
-each method accepts an input of yyjson document, returns a UTF-8 string or file.
+each method accepts an input of JSON document or root value, returns a UTF-8 string or file.
 
 ### Write JSON to string
-The `path` is JSON file path.<br/>
-The `doc` is JSON document, if you pass NULL, you will get NULL result.<br/>
+The `doc/val` is JSON document or root value, if you pass NULL, you will get NULL result.<br/>
 The `flg` is writer flag, pass 0 if you don't need it, see [writer flag](#writer-flag) for details.<br/>
 The `len` is a pointer to receive output length, pass NULL if you don't need it.<br/>
 This function returns a new JSON string, or NULL if error occurs.<br/>
@@ -250,8 +249,13 @@ The string is encoded as UTF-8 with a null-terminator. <br/>
 You should use free() or alc->free() to release it when it's no longer needed.
 
 ```c
-char *yyjson_write(yyjson_doc *doc, yyjson_write_flag flg, size_t *len);
-char *yyjson_mut_write(yyjson_mut_doc *doc, yyjson_write_flag flg, size_t *len);
+char *yyjson_write(const yyjson_doc *doc, yyjson_write_flag flg, size_t *len);
+
+char *yyjson_mut_write(const yyjson_mut_doc *doc, yyjson_write_flag flg, size_t *len);
+
+char *yyjson_val_write(const yyjson_val *val, yyjson_write_flag flg, size_t *len);
+
+char *yyjson_mut_val_write(const yyjson_mut_val *val, yyjson_write_flag flg, size_t *len);
 ```
 
 Sample code 1:
@@ -279,7 +283,7 @@ free(json);
 
 ### Write JSON to file
 The `path` is output JSON file path, If the path is invalid, you will get an error. If the file is not empty, the content will be discarded.<br/>
-The `doc` is JSON document, if you pass NULL, you will get an error.<br/>
+The `doc/val` is JSON document or root value, if you pass NULL, you will get an error.<br/>
 The `flg` is writer flag, pass 0 if you don't need it, see [writer flag](#writer-flag) for details.<br/>
 The `alc` is memory allocator, pass NULL if you don't need it, see [memory allocator](#memory-allocator) for details.<br/>
 The `err` is a pointer to receive error message, pass NULL if you don't need it.<br/>
@@ -287,15 +291,28 @@ This function returns true on success, or false if error occurs.<br/>
 
 ```c
 bool yyjson_write_file(const char *path,
-                       yyjson_doc *doc,
+                       const yyjson_doc *doc,
                        yyjson_write_flag flg,
-                       yyjson_alc *alc,
+                       const yyjson_alc *alc,
                        yyjson_write_err *err);
+
 bool yyjson_mut_write_file(const char *path,
-                           yyjson_mut_doc *doc,
+                           const yyjson_mut_doc *doc,
                            yyjson_write_flag flg,
-                           yyjson_alc *alc,
+                           const yyjson_alc *alc,
                            yyjson_write_err *err);
+
+bool yyjson_val_write_file(const char *path,
+                           const yyjson_val *val,
+                           yyjson_write_flag flg,
+                           const yyjson_alc *alc,
+                           yyjson_write_err *err);
+
+bool yyjson_mut_val_write_file(const char *path,
+                               const yyjson_mut_val *val,
+                               yyjson_write_flag flg,
+                               const yyjson_alc *alc,
+                               yyjson_write_err *err);
 ```
 
 Sample code:
@@ -307,7 +324,7 @@ if (suc) printf("OK");
 ```
 
 ### Write JSON with options
-The `doc` is JSON document, if you pass NULL, you will get NULL result.<br/>
+The `doc/val` is JSON document or root value, if you pass NULL, you will get NULL result.<br/>
 The `flg` is writer flag, pass 0 if you don't need it, see [writer flag](#writer-flag) for details.<br/>
 The `alc` is memory allocator, pass NULL if you don't need it, see [memory allocator](#memory-allocator) for details.<br/>
 The `len` is a pointer to receive output length, pass NULL if you don't need it.<br/>
@@ -318,16 +335,29 @@ The string is encoded as UTF-8 with a null-terminator. <br/>
 You should use free() or alc->free() to release it when it's no longer needed.
 
 ```c
-char *yyjson_write_opts(yyjson_doc *doc,
+char *yyjson_write_opts(const yyjson_doc *doc,
                         yyjson_write_flag flg,
-                        yyjson_alc *alc,
+                        const yyjson_alc *alc,
                         size_t *len,
                         yyjson_write_err *err);
-char *yyjson_mut_write_opts(yyjson_mut_doc *doc,
+
+char *yyjson_mut_write_opts(const yyjson_mut_doc *doc,
                             yyjson_write_flag flg,
-                            yyjson_alc *alc,
+                            const yyjson_alc *alc,
                             size_t *len,
                             yyjson_write_err *err);
+
+char *yyjson_val_write_opts(const yyjson_val *val,
+                            yyjson_write_flag flg,
+                            const yyjson_alc *alc,
+                            size_t *len,
+                            yyjson_write_err *err);
+
+char *yyjson_mut_val_write_opts(const yyjson_mut_val *val,
+                                yyjson_write_flag flg,
+                                const yyjson_alc *alc,
+                                size_t *len,
+                                yyjson_write_err *err);
 ```
 
 Sample code:
