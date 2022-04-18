@@ -1229,15 +1229,15 @@ yyjson_mut_doc *yyjson_mut_doc_new(const yyjson_alc *alc) {
     return doc;
 }
 
-yyjson_api yyjson_mut_doc *yyjson_doc_mut_copy(yyjson_doc *i_doc,
+yyjson_api yyjson_mut_doc *yyjson_doc_mut_copy(yyjson_doc *doc,
                                                const yyjson_alc *alc) {
     yyjson_mut_doc *m_doc;
     yyjson_mut_val *m_val;
     
-    if (!i_doc || !i_doc->root) return NULL;
+    if (!doc || !doc->root) return NULL;
     m_doc = yyjson_mut_doc_new(alc);
     if (!m_doc) return NULL;
-    m_val = yyjson_val_mut_copy(m_doc, i_doc->root);
+    m_val = yyjson_val_mut_copy(m_doc, doc->root);
     if (!m_val) {
         yyjson_mut_doc_free(m_doc);
         return NULL;
@@ -1246,15 +1246,15 @@ yyjson_api yyjson_mut_doc *yyjson_doc_mut_copy(yyjson_doc *i_doc,
     return m_doc;
 }
 
-yyjson_api yyjson_mut_doc *yyjson_mut_doc_mut_copy(yyjson_mut_doc *i_doc,
+yyjson_api yyjson_mut_doc *yyjson_mut_doc_mut_copy(yyjson_mut_doc *doc,
                                                    const yyjson_alc *alc) {
     yyjson_mut_doc *m_doc;
     yyjson_mut_val *m_val;
     
-    if (!i_doc || !i_doc->root) return NULL;
+    if (!doc || !doc->root) return NULL;
     m_doc = yyjson_mut_doc_new(alc);
     if (!m_doc) return NULL;
-    m_val = yyjson_mut_val_mut_copy(m_doc, i_doc->root);
+    m_val = yyjson_mut_val_mut_copy(m_doc, doc->root);
     if (!m_val) {
         yyjson_mut_doc_free(m_doc);
         return NULL;
