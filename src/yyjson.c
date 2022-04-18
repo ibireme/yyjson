@@ -1332,19 +1332,19 @@ yyjson_api yyjson_mut_val *yyjson_val_mut_copy(yyjson_mut_doc *m_doc,
     return m_vals;
 }
 
-static yyjson_mut_val *unsafe_yyjson_mut_ctn_mut_copy(yyjson_mut_doc *m_doc,
-                                                      yyjson_mut_val *i_val) {
-    yyjson_type type = unsafe_yyjson_get_type(i_val);
+static yyjson_mut_val *unsafe_yyjson_mut_val_mut_copy(yyjson_mut_doc *m_doc,
+                                                      yyjson_mut_val *m_vals) {
+    yyjson_type type = unsafe_yyjson_get_type(m_vals);
     yyjson_mut_val *m_val = unsafe_yyjson_mut_val(m_doc, 1);
     if (unlikely(!m_val)) return NULL;
     
     if (type == YYJSON_TYPE_ARR) {
         yyjson_mut_val *val, *new_val;
         yyjson_mut_arr_iter iter;
-        yyjson_mut_arr_iter_init(i_val, &iter);
+        yyjson_mut_arr_iter_init(m_vals, &iter);
         m_val->tag = YYJSON_TYPE_ARR;
         while ((val = yyjson_mut_arr_iter_next(&iter))) {
-            new_val = unsafe_yyjson_mut_ctn_mut_copy(m_doc, val);
+            new_val = unsafe_yyjson_mut_val_mut_copy(m_doc, val);
             if (unlikely(!yyjson_mut_arr_append(m_val, new_val))) return NULL;
         }
         return m_val;
@@ -1352,13 +1352,13 @@ static yyjson_mut_val *unsafe_yyjson_mut_ctn_mut_copy(yyjson_mut_doc *m_doc,
     } else if (type == YYJSON_TYPE_OBJ) {
         yyjson_mut_val *key, *val, *new_key, *new_val;
         yyjson_mut_obj_iter iter;
-        yyjson_mut_obj_iter_init(i_val, &iter);
+        yyjson_mut_obj_iter_init(m_vals, &iter);
         m_val->tag = YYJSON_TYPE_OBJ;
         while ((key = yyjson_mut_obj_iter_next(&iter))) {
             val = key->next;
-            new_key = unsafe_yyjson_mut_ctn_mut_copy(m_doc, key);
+            new_key = unsafe_yyjson_mut_val_mut_copy(m_doc, key);
             if (unlikely(!new_key)) return NULL;
-            new_val = unsafe_yyjson_mut_ctn_mut_copy(m_doc, val);
+            new_val = unsafe_yyjson_mut_val_mut_copy(m_doc, val);
             if (unlikely(!new_val)) return NULL;
             unsafe_yyjson_mut_obj_add(m_val, new_key, new_val,
                                       unsafe_yyjson_get_len(m_val));
@@ -1366,24 +1366,24 @@ static yyjson_mut_val *unsafe_yyjson_mut_ctn_mut_copy(yyjson_mut_doc *m_doc,
         return m_val;
         
     } else if (type == YYJSON_TYPE_STR){
-        usize len = unsafe_yyjson_get_len(i_val);
-        const char *str = unsafe_yyjson_mut_strncpy(m_doc, i_val->uni.str, len);
+        usize len = unsafe_yyjson_get_len(m_vals);
+        const char *str = unsafe_yyjson_mut_strncpy(m_doc, m_vals->uni.str, len);
         if (unlikely(!str)) return NULL;
-        m_val->tag = i_val->tag;
+        m_val->tag = m_vals->tag;
         m_val->uni.str = str;
         return m_val;
         
     } else {
-        m_val->tag = i_val->tag;
-        m_val->uni.u64 = i_val->uni.u64;
+        m_val->tag = m_vals->tag;
+        m_val->uni.u64 = m_vals->uni.u64;
         return m_val;
     }
 }
 
-yyjson_api yyjson_mut_val *yyjson_mut_val_mut_copy(yyjson_mut_doc *m_doc,
-                                                   yyjson_mut_val *i_vals) {
-    if (m_doc && i_vals) {
-        return unsafe_yyjson_mut_ctn_mut_copy(m_doc, i_vals);
+yyjson_api yyjson_mut_val *yyjson_mut_val_mut_copy(yyjson_mut_doc *doc,
+                                                   yyjson_mut_val *val) {
+    if (doc && val) {
+        return unsafe_yyjson_mut_val_mut_copy(doc, val);
     }
     return NULL;
 }
