@@ -1234,7 +1234,7 @@ yyjson_api yyjson_mut_doc *yyjson_doc_mut_copy(yyjson_doc *i_doc,
     yyjson_mut_doc *m_doc;
     yyjson_mut_val *m_val;
     
-    if (!i_doc) return NULL;
+    if (!i_doc || !i_doc->root) return NULL;
     m_doc = yyjson_mut_doc_new(alc);
     if (!m_doc) return NULL;
     m_val = yyjson_val_mut_copy(m_doc, i_doc->root);
@@ -1251,7 +1251,7 @@ yyjson_api yyjson_mut_doc *yyjson_mut_doc_mut_copy(yyjson_mut_doc *i_doc,
     yyjson_mut_doc *m_doc;
     yyjson_mut_val *m_val;
     
-    if (!i_doc) return NULL;
+    if (!i_doc || !i_doc->root) return NULL;
     m_doc = yyjson_mut_doc_new(alc);
     if (!m_doc) return NULL;
     m_val = yyjson_mut_val_mut_copy(m_doc, i_doc->root);
