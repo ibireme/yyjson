@@ -1287,12 +1287,11 @@ yyjson_api yyjson_mut_val *yyjson_val_mut_copy(yyjson_mut_doc *m_doc,
         yyjson_type type = unsafe_yyjson_get_type(i_val);
         m_val->tag = i_val->tag;
         m_val->uni.u64 = i_val->uni.u64;
-        if (type == YYJSON_TYPE_STR) {
+        if (type == YYJSON_TYPE_STR || type == YYJSON_TYPE_RAW) {
             const char *str = i_val->uni.str;
             usize str_len = unsafe_yyjson_get_len(i_val);
             m_val->uni.str = unsafe_yyjson_mut_strncpy(m_doc, str, str_len);
             if (!m_val->uni.str) return NULL;
-            
         } else if (type == YYJSON_TYPE_ARR) {
             usize len = unsafe_yyjson_get_len(i_val);
             if (len > 0) {
@@ -1364,6 +1363,7 @@ static yyjson_mut_val *unsafe_yyjson_mut_val_mut_copy(yyjson_mut_doc *m_doc,
             }
             break;
         
+        case YYJSON_TYPE_RAW:
         case YYJSON_TYPE_STR: {
             const char *str = m_vals->uni.str;
             usize str_len = unsafe_yyjson_get_len(m_vals);
