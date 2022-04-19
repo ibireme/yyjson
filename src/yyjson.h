@@ -2783,10 +2783,7 @@ yyjson_api_inline bool yyjson_obj_iter_init(yyjson_val *obj,
         iter->obj = obj;
         return true;
     }
-    if (iter) {
-        iter->idx = 0;
-        iter->max = 0;
-    }
+    if (iter) memset(iter, 0, sizeof(yyjson_obj_iter));
     return false;
 }
 
