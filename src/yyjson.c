@@ -1388,72 +1388,74 @@ yyjson_api yyjson_mut_val *yyjson_mut_val_mut_copy(yyjson_mut_doc *doc,
     return NULL;
 }
 
-bool yyjson_mut_equals(yyjson_mut_val *lhs, yyjson_mut_val *rhs) {
-    yyjson_type type = yyjson_mut_get_type(lhs);
-    if (type != yyjson_mut_get_type(rhs)) return false;
+bool unsafe_yyjson_mut_equals(yyjson_mut_val *lhs, yyjson_mut_val *rhs) {
+    yyjson_type type = unsafe_yyjson_get_type(lhs);
+    if (type != unsafe_yyjson_get_type(rhs)) return false;
     
-    if (type == YYJSON_TYPE_NULL) {
-        return true;
-    }
-    if (type == YYJSON_TYPE_BOOL) {
-        return unsafe_yyjson_get_bool(lhs) == unsafe_yyjson_get_bool(rhs);
-    }
-    if (type == YYJSON_TYPE_NUM) {
-        yyjson_subtype lt, rt;
-        lt = unsafe_yyjson_get_subtype(lhs);
-        rt = unsafe_yyjson_get_subtype(rhs);
-        if (lt == rt) return lhs->uni.u64 == rhs->uni.u64;
-        if (lt == YYJSON_SUBTYPE_SINT && rt == YYJSON_SUBTYPE_UINT) {
-            if (lhs->uni.i64 >= 0 && lhs->uni.i64 == rhs->uni.i64) return true;
-            else return false;
+    switch (type) {
+        case YYJSON_TYPE_OBJ: {
+            usize len = unsafe_yyjson_get_len(lhs);
+            if (len != unsafe_yyjson_get_len(rhs)) return false;
+            if (len > 0) {
+                yyjson_mut_obj_iter iter;
+                yyjson_mut_obj_iter_init(rhs, &iter);
+                lhs = (yyjson_mut_val *)lhs->uni.ptr;
+                while (len-- > 0) {
+                    rhs = yyjson_mut_obj_iter_getn(&iter, lhs->uni.str,
+                                                   unsafe_yyjson_get_len(lhs));
+                    if (!rhs || !unsafe_yyjson_mut_equals(lhs->next, rhs))
+                        return false;
+                    lhs = lhs->next->next;
+                }
+            }
+            /* yyjson allows duplicate keys, so the check may be inaccurate */
+            return true;
         }
-        if (lt == YYJSON_SUBTYPE_UINT && rt == YYJSON_SUBTYPE_SINT) {
-            if (rhs->uni.i64 >= 0 && lhs->uni.i64 == rhs->uni.i64) return true;
-            else return false;
-        }
-        return false;
-    }
-    if (type == YYJSON_TYPE_STR) {
-        usize len = unsafe_yyjson_get_len(lhs);
-        if (len != unsafe_yyjson_get_len(rhs)) return false;
-        return memcmp(lhs->uni.str, rhs->uni.str, len) == 0;
-    }
-    if (type == YYJSON_TYPE_ARR) {
-        yyjson_mut_val *lhs_val, *rhs_val;
-        yyjson_mut_arr_iter lhs_iter, rhs_iter;
-        usize len = unsafe_yyjson_get_len(lhs);
-        if (len != unsafe_yyjson_get_len(rhs)) return false;
-        if (len == 0) return true;
         
-        yyjson_mut_arr_iter_init(lhs, &lhs_iter);
-        yyjson_mut_arr_iter_init(rhs, &rhs_iter);
-        while ((lhs_val = yyjson_mut_arr_iter_next(&lhs_iter)) &&
-               (rhs_val = yyjson_mut_arr_iter_next(&rhs_iter))) {
-            if (!yyjson_mut_equals(lhs_val, rhs_val)) return false;
+        case YYJSON_TYPE_ARR: {
+            usize len = unsafe_yyjson_get_len(lhs);
+            if (len != unsafe_yyjson_get_len(rhs)) return false;
+            if (len > 0) {
+                lhs = (yyjson_mut_val *)lhs->uni.ptr;
+                rhs = (yyjson_mut_val *)rhs->uni.ptr;
+                while (len-- > 0) {
+                    if (!unsafe_yyjson_mut_equals(lhs, rhs))
+                        return false;
+                    lhs = lhs->next;
+                    rhs = rhs->next;
+                }
+            }
+            return true;
         }
-        return true;
-    }
-    if (type == YYJSON_TYPE_OBJ) {
-        yyjson_mut_val *key, *lhs_val, *rhs_val;
-        yyjson_mut_obj_iter lhs_iter, rhs_iter;
-        usize len = unsafe_yyjson_get_len(lhs);
-        if (len != unsafe_yyjson_get_len(rhs)) return false;
-        if (len == 0) return true;
         
-        yyjson_mut_obj_iter_init(lhs, &lhs_iter);
-        yyjson_mut_obj_iter_init(rhs, &rhs_iter);
-        while ((key = yyjson_mut_obj_iter_next(&lhs_iter))) {
-            lhs_val = key->next;
-            rhs_val = yyjson_mut_obj_iter_getn(&rhs_iter, key->uni.str,
-                                               unsafe_yyjson_get_len(key));
-            if (!rhs_val)  return false;
-            if (!yyjson_mut_equals(lhs_val, rhs_val)) return false;
+        case YYJSON_TYPE_NUM: {
+            yyjson_subtype lt = unsafe_yyjson_get_subtype(lhs);
+            yyjson_subtype rt = unsafe_yyjson_get_subtype(rhs);
+            if (lt == rt)
+                return lhs->uni.u64 == rhs->uni.u64;
+            if (lt == YYJSON_SUBTYPE_SINT && rt == YYJSON_SUBTYPE_UINT)
+                return lhs->uni.i64 >= 0 && lhs->uni.u64 == rhs->uni.u64;
+            if (lt == YYJSON_SUBTYPE_UINT && rt == YYJSON_SUBTYPE_SINT)
+                return rhs->uni.i64 >= 0 && lhs->uni.u64 == rhs->uni.u64;
+            return false;
         }
-        /* yyjson allows duplicate keys, so the check may be inaccurate */
-        return true;
+        
+        case YYJSON_TYPE_RAW:
+        case YYJSON_TYPE_STR: {
+            usize len = unsafe_yyjson_get_len(lhs);
+            if (len != unsafe_yyjson_get_len(rhs)) return false;
+            return 0 == len ||
+                   0 == memcmp(unsafe_yyjson_get_str(lhs),
+                               unsafe_yyjson_get_str(rhs), len);
+        }
+        
+        case YYJSON_TYPE_NULL:
+        case YYJSON_TYPE_BOOL:
+            return lhs->tag == rhs->tag;
+        
+        default:
+            return false;
     }
-    
-    return false;
 }
 
 /*==============================================================================

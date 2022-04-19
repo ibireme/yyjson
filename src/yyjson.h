@@ -1548,11 +1548,6 @@ yyjson_api_inline uint8_t yyjson_mut_get_tag(yyjson_mut_val *val);
     "array", "object", "true", "false", "uint", "sint", "real", "unknown". */
 yyjson_api_inline const char *yyjson_mut_get_type_desc(yyjson_mut_val *val);
 
-/** Returns whether two JSON values are equal (deep compare).
-    @warning This function takes a quadratic time. */
-yyjson_api bool yyjson_mut_equals(yyjson_mut_val *lhs,
-                                  yyjson_mut_val *rhs);
-
 /** Returns the content if the value is raw, or NULL on error. */
 yyjson_api_inline const char *yyjson_mut_get_raw(yyjson_mut_val *val);
 
@@ -1586,6 +1581,9 @@ yyjson_api_inline bool yyjson_mut_equals_str(yyjson_mut_val *val,
 yyjson_api_inline bool yyjson_mut_equals_strn(yyjson_mut_val *val,
                                               const char *str, size_t len);
 
+/** Returns whether two JSON values are equal (deep compare). */
+yyjson_api_inline bool yyjson_mut_equals(yyjson_mut_val *lhs,
+                                         yyjson_mut_val *rhs);
 
 
 /*==============================================================================
@@ -3078,7 +3076,16 @@ yyjson_api_inline bool yyjson_mut_equals_strn(yyjson_mut_val *val,
     return yyjson_equals_strn((yyjson_val *)val, str, len);
 }
 
+yyjson_api bool unsafe_yyjson_mut_equals(yyjson_mut_val *lhs,
+                                         yyjson_mut_val *rhs);
 
+yyjson_api_inline bool yyjson_mut_equals(yyjson_mut_val *lhs,
+                                         yyjson_mut_val *rhs) {
+    if (yyjson_unlikely(!lhs || !rhs))
+        return false;
+    
+    return unsafe_yyjson_mut_equals(lhs, rhs);
+}
 
 /*==============================================================================
  * Mutable JSON Value Creation API (Implementation)
