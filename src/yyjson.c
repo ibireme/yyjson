@@ -1229,15 +1229,15 @@ yyjson_mut_doc *yyjson_mut_doc_new(const yyjson_alc *alc) {
     return doc;
 }
 
-yyjson_api yyjson_mut_doc *yyjson_doc_mut_copy(yyjson_doc *i_doc,
+yyjson_api yyjson_mut_doc *yyjson_doc_mut_copy(yyjson_doc *doc,
                                                const yyjson_alc *alc) {
     yyjson_mut_doc *m_doc;
     yyjson_mut_val *m_val;
     
-    if (!i_doc) return NULL;
+    if (!doc || !doc->root) return NULL;
     m_doc = yyjson_mut_doc_new(alc);
     if (!m_doc) return NULL;
-    m_val = yyjson_val_mut_copy(m_doc, i_doc->root);
+    m_val = yyjson_val_mut_copy(m_doc, doc->root);
     if (!m_val) {
         yyjson_mut_doc_free(m_doc);
         return NULL;
@@ -1246,15 +1246,15 @@ yyjson_api yyjson_mut_doc *yyjson_doc_mut_copy(yyjson_doc *i_doc,
     return m_doc;
 }
 
-yyjson_api yyjson_mut_doc *yyjson_mut_doc_mut_copy(yyjson_mut_doc *i_doc,
+yyjson_api yyjson_mut_doc *yyjson_mut_doc_mut_copy(yyjson_mut_doc *doc,
                                                    const yyjson_alc *alc) {
     yyjson_mut_doc *m_doc;
     yyjson_mut_val *m_val;
     
-    if (!i_doc) return NULL;
+    if (!doc || !doc->root) return NULL;
     m_doc = yyjson_mut_doc_new(alc);
     if (!m_doc) return NULL;
-    m_val = yyjson_mut_val_mut_copy(m_doc, i_doc->root);
+    m_val = yyjson_mut_val_mut_copy(m_doc, doc->root);
     if (!m_val) {
         yyjson_mut_doc_free(m_doc);
         return NULL;
@@ -1266,7 +1266,7 @@ yyjson_api yyjson_mut_doc *yyjson_mut_doc_mut_copy(yyjson_mut_doc *i_doc,
 yyjson_api yyjson_mut_val *yyjson_val_mut_copy(yyjson_mut_doc *m_doc,
                                                yyjson_val *i_vals) {
     /*
-     The immutable object or array stores all sub-value in a contiguous memory,
+     The immutable object or array stores all sub-values in a contiguous memory,
      We copy them to another contiguous memory as mutable values,
      then reconnect the mutable values with the original relationship.
      */
@@ -1287,12 +1287,11 @@ yyjson_api yyjson_mut_val *yyjson_val_mut_copy(yyjson_mut_doc *m_doc,
         yyjson_type type = unsafe_yyjson_get_type(i_val);
         m_val->tag = i_val->tag;
         m_val->uni.u64 = i_val->uni.u64;
-        if (type == YYJSON_TYPE_STR) {
+        if (type == YYJSON_TYPE_STR || type == YYJSON_TYPE_RAW) {
             const char *str = i_val->uni.str;
             usize str_len = unsafe_yyjson_get_len(i_val);
             m_val->uni.str = unsafe_yyjson_mut_strncpy(m_doc, str, str_len);
             if (!m_val->uni.str) return NULL;
-            
         } else if (type == YYJSON_TYPE_ARR) {
             usize len = unsafe_yyjson_get_len(i_val);
             if (len > 0) {
@@ -1332,58 +1331,59 @@ yyjson_api yyjson_mut_val *yyjson_val_mut_copy(yyjson_mut_doc *m_doc,
     return m_vals;
 }
 
-static yyjson_mut_val *unsafe_yyjson_mut_ctn_mut_copy(yyjson_mut_doc *m_doc,
-                                                      yyjson_mut_val *i_val) {
-    yyjson_type type = unsafe_yyjson_get_type(i_val);
+static yyjson_mut_val *unsafe_yyjson_mut_val_mut_copy(yyjson_mut_doc *m_doc,
+                                                      yyjson_mut_val *m_vals) {
+    /*
+    The mutable object or array stores all sub-values in a circular linked list,
+    so we can traverse them in the same loop. The traversal starts from the last
+    item, continues with the first item in a list, and ends with the second 
+    to last item, which needs to be linked to the last item to close the circle.
+    */
+    
     yyjson_mut_val *m_val = unsafe_yyjson_mut_val(m_doc, 1);
     if (unlikely(!m_val)) return NULL;
+    m_val->tag = m_vals->tag;
     
-    if (type == YYJSON_TYPE_ARR) {
-        yyjson_mut_val *val, *new_val;
-        yyjson_mut_arr_iter iter;
-        yyjson_mut_arr_iter_init(i_val, &iter);
-        m_val->tag = YYJSON_TYPE_ARR;
-        while ((val = yyjson_mut_arr_iter_next(&iter))) {
-            new_val = unsafe_yyjson_mut_ctn_mut_copy(m_doc, val);
-            if (unlikely(!yyjson_mut_arr_append(m_val, new_val))) return NULL;
+    switch (unsafe_yyjson_get_type(m_vals)) {
+        case YYJSON_TYPE_OBJ:
+        case YYJSON_TYPE_ARR:
+            if (unsafe_yyjson_get_len(m_vals) > 0) {
+                yyjson_mut_val *last = (yyjson_mut_val *)m_vals->uni.ptr;
+                yyjson_mut_val *next = last->next, *prev;
+                prev = unsafe_yyjson_mut_val_mut_copy(m_doc, last);
+                if (!prev) return NULL;
+                m_val->uni.ptr = (void *)prev;
+                while (next != last) {
+                    prev->next = unsafe_yyjson_mut_val_mut_copy(m_doc, next);
+                    if (!prev->next) return NULL;
+                    prev = prev->next;
+                    next = next->next;
+                }
+                prev->next = (yyjson_mut_val *)m_val->uni.ptr; 
+            }
+            break;
+        
+        case YYJSON_TYPE_RAW:
+        case YYJSON_TYPE_STR: {
+            const char *str = m_vals->uni.str;
+            usize str_len = unsafe_yyjson_get_len(m_vals);
+            m_val->uni.str = unsafe_yyjson_mut_strncpy(m_doc, str, str_len);
+            if (!m_val->uni.str) return NULL;
+            break;
         }
-        return m_val;
         
-    } else if (type == YYJSON_TYPE_OBJ) {
-        yyjson_mut_val *key, *val, *new_key, *new_val;
-        yyjson_mut_obj_iter iter;
-        yyjson_mut_obj_iter_init(i_val, &iter);
-        m_val->tag = YYJSON_TYPE_OBJ;
-        while ((key = yyjson_mut_obj_iter_next(&iter))) {
-            val = key->next;
-            new_key = unsafe_yyjson_mut_ctn_mut_copy(m_doc, key);
-            if (unlikely(!new_key)) return NULL;
-            new_val = unsafe_yyjson_mut_ctn_mut_copy(m_doc, val);
-            if (unlikely(!new_val)) return NULL;
-            unsafe_yyjson_mut_obj_add(m_val, new_key, new_val,
-                                      unsafe_yyjson_get_len(m_val));
-        }
-        return m_val;
-        
-    } else if (type == YYJSON_TYPE_STR){
-        usize len = unsafe_yyjson_get_len(i_val);
-        const char *str = unsafe_yyjson_mut_strncpy(m_doc, i_val->uni.str, len);
-        if (unlikely(!str)) return NULL;
-        m_val->tag = i_val->tag;
-        m_val->uni.str = str;
-        return m_val;
-        
-    } else {
-        m_val->tag = i_val->tag;
-        m_val->uni.u64 = i_val->uni.u64;
-        return m_val;
+        default:
+            m_val->uni = m_vals->uni;
+            break;
     }
+    
+    return m_val;
 }
 
-yyjson_api yyjson_mut_val *yyjson_mut_val_mut_copy(yyjson_mut_doc *m_doc,
-                                                   yyjson_mut_val *i_vals) {
-    if (m_doc && i_vals) {
-        return unsafe_yyjson_mut_ctn_mut_copy(m_doc, i_vals);
+yyjson_api yyjson_mut_val *yyjson_mut_val_mut_copy(yyjson_mut_doc *doc,
+                                                   yyjson_mut_val *val) {
+    if (doc && val) {
+        return unsafe_yyjson_mut_val_mut_copy(doc, val);
     }
     return NULL;
 }
