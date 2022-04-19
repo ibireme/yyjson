@@ -5481,7 +5481,7 @@ yyjson_doc *yyjson_read_opts(char *dat,
                 err->msg = "UTF-16 encoding is not supported";
             }
         }
-        if (!has_flag(INSITU) && hdr) alc.free(alc.ctx, (void *)hdr);
+        if (!has_flag(INSITU)) alc.free(alc.ctx, (void *)hdr);
     }
     return doc;
     
@@ -5521,10 +5521,7 @@ yyjson_doc *yyjson_read_file(const char *path,
     if (file == NULL) return_err(FILE_OPEN, "file opening failed");
     
     /* get file size */
-    if (fseek(file, 0, SEEK_END) == 0) {
-        file_size = ftell(file);
-        if (file_size < 0 || (file_size + 1) < 0) file_size = 0;
-    }
+    if (fseek(file, 0, SEEK_END) == 0) file_size = ftell(file);
     rewind(file);
     
     /* read file */
@@ -6506,7 +6503,7 @@ static_inline const char_esc_type *get_esc_table_with_flag(
 /** Write raw string. */
 static_inline u8 *write_raw(u8 *cur, const u8 *raw, usize raw_len) {
     memcpy(cur, raw, raw_len);
-    return cur += raw_len;
+    return cur + raw_len;
 }
 
 /**

@@ -633,6 +633,8 @@ yyjson_api yyjson_doc *yyjson_read_opts(char *dat,
  @return    A new JSON document, or NULL if error occurs.
             You should use yyjson_doc_free() to release it
             when it's no longer needed.
+ 
+ @warning   On 32-bit system, files larger than 2GB may fail to read.
  */
 yyjson_api yyjson_doc *yyjson_read_file(const char *path,
                                         yyjson_read_flag flg,
@@ -4160,7 +4162,6 @@ yyjson_api_inline bool unsafe_yyjson_mut_obj_replace(yyjson_mut_val *obj,
                 memcpy(val, &tmp, cpy_len);
                 return true;
             } else {
-                pre_key = cur_key;
                 cur_key = cur_key->next->next;
             }
         }
