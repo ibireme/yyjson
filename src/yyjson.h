@@ -1595,11 +1595,32 @@ yyjson_api_inline bool yyjson_mut_equals(yyjson_mut_val *lhs,
  *============================================================================*/
 
 /** Creates and returns a raw value, returns NULL on error.
+    The input value should be a valid UTF-8 encoded string with null-terminator.
+    @warning The input string is not copied, you should keep this string
+    unmodified for the lifetime of this document. */
+yyjson_api_inline yyjson_mut_val *yyjson_mut_raw(yyjson_mut_doc *doc,
+                                                 const char *str);
+
+/** Creates and returns a raw value, returns NULL on error.
+    The input value should be a valid UTF-8 encoded string.
+    @warning The input string is not copied, you should keep this string
+    unmodified for the lifetime of this document. */
+yyjson_api_inline yyjson_mut_val *yyjson_mut_rawn(yyjson_mut_doc *doc,
+                                                  const char *str,
+                                                  size_t len);
+
+/** Creates and returns a raw value, returns NULL on error.
+    The input value should be a valid UTF-8 encoded string with null-terminator.
+    The input string is copied and held by the document. */
+yyjson_api_inline yyjson_mut_val *yyjson_mut_rawcpy(yyjson_mut_doc *doc,
+                                                    const char *str);
+
+/** Creates and returns a raw value, returns NULL on error.
     The input value should be a valid UTF-8 encoded string.
     The input string is copied and held by the document. */
-yyjson_api_inline yyjson_mut_val *yyjson_mut_raw(yyjson_mut_doc *doc,
-                                                 const char *str,
-                                                 size_t len);
+yyjson_api_inline yyjson_mut_val *yyjson_mut_rawncpy(yyjson_mut_doc *doc,
+                                                     const char *str,
+                                                     size_t len);
 
 /** Creates and returns a null value, returns NULL on error. */
 yyjson_api_inline yyjson_mut_val *yyjson_mut_null(yyjson_mut_doc *doc);
@@ -3102,8 +3123,34 @@ yyjson_api_inline bool yyjson_mut_equals(yyjson_mut_val *lhs,
  *============================================================================*/
 
 yyjson_api_inline yyjson_mut_val *yyjson_mut_raw(yyjson_mut_doc *doc,
-                                                 const char *str,
-                                                 size_t len) {
+                                                 const char *str) {
+    if (yyjson_likely(str)) return yyjson_mut_rawn(doc, str, strlen(str));
+    return NULL;
+}
+
+yyjson_api_inline yyjson_mut_val *yyjson_mut_rawn(yyjson_mut_doc *doc,
+                                                  const char *str,
+                                                  size_t len) {
+    if (yyjson_likely(doc && str)) {
+        yyjson_mut_val *val = unsafe_yyjson_mut_val(doc, 1);
+        if (yyjson_likely(val)) {
+            val->tag = ((uint64_t)len << YYJSON_TAG_BIT) | YYJSON_TYPE_RAW;
+            val->uni.str = str;
+            return val;
+        }
+    }
+    return NULL;
+}
+
+yyjson_api_inline yyjson_mut_val *yyjson_mut_rawcpy(yyjson_mut_doc *doc,
+                                                    const char *str) {
+    if (yyjson_likely(str)) return yyjson_mut_rawncpy(doc, str, strlen(str));
+    return NULL;
+}
+
+yyjson_api_inline yyjson_mut_val *yyjson_mut_rawncpy(yyjson_mut_doc *doc,
+                                                     const char *str,
+                                                     size_t len) {
     if (yyjson_likely(doc && str)) {
         yyjson_mut_val *val = unsafe_yyjson_mut_val(doc, 1);
         char *new_str = unsafe_yyjson_mut_strncpy(doc, str, len);

@@ -7411,6 +7411,15 @@ doc_begin:
 val_begin:
     val_type = unsafe_yyjson_get_type(val);
     switch (val_type) {
+        case YYJSON_TYPE_RAW:
+            str_len = unsafe_yyjson_get_len(val);
+            str_ptr = (const u8 *)unsafe_yyjson_get_str(val);
+            check_str_len(str_len);
+            incr_len(str_len + 2);
+            cur = write_raw(cur, str_ptr, str_len);
+            *cur++ = ',';
+            break;
+            
         case YYJSON_TYPE_STR:
             is_key = ((u8)ctn_obj & (u8)~ctn_len);
             str_len = unsafe_yyjson_get_len(val);
@@ -7578,6 +7587,16 @@ doc_begin:
 val_begin:
     val_type = unsafe_yyjson_get_type(val);
     switch (val_type) {
+        case YYJSON_TYPE_RAW:
+            str_len = unsafe_yyjson_get_len(val);
+            str_ptr = (const u8 *)unsafe_yyjson_get_str(val);
+            check_str_len(str_len);
+            incr_len(str_len + 3);
+            cur = write_raw(cur, str_ptr, str_len);
+            *cur++ = ',';
+            *cur++ = '\n';
+            break;
+            
         case YYJSON_TYPE_STR:
             is_key = ((u8)ctn_obj & (u8)~ctn_len);
             no_indent = ((u8)ctn_obj & (u8)ctn_len);
