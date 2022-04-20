@@ -702,10 +702,107 @@ static void test_json_obj_api(void) {
     yyjson_doc_free(doc);
 }
 
+static void validate_equals(const char *lhs_json, const char *rhs_json, bool equals) {
+    yyjson_doc *lhs_doc = yyjson_read(lhs_json, strlen(lhs_json), 0);
+    yyjson_doc *rhs_doc = yyjson_read(rhs_json, strlen(rhs_json), 0);
+
+    yyjson_val *lhs_val = yyjson_doc_get_root(lhs_doc);
+    yyjson_val *rhs_val = yyjson_doc_get_root(rhs_doc);
+
+    yy_assert(yyjson_equals(lhs_val, rhs_val) == equals);
+    yy_assert(yyjson_equals(rhs_val, lhs_val) == equals);
+
+    yyjson_doc_free(rhs_doc);
+    yyjson_doc_free(lhs_doc);
+}
+
+static void test_json_equals_api(void) {
+    yy_assert(!yyjson_equals(NULL, NULL));
+    validate_equals("", "", false);
+    validate_equals("", "true", false);
+    validate_equals("true", "", false);
+    validate_equals("true", "false", false);
+    validate_equals("null", "null", true);
+    validate_equals("true", "true", true);
+    validate_equals("false", "false", true);
+    validate_equals("1", "1", true);
+    validate_equals("1", "2", false);
+    validate_equals("-1", "-1", true);
+    validate_equals("-1", "1", false);
+    validate_equals("1", "\"hello\"", false);
+    validate_equals("\"hello\"", "\"hello\"", true);
+    validate_equals("\"hello\"", "\"world\"", false);
+    validate_equals("\"\"", "\"\"", true);
+    validate_equals("123.456", "123.456", true);
+    validate_equals("-123.456", "-123.456", true);
+    validate_equals("-123.456", "123.456", false);
+    validate_equals("{}", "{}", true);
+    validate_equals("[]", "[]", true);
+    validate_equals("[]", "{}", false);
+    validate_equals("{}", "[]", false);
+    validate_equals("[]", "[1]", false);
+    validate_equals("[1]", "[1]", true);
+    validate_equals("[1]", "[2]", false);
+    validate_equals("[1]", "[1, 2]", false);
+    validate_equals("{}", "{\"a\":0}", false);
+    validate_equals("{\"a\":0}", "{\"a\":0}", true);
+    validate_equals("{\"a\":0}", "{\"a\":1}", false);
+    validate_equals("{\"a\":0}", "{\"b\":0}", false);
+    validate_equals("{\"a\":0}", "{\"a\":0,\"b\":0}", false);
+    validate_equals("{\"a\":{\"b\":[1.0, 2.0]}}",
+                    "{\"a\":{\"b\":[1.0, 2.0]}}",
+                    true);
+    validate_equals("{\"a\":{\"b\":[1.0, 2.0]}}",
+                    "{\"a\":{\"b\":[1.0, 2]}}",
+                    false);
+    validate_equals("[1,2,3,4,5,\"test\",123.456,true,false,null]",
+                    "[1,2,3,4,5,\"test\",123.456,true,false,null]",
+                    true);
+    validate_equals("[null,1,2,3,4,5,\"test\",123.456,true,false]",
+                    "[1,2,3,4,5,\"test\",123.456,true,false,null]",
+                    false);
+    validate_equals("{}",
+                    "{\"a\":1,\"b\":2,\"c\":3}",
+                    false);
+    validate_equals("{\"a\":1,\"b\":2,\"c\":3}",
+                    "{\"b\":2,\"a\":1,\"c\":3}",
+                    true);
+    validate_equals("{\"a\":1,\"b\":2,\"c\":3}",
+                    "{\"a\":1,\"b\":2,\"c\":3,\"d\":4}",
+                    false);
+    validate_equals("\
+[{\
+  \"array\": [1,2,3,4,5,\"test\",123.456,true,false,null,{\"a\":1,\"b\":2,\"c\":3}],\
+  \"object\": {\
+    \"key1\": 1,\
+    \"key2\": 2,\
+    \"key3\": true,\
+    \"key4\": false,\
+    \"key5\": null,\
+    \"key6\": [1,2,3,4,5,\"test\",123.456,true,false,null],\
+    \"key7\": {\"a\":1,\"b\":2,\"c\":3}\
+  }\
+}]",
+"\
+[{\
+  \"object\": {\
+    \"key5\": null,\
+    \"key6\": [1,2,3,4,5,\"test\",123.456,true,false,null],\
+    \"key1\": 1,\
+    \"key7\": {\"c\":3,\"a\":1,\"b\":2},\
+    \"key2\": 2,\
+    \"key3\": true,\
+    \"key4\": false\
+  },\
+  \"array\": [1,2,3,4,5,\"test\",123.456,true,false,null,{\"a\":1,\"b\":2,\"c\":3}]\
+}]", true);
+}
+
 yy_test_case(test_json_val) {
     test_json_val_api();
     test_json_arr_api();
     test_json_obj_api();
+    test_json_equals_api();
 }
 
 #else

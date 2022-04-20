@@ -1272,6 +1272,8 @@ yyjson_api_inline bool yyjson_equals_str(yyjson_val *val, const char *str);
 yyjson_api_inline bool yyjson_equals_strn(yyjson_val *val, const char *str,
                                           size_t len);
 
+/** Returns whether two JSON values are equal (deep compare). */
+yyjson_api_inline bool yyjson_equals(yyjson_val *lhs, yyjson_val *rhs);
 
 
 /*==============================================================================
@@ -2639,6 +2641,15 @@ yyjson_api_inline bool yyjson_equals_strn(yyjson_val *val, const char *str,
     return false;
 }
 
+yyjson_api bool unsafe_yyjson_equals(yyjson_val *lhs, yyjson_val *rhs);
+
+yyjson_api_inline bool yyjson_equals(yyjson_val *lhs, yyjson_val *rhs) {
+    if (yyjson_unlikely(!lhs || !rhs))
+        return false;
+    
+    return unsafe_yyjson_equals(lhs, rhs);
+}
+
 
 
 /*==============================================================================
@@ -2783,10 +2794,7 @@ yyjson_api_inline bool yyjson_obj_iter_init(yyjson_val *obj,
         iter->obj = obj;
         return true;
     }
-    if (iter) {
-        iter->idx = 0;
-        iter->max = 0;
-    }
+    if (iter) memset(iter, 0, sizeof(yyjson_obj_iter));
     return false;
 }
 
