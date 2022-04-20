@@ -63,6 +63,7 @@
        YYJSON_READ_ALLOW_INF_AND_NAN
        YYJSON_READ_ALLOW_COMMENTS
        YYJSON_READ_ALLOW_TRAILING_COMMAS
+       YYJSON_READ_ALLOW_INVALID_UNICODE
        YYJSON_WRITE_ALLOW_INF_AND_NAN
    This may reduce binary size, and increase performance slightly. */
 #ifndef YYJSON_DISABLE_NON_STANDARD
@@ -517,6 +518,11 @@ static const yyjson_read_flag YYJSON_READ_ALLOW_INF_AND_NAN     = 1 << 4;
     inf/nan literal is also read as raw with `ALLOW_INF_AND_NAN` flag. */
 static const yyjson_read_flag YYJSON_READ_NUMBER_AS_RAW         = 1 << 5;
 
+/** Allow reading invalid unicode when parsing strings.
+    @warning Be careful when dealing with malformed unicode strings!
+    There's a security issue in writer functions trying to access the
+    memory outside the valid range when trying to parse invalid UTF-8. */
+static const yyjson_read_flag YYJSON_READ_ALLOW_INVALID_UNICODE = 1 << 6;
 
 
 /** Result code for JSON reader. */
