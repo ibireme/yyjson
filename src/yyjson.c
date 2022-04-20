@@ -6322,6 +6322,10 @@ typedef u8 char_esc_type;
 #define CHAR_ESC_UTF8_2 3 /* 2-byte UTF-8 character, escaped as '\uXXXX'. */
 #define CHAR_ESC_UTF8_3 4 /* 3-byte UTF-8 character, escaped as '\uXXXX'. */
 #define CHAR_ESC_UTF8_4 5 /* 4-byte UTF-8 character, escaped as two '\uXXXX'. */
+#define CHAR_ESC_INV8_1 6 /* CHAR_ESC_UTF8_1 with unicode validation. */
+#define CHAR_ESC_INV8_2 7 /* CHAR_ESC_UTF8_2 with unicode validation. */
+#define CHAR_ESC_INV8_3 8 /* CHAR_ESC_UTF8_3 with unicode validation. */
+#define CHAR_ESC_INV8_4 9 /* CHAR_ESC_UTF8_4 with unicode validation. */
 
 /** Character escape type table: don't escape unicode, don't escape '/'.
     (generate with misc/make_tables.c) */
@@ -6405,6 +6409,50 @@ static const char_esc_type esc_table_unicode_with_slashes[256] = {
     3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
     4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4,
     5, 5, 5, 5, 5, 5, 5, 5, 0, 0, 0, 0, 0, 0, 0, 0
+};
+
+/** Character escape type table: escape unicode, don't escape '/'.
+    Perform unicode validation and copy invalid sequences per-byte.
+    (generate with misc/make_tables.c) */
+static const char_esc_type esc_table_unicode_inv[256] = {
+    6, 6, 6, 6, 6, 6, 6, 6, 1, 1, 1, 6, 1, 1, 6, 6,
+    6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6,
+    0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7,
+    7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7,
+    8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
+    9, 9, 9, 9, 9, 9, 9, 9, 0, 0, 0, 0, 0, 0, 0, 0
+};
+
+/** Character escape type table: escape unicode, escape '/'.
+    Perform unicode validation and copy invalid sequences per-byte.
+    (generate with misc/make_tables.c) */
+static const char_esc_type esc_table_unicode_with_slashes_inv[256] = {
+    6, 6, 6, 6, 6, 6, 6, 6, 1, 1, 1, 6, 1, 1, 6, 6,
+    6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6,
+    0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7,
+    7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7,
+    8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
+    9, 9, 9, 9, 9, 9, 9, 9, 0, 0, 0, 0, 0, 0, 0, 0
 };
 
 /** Escaped hex character table: ["00" "01" "02" ... "FD" "FE" "FF"].
@@ -6551,9 +6599,17 @@ static_inline const char_esc_type *get_esc_table_with_flag(
     yyjson_read_flag flg) {
     if (unlikely(flg & YYJSON_WRITE_ESCAPE_UNICODE)) {
         if (unlikely(flg & YYJSON_WRITE_ESCAPE_SLASHES)) {
-            return esc_table_unicode_with_slashes;
+            if (unlikely(flg & YYJSON_WRITE_ALLOW_INVALID_UNICODE)) {
+                return esc_table_unicode_with_slashes_inv;
+            } else {
+                return esc_table_unicode_with_slashes;
+            }
         } else {
-            return esc_table_unicode;
+            if (unlikely(flg & YYJSON_WRITE_ALLOW_INVALID_UNICODE)) {
+                return esc_table_unicode_inv;
+            } else {
+                return esc_table_unicode;
+            }
         }
     } else {
         if (unlikely(flg & YYJSON_WRITE_ESCAPE_SLASHES)) {
@@ -6640,6 +6696,7 @@ copy_next:
                 str += 1;
                 continue;
             }
+            case CHAR_ESC_INV8_1:
             case CHAR_ESC_UTF8_1: {
                 ((v32 *)cur)[0] = v32_make('\\', 'u', '0', '0');
                 ((v16 *)cur)[2] = ((const v16 *)esc_hex_char_table)[*str];
@@ -6647,6 +6704,13 @@ copy_next:
                 str += 1;
                 continue;
             }
+            case CHAR_ESC_INV8_2: {
+                if (unlikely(end - str < 2)) {
+                    *cur++ = *str++;
+                    goto copy_char;
+                }
+            }
+            /* fallthrough */
             case CHAR_ESC_UTF8_2: {
                 u16 u = (u16)(((u16)(str[0] & 0x1F) << 6) |
                               ((u16)(str[1] & 0x3F) << 0));
@@ -6657,6 +6721,13 @@ copy_next:
                 str += 2;
                 continue;
             }
+            case CHAR_ESC_INV8_3: {
+                if (unlikely(end - str < 3)) {
+                    *cur++ = *str++;
+                    goto copy_char;
+                }
+            }
+            /* fallthrough */
             case CHAR_ESC_UTF8_3: {
                 u16 u = (u16)(((u16)(str[0] & 0x0F) << 12) |
                               ((u16)(str[1] & 0x3F) << 6) |
@@ -6668,6 +6739,13 @@ copy_next:
                 str += 3;
                 continue;
             }
+            case CHAR_ESC_INV8_4: {
+                if (unlikely(end - str < 4)) {
+                    *cur++ = *str++;
+                    goto copy_char;
+                }
+            }
+            /* fallthrough */
             case CHAR_ESC_UTF8_4: {
                 u32 hi, lo;
                 u32 u = ((u32)(str[0] & 0x07) << 18) |
@@ -7251,6 +7329,11 @@ char *yyjson_val_write_opts(const yyjson_val *val,
         return NULL;
     }
     
+#if YYJSON_DISABLE_NON_STANDARD
+    /*flg &= ~YYJSON_WRITE_ALLOW_INF_AND_NAN;*/
+    flg &= ~YYJSON_WRITE_ALLOW_INVALID_UNICODE;
+#endif
+    
     if (!unsafe_yyjson_is_ctn(root) || unsafe_yyjson_get_len(root) == 0) {
         return (char *)yyjson_write_single(root, flg, alc, dat_len, err);
     } else if (flg & YYJSON_WRITE_PRETTY) {
@@ -7731,6 +7814,11 @@ char *yyjson_mut_val_write_opts(const yyjson_mut_val *val,
         err->code = YYJSON_WRITE_ERROR_INVALID_PARAMETER;
         return NULL;
     }
+    
+#if YYJSON_DISABLE_NON_STANDARD
+    /*flg &= ~YYJSON_WRITE_ALLOW_INF_AND_NAN;*/
+    flg &= ~YYJSON_WRITE_ALLOW_INVALID_UNICODE;
+#endif
     
     if (!unsafe_yyjson_is_ctn(root) || unsafe_yyjson_get_len(root) == 0) {
         return (char *)yyjson_mut_write_single(root, flg, alc, dat_len, err);

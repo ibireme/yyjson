@@ -64,6 +64,7 @@
        YYJSON_READ_ALLOW_COMMENTS
        YYJSON_READ_ALLOW_TRAILING_COMMAS
        YYJSON_WRITE_ALLOW_INF_AND_NAN
+       YYJSON_WRITE_ALLOW_INVALID_UNICODE
    This may reduce binary size, and increase performance slightly. */
 #ifndef YYJSON_DISABLE_NON_STANDARD
 #endif
@@ -732,24 +733,27 @@ typedef uint32_t yyjson_write_flag;
     - Report error on inf or nan number.
     - Do not validate string encoding.
     - Do not escape unicode or slash. */
-static const yyjson_write_flag YYJSON_WRITE_NOFLAG              = 0 << 0;
+static const yyjson_write_flag YYJSON_WRITE_NOFLAG                 = 0 << 0;
 
 /** Write JSON pretty with 4 space indent. */
-static const yyjson_write_flag YYJSON_WRITE_PRETTY              = 1 << 0;
+static const yyjson_write_flag YYJSON_WRITE_PRETTY                 = 1 << 0;
 
 /** Escape unicode as `uXXXX`, make the output ASCII only. */
-static const yyjson_write_flag YYJSON_WRITE_ESCAPE_UNICODE      = 1 << 1;
+static const yyjson_write_flag YYJSON_WRITE_ESCAPE_UNICODE         = 1 << 1;
 
 /** Escape '/' as '\/'. */
-static const yyjson_write_flag YYJSON_WRITE_ESCAPE_SLASHES      = 1 << 2;
+static const yyjson_write_flag YYJSON_WRITE_ESCAPE_SLASHES         = 1 << 2;
 
 /** Write inf and nan number as 'Infinity' and 'NaN' literal (non-standard). */
-static const yyjson_write_flag YYJSON_WRITE_ALLOW_INF_AND_NAN   = 1 << 3;
+static const yyjson_write_flag YYJSON_WRITE_ALLOW_INF_AND_NAN      = 1 << 3;
 
 /** Write inf and nan number as null literal.
     This flag will override `YYJSON_WRITE_ALLOW_INF_AND_NAN` flag. */
-static const yyjson_write_flag YYJSON_WRITE_INF_AND_NAN_AS_NULL = 1 << 4;
+static const yyjson_write_flag YYJSON_WRITE_INF_AND_NAN_AS_NULL    = 1 << 4;
 
+/** When `YYJSON_WRITE_ESCAPE_UNICODE` flag is set don't try to parse
+    malformed unicode sequences, but copy them per-byte instead. */
+static const yyjson_write_flag YYJSON_WRITE_ALLOW_INVALID_UNICODE  = 1 << 5;
 
 
 /** Result code for JSON writer */

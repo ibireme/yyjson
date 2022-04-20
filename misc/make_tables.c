@@ -317,6 +317,10 @@ static void make_u64_pow10_table(void) {
 #define CHAR_ESC_UTF8_2 3 /* 2-byte UTF-8 character, escaped as '\uXXXX'. */
 #define CHAR_ESC_UTF8_3 4 /* 3-byte UTF-8 character, escaped as '\uXXXX'. */
 #define CHAR_ESC_UTF8_4 5 /* 4-byte UTF-8 character, escaped as two '\uXXXX'. */
+#define CHAR_ESC_INV8_1 6 /* CHAR_ESC_UTF8_1 with unicode validation. */
+#define CHAR_ESC_INV8_2 7 /* CHAR_ESC_UTF8_2 with unicode validation. */
+#define CHAR_ESC_INV8_3 8 /* CHAR_ESC_UTF8_3 with unicode validation. */
+#define CHAR_ESC_INV8_4 9 /* CHAR_ESC_UTF8_4 with unicode validation. */
 
 static void make_esc_table(void) {
     u8 table[256];
@@ -421,6 +425,38 @@ static void make_esc_table(void) {
     printf("};\n");
     printf("\n");
     
+    // esc_table_unicode_inv
+    memset(table, CHAR_ESC_NONE, 256);
+    for (int i = 0; i <= 0x1F; i++) {
+        table[i] = CHAR_ESC_INV8_1;
+    }
+    table['\b'] = CHAR_ESC_ASCII;
+    table['\t'] = CHAR_ESC_ASCII;
+    table['\n'] = CHAR_ESC_ASCII;
+    table['\f'] = CHAR_ESC_ASCII;
+    table['\r'] = CHAR_ESC_ASCII;
+    table['\\'] = CHAR_ESC_ASCII;
+    table['"'] = CHAR_ESC_ASCII;
+    for (int i = 0; i <= 0xFF; i++) {
+        if ((i & 0xE0) == 0xC0) table[i] = CHAR_ESC_INV8_2;
+        if ((i & 0xF0) == 0xE0) table[i] = CHAR_ESC_INV8_3;
+        if ((i & 0xF8) == 0xF0) table[i] = CHAR_ESC_INV8_4;
+    }
+    
+    printf("static const char_esc_type esc_table_unicode_inv[256] = {\n");
+    for (int i = 0; i < table_len; i++) {
+        bool is_head = ((i % line_len) == 0);
+        bool is_tail = ((i % line_len) == line_len - 1);
+        bool is_last = i + 1 == table_len;
+        
+        if (is_head) printf("    ");
+        printf("%d", table[i]);
+        if (i + 1 < table_len) printf(",");
+        if (!is_tail && !is_last) printf(" "); else printf("\n");
+    }
+    printf("};\n");
+    printf("\n");
+    
     // esc_table_unicode_with_slashes
     memset(table, CHAR_ESC_NONE, 256);
     for (int i = 0; i <= 0x1F; i++) {
@@ -441,6 +477,39 @@ static void make_esc_table(void) {
     }
     
     printf("static const char_esc_type esc_table_unicode_with_slashes[256] = {\n");
+    for (int i = 0; i < table_len; i++) {
+        bool is_head = ((i % line_len) == 0);
+        bool is_tail = ((i % line_len) == line_len - 1);
+        bool is_last = i + 1 == table_len;
+        
+        if (is_head) printf("    ");
+        printf("%d", table[i]);
+        if (i + 1 < table_len) printf(",");
+        if (!is_tail && !is_last) printf(" "); else printf("\n");
+    }
+    printf("};\n");
+    printf("\n");
+    
+    // esc_table_unicode_with_slashes_inv
+    memset(table, CHAR_ESC_NONE, 256);
+    for (int i = 0; i <= 0x1F; i++) {
+        table[i] = CHAR_ESC_INV8_1;
+    }
+    table['\b'] = CHAR_ESC_ASCII;
+    table['\t'] = CHAR_ESC_ASCII;
+    table['\n'] = CHAR_ESC_ASCII;
+    table['\f'] = CHAR_ESC_ASCII;
+    table['\r'] = CHAR_ESC_ASCII;
+    table['\\'] = CHAR_ESC_ASCII;
+    table['/'] = CHAR_ESC_ASCII;
+    table['"'] = CHAR_ESC_ASCII;
+    for (int i = 0; i <= 0xFF; i++) {
+        if ((i & 0xE0) == 0xC0) table[i] = CHAR_ESC_INV8_2;
+        if ((i & 0xF0) == 0xE0) table[i] = CHAR_ESC_INV8_3;
+        if ((i & 0xF8) == 0xF0) table[i] = CHAR_ESC_INV8_4;
+    }
+    
+    printf("static const char_esc_type esc_table_unicode_with_slashes_inv[256] = {\n");
     for (int i = 0; i < table_len; i++) {
         bool is_head = ((i % line_len) == 0);
         bool is_tail = ((i % line_len) == line_len - 1);
