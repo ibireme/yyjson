@@ -243,7 +243,7 @@ yyjson_mut_doc_free(doc);
 * [x] Add more tests: valgrind, sanitizer.
 * [x] Support JSON Pointer to query value from document.
 * [x] Add fuzzer.
-* [ ] Add `RAW` type for JSON reader and writer.
+* [x] Add `RAW` type for JSON reader and writer.
 * [ ] Add streaming API for JSON reader and writer.
 * [ ] Add documentation about performance.
 * [ ] Optimize performance for 32-bit processor.
