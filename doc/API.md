@@ -223,7 +223,6 @@ Allow nan/inf number or literal (case-insensitive), such as 1e999, NaN, Inf, -In
 }
 ```
 
-
 ●**YYJSON_READ_NUMBER_AS_RAW**<br/>
 Read numbers as raw strings without parsing, allowing you to keep arbitrarily large numbers. 
 
@@ -233,6 +232,19 @@ bool yyjson_is_raw(yyjson_val *val);
 const char *yyjson_get_raw(yyjson_val *val);
 size_t yyjson_get_len(yyjson_val *val)
 ```
+
+●**YYJSON_READ_ALLOW_INVALID_UNICODE**<br/>
+Allow reading invalid unicode when parsing string values, for example:
+```
+"\x80xyz"
+"\xF0\x81\x81\x81"
+```
+Invalid characters will be allowed to appear in the string values, but
+invalid escape sequences will still be reported as errors.
+
+This flag does not affect the performance of correctly encoded string.
+
+*Be careful when dealing with malformed unicode strings!*
 
 
 ---------------
@@ -394,7 +406,7 @@ This is the default flag for JSON writer:
 
 - Write JSON minify.
 - Report error on inf or nan number.
-- Do not validate string encoding.
+- Report error on invalid UTF-8 string.
 - Do not escape unicode or slash. 
 
 ●**YYJSON_WRITE_PRETTY**<br/>
@@ -431,6 +443,13 @@ This flag will override `YYJSON_WRITE_ALLOW_INF_AND_NAN` flag, for example:
 ```js
 {"not a number":null,"large number":null}
 ```
+
+●**YYJSON_WRITE_ALLOW_INVALID_UNICODE**<br/>
+Allow invalid unicode when encoding string values.
+
+Invalid characters in string value will be copied byte by byte. If `YYJSON_WRITE_ESCAPE_UNICODE` flag is also set, invalid character will be escaped as `\uFFFD` (replacement character).
+
+This flag does not affect the performance of correctly encoded string.
 
 
 ---------------
