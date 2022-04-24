@@ -386,13 +386,11 @@ yyjson_api uint32_t yyjson_version(void) {
 #define repeat8(x)  { x x x x x x x x }
 #define repeat16(x) { x x x x x x x x x x x x x x x x }
 
+#define repeat2_incr(x)  { x(0) x(1) }
 #define repeat4_incr(x)  { x(0) x(1) x(2) x(3) }
-
 #define repeat8_incr(x)  { x(0) x(1) x(2) x(3) x(4) x(5) x(6) x(7) }
-
 #define repeat16_incr(x) { x(0) x(1) x(2) x(3) x(4) x(5) x(6) x(7) \
                            x(8) x(9) x(10) x(11) x(12) x(13) x(14) x(15) }
-
 #define repeat_in_1_18(x) { x(1) x(2) x(3) x(4) x(5) x(6) x(7) \
                             x(8) x(9) x(10) x(11) x(12) x(13) x(14) x(15) \
                             x(16) x(17) x(18) }
@@ -526,13 +524,14 @@ typedef union v64_uni { v64 v; u64 u; } v64_uni;
 
 
 /*==============================================================================
- * Character Utils
+ * Load/Store Utils
  *============================================================================*/
+
+#define byte_move_idx(x) ((u8 *)dst)[x] = ((u8 *)src)[x];
 
 static_inline void byte_move_2(void *dst, const void *src) {
 #if YYJSON_DISABLE_UNALIGNED_MEMORY_ACCESS
-    ((u8 *)dst)[0] = ((u8 *)src)[0];
-    ((u8 *)dst)[1] = ((u8 *)src)[1];
+    repeat2_incr(byte_move_idx);
 #else
     memmove(dst, src, 2);
 #endif
@@ -540,10 +539,7 @@ static_inline void byte_move_2(void *dst, const void *src) {
 
 static_inline void byte_move_4(void *dst, const void *src) {
 #if YYJSON_DISABLE_UNALIGNED_MEMORY_ACCESS
-    ((u8 *)dst)[0] = ((u8 *)src)[0];
-    ((u8 *)dst)[1] = ((u8 *)src)[1];
-    ((u8 *)dst)[2] = ((u8 *)src)[2];
-    ((u8 *)dst)[3] = ((u8 *)src)[3];
+    repeat4_incr(byte_move_idx);
 #else
     memmove(dst, src, 4);
 #endif
@@ -551,14 +547,7 @@ static_inline void byte_move_4(void *dst, const void *src) {
 
 static_inline void byte_move_8(void *dst, const void *src) {
 #if YYJSON_DISABLE_UNALIGNED_MEMORY_ACCESS
-    ((u8 *)dst)[0] = ((u8 *)src)[0];
-    ((u8 *)dst)[1] = ((u8 *)src)[1];
-    ((u8 *)dst)[2] = ((u8 *)src)[2];
-    ((u8 *)dst)[3] = ((u8 *)src)[3];
-    ((u8 *)dst)[4] = ((u8 *)src)[4];
-    ((u8 *)dst)[5] = ((u8 *)src)[5];
-    ((u8 *)dst)[6] = ((u8 *)src)[6];
-    ((u8 *)dst)[7] = ((u8 *)src)[7];
+    repeat8_incr(byte_move_idx);
 #else
     memmove(dst, src, 8);
 #endif
@@ -566,29 +555,42 @@ static_inline void byte_move_8(void *dst, const void *src) {
 
 static_inline void byte_move_16(void *dst, const void *src) {
 #if YYJSON_DISABLE_UNALIGNED_MEMORY_ACCESS
-    ((u8 *)dst)[0] = ((u8 *)src)[0];
-    ((u8 *)dst)[1] = ((u8 *)src)[1];
-    ((u8 *)dst)[2] = ((u8 *)src)[2];
-    ((u8 *)dst)[3] = ((u8 *)src)[3];
-    ((u8 *)dst)[4] = ((u8 *)src)[4];
-    ((u8 *)dst)[5] = ((u8 *)src)[5];
-    ((u8 *)dst)[6] = ((u8 *)src)[6];
-    ((u8 *)dst)[7] = ((u8 *)src)[7];
-    ((u8 *)dst)[8] = ((u8 *)src)[8];
-    ((u8 *)dst)[9] = ((u8 *)src)[9];
-    ((u8 *)dst)[10] = ((u8 *)src)[10];
-    ((u8 *)dst)[11] = ((u8 *)src)[11];
-    ((u8 *)dst)[12] = ((u8 *)src)[12];
-    ((u8 *)dst)[13] = ((u8 *)src)[13];
-    ((u8 *)dst)[14] = ((u8 *)src)[14];
-    ((u8 *)dst)[15] = ((u8 *)src)[15];
+    repeat16_incr(byte_move_idx);
 #else
     memmove(dst, src, 16);
 #endif
 }
 
-static_inline bool byte_match_1(void *buf, const char *pat) {
-    return *(u8 *)buf == (u8)*pat;
+static_inline void byte_copy_2(void *dst, const void *src) {
+#if YYJSON_DISABLE_UNALIGNED_MEMORY_ACCESS
+    repeat2_incr(byte_move_idx);
+#else
+    memcpy(dst, src, 2);
+#endif
+}
+
+static_inline void byte_copy_4(void *dst, const void *src) {
+#if YYJSON_DISABLE_UNALIGNED_MEMORY_ACCESS
+    repeat4_incr(byte_move_idx);
+#else
+    memcpy(dst, src, 4);
+#endif
+}
+
+static_inline void byte_copy_8(void *dst, const void *src) {
+#if YYJSON_DISABLE_UNALIGNED_MEMORY_ACCESS
+    repeat8_incr(byte_move_idx);
+#else
+    memcpy(dst, src, 8);
+#endif
+}
+
+static_inline void byte_copy_16(void *dst, const void *src) {
+#if YYJSON_DISABLE_UNALIGNED_MEMORY_ACCESS
+    repeat16_incr(byte_move_idx);
+#else
+    memcpy(dst, src, 16);
+#endif
 }
 
 static_inline bool byte_match_2(void *buf, const char *pat) {
@@ -619,57 +621,27 @@ static_inline bool byte_match_4(void *buf, const char *pat) {
 #endif
 }
 
-static_inline u32 byte_load_4(void *src) {
+static_inline u16 byte_load_2(const void *src) {
+    v16_uni uni;
+    uni.v = *(v16 *)src;
+    return uni.u;
+}
+
+static_inline u32 byte_load_3(const void *src) {
+    v32_uni uni;
+    ((v16_uni *)&uni)->v = *(v16 *)src;
+    uni.v.c3 = ((char *)src)[2];
+    uni.v.c4 = 0;
+    return uni.u;
+}
+
+static_inline u32 byte_load_4(const void *src) {
     v32_uni uni;
     uni.v = *(v32 *)src;
     return uni.u;
 }
 
-/** Compound Literals, C99 only. */
-#if YYJSON_STDC_VER >= 199901L && !defined(__cplusplus)
-
-#define v16_make(c1, c2) \
-    ((v16){ c1, c2 })
-
-#define v32_make(c1, c2, c3, c4) \
-    ((v32){ c1, c2, c3, c4 })
-
-#define v64_make(c1, c2, c3, c4, c5, c6, c7, c8) \
-    ((v64){ c1, c2, c3, c4, c5, c6, c7, c8 })
-
-#else
-
-static_inline v16 v16_make(char c1, char c2) {
-    v16 v;
-    v.c1 = c1;
-    v.c2 = c2;
-    return v;
-}
-
-static_inline v32 v32_make(char c1, char c2, char c3, char c4) {
-    v32 v;
-    v.c1 = c1;
-    v.c2 = c2;
-    v.c3 = c3;
-    v.c4 = c4;
-    return v;
-}
-
-static_inline v64 v64_make(char c1, char c2, char c3, char c4,
-                           char c5, char c6, char c7, char c8) {
-    v64 v;
-    v.c1 = c1;
-    v.c2 = c2;
-    v.c3 = c3;
-    v.c4 = c4;
-    v.c5 = c5;
-    v.c6 = c6;
-    v.c7 = c7;
-    v.c8 = c8;
-    return v;
-}
-
-#endif
+#undef byte_move_expr
 
 
 
@@ -1336,7 +1308,7 @@ static yyjson_mut_val *unsafe_yyjson_mut_val_mut_copy(yyjson_mut_doc *m_doc,
     /*
     The mutable object or array stores all sub-values in a circular linked list,
     so we can traverse them in the same loop. The traversal starts from the last
-    item, continues with the first item in a list, and ends with the second 
+    item, continues with the first item in a list, and ends with the second
     to last item, which needs to be linked to the last item to close the circle.
     */
     
@@ -1359,7 +1331,7 @@ static yyjson_mut_val *unsafe_yyjson_mut_val_mut_copy(yyjson_mut_doc *m_doc,
                     prev = prev->next;
                     next = next->next;
                 }
-                prev->next = (yyjson_mut_val *)m_val->uni.ptr; 
+                prev->next = (yyjson_mut_val *)m_val->uni.ptr;
             }
             break;
         
@@ -1382,9 +1354,7 @@ static yyjson_mut_val *unsafe_yyjson_mut_val_mut_copy(yyjson_mut_doc *m_doc,
 
 yyjson_api yyjson_mut_val *yyjson_mut_val_mut_copy(yyjson_mut_doc *doc,
                                                    yyjson_mut_val *val) {
-    if (doc && val) {
-        return unsafe_yyjson_mut_val_mut_copy(doc, val);
-    }
+    if (doc && val) return unsafe_yyjson_mut_val_mut_copy(doc, val);
     return NULL;
 }
 
@@ -2844,10 +2814,8 @@ static_inline bool read_nan(bool sign, u8 **ptr, u8 **pre, yyjson_val *val) {
 /** Read 'Inf', 'Infinity' or 'NaN' literal (ignoring case). */
 static_inline bool read_inf_or_nan(bool sign, u8 **ptr, u8 **pre,
                                    yyjson_val *val) {
-#if !YYJSON_DISABLE_NON_STANDARD
     if (read_inf(sign, ptr, pre, val)) return true;
     if (read_nan(sign, ptr, pre, val)) return true;
-#endif
     return false;
 }
 
@@ -2945,7 +2913,7 @@ static_noinline bool skip_spaces_and_comments(u8 **ptr) {
                     cur += 2;
                     break;
                 }
-                if (byte_match_1(cur, "\0")) {
+                if (*cur == 0) {
                     *end = hdr;
                     return false;
                 }
@@ -4025,15 +3993,17 @@ read_double:
 /**
  Read a JSON string.
  @param ptr The head pointer of string before '"' prefix (inout).
+ @param lst JSON last position.
+ @param inv Allow invalid unicode.
  @param val The string value to be written.
  @param msg The error message pointer.
  @return Whether success.
  */
 static_inline bool read_string(u8 **ptr,
+                               u8 *lst,
                                bool inv,
                                yyjson_val *val,
                                const char **msg) {
-    
     /*
      Each unicode code point is encoded as 1 to 4 bytes in UTF-8 encoding,
      we use 4-byte mask and pattern value to validate UTF-8 byte sequence,
@@ -4138,28 +4108,32 @@ static_inline bool read_string(u8 **ptr,
     u32 b4_err1 = b4_err1_uni.u;
 #endif
     
-#define is_valid_seq_1(uni) \
-    ((uni & b1_mask) == b1_patt)
-    
-#define is_valid_seq_2(uni) \
+#define is_valid_seq_1(uni) ( \
+    ((uni & b1_mask) == b1_patt) \
+)
+
+#define is_valid_seq_2(uni) ( \
     ((uni & b2_mask) == b2_patt) && \
-    ((uni & b2_requ))
+    ((uni & b2_requ)) \
+)
     
-#define is_valid_seq_3(uni) \
+#define is_valid_seq_3(uni) ( \
     ((uni & b3_mask) == b3_patt) && \
     ((tmp = (uni & b3_requ))) && \
-    ((tmp != b3_erro))
+    ((tmp != b3_erro)) \
+)
     
-#define is_valid_seq_4(uni) \
+#define is_valid_seq_4(uni) ( \
     ((uni & b4_mask) == b4_patt) && \
     ((tmp = (uni & b4_requ))) && \
-    ((tmp & b4_err0) == 0 || (tmp & b4_err1) == 0)
+    ((tmp & b4_err0) == 0 || (tmp & b4_err1) == 0) \
+)
     
 #define return_err(_end, _msg) do { \
     *msg = _msg; \
     *end = _end; \
     return false; \
-} while (false);
+} while (false)
     
     u8 *cur = *ptr;
     u8 **end = ptr;
@@ -4311,7 +4285,9 @@ copy_escape:
         *end = src + 1;
         return true;
     } else {
-        return_err(src, "unexpected control character in string");
+        if (!inv) return_err(src, "unexpected control character in string");
+        if (src >= lst) return_err(src, "unclosed string");
+        *dst++ = *src++;
     }
     
 copy_ascii:
@@ -4507,8 +4483,8 @@ static_noinline yyjson_doc *read_root_single(u8 *hdr,
     yyjson_doc *doc; /* the JSON document, equals to val_hdr */
     const char *msg; /* error message */
     
-    bool ext; /* allow inf and nan */
     bool raw; /* read number as raw */
+    bool ext; /* allow inf and nan */
     bool inv; /* allow invalid unicode */
     u8 *raw_end; /* raw end for null-terminator */
     u8 **pre; /* previous raw end pointer */
@@ -4520,8 +4496,8 @@ static_noinline yyjson_doc *read_root_single(u8 *hdr,
     val_hdr = (yyjson_val *)alc.malloc(alc.ctx, alc_num * sizeof(yyjson_val));
     if (unlikely(!val_hdr)) goto fail_alloc;
     val = val_hdr + hdr_len;
-    ext = (flg & YYJSON_READ_ALLOW_INF_AND_NAN) != 0;
     raw = (flg & YYJSON_READ_NUMBER_AS_RAW) != 0;
+    ext = (flg & YYJSON_READ_ALLOW_INF_AND_NAN) != 0;
     inv = (flg & YYJSON_READ_ALLOW_INVALID_UNICODE) != 0;
     raw_end = NULL;
     pre = raw ? &raw_end : NULL;
@@ -4531,7 +4507,7 @@ static_noinline yyjson_doc *read_root_single(u8 *hdr,
         goto fail_number;
     }
     if (*cur == '"') {
-        if (likely(read_string(&cur, inv, val, &msg))) goto doc_end;
+        if (likely(read_string(&cur, end, inv, val, &msg))) goto doc_end;
         goto fail_string;
     }
     if (*cur == 't') {
@@ -4557,15 +4533,13 @@ static_noinline yyjson_doc *read_root_single(u8 *hdr,
 doc_end:
     /* check invalid contents after json document */
     if (unlikely(cur < end) && !has_flag(STOP_WHEN_DONE)) {
-#if !YYJSON_DISABLE_NON_STANDARD
         if (has_flag(ALLOW_COMMENTS)) {
             if (!skip_spaces_and_comments(&cur)) {
                 if (byte_match_2(cur, "/*")) goto fail_comment;
             }
-        } else while (char_is_space(*cur)) cur++;
-#else
-        while (char_is_space(*cur)) cur++;
-#endif
+        } else {
+            while (char_is_space(*cur)) cur++;
+        }
         if (unlikely(cur < end)) goto fail_garbage;
     }
     
@@ -4650,8 +4624,8 @@ static_inline yyjson_doc *read_root_minify(u8 *hdr,
     yyjson_doc *doc; /* the JSON document, equals to val_hdr */
     const char *msg; /* error message */
     
-    bool ext; /* allow inf and nan */
     bool raw; /* read number as raw */
+    bool ext; /* allow inf and nan */
     bool inv; /* allow invalid unicode */
     u8 *raw_end; /* raw end for null-terminator */
     u8 **pre; /* previous raw end pointer */
@@ -4669,8 +4643,8 @@ static_inline yyjson_doc *read_root_minify(u8 *hdr,
     val = val_hdr + hdr_len;
     ctn = val;
     ctn_len = 0;
-    ext = (flg & YYJSON_READ_ALLOW_INF_AND_NAN) != 0;
     raw = (flg & YYJSON_READ_NUMBER_AS_RAW) != 0;
+    ext = (flg & YYJSON_READ_ALLOW_INF_AND_NAN) != 0;
     inv = (flg & YYJSON_READ_ALLOW_INVALID_UNICODE) != 0;
     raw_end = NULL;
     pre = raw ? &raw_end : NULL;
@@ -4717,7 +4691,7 @@ arr_val_begin:
     if (*cur == '"') {
         val_incr();
         ctn_len++;
-        if (likely(read_string(&cur, inv, val, &msg))) goto arr_val_end;
+        if (likely(read_string(&cur, end, inv, val, &msg))) goto arr_val_end;
         goto fail_string;
     }
     if (*cur == 't') {
@@ -4757,12 +4731,10 @@ arr_val_begin:
         if (read_inf_or_nan(false, &cur, pre, val)) goto arr_val_end;
         goto fail_character;
     }
-#if !YYJSON_DISABLE_NON_STANDARD
     if (has_flag(ALLOW_COMMENTS)) {
         if (skip_spaces_and_comments(&cur)) goto arr_val_begin;
         if (byte_match_2(cur, "/*")) goto fail_comment;
     }
-#endif
     goto fail_character;
     
 arr_val_end:
@@ -4778,12 +4750,10 @@ arr_val_end:
         while (char_is_space(*++cur));
         goto arr_val_end;
     }
-#if !YYJSON_DISABLE_NON_STANDARD
     if (has_flag(ALLOW_COMMENTS)) {
         if (skip_spaces_and_comments(&cur)) goto arr_val_end;
         if (byte_match_2(cur, "/*")) goto fail_comment;
     }
-#endif
     goto fail_character;
     
 arr_end:
@@ -4819,7 +4789,7 @@ obj_key_begin:
     if (likely(*cur == '"')) {
         val_incr();
         ctn_len++;
-        if (likely(read_string(&cur, inv, val, &msg))) goto obj_key_end;
+        if (likely(read_string(&cur, end, inv, val, &msg))) goto obj_key_end;
         goto fail_string;
     }
     if (likely(*cur == '}')) {
@@ -4832,12 +4802,10 @@ obj_key_begin:
         while (char_is_space(*++cur));
         goto obj_key_begin;
     }
-#if !YYJSON_DISABLE_NON_STANDARD
     if (has_flag(ALLOW_COMMENTS)) {
         if (skip_spaces_and_comments(&cur)) goto obj_key_begin;
         if (byte_match_2(cur, "/*")) goto fail_comment;
     }
-#endif
     goto fail_character;
     
 obj_key_end:
@@ -4849,19 +4817,17 @@ obj_key_end:
         while (char_is_space(*++cur));
         goto obj_key_end;
     }
-#if !YYJSON_DISABLE_NON_STANDARD
     if (has_flag(ALLOW_COMMENTS)) {
         if (skip_spaces_and_comments(&cur)) goto obj_key_end;
         if (byte_match_2(cur, "/*")) goto fail_comment;
     }
-#endif
     goto fail_character;
     
 obj_val_begin:
     if (*cur == '"') {
         val++;
         ctn_len++;
-        if (likely(read_string(&cur, inv, val, &msg))) goto obj_val_end;
+        if (likely(read_string(&cur, end, inv, val, &msg))) goto obj_val_end;
         goto fail_string;
     }
     if (char_is_number(*cur)) {
@@ -4909,12 +4875,10 @@ obj_val_begin:
         if (read_inf_or_nan(false, &cur, pre, val)) goto obj_val_end;
         goto fail_character;
     }
-#if !YYJSON_DISABLE_NON_STANDARD
     if (has_flag(ALLOW_COMMENTS)) {
         if (skip_spaces_and_comments(&cur)) goto obj_val_begin;
         if (byte_match_2(cur, "/*")) goto fail_comment;
     }
-#endif
     goto fail_character;
     
 obj_val_end:
@@ -4930,12 +4894,10 @@ obj_val_end:
         while (char_is_space(*++cur));
         goto obj_val_end;
     }
-#if !YYJSON_DISABLE_NON_STANDARD
     if (has_flag(ALLOW_COMMENTS)) {
         if (skip_spaces_and_comments(&cur)) goto obj_val_end;
         if (byte_match_2(cur, "/*")) goto fail_comment;
     }
-#endif
     goto fail_character;
     
 obj_end:
@@ -4954,13 +4916,10 @@ obj_end:
     }
     
 doc_end:
-    
     /* check invalid contents after json document */
     if (unlikely(cur < end) && !has_flag(STOP_WHEN_DONE)) {
-#if !YYJSON_DISABLE_NON_STANDARD
-        if (has_flag(ALLOW_COMMENTS)) skip_spaces_and_comments(&cur); else
-#endif
-        while (char_is_space(*cur)) cur++;
+        if (has_flag(ALLOW_COMMENTS)) skip_spaces_and_comments(&cur);
+        else while (char_is_space(*cur)) cur++;
         if (unlikely(cur < end)) goto fail_garbage;
     }
     
@@ -5048,8 +5007,8 @@ static_inline yyjson_doc *read_root_pretty(u8 *hdr,
     yyjson_doc *doc; /* the JSON document, equals to val_hdr */
     const char *msg; /* error message */
     
-    bool ext; /* allow inf and nan */
     bool raw; /* read number as raw */
+    bool ext; /* allow inf and nan */
     bool inv; /* allow invalid unicode */
     u8 *raw_end; /* raw end for null-terminator */
     u8 **pre; /* previous raw end pointer */
@@ -5067,8 +5026,8 @@ static_inline yyjson_doc *read_root_pretty(u8 *hdr,
     val = val_hdr + hdr_len;
     ctn = val;
     ctn_len = 0;
-    ext = (flg & YYJSON_READ_ALLOW_INF_AND_NAN) != 0;
     raw = (flg & YYJSON_READ_NUMBER_AS_RAW) != 0;
+    ext = (flg & YYJSON_READ_ALLOW_INF_AND_NAN) != 0;
     inv = (flg & YYJSON_READ_ALLOW_INVALID_UNICODE) != 0;
     raw_end = NULL;
     pre = raw ? &raw_end : NULL;
@@ -5130,7 +5089,7 @@ arr_val_begin:
     if (*cur == '"') {
         val_incr();
         ctn_len++;
-        if (likely(read_string(&cur, inv, val, &msg))) goto arr_val_end;
+        if (likely(read_string(&cur, end, inv, val, &msg))) goto arr_val_end;
         goto fail_string;
     }
     if (*cur == 't') {
@@ -5170,12 +5129,10 @@ arr_val_begin:
         if (read_inf_or_nan(false, &cur, pre, val)) goto arr_val_end;
         goto fail_character;
     }
-#if !YYJSON_DISABLE_NON_STANDARD
     if (has_flag(ALLOW_COMMENTS)) {
         if (skip_spaces_and_comments(&cur)) goto arr_val_begin;
         if (byte_match_2(cur, "/*")) goto fail_comment;
     }
-#endif
     goto fail_character;
     
 arr_val_end:
@@ -5195,12 +5152,10 @@ arr_val_end:
         while (char_is_space(*++cur));
         goto arr_val_end;
     }
-#if !YYJSON_DISABLE_NON_STANDARD
     if (has_flag(ALLOW_COMMENTS)) {
         if (skip_spaces_and_comments(&cur)) goto arr_val_end;
         if (byte_match_2(cur, "/*")) goto fail_comment;
     }
-#endif
     goto fail_character;
     
 arr_end:
@@ -5249,7 +5204,7 @@ obj_key_begin:
     if (likely(*cur == '"')) {
         val_incr();
         ctn_len++;
-        if (likely(read_string(&cur, inv, val, &msg))) goto obj_key_end;
+        if (likely(read_string(&cur, end, inv, val, &msg))) goto obj_key_end;
         goto fail_string;
     }
     if (likely(*cur == '}')) {
@@ -5262,12 +5217,10 @@ obj_key_begin:
         while (char_is_space(*++cur));
         goto obj_key_begin;
     }
-#if !YYJSON_DISABLE_NON_STANDARD
     if (has_flag(ALLOW_COMMENTS)) {
         if (skip_spaces_and_comments(&cur)) goto obj_key_begin;
         if (byte_match_2(cur, "/*")) goto fail_comment;
     }
-#endif
     goto fail_character;
     
 obj_key_end:
@@ -5283,19 +5236,17 @@ obj_key_end:
         while (char_is_space(*++cur));
         goto obj_key_end;
     }
-#if !YYJSON_DISABLE_NON_STANDARD
     if (has_flag(ALLOW_COMMENTS)) {
         if (skip_spaces_and_comments(&cur)) goto obj_key_end;
         if (byte_match_2(cur, "/*")) goto fail_comment;
     }
-#endif
     goto fail_character;
     
 obj_val_begin:
     if (*cur == '"') {
         val++;
         ctn_len++;
-        if (likely(read_string(&cur, inv, val, &msg))) goto obj_val_end;
+        if (likely(read_string(&cur, end, inv, val, &msg))) goto obj_val_end;
         goto fail_string;
     }
     if (char_is_number(*cur)) {
@@ -5343,12 +5294,10 @@ obj_val_begin:
         if (read_inf_or_nan(false, &cur, pre, val)) goto obj_val_end;
         goto fail_character;
     }
-#if !YYJSON_DISABLE_NON_STANDARD
     if (has_flag(ALLOW_COMMENTS)) {
         if (skip_spaces_and_comments(&cur)) goto obj_val_begin;
         if (byte_match_2(cur, "/*")) goto fail_comment;
     }
-#endif
     goto fail_character;
     
 obj_val_end:
@@ -5368,12 +5317,10 @@ obj_val_end:
         while (char_is_space(*++cur));
         goto obj_val_end;
     }
-#if !YYJSON_DISABLE_NON_STANDARD
     if (has_flag(ALLOW_COMMENTS)) {
         if (skip_spaces_and_comments(&cur)) goto obj_val_end;
         if (byte_match_2(cur, "/*")) goto fail_comment;
     }
-#endif
     goto fail_character;
     
 obj_end:
@@ -5393,13 +5340,10 @@ obj_end:
     }
     
 doc_end:
-    
     /* check invalid contents after json document */
     if (unlikely(cur < end) && !has_flag(STOP_WHEN_DONE)) {
-#if !YYJSON_DISABLE_NON_STANDARD
-        if (has_flag(ALLOW_COMMENTS)) skip_spaces_and_comments(&cur); else
-#endif
-        while (char_is_space(*cur)) cur++;
+        if (has_flag(ALLOW_COMMENTS)) skip_spaces_and_comments(&cur);
+        else while (char_is_space(*cur)) cur++;
         if (unlikely(cur < end)) goto fail_garbage;
     }
     
@@ -5461,6 +5405,13 @@ yyjson_doc *yyjson_read_opts(char *dat,
     yyjson_doc *doc;
     u8 *hdr = NULL, *end, *cur;
     
+#if YYJSON_DISABLE_NON_STANDARD
+    flg &= ~YYJSON_READ_ALLOW_TRAILING_COMMAS;
+    flg &= ~YYJSON_READ_ALLOW_COMMENTS;
+    flg &= ~YYJSON_READ_ALLOW_INF_AND_NAN;
+    flg &= ~YYJSON_READ_ALLOW_INVALID_UNICODE;
+#endif
+    
     /* validate input parameters */
     if (!err) err = &dummy_err;
     if (likely(!alc_ptr)) {
@@ -5476,7 +5427,11 @@ yyjson_doc *yyjson_read_opts(char *dat,
     }
     
     /* add 4-byte zero padding for input data if necessary */
-    if (!has_flag(INSITU)) {
+    if (has_flag(INSITU)) {
+        hdr = (u8 *)dat;
+        end = (u8 *)dat + len;
+        cur = (u8 *)dat;
+    } else {
         if (unlikely(len >= USIZE_MAX - YYJSON_PADDING_SIZE)) {
             return_err(0, MEMORY_ALLOCATION, "memory allocation failed");
         }
@@ -5488,15 +5443,10 @@ yyjson_doc *yyjson_read_opts(char *dat,
         cur = hdr;
         memcpy(hdr, dat, len);
         memset(end, 0, YYJSON_PADDING_SIZE);
-    } else {
-        hdr = (u8 *)dat;
-        end = (u8 *)dat + len;
-        cur = (u8 *)dat;
     }
     
     /* skip empty contents before json document */
     if (unlikely(char_is_space_or_comment(*cur))) {
-#if !YYJSON_DISABLE_NON_STANDARD
         if (has_flag(ALLOW_COMMENTS)) {
             if (!skip_spaces_and_comments(&cur)) {
                 return_err(cur - hdr, INVALID_COMMENT,
@@ -5507,22 +5457,10 @@ yyjson_doc *yyjson_read_opts(char *dat,
                 while (char_is_space(*++cur));
             }
         }
-#else
-        if (likely(char_is_space(*cur))) {
-            while (char_is_space(*++cur));
-        }
-#endif
         if (unlikely(cur >= end)) {
             return_err(0, EMPTY_CONTENT, "input data is empty");
         }
     }
-    
-#if YYJSON_DISABLE_NON_STANDARD
-    flg &= ~YYJSON_READ_ALLOW_TRAILING_COMMAS;
-    flg &= ~YYJSON_READ_ALLOW_COMMENTS;
-    flg &= ~YYJSON_READ_ALLOW_INF_AND_NAN;
-    flg &= ~YYJSON_READ_ALLOW_INVALID_UNICODE;
-#endif
     
     /* read json document */
     if (likely(char_is_container(*cur))) {
@@ -6107,18 +6045,17 @@ static_noinline u8 *write_f64_raw(u8 *buf, u64 raw, yyjson_write_flag flg) {
     /* return inf and nan */
     if (unlikely(exp_raw == ((u32)1 << F64_EXP_BITS) - 1)) {
         if (flg & YYJSON_WRITE_INF_AND_NAN_AS_NULL) {
-            *(v32 *)&buf[0] = v32_make('n', 'u', 'l', 'l');
+            byte_copy_4(buf, "null");
             return buf + 4;
         } else if (flg & YYJSON_WRITE_ALLOW_INF_AND_NAN) {
             if (sig_raw == 0) {
                 buf[0] = '-';
                 buf += sign;
-                *(v32 *)&buf[0] = v32_make('I', 'n', 'f', 'i');
-                *(v32 *)&buf[4] = v32_make('n', 'i', 't', 'y');
+                byte_copy_8(buf, "Infinity");
                 buf += 8;
                 return buf;
             } else {
-                *(v32 *)&buf[0] = v32_make('N', 'a', 'N', '\0');
+                byte_copy_4(buf, "NaN");
                 return buf + 3;
             }
         } else {
@@ -6133,7 +6070,7 @@ static_noinline u8 *write_f64_raw(u8 *buf, u64 raw, yyjson_write_flag flg) {
     
     /* return zero */
     if ((raw << 1) == 0) {
-        *(v32 *)&buf[0] = v32_make('0', '.', '0', '\0');
+        byte_copy_4(buf, "0.0");
         buf += 3;
         return buf;
     }
@@ -6149,7 +6086,7 @@ static_noinline u8 *write_f64_raw(u8 *buf, u64 raw, yyjson_write_flag flg) {
                 /* number is integer in range 1 to 0x1FFFFFFFFFFFFF */
                 sig_dec = sig_bin >> -exp_bin;
                 buf = write_u64_len_1_to_16(sig_dec, buf);
-                *(v16 *)buf = v16_make('.', '0');
+                byte_copy_2(buf, ".0");
                 buf += 2;
                 return buf;
             }
@@ -6274,16 +6211,15 @@ static_noinline u8 *write_f64_raw(u8 *buf, u64 raw, yyjson_write_flag flg) {
     if (unlikely(!digi_is_digit(*cur))) {
         /* nan, inf, or bad output */
         if (flg & YYJSON_WRITE_INF_AND_NAN_AS_NULL) {
-            *(v32 *)&buf[0] = v32_make('n', 'u', 'l', 'l');
+            byte_copy_4(buf, "null");
             return buf + 4;
         } else if (flg & YYJSON_WRITE_ALLOW_INF_AND_NAN) {
             if (*cur == 'i') {
-                *(v32 *)&cur[0] = v32_make('I', 'n', 'f', 'i');
-                *(v32 *)&cur[4] = v32_make('n', 'i', 't', 'y');
+                byte_copy_8(cur, "Infinity");
                 cur += 8;
                 return cur;
             } else if (*cur == 'n') {
-                *(v32 *)&buf[0] = v32_make('N', 'a', 'N', '\0');
+                byte_copy_4(buf, "NaN");
                 return buf + 3;
             }
         }
@@ -6324,97 +6260,101 @@ static_inline u8 *write_number(u8 *cur, yyjson_val *val,
  * String Writer
  *============================================================================*/
 
-/** Character escape type. */
-typedef u8 char_esc_type;
-#define CHAR_ESC_NONE   0 /* Character do not need to be escaped. */
-#define CHAR_ESC_ASCII  1 /* ASCII character, escaped as '\x'. */
-#define CHAR_ESC_UTF8_1 2 /* 1-byte UTF-8 character, escaped as '\uXXXX'. */
-#define CHAR_ESC_UTF8_2 3 /* 2-byte UTF-8 character, escaped as '\uXXXX'. */
-#define CHAR_ESC_UTF8_3 4 /* 3-byte UTF-8 character, escaped as '\uXXXX'. */
-#define CHAR_ESC_UTF8_4 5 /* 4-byte UTF-8 character, escaped as two '\uXXXX'. */
+/** Character encode type, if (type > CHAR_ENC_ERR_1) bytes = type / 2; */
+typedef u8 char_enc_type;
+#define CHAR_ENC_CPY_1  0 /* 1-byte UTF-8, copy. */
+#define CHAR_ENC_ERR_1  1 /* 1-byte UTF-8, error. */
+#define CHAR_ENC_ESC_A  2 /* 1-byte ASCII, escaped as '\x'. */
+#define CHAR_ENC_ESC_1  3 /* 1-byte UTF-8, escaped as '\uXXXX'. */
+#define CHAR_ENC_CPY_2  4 /* 2-byte UTF-8, copy. */
+#define CHAR_ENC_ESC_2  5 /* 2-byte UTF-8, escaped as '\uXXXX'. */
+#define CHAR_ENC_CPY_3  6 /* 3-byte UTF-8, copy. */
+#define CHAR_ENC_ESC_3  7 /* 3-byte UTF-8, escaped as '\uXXXX'. */
+#define CHAR_ENC_CPY_4  8 /* 4-byte UTF-8, copy. */
+#define CHAR_ENC_ESC_4  9 /* 4-byte UTF-8, escaped as '\uXXXX\uXXXX'. */
 
-/** Character escape type table: don't escape unicode, don't escape '/'.
+/** Character encode type table: don't escape unicode, don't escape '/'.
     (generate with misc/make_tables.c) */
-static const char_esc_type esc_table_default[256] = {
-    2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 2, 1, 1, 2, 2,
-    2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
-    0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
-};
-
-/** Character escape type table: don't escape unicode, escape '/'.
-    (generate with misc/make_tables.c) */
-static const char_esc_type esc_table_default_with_slashes[256] = {
-    2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 2, 1, 1, 2, 2,
-    2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
-    0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
-};
-
-/** Character escape type table: escape unicode, don't escape '/'.
-    (generate with misc/make_tables.c) */
-static const char_esc_type esc_table_unicode[256] = {
-    2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 2, 1, 1, 2, 2,
-    2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
-    0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+static const char_enc_type enc_table_cpy[256] = {
+    3, 3, 3, 3, 3, 3, 3, 3, 2, 2, 2, 3, 2, 2, 3, 3,
     3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
-    3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
+    0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
     4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4,
-    5, 5, 5, 5, 5, 5, 5, 5, 0, 0, 0, 0, 0, 0, 0, 0
+    4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4,
+    6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6,
+    8, 8, 8, 8, 8, 8, 8, 8, 1, 1, 1, 1, 1, 1, 1, 1
 };
 
-/** Character escape type table: escape unicode, escape '/'.
+/** Character encode type table: don't escape unicode, escape '/'.
     (generate with misc/make_tables.c) */
-static const char_esc_type esc_table_unicode_with_slashes[256] = {
-    2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 2, 1, 1, 2, 2,
-    2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
-    0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+static const char_enc_type enc_table_cpy_slash[256] = {
+    3, 3, 3, 3, 3, 3, 3, 3, 2, 2, 2, 3, 2, 2, 3, 3,
     3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
-    3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
+    0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
     4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4,
-    5, 5, 5, 5, 5, 5, 5, 5, 0, 0, 0, 0, 0, 0, 0, 0
+    4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4,
+    6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6,
+    8, 8, 8, 8, 8, 8, 8, 8, 1, 1, 1, 1, 1, 1, 1, 1
+};
+
+/** Character encode type table: escape unicode, don't escape '/'.
+    (generate with misc/make_tables.c) */
+static const char_enc_type enc_table_esc[256] = {
+    3, 3, 3, 3, 3, 3, 3, 3, 2, 2, 2, 3, 2, 2, 3, 3,
+    3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
+    0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5,
+    5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5,
+    7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7,
+    9, 9, 9, 9, 9, 9, 9, 9, 1, 1, 1, 1, 1, 1, 1, 1
+};
+
+/** Character encode type table: escape unicode, escape '/'.
+    (generate with misc/make_tables.c) */
+static const char_enc_type enc_table_esc_slash[256] = {
+    3, 3, 3, 3, 3, 3, 3, 3, 2, 2, 2, 3, 2, 2, 3, 3,
+    3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
+    0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5,
+    5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5,
+    7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7,
+    9, 9, 9, 9, 9, 9, 9, 9, 1, 1, 1, 1, 1, 1, 1, 1
 };
 
 /** Escaped hex character table: ["00" "01" "02" ... "FD" "FE" "FF"].
@@ -6556,20 +6496,20 @@ static const u8 esc_single_char_table[512] = {
     ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '
 };
 
-/** Returns the escape table with options. */
-static_inline const char_esc_type *get_esc_table_with_flag(
+/** Returns the encode table with options. */
+static_inline const char_enc_type *get_enc_table_with_flag(
     yyjson_read_flag flg) {
     if (unlikely(flg & YYJSON_WRITE_ESCAPE_UNICODE)) {
         if (unlikely(flg & YYJSON_WRITE_ESCAPE_SLASHES)) {
-            return esc_table_unicode_with_slashes;
+            return enc_table_esc_slash;
         } else {
-            return esc_table_unicode;
+            return enc_table_esc;
         }
     } else {
         if (unlikely(flg & YYJSON_WRITE_ESCAPE_SLASHES)) {
-            return esc_table_default_with_slashes;
+            return enc_table_cpy_slash;
         } else {
-            return esc_table_default;
+            return enc_table_cpy;
         }
     }
 }
@@ -6582,53 +6522,131 @@ static_inline u8 *write_raw(u8 *cur, const u8 *raw, usize raw_len) {
 
 /**
  Write UTF-8 string (requires len * 6 + 2 bytes buffer).
- If the input string is not valid UTF-8 encoding, undefined behavior may occur.
  @param cur Buffer cursor.
- @param str A valid UTF-8 string, null-terminator is not required.
+ @param esc Escape unicode.
+ @param inv Allow invalid unicode.
+ @param str A UTF-8 string, null-terminator is not required.
  @param str_len Length of string in bytes.
- @param esc_table Escape type table for character escaping.
- @return The buffer cursor after string.
+ @param enc_table Encode type table for character.
+ @return The buffer cursor after string, or NULL on invalid unicode.
  */
-static_inline u8 *write_string(u8 *cur,
-                               const u8 *str,
-                               usize str_len,
-                               const char_esc_type *esc_table) {
+static_inline u8 *write_string(u8 *cur, bool esc, bool inv,
+                               const u8 *str, usize str_len,
+                               const char_enc_type *enc_table) {
+    
+    /* UTF-8 character mask and pattern, see `read_string` for details. */
+#if YYJSON_ENDIAN == YYJSON_BIG_ENDIAN
+    const u16 b2_mask = 0xE0C0UL;
+    const u16 b2_patt = 0xC080UL;
+    const u16 b2_requ = 0x1E00UL;
+    const u32 b3_mask = 0xF0C0C000UL;
+    const u32 b3_patt = 0xE0808000UL;
+    const u32 b3_requ = 0x0F200000UL;
+    const u32 b3_erro = 0x0D200000UL;
+    const u32 b4_mask = 0xF8C0C0C0UL;
+    const u32 b4_patt = 0xF0808080UL;
+    const u32 b4_requ = 0x07300000UL;
+    const u32 b4_err0 = 0x04000000UL;
+    const u32 b4_err1 = 0x03300000UL;
+#elif YYJSON_ENDIAN == YYJSON_LITTLE_ENDIAN
+    const u16 b2_mask = 0xC0E0UL;
+    const u16 b2_patt = 0x80C0UL;
+    const u16 b2_requ = 0x001EUL;
+    const u32 b3_mask = 0x00C0C0F0UL;
+    const u32 b3_patt = 0x008080E0UL;
+    const u32 b3_requ = 0x0000200FUL;
+    const u32 b3_erro = 0x0000200DUL;
+    const u32 b4_mask = 0xC0C0C0F8UL;
+    const u32 b4_patt = 0x808080F0UL;
+    const u32 b4_requ = 0x00003007UL;
+    const u32 b4_err0 = 0x00000004UL;
+    const u32 b4_err1 = 0x00003003UL;
+#else
+    v16_uni b2_mask_uni = {{ 0xE0, 0xC0 }};
+    v16_uni b2_patt_uni = {{ 0xC0, 0x80 }};
+    v16_uni b2_requ_uni = {{ 0x1E, 0x00 }};
+    v32_uni b3_mask_uni = {{ 0xF0, 0xC0, 0xC0, 0x00 }};
+    v32_uni b3_patt_uni = {{ 0xE0, 0x80, 0x80, 0x00 }};
+    v32_uni b3_requ_uni = {{ 0x0F, 0x20, 0x00, 0x00 }};
+    v32_uni b3_erro_uni = {{ 0x0D, 0x20, 0x00, 0x00 }};
+    v32_uni b4_mask_uni = {{ 0xF8, 0xC0, 0xC0, 0xC0 }};
+    v32_uni b4_patt_uni = {{ 0xF0, 0x80, 0x80, 0x80 }};
+    v32_uni b4_requ_uni = {{ 0x07, 0x30, 0x00, 0x00 }};
+    v32_uni b4_err0_uni = {{ 0x04, 0x00, 0x00, 0x00 }};
+    v32_uni b4_err1_uni = {{ 0x03, 0x30, 0x00, 0x00 }};
+    u16 b2_mask = b2_mask_uni.u;
+    u16 b2_patt = b2_patt_uni.u;
+    u16 b2_requ = b2_requ_uni.u;
+    u32 b3_mask = b3_mask_uni.u;
+    u32 b3_patt = b3_patt_uni.u;
+    u32 b3_requ = b3_requ_uni.u;
+    u32 b3_erro = b3_erro_uni.u;
+    u32 b4_mask = b4_mask_uni.u;
+    u32 b4_patt = b4_patt_uni.u;
+    u32 b4_requ = b4_requ_uni.u;
+    u32 b4_err0 = b4_err0_uni.u;
+    u32 b4_err1 = b4_err1_uni.u;
+#endif
+    
+#define is_valid_seq_2(uni) ( \
+    ((uni & b2_mask) == b2_patt) && \
+    ((uni & b2_requ)) \
+)
+    
+#define is_valid_seq_3(uni) ( \
+    ((uni & b3_mask) == b3_patt) && \
+    ((tmp = (uni & b3_requ))) && \
+    ((tmp != b3_erro)) \
+)
+    
+#define is_valid_seq_4(uni) ( \
+    ((uni & b4_mask) == b4_patt) && \
+    ((tmp = (uni & b4_requ))) && \
+    ((tmp & b4_err0) == 0 || (tmp & b4_err1) == 0) \
+)
+    
+    /* The replacement character U+FFFD, used to indicate invalid character. */
+    const v32 rep = { 'F', 'F', 'F', 'D' };
+    const v32 pre = { '\\', 'u', '0', '0' };
+    
+    const u8 *src = str;
     const u8 *end = str + str_len;
     *cur++ = '"';
     
-copy_char:
+copy_ascii:
     /*
-     Copy continuous unescaped char, loop unrolling, same as the following code:
+     Copy continuous ASCII, loop unrolling, same as the following code:
      
-         while (str < end) (
-            if (unlikely(esc_table[*str] != CHAR_ESC_NONE)) break;
-            *cur++ = *str++;
+         while (end > src) (
+            if (unlikely(enc_table[*src])) break;
+            *cur++ = *src++;
          );
      */
 #define expr_jump(i) \
-    if (unlikely(esc_table[str[i]] != CHAR_ESC_NONE)) goto stop_char_##i;
+    if (unlikely(enc_table[src[i]])) goto stop_char_##i;
     
 #define expr_stop(i) \
     stop_char_##i: \
-    memcpy(cur, str, i); \
-    cur += i; str += i; goto copy_next;
+    memcpy(cur, src, i); \
+    cur += i; src += i; goto copy_utf8;
     
-    while (end - str >= 16) {
+    while (end - src >= 16) {
         repeat16_incr(expr_jump);
-        memcpy(cur, str, 16);
-        cur += 16; str += 16;
+        byte_copy_16(cur, src);
+        cur += 16; src += 16;
     }
     
-    while (end - str >= 4) {
+    while (end - src >= 4) {
         repeat4_incr(expr_jump);
-        memcpy(cur, str, 4);
-        cur += 4; str += 4;
+        byte_copy_4(cur, src);
+        cur += 4; src += 4;
     }
     
-    while (str < end) {
+    while (end > src) {
         expr_jump(0);
-        *cur++ = *str++;
+        *cur++ = *src++;
     }
+    
     *cur++ = '"';
     return cur;
     
@@ -6637,74 +6655,146 @@ copy_char:
 #undef expr_jump
 #undef expr_stop
     
-copy_next:
-    while (str < end) {
-        switch (esc_table[*str]) {
-            case CHAR_ESC_NONE: {
-                *cur++ = *str++;
-                goto copy_char;
-            }
-            case CHAR_ESC_ASCII: {
-                *(v16 *)cur = ((const v16 *)esc_single_char_table)[*str];
-                cur += 2;
-                str += 1;
-                continue;
-            }
-            case CHAR_ESC_UTF8_1: {
-                ((v32 *)cur)[0] = v32_make('\\', 'u', '0', '0');
-                ((v16 *)cur)[2] = ((const v16 *)esc_hex_char_table)[*str];
-                cur += 6;
-                str += 1;
-                continue;
-            }
-            case CHAR_ESC_UTF8_2: {
-                u16 u = (u16)(((u16)(str[0] & 0x1F) << 6) |
-                              ((u16)(str[1] & 0x3F) << 0));
-                ((v16 *)cur)[0] = v16_make('\\', 'u');
-                ((v16 *)cur)[1] = ((const v16 *)esc_hex_char_table)[u >> 8];
-                ((v16 *)cur)[2] = ((const v16 *)esc_hex_char_table)[u & 0xFF];
-                cur += 6;
-                str += 2;
-                continue;
-            }
-            case CHAR_ESC_UTF8_3: {
-                u16 u = (u16)(((u16)(str[0] & 0x0F) << 12) |
-                              ((u16)(str[1] & 0x3F) << 6) |
-                              ((u16)(str[2] & 0x3F) << 0));
-                ((v16 *)cur)[0] = v16_make('\\', 'u');
-                ((v16 *)cur)[1] = ((const v16 *)esc_hex_char_table)[u >> 8];
-                ((v16 *)cur)[2] = ((const v16 *)esc_hex_char_table)[u & 0xFF];
-                cur += 6;
-                str += 3;
-                continue;
-            }
-            case CHAR_ESC_UTF8_4: {
-                u32 hi, lo;
-                u32 u = ((u32)(str[0] & 0x07) << 18) |
-                        ((u32)(str[1] & 0x3F) << 12) |
-                        ((u32)(str[2] & 0x3F) << 6) |
-                        ((u32)(str[3] & 0x3F) << 0);
-                u -= 0x10000;
-                hi = (u >> 10) + 0xD800;
-                lo = (u & 0x3FF) + 0xDC00;
-                ((v16 *)cur)[0] = v16_make('\\', 'u');
-                ((v16 *)cur)[1] = ((const v16 *)esc_hex_char_table)[hi >> 8];
-                ((v16 *)cur)[2] = ((const v16 *)esc_hex_char_table)[hi & 0xFF];
-                ((v16 *)cur)[3] = v16_make('\\', 'u');
-                ((v16 *)cur)[4] = ((const v16 *)esc_hex_char_table)[lo >> 8];
-                ((v16 *)cur)[5] = ((const v16 *)esc_hex_char_table)[lo & 0xFF];
-                cur += 12;
-                str += 4;
-                continue;
-            }
-            default:
-                break;
+copy_utf8:
+    if (unlikely(src + 4 > end)) {
+        if (end == src) goto copy_end;
+        if (end - src < enc_table[*src] / 2) goto err_one;
+    }
+    switch (enc_table[*src]) {
+        case CHAR_ENC_CPY_1: {
+            *cur++ = *src++;
+            goto copy_ascii;
         }
+        case CHAR_ENC_CPY_2: {
+            u16 v;
+            v = byte_load_2(src);
+            if (unlikely(!is_valid_seq_2(v))) goto err_cpy;
+            
+            byte_copy_2(cur, src);
+            cur += 2;
+            src += 2;
+            goto copy_utf8;
+        }
+        case CHAR_ENC_CPY_3: {
+            u32 v, tmp;
+            if (likely(src + 4 <= end)) {
+                v = byte_load_4(src);
+                if (unlikely(!is_valid_seq_3(v))) goto err_cpy;
+                byte_copy_4(cur, src);
+            } else {
+                v = byte_load_3(src);
+                if (unlikely(!is_valid_seq_3(v))) goto err_cpy;
+                byte_copy_4(cur, &v);
+            }
+            cur += 3;
+            src += 3;
+            goto copy_utf8;
+        }
+        case CHAR_ENC_CPY_4: {
+            u32 v, tmp;
+            v = byte_load_4(src);
+            if (unlikely(!is_valid_seq_4(v))) goto err_cpy;
+            
+            byte_copy_4(cur, src);
+            cur += 4;
+            src += 4;
+            goto copy_utf8;
+        }
+        case CHAR_ENC_ESC_A: {
+            byte_move_2(cur, &esc_single_char_table[*src * 2]);
+            cur += 2;
+            src += 1;
+            goto copy_utf8;
+        }
+        case CHAR_ENC_ESC_1: {
+            byte_copy_4(cur + 0, &pre);
+            byte_copy_2(cur + 4, &esc_hex_char_table[*src * 2]);
+            cur += 6;
+            src += 1;
+            goto copy_utf8;
+        }
+        case CHAR_ENC_ESC_2: {
+            u16 u, v;
+            v = byte_load_2(src);
+            if (unlikely(!is_valid_seq_2(v))) goto err_esc;
+            
+            u = (u16)(((u16)(src[0] & 0x1F) << 6) |
+                      ((u16)(src[1] & 0x3F) << 0));
+            byte_copy_2(cur + 0, &pre);
+            byte_copy_2(cur + 2, &esc_hex_char_table[(u >> 8) * 2]);
+            byte_copy_2(cur + 4, &esc_hex_char_table[(u & 0xFF) * 2]);
+            cur += 6;
+            src += 2;
+            goto copy_utf8;
+        }
+        case CHAR_ENC_ESC_3: {
+            u16 u;
+            u32 v, tmp;
+            v = byte_load_3(src);
+            if (unlikely(!is_valid_seq_3(v))) goto err_esc;
+            
+            u = (u16)(((u16)(src[0] & 0x0F) << 12) |
+                      ((u16)(src[1] & 0x3F) << 6) |
+                      ((u16)(src[2] & 0x3F) << 0));
+            byte_copy_2(cur + 0, &pre);
+            byte_copy_2(cur + 2, &esc_hex_char_table[(u >> 8) * 2]);
+            byte_copy_2(cur + 4, &esc_hex_char_table[(u & 0xFF) * 2]);
+            cur += 6;
+            src += 3;
+            goto copy_utf8;
+        }
+        case CHAR_ENC_ESC_4: {
+            u32 hi, lo, u, v, tmp;
+            v = byte_load_4(src);
+            if (unlikely(!is_valid_seq_4(v))) goto err_esc;
+            
+            u = ((u32)(src[0] & 0x07) << 18) |
+                ((u32)(src[1] & 0x3F) << 12) |
+                ((u32)(src[2] & 0x3F) << 6) |
+                ((u32)(src[3] & 0x3F) << 0);
+            u -= 0x10000;
+            hi = (u >> 10) + 0xD800;
+            lo = (u & 0x3FF) + 0xDC00;
+            byte_copy_2(cur + 0, &pre);
+            byte_copy_2(cur + 2, &esc_hex_char_table[(hi >> 8) * 2]);
+            byte_copy_2(cur + 4, &esc_hex_char_table[(hi & 0xFF) * 2]);
+            byte_copy_2(cur + 6, &pre);
+            byte_copy_2(cur + 8, &esc_hex_char_table[(lo >> 8) * 2]);
+            byte_copy_2(cur + 10, &esc_hex_char_table[(lo & 0xFF) * 2]);
+            cur += 12;
+            src += 4;
+            goto copy_utf8;
+        }
+        case CHAR_ENC_ERR_1: {
+            goto err_one;
+        }
+        default: break;
     }
     
 copy_end:
     *cur++ = '"';
     return cur;
+    
+err_one:
+    if (esc) goto err_esc;
+    else goto err_cpy;
+    
+err_cpy:
+    if (!inv) return NULL;
+    *cur++ = *src++;
+    goto copy_utf8;
+    
+err_esc:
+    if (!inv) return NULL;
+    byte_copy_2(cur + 0, &pre);
+    byte_copy_4(cur + 2, &rep);
+    cur += 6;
+    src += 1;
+    goto copy_utf8;
+    
+#undef is_valid_seq_2
+#undef is_valid_seq_3
+#undef is_valid_seq_4
 }
 
 /*==============================================================================
@@ -6713,21 +6803,27 @@ copy_end:
 
 /** Write null (requires 8 bytes buffer). */
 static_inline u8 *write_null(u8 *cur) {
-    *(v64 *)cur = v64_make('n', 'u', 'l', 'l', ',', '\n', 0, 0);
+    v64 v = { 'n', 'u', 'l', 'l', ',', '\n', 0, 0 };
+    byte_copy_8(cur, &v);
     return cur + 4;
 }
 
 /** Write bool (requires 8 bytes buffer). */
 static_inline u8 *write_bool(u8 *cur, bool val) {
-    *(v64 *)cur = val ? v64_make('t', 'r', 'u', 'e', ',', '\n', 0, 0) :
-                        v64_make('f', 'a', 'l', 's', 'e', ',', '\n', 0);
+    v64 v0 = { 'f', 'a', 'l', 's', 'e', ',', '\n', 0 };
+    v64 v1 = { 't', 'r', 'u', 'e', ',', '\n', 0, 0 };
+    if (val) {
+        byte_copy_8(cur, &v1);
+    } else {
+        byte_copy_8(cur, &v0);
+    }
     return cur + 5 - val;
 }
 
 /** Write indent (requires level * 4 bytes buffer). */
 static_inline u8 *write_indent(u8 *cur, usize level) {
     while (level-- > 0) {
-        *(v32 *)cur = v32_make(' ', ' ', ' ', ' ');
+        byte_copy_4(cur, "    ");
         cur += 4;
     }
     return cur;
@@ -6811,7 +6907,9 @@ static_inline u8 *yyjson_write_single(yyjson_val *val,
     u8 *hdr = NULL, *cur;
     usize str_len;
     const u8 *str_ptr;
-    const char_esc_type *esc_table = get_esc_table_with_flag(flg);
+    const char_enc_type *enc_table = get_enc_table_with_flag(flg);
+    bool esc = (flg & YYJSON_WRITE_ESCAPE_UNICODE) != 0;
+    bool inv = (flg & YYJSON_WRITE_ALLOW_INVALID_UNICODE) != 0;
     
     switch (unsafe_yyjson_get_type(val)) {
         case YYJSON_TYPE_RAW:
@@ -6827,7 +6925,8 @@ static_inline u8 *yyjson_write_single(yyjson_val *val,
             str_ptr = (const u8 *)unsafe_yyjson_get_str(val);
             check_str_len(str_len);
             incr_len(str_len * 6 + 4);
-            cur = write_string(cur, str_ptr, str_len, esc_table);
+            cur = write_string(cur, esc, inv, str_ptr, str_len, enc_table);
+            if (unlikely(!cur)) goto fail_str;
             break;
             
         case YYJSON_TYPE_NUM:
@@ -6848,13 +6947,13 @@ static_inline u8 *yyjson_write_single(yyjson_val *val,
             
         case YYJSON_TYPE_ARR:
             incr_len(4);
-            *(v16 *)cur = v16_make('[', ']');
+            byte_copy_2(cur, "[]");
             cur += 2;
             break;
             
         case YYJSON_TYPE_OBJ:
             incr_len(4);
-            *(v16 *)cur = v16_make('{', '}');
+            byte_copy_2(cur, "{}");
             cur += 2;
             break;
             
@@ -6873,6 +6972,8 @@ fail_type:
     return_err(INVALID_VALUE_TYPE, "invalid JSON value type");
 fail_num:
     return_err(NAN_OR_INF, "nan or inf number is not allowed");
+fail_str:
+    return_err(INVALID_STRING, "invalid utf-8 encoding in string");
     
 #undef return_err
 #undef check_str_len
@@ -6927,7 +7028,9 @@ static_inline u8 *yyjson_write_minify(const yyjson_val *root,
     yyjson_write_ctx *ctx, *ctx_tmp;
     usize alc_len, alc_inc, ctx_len, ext_len, str_len;
     const u8 *str_ptr;
-    const char_esc_type *esc_table = get_esc_table_with_flag(flg);
+    const char_enc_type *enc_table = get_enc_table_with_flag(flg);
+    bool esc = (flg & YYJSON_WRITE_ESCAPE_UNICODE) != 0;
+    bool inv = (flg & YYJSON_WRITE_ALLOW_INVALID_UNICODE) != 0;
     
     alc_len = root->uni.ofs / sizeof(yyjson_val);
     alc_len = alc_len * YYJSON_WRITER_ESTIMATED_MINIFY_RATIO + 64;
@@ -6948,70 +7051,69 @@ doc_begin:
     
 val_begin:
     val_type = unsafe_yyjson_get_type(val);
-    switch (val_type) {
-        case YYJSON_TYPE_RAW:
-            str_len = unsafe_yyjson_get_len(val);
-            str_ptr = (const u8 *)unsafe_yyjson_get_str(val);
-            check_str_len(str_len);
-            incr_len(str_len + 2);
-            cur = write_raw(cur, str_ptr, str_len);
-            *cur++ = ',';
-            break;
-            
-        case YYJSON_TYPE_STR:
-            is_key = ((u8)ctn_obj & (u8)~ctn_len);
-            str_len = unsafe_yyjson_get_len(val);
-            str_ptr = (const u8 *)unsafe_yyjson_get_str(val);
-            check_str_len(str_len);
-            incr_len(str_len * 6 + 16);
-            cur = write_string(cur, str_ptr, str_len, esc_table);
-            *cur++ = is_key ? ':' : ',';
-            break;
-            
-        case YYJSON_TYPE_NUM:
-            incr_len(32);
-            cur = write_number(cur, val, flg);
-            if (unlikely(!cur)) goto fail_num;
-            *cur++ = ',';
-            break;
-            
-        case YYJSON_TYPE_BOOL:
-            incr_len(16);
-            cur = write_bool(cur, unsafe_yyjson_get_bool(val));
-            cur++;
-            break;
-            
-        case YYJSON_TYPE_NULL:
-            incr_len(16);
-            cur = write_null(cur);
-            cur++;
-            break;
-            
-        case YYJSON_TYPE_ARR:
-        case YYJSON_TYPE_OBJ:
-            ctn_len_tmp = unsafe_yyjson_get_len(val);
-            ctn_obj_tmp = (val_type == YYJSON_TYPE_OBJ);
-            incr_len(16);
-            if (unlikely(ctn_len_tmp == 0)) {
-                /* write empty container */
-                *cur++ = (u8)('[' | ((u8)ctn_obj_tmp << 5));
-                *cur++ = (u8)(']' | ((u8)ctn_obj_tmp << 5));
-                *cur++ = ',';
-                break;
-            } else {
-                /* push context, setup new container */
-                yyjson_write_ctx_set(--ctx, ctn_len, ctn_obj);
-                ctn_len = ctn_len_tmp << (u8)ctn_obj_tmp;
-                ctn_obj = ctn_obj_tmp;
-                *cur++ = (u8)('[' | ((u8)ctn_obj << 5));
-                val++;
-                goto val_begin;
-            }
-            
-        default:
-            goto fail_type;
+    if (val_type == YYJSON_TYPE_STR) {
+        is_key = ((u8)ctn_obj & (u8)~ctn_len);
+        str_len = unsafe_yyjson_get_len(val);
+        str_ptr = (const u8 *)unsafe_yyjson_get_str(val);
+        check_str_len(str_len);
+        incr_len(str_len * 6 + 16);
+        cur = write_string(cur, esc, inv, str_ptr, str_len, enc_table);
+        if (unlikely(!cur)) goto fail_str;
+        *cur++ = is_key ? ':' : ',';
+        goto val_end;
     }
+    if (val_type == YYJSON_TYPE_NUM) {
+        incr_len(32);
+        cur = write_number(cur, val, flg);
+        if (unlikely(!cur)) goto fail_num;
+        *cur++ = ',';
+        goto val_end;
+    }
+    if ((val_type & (YYJSON_TYPE_ARR & YYJSON_TYPE_OBJ)) ==
+                    (YYJSON_TYPE_ARR & YYJSON_TYPE_OBJ)) {
+        ctn_len_tmp = unsafe_yyjson_get_len(val);
+        ctn_obj_tmp = (val_type == YYJSON_TYPE_OBJ);
+        incr_len(16);
+        if (unlikely(ctn_len_tmp == 0)) {
+            /* write empty container */
+            *cur++ = (u8)('[' | ((u8)ctn_obj_tmp << 5));
+            *cur++ = (u8)(']' | ((u8)ctn_obj_tmp << 5));
+            *cur++ = ',';
+            goto val_end;
+        } else {
+            /* push context, setup new container */
+            yyjson_write_ctx_set(--ctx, ctn_len, ctn_obj);
+            ctn_len = ctn_len_tmp << (u8)ctn_obj_tmp;
+            ctn_obj = ctn_obj_tmp;
+            *cur++ = (u8)('[' | ((u8)ctn_obj << 5));
+            val++;
+            goto val_begin;
+        }
+    }
+    if (val_type == YYJSON_TYPE_BOOL) {
+        incr_len(16);
+        cur = write_bool(cur, unsafe_yyjson_get_bool(val));
+        cur++;
+        goto val_end;
+    }
+    if (val_type == YYJSON_TYPE_NULL) {
+        incr_len(16);
+        cur = write_null(cur);
+        cur++;
+        goto val_end;
+    }
+    if (val_type == YYJSON_TYPE_RAW) {
+        str_len = unsafe_yyjson_get_len(val);
+        str_ptr = (const u8 *)unsafe_yyjson_get_str(val);
+        check_str_len(str_len);
+        incr_len(str_len + 2);
+        cur = write_raw(cur, str_ptr, str_len);
+        *cur++ = ',';
+        goto val_end;
+    }
+    goto fail_type;
     
+val_end:
     val++;
     ctn_len--;
     if (unlikely(ctn_len == 0)) goto ctn_end;
@@ -7042,6 +7144,8 @@ fail_type:
     return_err(INVALID_VALUE_TYPE, "invalid JSON value type");
 fail_num:
     return_err(NAN_OR_INF, "nan or inf number is not allowed");
+fail_str:
+    return_err(INVALID_STRING, "invalid utf-8 encoding in string");
     
 #undef return_err
 #undef incr_len
@@ -7096,7 +7200,9 @@ static_inline u8 *yyjson_write_pretty(const yyjson_val *root,
     yyjson_write_ctx *ctx, *ctx_tmp;
     usize alc_len, alc_inc, ctx_len, ext_len, str_len, level;
     const u8 *str_ptr;
-    const char_esc_type *esc_table = get_esc_table_with_flag(flg);
+    const char_enc_type *enc_table = get_enc_table_with_flag(flg);
+    bool esc = (flg & YYJSON_WRITE_ESCAPE_UNICODE) != 0;
+    bool inv = (flg & YYJSON_WRITE_ALLOW_INVALID_UNICODE) != 0;
     
     alc_len = root->uni.ofs / sizeof(yyjson_val);
     alc_len = alc_len * YYJSON_WRITER_ESTIMATED_PRETTY_RATIO + 64;
@@ -7119,88 +7225,87 @@ doc_begin:
     
 val_begin:
     val_type = unsafe_yyjson_get_type(val);
-    switch (val_type) {
-        case YYJSON_TYPE_RAW:
-            str_len = unsafe_yyjson_get_len(val);
-            str_ptr = (const u8 *)unsafe_yyjson_get_str(val);
-            check_str_len(str_len);
-            incr_len(str_len + 3);
-            cur = write_raw(cur, str_ptr, str_len);
-            *cur++ = ',';
-            *cur++ = '\n';
-            break;
-            
-        case YYJSON_TYPE_STR:
-            is_key = ((u8)ctn_obj & (u8)~ctn_len);
-            no_indent = ((u8)ctn_obj & (u8)ctn_len);
-            str_len = unsafe_yyjson_get_len(val);
-            str_ptr = (const u8 *)unsafe_yyjson_get_str(val);
-            check_str_len(str_len);
-            incr_len(str_len * 6 + 16 + (no_indent ? 0 : level * 4));
-            cur = write_indent(cur, no_indent ? 0 : level);
-            cur = write_string(cur, str_ptr, str_len, esc_table);
-            *cur++ = is_key ? ':' : ',';
-            *cur++ = is_key ? ' ' : '\n';
-            break;
-            
-        case YYJSON_TYPE_NUM:
-            no_indent = ((u8)ctn_obj & (u8)ctn_len);
-            incr_len(32 + (no_indent ? 0 : level * 4));
-            cur = write_indent(cur, no_indent ? 0 : level);
-            cur = write_number(cur, val, flg);
-            if (unlikely(!cur)) goto fail_num;
-            *cur++ = ',';
-            *cur++ = '\n';
-            break;
-            
-        case YYJSON_TYPE_BOOL:
-            no_indent = ((u8)ctn_obj & (u8)ctn_len);
-            incr_len(16 + (no_indent ? 0 : level * 4));
-            cur = write_indent(cur, no_indent ? 0 : level);
-            cur = write_bool(cur, unsafe_yyjson_get_bool(val));
-            cur += 2;
-            break;
-            
-        case YYJSON_TYPE_NULL:
-            no_indent = ((u8)ctn_obj & (u8)ctn_len);
-            incr_len(16 + (no_indent ? 0 : level * 4));
-            cur = write_indent(cur, no_indent ? 0 : level);
-            cur = write_null(cur);
-            cur += 2;
-            break;
-            
-        case YYJSON_TYPE_ARR:
-        case YYJSON_TYPE_OBJ:
-            no_indent = ((u8)ctn_obj & (u8)ctn_len);
-            ctn_len_tmp = unsafe_yyjson_get_len(val);
-            ctn_obj_tmp = (val_type == YYJSON_TYPE_OBJ);
-            if (unlikely(ctn_len_tmp == 0)) {
-                /* write empty container */
-                incr_len(16 + (no_indent ? 0 : level * 4));
-                cur = write_indent(cur, no_indent ? 0 : level);
-                *cur++ = (u8)('[' | ((u8)ctn_obj_tmp << 5));
-                *cur++ = (u8)(']' | ((u8)ctn_obj_tmp << 5));
-                *cur++ = ',';
-                *cur++ = '\n';
-                break;
-            } else {
-                /* push context, setup new container */
-                incr_len(32 + (no_indent ? 0 : level * 4));
-                yyjson_write_ctx_set(--ctx, ctn_len, ctn_obj);
-                ctn_len = ctn_len_tmp << (u8)ctn_obj_tmp;
-                ctn_obj = ctn_obj_tmp;
-                cur = write_indent(cur, no_indent ? 0 : level);
-                level++;
-                *cur++ = (u8)('[' | ((u8)ctn_obj << 5));
-                *cur++ = '\n';
-                val++;
-                goto val_begin;
-            }
-            
-        default:
-            goto fail_type;
+    if (val_type == YYJSON_TYPE_STR) {
+        is_key = ((u8)ctn_obj & (u8)~ctn_len);
+        no_indent = ((u8)ctn_obj & (u8)ctn_len);
+        str_len = unsafe_yyjson_get_len(val);
+        str_ptr = (const u8 *)unsafe_yyjson_get_str(val);
+        check_str_len(str_len);
+        incr_len(str_len * 6 + 16 + (no_indent ? 0 : level * 4));
+        cur = write_indent(cur, no_indent ? 0 : level);
+        cur = write_string(cur, esc, inv, str_ptr, str_len, enc_table);
+        if (unlikely(!cur)) goto fail_str;
+        *cur++ = is_key ? ':' : ',';
+        *cur++ = is_key ? ' ' : '\n';
+        goto val_end;
     }
+    if (val_type == YYJSON_TYPE_NUM) {
+        no_indent = ((u8)ctn_obj & (u8)ctn_len);
+        incr_len(32 + (no_indent ? 0 : level * 4));
+        cur = write_indent(cur, no_indent ? 0 : level);
+        cur = write_number(cur, val, flg);
+        if (unlikely(!cur)) goto fail_num;
+        *cur++ = ',';
+        *cur++ = '\n';
+        goto val_end;
+    }
+    if ((val_type & (YYJSON_TYPE_ARR & YYJSON_TYPE_OBJ)) ==
+                    (YYJSON_TYPE_ARR & YYJSON_TYPE_OBJ)) {
+        no_indent = ((u8)ctn_obj & (u8)ctn_len);
+        ctn_len_tmp = unsafe_yyjson_get_len(val);
+        ctn_obj_tmp = (val_type == YYJSON_TYPE_OBJ);
+        if (unlikely(ctn_len_tmp == 0)) {
+            /* write empty container */
+            incr_len(16 + (no_indent ? 0 : level * 4));
+            cur = write_indent(cur, no_indent ? 0 : level);
+            *cur++ = (u8)('[' | ((u8)ctn_obj_tmp << 5));
+            *cur++ = (u8)(']' | ((u8)ctn_obj_tmp << 5));
+            *cur++ = ',';
+            *cur++ = '\n';
+            goto val_end;
+        } else {
+            /* push context, setup new container */
+            incr_len(32 + (no_indent ? 0 : level * 4));
+            yyjson_write_ctx_set(--ctx, ctn_len, ctn_obj);
+            ctn_len = ctn_len_tmp << (u8)ctn_obj_tmp;
+            ctn_obj = ctn_obj_tmp;
+            cur = write_indent(cur, no_indent ? 0 : level);
+            level++;
+            *cur++ = (u8)('[' | ((u8)ctn_obj << 5));
+            *cur++ = '\n';
+            val++;
+            goto val_begin;
+        }
+    }
+    if (val_type == YYJSON_TYPE_BOOL) {
+        no_indent = ((u8)ctn_obj & (u8)ctn_len);
+        incr_len(16 + (no_indent ? 0 : level * 4));
+        cur = write_indent(cur, no_indent ? 0 : level);
+        cur = write_bool(cur, unsafe_yyjson_get_bool(val));
+        cur += 2;
+        goto val_end;
+    }
+    if (val_type == YYJSON_TYPE_NULL) {
+        no_indent = ((u8)ctn_obj & (u8)ctn_len);
+        incr_len(16 + (no_indent ? 0 : level * 4));
+        cur = write_indent(cur, no_indent ? 0 : level);
+        cur = write_null(cur);
+        cur += 2;
+        goto val_end;
+    }
+    if (val_type == YYJSON_TYPE_RAW) {
+        str_len = unsafe_yyjson_get_len(val);
+        str_ptr = (const u8 *)unsafe_yyjson_get_str(val);
+        check_str_len(str_len);
+        incr_len(str_len + 3);
+        cur = write_raw(cur, str_ptr, str_len);
+        *cur++ = ',';
+        *cur++ = '\n';
+        goto val_end;
+    }
+    goto fail_type;
     
+val_end:
     val++;
     ctn_len--;
     if (unlikely(ctn_len == 0)) goto ctn_end;
@@ -7235,6 +7340,8 @@ fail_type:
     return_err(INVALID_VALUE_TYPE, "invalid JSON value type");
 fail_num:
     return_err(NAN_OR_INF, "nan or inf number is not allowed");
+fail_str:
+    return_err(INVALID_STRING, "invalid utf-8 encoding in string");
     
 #undef return_err
 #undef incr_len
@@ -7253,6 +7360,11 @@ char *yyjson_val_write_opts(const yyjson_val *val,
     
     err = err ? err : &dummy_err;
     dat_len = dat_len ? dat_len : &dummy_dat_len;
+    
+#if YYJSON_DISABLE_NON_STANDARD
+    flg &= ~YYJSON_WRITE_ALLOW_INF_AND_NAN;
+    flg &= ~YYJSON_WRITE_ALLOW_INVALID_UNICODE;
+#endif
     
     if (unlikely(!root)) {
         *dat_len = 0;
@@ -7398,7 +7510,9 @@ static_inline u8 *yyjson_mut_write_minify(const yyjson_mut_val *root,
     yyjson_mut_write_ctx *ctx, *ctx_tmp;
     usize alc_len, alc_inc, ctx_len, ext_len, str_len;
     const u8 *str_ptr;
-    const char_esc_type *esc_table = get_esc_table_with_flag(flg);
+    const char_enc_type *enc_table = get_enc_table_with_flag(flg);
+    bool esc = (flg & YYJSON_WRITE_ESCAPE_UNICODE) != 0;
+    bool inv = (flg & YYJSON_WRITE_ALLOW_INVALID_UNICODE) != 0;
     
     alc_len = 0 * YYJSON_WRITER_ESTIMATED_MINIFY_RATIO + 64;
     alc_len = size_align_up(alc_len, sizeof(yyjson_mut_write_ctx));
@@ -7420,72 +7534,71 @@ doc_begin:
     
 val_begin:
     val_type = unsafe_yyjson_get_type(val);
-    switch (val_type) {
-        case YYJSON_TYPE_RAW:
-            str_len = unsafe_yyjson_get_len(val);
-            str_ptr = (const u8 *)unsafe_yyjson_get_str(val);
-            check_str_len(str_len);
-            incr_len(str_len + 2);
-            cur = write_raw(cur, str_ptr, str_len);
-            *cur++ = ',';
-            break;
-            
-        case YYJSON_TYPE_STR:
-            is_key = ((u8)ctn_obj & (u8)~ctn_len);
-            str_len = unsafe_yyjson_get_len(val);
-            str_ptr = (const u8 *)unsafe_yyjson_get_str(val);
-            check_str_len(str_len);
-            incr_len(str_len * 6 + 16);
-            cur = write_string(cur, str_ptr, str_len, esc_table);
-            *cur++ = is_key ? ':' : ',';
-            break;
-            
-        case YYJSON_TYPE_NUM:
-            incr_len(32);
-            cur = write_number(cur, (yyjson_val *)val, flg);
-            if (unlikely(!cur)) goto fail_num;
-            *cur++ = ',';
-            break;
-            
-        case YYJSON_TYPE_BOOL:
-            incr_len(16);
-            cur = write_bool(cur, unsafe_yyjson_get_bool(val));
-            cur++;
-            break;
-            
-        case YYJSON_TYPE_NULL:
-            incr_len(16);
-            cur = write_null(cur);
-            cur++;
-            break;
-            
-        case YYJSON_TYPE_ARR:
-        case YYJSON_TYPE_OBJ:
-            ctn_len_tmp = unsafe_yyjson_get_len(val);
-            ctn_obj_tmp = (val_type == YYJSON_TYPE_OBJ);
-            incr_len(16);
-            if (unlikely(ctn_len_tmp == 0)) {
-                /* write empty container */
-                *cur++ = (u8)('[' | ((u8)ctn_obj_tmp << 5));
-                *cur++ = (u8)(']' | ((u8)ctn_obj_tmp << 5));
-                *cur++ = ',';
-                break;
-            } else {
-                /* push context, setup new container */
-                yyjson_mut_write_ctx_set(--ctx, ctn, ctn_len, ctn_obj);
-                ctn_len = ctn_len_tmp << (u8)ctn_obj_tmp;
-                ctn_obj = ctn_obj_tmp;
-                *cur++ = (u8)('[' | ((u8)ctn_obj << 5));
-                ctn = val;
-                val = (yyjson_mut_val *)ctn->uni.ptr; /* tail */
-                val = ctn_obj ? val->next->next : val->next;
-                goto val_begin;
-            }
-            
-        default:
-            goto fail_type;
+    if (val_type == YYJSON_TYPE_STR) {
+        is_key = ((u8)ctn_obj & (u8)~ctn_len);
+        str_len = unsafe_yyjson_get_len(val);
+        str_ptr = (const u8 *)unsafe_yyjson_get_str(val);
+        check_str_len(str_len);
+        incr_len(str_len * 6 + 16);
+        cur = write_string(cur, esc, inv, str_ptr, str_len, enc_table);
+        if (unlikely(!cur)) goto fail_str;
+        *cur++ = is_key ? ':' : ',';
+        goto val_end;
     }
+    if (val_type == YYJSON_TYPE_NUM) {
+        incr_len(32);
+        cur = write_number(cur, (yyjson_val *)val, flg);
+        if (unlikely(!cur)) goto fail_num;
+        *cur++ = ',';
+        goto val_end;
+    }
+    if ((val_type & (YYJSON_TYPE_ARR & YYJSON_TYPE_OBJ)) ==
+                    (YYJSON_TYPE_ARR & YYJSON_TYPE_OBJ)) {
+        ctn_len_tmp = unsafe_yyjson_get_len(val);
+        ctn_obj_tmp = (val_type == YYJSON_TYPE_OBJ);
+        incr_len(16);
+        if (unlikely(ctn_len_tmp == 0)) {
+            /* write empty container */
+            *cur++ = (u8)('[' | ((u8)ctn_obj_tmp << 5));
+            *cur++ = (u8)(']' | ((u8)ctn_obj_tmp << 5));
+            *cur++ = ',';
+            goto val_end;
+        } else {
+            /* push context, setup new container */
+            yyjson_mut_write_ctx_set(--ctx, ctn, ctn_len, ctn_obj);
+            ctn_len = ctn_len_tmp << (u8)ctn_obj_tmp;
+            ctn_obj = ctn_obj_tmp;
+            *cur++ = (u8)('[' | ((u8)ctn_obj << 5));
+            ctn = val;
+            val = (yyjson_mut_val *)ctn->uni.ptr; /* tail */
+            val = ctn_obj ? val->next->next : val->next;
+            goto val_begin;
+        }
+    }
+    if (val_type == YYJSON_TYPE_BOOL) {
+        incr_len(16);
+        cur = write_bool(cur, unsafe_yyjson_get_bool(val));
+        cur++;
+        goto val_end;
+    }
+    if (val_type == YYJSON_TYPE_NULL) {
+        incr_len(16);
+        cur = write_null(cur);
+        cur++;
+        goto val_end;
+    }
+    if (val_type == YYJSON_TYPE_RAW) {
+        str_len = unsafe_yyjson_get_len(val);
+        str_ptr = (const u8 *)unsafe_yyjson_get_str(val);
+        check_str_len(str_len);
+        incr_len(str_len + 2);
+        cur = write_raw(cur, str_ptr, str_len);
+        *cur++ = ',';
+        goto val_end;
+    }
+    goto fail_type;
     
+val_end:
     ctn_len--;
     if (unlikely(ctn_len == 0)) goto ctn_end;
     val = val->next;
@@ -7518,6 +7631,8 @@ fail_type:
     return_err(INVALID_VALUE_TYPE, "invalid JSON value type");
 fail_num:
     return_err(NAN_OR_INF, "nan or inf number is not allowed");
+fail_str:
+    return_err(INVALID_STRING, "invalid utf-8 encoding in string");
     
 #undef return_err
 #undef incr_len
@@ -7572,7 +7687,9 @@ static_inline u8 *yyjson_mut_write_pretty(const yyjson_mut_val *root,
     yyjson_mut_write_ctx *ctx, *ctx_tmp;
     usize alc_len, alc_inc, ctx_len, ext_len, str_len, level;
     const u8 *str_ptr;
-    const char_esc_type *esc_table = get_esc_table_with_flag(flg);
+    const char_enc_type *enc_table = get_enc_table_with_flag(flg);
+    bool esc = (flg & YYJSON_WRITE_ESCAPE_UNICODE) != 0;
+    bool inv = (flg & YYJSON_WRITE_ALLOW_INVALID_UNICODE) != 0;
     
     alc_len = 0 * YYJSON_WRITER_ESTIMATED_PRETTY_RATIO + 64;
     alc_len = size_align_up(alc_len, sizeof(yyjson_mut_write_ctx));
@@ -7596,90 +7713,89 @@ doc_begin:
     
 val_begin:
     val_type = unsafe_yyjson_get_type(val);
-    switch (val_type) {
-        case YYJSON_TYPE_RAW:
-            str_len = unsafe_yyjson_get_len(val);
-            str_ptr = (const u8 *)unsafe_yyjson_get_str(val);
-            check_str_len(str_len);
-            incr_len(str_len + 3);
-            cur = write_raw(cur, str_ptr, str_len);
-            *cur++ = ',';
-            *cur++ = '\n';
-            break;
-            
-        case YYJSON_TYPE_STR:
-            is_key = ((u8)ctn_obj & (u8)~ctn_len);
-            no_indent = ((u8)ctn_obj & (u8)ctn_len);
-            str_len = unsafe_yyjson_get_len(val);
-            str_ptr = (const u8 *)unsafe_yyjson_get_str(val);
-            check_str_len(str_len);
-            incr_len(str_len * 6 + 16 + (no_indent ? 0 : level * 4));
-            cur = write_indent(cur, no_indent ? 0 : level);
-            cur = write_string(cur, str_ptr, str_len, esc_table);
-            *cur++ = is_key ? ':' : ',';
-            *cur++ = is_key ? ' ' : '\n';
-            break;
-            
-        case YYJSON_TYPE_NUM:
-            no_indent = ((u8)ctn_obj & (u8)ctn_len);
-            incr_len(32 + (no_indent ? 0 : level * 4));
-            cur = write_indent(cur, no_indent ? 0 : level);
-            cur = write_number(cur, (yyjson_val *)val, flg);
-            if (unlikely(!cur)) goto fail_num;
-            *cur++ = ',';
-            *cur++ = '\n';
-            break;
-            
-        case YYJSON_TYPE_BOOL:
-            no_indent = ((u8)ctn_obj & (u8)ctn_len);
-            incr_len(16 + (no_indent ? 0 : level * 4));
-            cur = write_indent(cur, no_indent ? 0 : level);
-            cur = write_bool(cur, unsafe_yyjson_get_bool(val));
-            cur += 2;
-            break;
-            
-        case YYJSON_TYPE_NULL:
-            no_indent = ((u8)ctn_obj & (u8)ctn_len);
-            incr_len(16 + (no_indent ? 0 : level * 4));
-            cur = write_indent(cur, no_indent ? 0 : level);
-            cur = write_null(cur);
-            cur += 2;
-            break;
-            
-        case YYJSON_TYPE_ARR:
-        case YYJSON_TYPE_OBJ:
-            no_indent = ((u8)ctn_obj & (u8)ctn_len);
-            ctn_len_tmp = unsafe_yyjson_get_len(val);
-            ctn_obj_tmp = (val_type == YYJSON_TYPE_OBJ);
-            if (unlikely(ctn_len_tmp == 0)) {
-                /* write empty container */
-                incr_len(16 + (no_indent ? 0 : level * 4));
-                cur = write_indent(cur, no_indent ? 0 : level);
-                *cur++ = (u8)('[' | ((u8)ctn_obj_tmp << 5));
-                *cur++ = (u8)(']' | ((u8)ctn_obj_tmp << 5));
-                *cur++ = ',';
-                *cur++ = '\n';
-                break;
-            } else {
-                /* push context, setup new container */
-                incr_len(32 + (no_indent ? 0 : level * 4));
-                yyjson_mut_write_ctx_set(--ctx, ctn, ctn_len, ctn_obj);
-                ctn_len = ctn_len_tmp << (u8)ctn_obj_tmp;
-                ctn_obj = ctn_obj_tmp;
-                cur = write_indent(cur, no_indent ? 0 : level);
-                level++;
-                *cur++ = (u8)('[' | ((u8)ctn_obj << 5));
-                *cur++ = '\n';
-                ctn = val;
-                val = (yyjson_mut_val *)ctn->uni.ptr; /* tail */
-                val = ctn_obj ? val->next->next : val->next;
-                goto val_begin;
-            }
-            
-        default:
-            goto fail_type;
+    if (val_type == YYJSON_TYPE_STR) {
+        is_key = ((u8)ctn_obj & (u8)~ctn_len);
+        no_indent = ((u8)ctn_obj & (u8)ctn_len);
+        str_len = unsafe_yyjson_get_len(val);
+        str_ptr = (const u8 *)unsafe_yyjson_get_str(val);
+        check_str_len(str_len);
+        incr_len(str_len * 6 + 16 + (no_indent ? 0 : level * 4));
+        cur = write_indent(cur, no_indent ? 0 : level);
+        cur = write_string(cur, esc, inv, str_ptr, str_len, enc_table);
+        if (unlikely(!cur)) goto fail_str;
+        *cur++ = is_key ? ':' : ',';
+        *cur++ = is_key ? ' ' : '\n';
+        goto val_end;
     }
+    if (val_type == YYJSON_TYPE_NUM) {
+        no_indent = ((u8)ctn_obj & (u8)ctn_len);
+        incr_len(32 + (no_indent ? 0 : level * 4));
+        cur = write_indent(cur, no_indent ? 0 : level);
+        cur = write_number(cur, (yyjson_val *)val, flg);
+        if (unlikely(!cur)) goto fail_num;
+        *cur++ = ',';
+        *cur++ = '\n';
+        goto val_end;
+    }
+    if ((val_type & (YYJSON_TYPE_ARR & YYJSON_TYPE_OBJ)) ==
+                    (YYJSON_TYPE_ARR & YYJSON_TYPE_OBJ)) {
+        no_indent = ((u8)ctn_obj & (u8)ctn_len);
+        ctn_len_tmp = unsafe_yyjson_get_len(val);
+        ctn_obj_tmp = (val_type == YYJSON_TYPE_OBJ);
+        if (unlikely(ctn_len_tmp == 0)) {
+            /* write empty container */
+            incr_len(16 + (no_indent ? 0 : level * 4));
+            cur = write_indent(cur, no_indent ? 0 : level);
+            *cur++ = (u8)('[' | ((u8)ctn_obj_tmp << 5));
+            *cur++ = (u8)(']' | ((u8)ctn_obj_tmp << 5));
+            *cur++ = ',';
+            *cur++ = '\n';
+            goto val_end;
+        } else {
+            /* push context, setup new container */
+            incr_len(32 + (no_indent ? 0 : level * 4));
+            yyjson_mut_write_ctx_set(--ctx, ctn, ctn_len, ctn_obj);
+            ctn_len = ctn_len_tmp << (u8)ctn_obj_tmp;
+            ctn_obj = ctn_obj_tmp;
+            cur = write_indent(cur, no_indent ? 0 : level);
+            level++;
+            *cur++ = (u8)('[' | ((u8)ctn_obj << 5));
+            *cur++ = '\n';
+            ctn = val;
+            val = (yyjson_mut_val *)ctn->uni.ptr; /* tail */
+            val = ctn_obj ? val->next->next : val->next;
+            goto val_begin;
+        }
+    }
+    if (val_type == YYJSON_TYPE_BOOL) {
+        no_indent = ((u8)ctn_obj & (u8)ctn_len);
+        incr_len(16 + (no_indent ? 0 : level * 4));
+        cur = write_indent(cur, no_indent ? 0 : level);
+        cur = write_bool(cur, unsafe_yyjson_get_bool(val));
+        cur += 2;
+        goto val_end;
+    }
+    if (val_type == YYJSON_TYPE_NULL) {
+        no_indent = ((u8)ctn_obj & (u8)ctn_len);
+        incr_len(16 + (no_indent ? 0 : level * 4));
+        cur = write_indent(cur, no_indent ? 0 : level);
+        cur = write_null(cur);
+        cur += 2;
+        goto val_end;
+    }
+    if (val_type == YYJSON_TYPE_RAW) {
+        str_len = unsafe_yyjson_get_len(val);
+        str_ptr = (const u8 *)unsafe_yyjson_get_str(val);
+        check_str_len(str_len);
+        incr_len(str_len + 3);
+        cur = write_raw(cur, str_ptr, str_len);
+        *cur++ = ',';
+        *cur++ = '\n';
+        goto val_end;
+    }
+    goto fail_type;
     
+val_end:
     ctn_len--;
     if (unlikely(ctn_len == 0)) goto ctn_end;
     val = val->next;
@@ -7716,6 +7832,8 @@ fail_type:
     return_err(INVALID_VALUE_TYPE, "invalid JSON value type");
 fail_num:
     return_err(NAN_OR_INF, "nan or inf number is not allowed");
+fail_str:
+    return_err(INVALID_STRING, "invalid utf-8 encoding in string");
     
 #undef return_err
 #undef incr_len
@@ -7734,6 +7852,11 @@ char *yyjson_mut_val_write_opts(const yyjson_mut_val *val,
     
     err = err ? err : &dummy_err;
     dat_len = dat_len ? dat_len : &dummy_dat_len;
+    
+#if YYJSON_DISABLE_NON_STANDARD
+    flg &= ~YYJSON_WRITE_ALLOW_INF_AND_NAN;
+    flg &= ~YYJSON_WRITE_ALLOW_INVALID_UNICODE;
+#endif
     
     if (unlikely(!root)) {
         *dat_len = 0;

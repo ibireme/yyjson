@@ -289,6 +289,18 @@ static void test_json_write(yyjson_alc *alc) {
     validate_json_write_ex(doc, alc,
                            "-Infinity", "-Infinity",
                            "null", "null");
+#else
+    root = yyjson_mut_real(doc, NAN);
+    yyjson_mut_doc_set_root(doc, root);
+    validate_json_write_ex(doc, alc,
+                           NULL, NULL,
+                           "null", "null");
+    
+    root = yyjson_mut_real(doc, -INFINITY);
+    yyjson_mut_doc_set_root(doc, root);
+    validate_json_write_ex(doc, alc,
+                           NULL, NULL,
+                           "null", "null");
 #endif
     
     root = yyjson_mut_null(doc);
@@ -652,6 +664,7 @@ yy_test_case(test_json_writer) {
     yyjson_mut_write_file("", NULL, 0, NULL, NULL);
     yyjson_mut_write_file("tmp.json", NULL, 0, NULL, NULL);
     
+#if !YYJSON_DISABLE_READER
     // test invalid immutable doc
     yyjson_doc *doc = yyjson_read("[1]", 3, 0);
     yy_assert(doc);
@@ -669,7 +682,6 @@ yy_test_case(test_json_writer) {
     yyjson_doc_free(doc);
     
     
-#if !YYJSON_DISABLE_READER
     // test fail
     char path[4100];
     memset(path, 'a', sizeof(path));
@@ -682,6 +694,35 @@ yy_test_case(test_json_writer) {
     yyjson_mut_doc_set_root(mdoc, yyjson_mut_null(mdoc));
     yy_assert(!yyjson_mut_write_file(path, mdoc, 0, NULL, NULL));
     yyjson_mut_doc_free(mdoc);
+    
+    
+    // test raw
+    const char *str = "[1.2345678901234567890e999]";
+    idoc = yyjson_read(str, strlen(str), YYJSON_READ_NUMBER_AS_RAW);
+    yyjson_val *root = yyjson_doc_get_root(idoc);
+    yyjson_val *raw = yyjson_arr_get_first(root);
+    yy_assert(yyjson_is_raw(raw));
+    yy_assert(yyjson_get_len(raw) == strlen(str) - 2);
+    yy_assert(memcmp(yyjson_get_raw(raw), str + 1, strlen(str) - 2) == 0);
+    
+    usize ret_len;
+    char *ret = yyjson_write(idoc, 0, &ret_len);
+    yy_assert(ret_len == strlen(str) && memcmp(ret, str, ret_len) == 0);
+    free(ret);
+    ret = yyjson_write(idoc, YYJSON_WRITE_PRETTY, &ret_len);
+    yy_assert(ret);
+    free(ret);
+    
+    mdoc = yyjson_doc_mut_copy(idoc, NULL);
+    ret = yyjson_mut_write(mdoc, 0, &ret_len);
+    yy_assert(ret_len == strlen(str) && memcmp(ret, str, ret_len) == 0);
+    free(ret);
+    ret = yyjson_mut_write(mdoc, YYJSON_WRITE_PRETTY, &ret_len);
+    yy_assert(ret);
+    free(ret);
+    yyjson_mut_doc_free(mdoc);
+    
+    yyjson_doc_free(idoc);
 #endif
 }
 

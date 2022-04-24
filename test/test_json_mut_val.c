@@ -1906,6 +1906,8 @@ static void test_json_mut_doc_api(void) {
         
         yyjson_mut_doc_free(doc);
     }
+    
+#if !YYJSON_DISABLE_READER
     {
         yyjson_doc *idoc = yyjson_read("1", 1, 0);
         idoc->root = NULL;
@@ -1922,9 +1924,11 @@ static void test_json_mut_doc_api(void) {
         yyjson_mut_doc_free(json_cp);
         yyjson_mut_doc_free(json_mut_cp);
     }
+#endif
 }
 
 static void validate_equals(const char *lhs_json, const char *rhs_json, bool equals) {
+#if !YYJSON_DISABLE_READER
     yyjson_doc *lhs_doc = yyjson_read(lhs_json, strlen(lhs_json), 0);
     yyjson_doc *rhs_doc = yyjson_read(rhs_json, strlen(rhs_json), 0);
 
@@ -1933,7 +1937,7 @@ static void validate_equals(const char *lhs_json, const char *rhs_json, bool equ
 
     yyjson_mut_val *mut_lhs_val = yyjson_mut_doc_get_root(mut_lhs_doc);
     yyjson_mut_val *mut_rhs_val = yyjson_mut_doc_get_root(mut_rhs_doc);
-
+    
     yy_assert(yyjson_mut_equals(mut_lhs_val, mut_rhs_val) == equals);
     yy_assert(yyjson_mut_equals(mut_rhs_val, mut_lhs_val) == equals);
 
@@ -1942,6 +1946,26 @@ static void validate_equals(const char *lhs_json, const char *rhs_json, bool equ
 
     yyjson_doc_free(rhs_doc);
     yyjson_doc_free(lhs_doc);
+    
+    // RAW type
+    lhs_doc = yyjson_read(lhs_json, strlen(lhs_json), YYJSON_READ_NUMBER_AS_RAW);
+    rhs_doc = yyjson_read(rhs_json, strlen(rhs_json), YYJSON_READ_NUMBER_AS_RAW);
+
+    mut_lhs_doc = yyjson_doc_mut_copy(lhs_doc, NULL);
+    mut_rhs_doc = yyjson_doc_mut_copy(rhs_doc, NULL);
+
+    mut_lhs_val = yyjson_mut_doc_get_root(mut_lhs_doc);
+    mut_rhs_val = yyjson_mut_doc_get_root(mut_rhs_doc);
+    
+    yy_assert(yyjson_mut_equals(mut_lhs_val, mut_rhs_val) == equals);
+    yy_assert(yyjson_mut_equals(mut_rhs_val, mut_lhs_val) == equals);
+
+    yyjson_mut_doc_free(mut_rhs_doc);
+    yyjson_mut_doc_free(mut_lhs_doc);
+    
+    yyjson_doc_free(rhs_doc);
+    yyjson_doc_free(lhs_doc);
+#endif
 }
 
 static void test_json_mut_equals_api(void) {

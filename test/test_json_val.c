@@ -705,13 +705,26 @@ static void test_json_obj_api(void) {
 static void validate_equals(const char *lhs_json, const char *rhs_json, bool equals) {
     yyjson_doc *lhs_doc = yyjson_read(lhs_json, strlen(lhs_json), 0);
     yyjson_doc *rhs_doc = yyjson_read(rhs_json, strlen(rhs_json), 0);
-
+    
     yyjson_val *lhs_val = yyjson_doc_get_root(lhs_doc);
     yyjson_val *rhs_val = yyjson_doc_get_root(rhs_doc);
-
+    
     yy_assert(yyjson_equals(lhs_val, rhs_val) == equals);
     yy_assert(yyjson_equals(rhs_val, lhs_val) == equals);
 
+    yyjson_doc_free(rhs_doc);
+    yyjson_doc_free(lhs_doc);
+    
+    // RAW type
+    lhs_doc = yyjson_read(lhs_json, strlen(lhs_json), YYJSON_READ_NUMBER_AS_RAW);
+    rhs_doc = yyjson_read(rhs_json, strlen(rhs_json), YYJSON_READ_NUMBER_AS_RAW);
+    
+    lhs_val = yyjson_doc_get_root(lhs_doc);
+    rhs_val = yyjson_doc_get_root(rhs_doc);
+    
+    yy_assert(yyjson_equals(lhs_val, rhs_val) == equals);
+    yy_assert(yyjson_equals(rhs_val, lhs_val) == equals);
+    
     yyjson_doc_free(rhs_doc);
     yyjson_doc_free(lhs_doc);
 }

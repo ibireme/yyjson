@@ -59,12 +59,14 @@
        Reading and writing inf/nan literal, such as 'NaN', '-Infinity'.
        Single line and multiple line comments.
        Single trailing comma at the end of an object or array.
+       Invalid unicode in string value.
    This may also invalidate these options:
        YYJSON_READ_ALLOW_INF_AND_NAN
        YYJSON_READ_ALLOW_COMMENTS
        YYJSON_READ_ALLOW_TRAILING_COMMAS
        YYJSON_READ_ALLOW_INVALID_UNICODE
        YYJSON_WRITE_ALLOW_INF_AND_NAN
+       YYJSON_WRITE_ALLOW_INVALID_UNICODE
    This may reduce binary size, and increase performance slightly. */
 #ifndef YYJSON_DISABLE_NON_STANDARD
 #endif
@@ -504,25 +506,27 @@ static const yyjson_read_flag YYJSON_READ_INSITU                = 1 << 0;
 static const yyjson_read_flag YYJSON_READ_STOP_WHEN_DONE        = 1 << 1;
 
 /** Allow single trailing comma at the end of an object or array,
-    such as [1,2,3,] {"a":1,"b":2,}. */
+    such as [1,2,3,] {"a":1,"b":2,} (non-standard). */
 static const yyjson_read_flag YYJSON_READ_ALLOW_TRAILING_COMMAS = 1 << 2;
 
-/** Allow C-style single line and multiple line comments. */
+/** Allow C-style single line and multiple line comments (non-standard). */
 static const yyjson_read_flag YYJSON_READ_ALLOW_COMMENTS        = 1 << 3;
 
 /** Allow inf/nan number and literal, case-insensitive,
-    such as 1e999, NaN, inf, -Infinity. */
+    such as 1e999, NaN, inf, -Infinity (non-standard). */
 static const yyjson_read_flag YYJSON_READ_ALLOW_INF_AND_NAN     = 1 << 4;
 
 /** Read number as raw string (value with YYJSON_TYPE_RAW type),
     inf/nan literal is also read as raw with `ALLOW_INF_AND_NAN` flag. */
 static const yyjson_read_flag YYJSON_READ_NUMBER_AS_RAW         = 1 << 5;
 
-/** Allow reading invalid unicode when parsing strings.
-    @warning Be careful when dealing with malformed unicode strings!
-    There's a security issue in writer functions trying to access the
-    memory outside the valid range when trying to parse invalid UTF-8. */
+/** Allow reading invalid unicode when parsing string values (non-standard).
+    Invalid characters will be allowed to appear in the string values, but
+    invalid escape sequences will still be reported as errors.
+    This flag does not affect the performance of correctly encoded string.
+    @warning Be careful when dealing with malformed unicode strings! */
 static const yyjson_read_flag YYJSON_READ_ALLOW_INVALID_UNICODE = 1 << 6;
+
 
 
 /** Result code for JSON reader. */
@@ -736,25 +740,32 @@ typedef uint32_t yyjson_write_flag;
 /** Default option:
     - Write JSON minify.
     - Report error on inf or nan number.
-    - Do not validate string encoding.
+    - Report error on invalid UTF-8 string.
     - Do not escape unicode or slash. */
-static const yyjson_write_flag YYJSON_WRITE_NOFLAG              = 0 << 0;
+static const yyjson_write_flag YYJSON_WRITE_NOFLAG                  = 0 << 0;
 
 /** Write JSON pretty with 4 space indent. */
-static const yyjson_write_flag YYJSON_WRITE_PRETTY              = 1 << 0;
+static const yyjson_write_flag YYJSON_WRITE_PRETTY                  = 1 << 0;
 
 /** Escape unicode as `uXXXX`, make the output ASCII only. */
-static const yyjson_write_flag YYJSON_WRITE_ESCAPE_UNICODE      = 1 << 1;
+static const yyjson_write_flag YYJSON_WRITE_ESCAPE_UNICODE          = 1 << 1;
 
 /** Escape '/' as '\/'. */
-static const yyjson_write_flag YYJSON_WRITE_ESCAPE_SLASHES      = 1 << 2;
+static const yyjson_write_flag YYJSON_WRITE_ESCAPE_SLASHES          = 1 << 2;
 
 /** Write inf and nan number as 'Infinity' and 'NaN' literal (non-standard). */
-static const yyjson_write_flag YYJSON_WRITE_ALLOW_INF_AND_NAN   = 1 << 3;
+static const yyjson_write_flag YYJSON_WRITE_ALLOW_INF_AND_NAN       = 1 << 3;
 
 /** Write inf and nan number as null literal.
     This flag will override `YYJSON_WRITE_ALLOW_INF_AND_NAN` flag. */
-static const yyjson_write_flag YYJSON_WRITE_INF_AND_NAN_AS_NULL = 1 << 4;
+static const yyjson_write_flag YYJSON_WRITE_INF_AND_NAN_AS_NULL     = 1 << 4;
+
+/** Allow invalid unicode when encoding string values (non-standard).
+    Invalid characters in string value will be copied byte by byte.
+    If `YYJSON_WRITE_ESCAPE_UNICODE` flag is also set, invalid character will be
+    escaped as `\uFFFD` (replacement character).
+    This flag does not affect the performance of correctly encoded string. */
+static const yyjson_read_flag YYJSON_WRITE_ALLOW_INVALID_UNICODE    = 1 << 5;
 
 
 
@@ -782,11 +793,14 @@ static const yyjson_write_code YYJSON_WRITE_ERROR_FILE_OPEN             = 5;
 /** Failed to write a file. */
 static const yyjson_write_code YYJSON_WRITE_ERROR_FILE_WRITE            = 6;
 
+/** Invalid unicode in string. */
+static const yyjson_write_code YYJSON_WRITE_ERROR_INVALID_STRING        = 7;
+
 /** Error information for JSON writer. */
 typedef struct yyjson_write_err {
-    /** Error code, see yyjson_write_code for all available values. */
+    /** Error code, see `yyjson_write_code` for all available values. */
     yyjson_write_code code;
-    /** Short error message (NULL for success). */
+    /** Short error message, constant, no need to free (NULL for success). */
     const char *msg;
 } yyjson_write_err;
 
@@ -3118,9 +3132,7 @@ yyjson_api bool unsafe_yyjson_mut_equals(yyjson_mut_val *lhs,
 
 yyjson_api_inline bool yyjson_mut_equals(yyjson_mut_val *lhs,
                                          yyjson_mut_val *rhs) {
-    if (yyjson_unlikely(!lhs || !rhs))
-        return false;
-    
+    if (yyjson_unlikely(!lhs || !rhs)) return false;
     return unsafe_yyjson_mut_equals(lhs, rhs);
 }
 
@@ -3680,7 +3692,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_replace(yyjson_mut_val *arr,
                 val->next = val;
                 arr->uni.ptr = val;
                 return prev;
-            };
+            }
         }
     }
     return NULL;
@@ -4211,16 +4223,9 @@ yyjson_api_inline bool unsafe_yyjson_mut_obj_replace(yyjson_mut_val *obj,
         size_t i;
         for (i = 0; i < obj_len; i++) {
             if (key->tag == cur_key->tag &&
-            memcmp(key->uni.str, cur_key->uni.ptr, key_len) == 0) {
-                size_t cpy_len = sizeof(*key) - sizeof(key->next);
-                yyjson_mut_val tmp;
-                memcpy(&tmp, cur_key, cpy_len);
-                memcpy(cur_key, key, cpy_len);
-                memcpy(key, &tmp, cpy_len);
-
-                memcpy(&tmp, cur_key->next, cpy_len);
-                memcpy(cur_key->next, val, cpy_len);
-                memcpy(val, &tmp, cpy_len);
+                memcmp(key->uni.str, cur_key->uni.ptr, key_len) == 0) {
+                cur_key->next->tag = val->tag;
+                cur_key->next->uni.u64 = val->uni.u64;
                 return true;
             } else {
                 cur_key = cur_key->next->next;
@@ -4290,7 +4295,8 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_obj_remove(yyjson_mut_val *obj,
                                              yyjson_mut_val *key) {
     if (yyjson_likely(yyjson_mut_is_obj(obj) && yyjson_mut_is_str(key))) {
         return unsafe_yyjson_mut_obj_remove(obj, key->uni.str,
-                                     unsafe_yyjson_get_len(key), key->tag);
+                                            unsafe_yyjson_get_len(key),
+                                            key->tag);
     }
     return NULL;
 }
@@ -4307,7 +4313,7 @@ yyjson_api_inline bool yyjson_mut_obj_replace(yyjson_mut_val *obj,
                                               yyjson_mut_val *key,
                                               yyjson_mut_val *val) {
     if (yyjson_likely(yyjson_mut_is_obj(obj) &&
-    yyjson_mut_is_str(key) && val)) {
+                      yyjson_mut_is_str(key) && val)) {
         return unsafe_yyjson_mut_obj_replace(obj, key, val);
     }
     return false;
@@ -4570,4 +4576,3 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_doc_get_pointer(
 #endif /* extern "C" end */
 
 #endif /* YYJSON_H */
-

@@ -267,9 +267,15 @@ static void test_real_write(const char *line, usize len, f64 num) {
         yy_assertf(str == NULL,
                    "num write should return NULL, but returns: %s\n",
                    str);
+#if !YYJSON_DISABLE_NON_STANDARD
         yy_assertf(strcmp(str_nan_inf, line) == 0,
                    "num write not match:\nexpect: %s\nreturn: %s\n",
                    line, str_nan_inf);
+#else
+        yy_assertf(str_nan_inf == NULL,
+                   "num write should return NULL, but returns: %s\n",
+                   str);
+#endif
     } else {
         yy_assert(strcmp(str, str_nan_inf) == 0);
         yy_assertf(strtod_gay(str, NULL) == num,

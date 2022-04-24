@@ -1,10 +1,10 @@
 #include "yyjson.h"
 #include "yy_test_utils.h"
 
-static
-void test_one(const char *original_json,
-              const char *patch_json,
-              const char *want_result_json) {
+static void test_one(const char *original_json,
+                     const char *patch_json,
+                     const char *want_result_json) {
+#if !YYJSON_DISABLE_READER
     yyjson_doc *original_doc = yyjson_read(original_json, strlen(original_json), 0);
     yyjson_doc *patch_doc = yyjson_read(patch_json, strlen(patch_json), 0);
     yyjson_doc *want_result_doc = yyjson_read(want_result_json, strlen(want_result_json), 0);
@@ -27,10 +27,10 @@ void test_one(const char *original_json,
     yyjson_doc_free(want_result_doc);
     yyjson_doc_free(patch_doc);
     yyjson_doc_free(original_doc);
+#endif
 }
 
 yy_test_case(test_json_merge_patch) {
-#if !YYJSON_DISABLE_READER
     // test cases from spec: https://tools.ietf.org/html/rfc7386
     test_one("{\"a\":\"b\"}", "{\"a\":\"c\"}", "{\"a\":\"c\"}");
     test_one("{\"a\":\"b\"}", "{\"b\":\"c\"}", "{\"a\":\"b\",\"b\":\"c\"}");
@@ -48,5 +48,4 @@ yy_test_case(test_json_merge_patch) {
     test_one("{\"e\":null}", "{\"a\":1}", "{\"e\":null,\"a\":1}");
     test_one("[1,2]", "{\"a\":\"b\",\"c\":null}", "{\"a\":\"b\"}");
     test_one("{}", "{\"a\":{\"bb\":{\"ccc\":null}}}", "{\"a\":{\"bb\":{}}}");
-#endif
 }
