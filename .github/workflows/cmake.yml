@@ -172,7 +172,7 @@ jobs:
         ctest -C Release --output-on-failure
 
 
-writer:
+  writer:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
