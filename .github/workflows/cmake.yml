@@ -107,13 +107,27 @@ jobs:
 
   windows:
     runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        build_option:
+          - Default
+          - DisableReader
+          - DisableWriter
     steps:
     - uses: actions/checkout@v2
     - name: Build and Test
       run: |
+        if [ "${{matrix.build_flag}}" == "DisableReader" ]; then
+          BUILD_OPTIONS="-DYYJSON_DISABLE_READER=ON"
+        elif [ "${{ matrix.build_flag }}" == "DisableWriter" ]; then
+          BUILD_OPTIONS="-DYYJSON_DISABLE_WRITER=ON"
+        else
+          BUILD_OPTIONS=""
+        fi
         mkdir build
         cd build
-        cmake .. -DCMAKE_BUILD_TYPE=Release -DYYJSON_BUILD_TESTS=ON
+        cmake .. -DCMAKE_BUILD_TYPE=Release -DYYJSON_BUILD_TESTS=ON $BUILD_OPTIONS
         cmake --build . --config Release
         ctest -C Release --output-on-failure
 

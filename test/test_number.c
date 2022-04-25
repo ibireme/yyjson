@@ -460,7 +460,7 @@ static void test_with_file(const char *name, num_type type) {
 static void test_random_int(void) {
     char buf[32];
     char *end;
-    int count = 100000;
+    int count = 10000;
     
     yy_random_reset();
     for (int i = 0; i < count; i++) {
@@ -494,7 +494,7 @@ static void test_random_int(void) {
 static void test_random_real(void) {
     char buf[32];
     char *end;
-    int count = 100000;
+    int count = 10000;
     
     yy_random_reset();
     for (int i = 0; i < count; i++) {
