@@ -99,27 +99,13 @@ jobs:
 
   windows:
     runs-on: windows-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        build_option:
-          - Default
-          - DisableReader
-          - DisableWriter
     steps:
     - uses: actions/checkout@v2
     - name: Build and Test
       run: |
-        if [[ "${{matrix.build_option}}" == "DisableReader" ]]; then
-          BUILD_OPTIONS="-DYYJSON_DISABLE_READER=ON"
-        elif [[ "${{ matrix.build_option }}" == "DisableWriter" ]]; then
-          BUILD_OPTIONS="-DYYJSON_DISABLE_WRITER=ON"
-        else
-          BUILD_OPTIONS=""
-        fi
         mkdir build
         cd build
-        cmake .. -DCMAKE_BUILD_TYPE=Release -DYYJSON_BUILD_TESTS=ON $BUILD_OPTIONS
+        cmake .. -DCMAKE_BUILD_TYPE=Release -DYYJSON_BUILD_TESTS=ON
         cmake --build . --config Release
         ctest -C Release --output-on-failure
 
@@ -151,7 +137,7 @@ jobs:
       shell: bash
       run: sudo apt update; sudo apt install tcc
 
-    - name: TinyCC
+    - name: Build and Test
       run: |
         mkdir build
         cd build
@@ -164,8 +150,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
-    
-    - name: FastMath
+    - name: Build and Test
       run: |
         mkdir build
         cd build
@@ -174,11 +159,36 @@ jobs:
         ctest -C Release --output-on-failure
 
 
+  reader:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Build and Test
+      run: |
+        mkdir build
+        cd build
+        cmake .. -DYYJSON_DISABLE_WRITER=ON -DCMAKE_BUILD_TYPE=Release -DYYJSON_BUILD_TESTS=ON
+        cmake --build . --config Release
+        ctest -C Release --output-on-failure
+
+
+writer:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Build and Test
+      run: |
+        mkdir build
+        cd build
+        cmake .. -DYYJSON_DISABLE_READER=ON -DCMAKE_BUILD_TYPE=Release -DYYJSON_BUILD_TESTS=ON
+        cmake --build . --config Release
+        ctest -C Release --output-on-failure
+
+
   fuzzing:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
-    
     - name: Fuzzing
       run: |
         mkdir build
