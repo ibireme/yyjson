@@ -110,9 +110,9 @@ jobs:
     - uses: actions/checkout@v2
     - name: Build and Test
       run: |
-        if [ "${{matrix.build_option}}" == "DisableReader" ]; then
+        if [[ "${{matrix.build_option}}" == "DisableReader" ]]; then
           BUILD_OPTIONS="-DYYJSON_DISABLE_READER=ON"
-        elif [ "${{ matrix.build_option }}" == "DisableWriter" ]; then
+        elif [[ "${{ matrix.build_option }}" == "DisableWriter" ]]; then
           BUILD_OPTIONS="-DYYJSON_DISABLE_WRITER=ON"
         else
           BUILD_OPTIONS=""
