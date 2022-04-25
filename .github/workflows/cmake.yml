@@ -24,10 +24,7 @@ jobs:
           - Valgrind
           - Sanitizer
           - None
-        compiler:
-          - gcc
-          - clang
-          
+
     steps:
     - uses: actions/checkout@v2
 
@@ -49,14 +46,9 @@ jobs:
         if [ "${{matrix.checker}}" == "Sanitizer" ]; then
           BUILD_OPTIONS="${BUILD_OPTIONS} -DYYJSON_ENABLE_SANITIZE=ON"
         fi
-        if [ "${{matrix.compiler}}" == "clang" ]; then
-          BUILD_COMPILER="-DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++"
-        else
-          BUILD_COMPILER=""
-        fi
         cmake -E make_directory ${{runner.workspace}}/build
         cd ${{runner.workspace}}/build
-        cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=${{matrix.build_type}} $BUILD_OPTIONS $BUILD_COMPILER
+        cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=${{matrix.build_type}} $BUILD_OPTIONS
 
     - name: Build
       shell: bash
@@ -118,9 +110,9 @@ jobs:
     - uses: actions/checkout@v2
     - name: Build and Test
       run: |
-        if [ "${{matrix.build_flag}}" == "DisableReader" ]; then
+        if [ "${{matrix.build_option}}" == "DisableReader" ]; then
           BUILD_OPTIONS="-DYYJSON_DISABLE_READER=ON"
-        elif [ "${{ matrix.build_flag }}" == "DisableWriter" ]; then
+        elif [ "${{ matrix.build_option }}" == "DisableWriter" ]; then
           BUILD_OPTIONS="-DYYJSON_DISABLE_WRITER=ON"
         else
           BUILD_OPTIONS=""
