@@ -1,5 +1,9 @@
 #include "yyjson.c"
 
 int main(void) {
-    return !!yyjson_read(" ", 1, 0);
+    yyjson_mut_doc *mdoc = yyjson_mut_doc_new(NULL);
+    yyjson_mut_val *root = yyjson_mut_int(mdoc, 0);
+    yyjson_mut_doc_set_root(mdoc, root);
+    yyjson_mut_doc_free(mdoc);
+    return 0;
 }
