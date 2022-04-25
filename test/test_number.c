@@ -88,7 +88,7 @@ static void test_uint_read(const char *line, usize len, u64 num) {
                "num should be read as raw: %s\n", line);
     
     yy_assertf(strcmp(line, yyjson_get_raw(val)) == 0,
-               "uint num read as raw not match:\nstr: %s\nreturn: %llu\n",
+               "uint num read as raw not match:\nstr: %s\nreturn: %s\n",
                line, yyjson_get_raw(val));
     
     yyjson_doc_free(doc);
@@ -149,7 +149,7 @@ static void test_sint_read(const char *line, usize len, i64 num) {
                "num should be read as raw: %s\n", line);
     
     yy_assertf(strcmp(line, yyjson_get_raw(val)) == 0,
-               "sint num read as raw not match:\nstr: %s\nreturn: %llu\n",
+               "sint num read as raw not match:\nstr: %s\nreturn: %s\n",
                line, yyjson_get_raw(val));
     
     yyjson_doc_free(doc);
@@ -205,7 +205,7 @@ static void test_real_read(const char *line, usize len, f64 num) {
         yy_assertf(yyjson_is_raw(val),
                    "num should be read as raw: %s\n", line);
         yy_assertf(strcmp(line, yyjson_get_raw(val)) == 0,
-                   "num read as raw not match:\nstr: %s\nreturn: %llu\n",
+                   "num read as raw not match:\nstr: %s\nreturn: %s\n",
                    line, yyjson_get_raw(val));
         yyjson_doc_free(doc);
         
@@ -343,7 +343,7 @@ static void test_nan_inf_read(const char *line, usize len, f64 num) {
     yy_assertf(yyjson_is_raw(val),
                "num should be read as raw: %s\n", line);
     yy_assertf(strcmp(line, yyjson_get_raw(val)) == 0,
-               "num read as raw not match:\nstr: %s\nreturn: %llu\n",
+               "num read as raw not match:\nstr: %s\nreturn: %s\n",
                line, yyjson_get_raw(val));
     yyjson_doc_free(doc);
     
