@@ -1500,50 +1500,54 @@ bool unsafe_yyjson_mut_equals(yyjson_mut_val *lhs, yyjson_mut_val *rhs) {
  Get value from JSON array with a path segment (array index).
  @param ptr Input the segment after `/`, output the end of segment.
  @param end The end of entire JSON pointer.
- @param arr JSON array (yyjson_val/yyjson_mut_val, based on `imu`).
- @param imu `arr` is immutable.
+ @param arr JSON array (yyjson_val/yyjson_mut_val, based on `mut`).
+ @param mut `arr` is mutable.
  @return The matched value, or NULL if not matched.
  */
 static_inline void *pointer_read_arr(const char **ptr,
                                      const char *end,
                                      void *arr,
-                                     bool imu) {
+                                     bool mut) {
     const char *hdr = *ptr;
     const char *cur = hdr;
+    yyjson_val *i_arr = (yyjson_val *)arr;
+    yyjson_mut_val *m_arr = (yyjson_mut_val *)arr;
     u64 idx = 0;
     u8 add;
     
     /* start with 0 */
     if (cur < end && *cur == '0') {
         *ptr = cur + 1;
-        return imu ? (void *)yyjson_arr_get_first(arr):
-                 (void *)yyjson_mut_arr_get_first(arr);
+        return mut
+            ? (void *)yyjson_mut_arr_get_first(m_arr)
+            : (void *)yyjson_arr_get_first(i_arr);
     }
     
     /* read whole number */
     if (cur + U64_SAFE_DIG < end) end = cur + U64_SAFE_DIG;
-    while (cur < end && (add = *(u8 *)cur - '0') <= 9) {
+    while (cur < end && (add = (u8)((u8)*cur - (u8)'0')) <= 9) {
         cur++;
         idx = idx * 10 + add;
     }
     if (cur == hdr) return NULL;
     *ptr = cur;
-    return imu ? (void *)yyjson_arr_get(arr, idx):
-             (void *)yyjson_mut_arr_get(arr, idx);
+    return mut
+        ? (void *)yyjson_mut_arr_get(m_arr, idx)
+        : (void *)yyjson_arr_get(i_arr, idx);
 }
 
 /**
  Get value from JSON object with a path segment (object key).
  @param ptr Input the segment after `/`, output the end of segment.
  @param end The end of entire JSON pointer.
- @param obj JSON object (yyjson_val/yyjson_mut_val, based on `imu`).
- @param imu `obj` is immutable.
+ @param obj JSON object (yyjson_val/yyjson_mut_val, based on `mut`).
+ @param mut `obj` is mutable.
  @return The matched value, or NULL if not matched.
  */
 static_inline void *pointer_read_obj(const char **ptr,
                                      const char *end,
                                      void *obj,
-                                     bool imu) {
+                                     bool mut) {
 #define BUF_SIZE 512
 #define is_escaped(cur) ((cur) < end && (*(cur) == '0' || *(cur) == '1'))
 #define is_unescaped(cur) ((cur) < end && *(cur) != '/' && *(cur) != '~')
@@ -1551,6 +1555,8 @@ static_inline void *pointer_read_obj(const char **ptr,
     
     const char *hdr = *ptr;
     const char *cur = hdr;
+    yyjson_val *i_obj = (yyjson_val *)obj;
+    yyjson_mut_val *m_obj = (yyjson_mut_val *)obj;
     yyjson_obj_iter i_iter;
     yyjson_mut_obj_iter m_iter;
     void *key;
@@ -1558,23 +1564,27 @@ static_inline void *pointer_read_obj(const char **ptr,
     /* skip unescaped characters */
     while (is_unescaped(cur)) cur++;
     if (likely(is_completed(cur))) {
+        usize len = (usize)(cur - hdr);
         *ptr = cur;
-        return imu ? (void *)yyjson_obj_getn(obj, hdr, cur - hdr):
-                 (void *)yyjson_mut_obj_getn(obj, hdr, cur - hdr);
+        return mut
+            ? (void *)yyjson_mut_obj_getn(m_obj, hdr, len)
+            : (void *)yyjson_obj_getn(i_obj, hdr, len);
     }
     
     /* copy escaped characters to buffer */
     if (likely(end - hdr <= BUF_SIZE)) {
         char buf[BUF_SIZE];
-        char *dst = buf + (cur - hdr);
-        memcpy(buf, hdr, cur - hdr);
+        char *dst = buf + (usize)(cur - hdr);
+        memcpy(buf, hdr, (usize)(cur - hdr));
         while (true) {
             if (is_unescaped(cur)) {
                 *dst++ = *cur++;
             } else if (is_completed(cur)) {
+                usize len = (usize)(dst - buf);
                 *ptr = cur;
-                return imu ? (void *)yyjson_obj_getn(obj, buf, dst - buf):
-                         (void *)yyjson_mut_obj_getn(obj, buf, dst - buf);
+                return mut
+                    ? (void *)yyjson_mut_obj_getn(m_obj, buf, len)
+                    : (void *)yyjson_obj_getn(i_obj, buf, len);
             } else {
                 cur++; /* skip '~' */
                 if (unlikely(!is_escaped(cur))) return NULL;
@@ -1585,28 +1595,29 @@ static_inline void *pointer_read_obj(const char **ptr,
     
     /* compare byte by byte */
     cur = hdr;
-    if (imu) yyjson_obj_iter_init(obj, &i_iter);
-    else yyjson_mut_obj_iter_init(obj, &m_iter);
-    while ((key = imu ? (void *)yyjson_obj_iter_next(&i_iter):
-                    (void *)yyjson_mut_obj_iter_next(&m_iter))) {
-        const char *kstr = unsafe_yyjson_get_str(key);
-        const char *kend = kstr + unsafe_yyjson_get_len(key);
-        while (kstr < kend) {
-            if (is_unescaped(cur) && *kstr == *cur) {
-                kstr += 1;
+    if (!mut) yyjson_obj_iter_init(i_obj, &i_iter);
+    else yyjson_mut_obj_iter_init(m_obj, &m_iter);
+    while ((key = mut ? (void *)yyjson_mut_obj_iter_next(&m_iter)
+                      : (void *)yyjson_obj_iter_next(&i_iter))) {
+        const char *k_str = unsafe_yyjson_get_str(key);
+        const char *k_end = k_str + unsafe_yyjson_get_len(key);
+        while (k_str < k_end) {
+            if (is_unescaped(cur) && *k_str == *cur) {
+                k_str += 1;
                 cur += 1;
             } else if (cur < end && *cur == '~' && is_escaped(cur + 1) &&
-                       *kstr == (*(cur + 1) == '0' ? '~' : '/')) {
-                kstr += 1;
+                       *k_str == (*(cur + 1) == '0' ? '~' : '/')) {
+                k_str += 1;
                 cur += 2;
             } else {
                 break;
             }
         }
-        if (kstr == kend && is_completed(cur)) {
+        if (k_str == k_end && is_completed(cur)) {
             *ptr = cur;
-            return imu ? (void *)yyjson_obj_iter_get_val(key):
-                     (void *)yyjson_mut_obj_iter_get_val(key);
+            return mut
+                ? (void *)yyjson_mut_obj_iter_get_val((yyjson_mut_val *)key)
+                : (void *)yyjson_obj_iter_get_val((yyjson_val *)key);
         }
     }
     return NULL;
@@ -1624,9 +1635,9 @@ yyjson_api yyjson_val *unsafe_yyjson_get_pointer(yyjson_val *val,
     ptr++; /* skip '/' */
     while (true) {
         if (yyjson_is_obj(val)) {
-            val = pointer_read_obj(&ptr, end, val, true);
+            val = (yyjson_val *)pointer_read_obj(&ptr, end, val, false);
         } else if (yyjson_is_arr(val)) {
-            val = pointer_read_arr(&ptr, end, val, true);
+            val = (yyjson_val *)pointer_read_arr(&ptr, end, val, false);
         } else {
             val = NULL;
         }
@@ -1642,9 +1653,9 @@ yyjson_api yyjson_mut_val *unsafe_yyjson_mut_get_pointer(yyjson_mut_val *val,
     ptr++; /* skip '/' */
     while (true) {
         if (yyjson_mut_is_obj(val)) {
-            val = pointer_read_obj(&ptr, end, val, false);
+            val = (yyjson_mut_val *)pointer_read_obj(&ptr, end, val, true);
         } else if (yyjson_mut_is_arr(val)) {
-            val = pointer_read_arr(&ptr, end, val, false);
+            val = (yyjson_mut_val *)pointer_read_arr(&ptr, end, val, true);
         } else {
             val = NULL;
         }
