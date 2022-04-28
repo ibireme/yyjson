@@ -1651,7 +1651,7 @@ static void test_json_mut_obj_api(void) {
     {
         const char *pairs[6] = {"a", "x", "b", "y", "c", "z"};
         obj = yyjson_mut_obj_with_kv(NULL, pairs, 3);
-        yy_assert(!obj)
+        yy_assert(!obj);
         obj = yyjson_mut_obj_with_kv(doc, pairs, 3);
         yy_assert(yyjson_mut_is_obj(obj));
         yy_assert(yyjson_mut_obj_size(obj) == 3);

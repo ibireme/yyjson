@@ -2286,31 +2286,51 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_obj_remove_strn(
 
 /*==============================================================================
  * JSON Pointer API
+ * https://tools.ietf.org/html/rfc6901
  *============================================================================*/
 
-/** Get a JSON value with JSON Pointer: https://tools.ietf.org/html/rfc6901
-    For example: "/users/0/uid".
+/** Get a JSON value with JSON Pointer.
     Returns NULL if there's no matched value. */
 yyjson_api_inline yyjson_val *yyjson_get_pointer(yyjson_val *val,
-                                                 const char *pointer);
+                                                 const char *ptr);
 
-/** Get a JSON value with JSON Pointer: https://tools.ietf.org/html/rfc6901
-    For example: "/users/0/uid".
+/** Get a JSON value with JSON Pointer.
+    Returns NULL if there's no matched value. */
+yyjson_api_inline yyjson_val *yyjson_get_pointern(yyjson_val *val,
+                                                  const char *ptr,
+                                                  size_t len);
+
+/** Get a JSON value with JSON Pointer.
     Returns NULL if there's no matched value. */
 yyjson_api_inline yyjson_val *yyjson_doc_get_pointer(yyjson_doc *doc,
-                                                     const char *pointer);
+                                                     const char *ptr);
 
-/** Get a JSON value with JSON Pointer: https://tools.ietf.org/html/rfc6901
-    For example: "/users/0/uid".
+/** Get a JSON value with JSON Pointer.
+    Returns NULL if there's no matched value. */
+yyjson_api_inline yyjson_val *yyjson_doc_get_pointern(yyjson_doc *doc,
+                                                     const char *ptr,
+                                                      size_t len);
+
+/** Get a JSON value with JSON Pointer.
     Returns NULL if there's no matched value. */
 yyjson_api_inline yyjson_mut_val *yyjson_mut_get_pointer(yyjson_mut_val *val,
-                                                         const char *pointer);
+                                                         const char *ptr);
 
-/** Get a JSON value with JSON Pointer: https://tools.ietf.org/html/rfc6901
-    For example: "/users/0/uid".
+/** Get a JSON value with JSON Pointer.
+    Returns NULL if there's no matched value. */
+yyjson_api_inline yyjson_mut_val *yyjson_mut_get_pointern(yyjson_mut_val *val,
+                                                          const char *ptr,
+                                                          size_t len);
+
+/** Get a JSON value with JSON Pointer.
     Returns NULL if there's no matched value. */
 yyjson_api_inline yyjson_mut_val *yyjson_mut_doc_get_pointer(
-                                    yyjson_mut_doc *doc, const char *pointer);
+    yyjson_mut_doc *doc, const char *ptr);
+
+/** Get a JSON value with JSON Pointer.
+    Returns NULL if there's no matched value. */
+yyjson_api_inline yyjson_mut_val *yyjson_mut_doc_get_pointern(
+    yyjson_mut_doc *doc, const char *ptr, size_t len);
 
 
 
@@ -4515,44 +4535,66 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_obj_remove_strn(
  * JSON Pointer API (Implementation)
  *============================================================================*/
 
+/* `val` not null, `ptr` start with '/', `len` > 0. */
 yyjson_api yyjson_val *unsafe_yyjson_get_pointer(yyjson_val *val,
                                                  const char *ptr,
                                                  size_t len);
 
+/* `val` not null, `ptr` start with '/', `len` > 0. */
 yyjson_api yyjson_mut_val *unsafe_yyjson_mut_get_pointer(yyjson_mut_val *val,
                                                          const char *ptr,
                                                          size_t len);
 
+
+yyjson_api_inline yyjson_val *yyjson_get_pointern(yyjson_val *val,
+                                                  const char *ptr,
+                                                  size_t len) {
+    if (!val || !ptr) return NULL;
+    if (len == 0) return val;
+    if (*ptr != '/') return NULL;
+    return unsafe_yyjson_get_pointer(val, ptr, len);
+}
+
 yyjson_api_inline yyjson_val *yyjson_get_pointer(yyjson_val *val,
                                                  const char *ptr) {
-    if (val && ptr) {
-        if (*ptr == '\0') return val;
-        if (*ptr != '/') return NULL;
-        return unsafe_yyjson_get_pointer(val, ptr, strlen(ptr));
-    }
-    return NULL;
+    if (!val || !ptr) return NULL;
+    return yyjson_get_pointern(val, ptr, strlen(ptr));
+}
+
+yyjson_api_inline yyjson_val *yyjson_doc_get_pointern(yyjson_doc *doc,
+                                                      const char *ptr,
+                                                      size_t len) {
+    return yyjson_get_pointern(doc ? doc->root : NULL, ptr, len);
 }
 
 yyjson_api_inline yyjson_val *yyjson_doc_get_pointer(yyjson_doc *doc,
                                                      const char *ptr) {
-    if (doc) return yyjson_get_pointer(doc->root, ptr);
-    return NULL;
+    return yyjson_get_pointer(doc ? doc->root : NULL, ptr);
+}
+
+yyjson_api_inline yyjson_mut_val *yyjson_mut_get_pointern(yyjson_mut_val *val,
+                                                          const char *ptr,
+                                                          size_t len) {
+    if (!val || !ptr) return NULL;
+    if (len == 0) return val;
+    if (*ptr != '/') return NULL;
+    return unsafe_yyjson_mut_get_pointer(val, ptr, len);
 }
 
 yyjson_api_inline yyjson_mut_val *yyjson_mut_get_pointer(yyjson_mut_val *val,
                                                          const char *ptr) {
-    if (val && ptr) {
-        if (*ptr == '\0') return val;
-        if (*ptr != '/') return NULL;
-        return unsafe_yyjson_mut_get_pointer(val, ptr, strlen(ptr));
-    }
-    return NULL;
+    if (!val || !ptr) return NULL;
+    return yyjson_mut_get_pointern(val, ptr, strlen(ptr));
+}
+
+yyjson_api_inline yyjson_mut_val *yyjson_mut_doc_get_pointern(
+    yyjson_mut_doc *doc, const char *ptr, size_t len) {
+    return yyjson_mut_get_pointern(doc ? doc->root : NULL, ptr, len);
 }
 
 yyjson_api_inline yyjson_mut_val *yyjson_mut_doc_get_pointer(
     yyjson_mut_doc *doc, const char *ptr) {
-    if (doc) return yyjson_mut_get_pointer(doc->root, ptr);
-    return NULL;
+    return yyjson_mut_get_pointer(doc ? doc->root : NULL, ptr);
 }
 
 

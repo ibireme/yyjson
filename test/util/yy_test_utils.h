@@ -197,19 +197,21 @@ typedef unsigned __int64    uint64_t;
 #endif
 
 /* assert */
-#define yy_assert(expr) \
+#define yy_assert(expr) do { \
     if (!(expr)) { \
         fprintf(stderr, "Assertion failed: %s (%s: %d)\n", #expr, __FILE__, __LINE__); \
         abort(); \
-    };
+    }; \
+} while(false)
 
-#define yy_assertf(expr, ...) \
+#define yy_assertf(expr, ...) do { \
     if (!(expr)) { \
         fprintf(stderr, "Assertion failed: %s (%s: %d)\n", #expr, __FILE__, __LINE__); \
         fprintf(stderr, __VA_ARGS__); \
         fprintf(stderr, "\n"); \
         abort(); \
-    };
+    }; \
+} while(false)
 
 /* test */
 #if yy_has_include("yy_xctest.h")

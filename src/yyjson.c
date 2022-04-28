@@ -1496,181 +1496,160 @@ bool unsafe_yyjson_mut_equals(yyjson_mut_val *lhs, yyjson_mut_val *rhs) {
  * JSON Pointer
  *============================================================================*/
 
-/* only 0x0, 0x2F ('/') and 0x7E ('~') are excluded from this table */
-static const bool pointer_char_table[] = {
-    0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0,
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1,
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1
-};
-
-static_inline bool pointer_read_index(const char *ptr,
-                                      const char **end,
-                                      usize *idx) {
-    u64 num;
-    u32 i;
+/**
+ Get value from JSON array with a path segment (array index).
+ @param ptr Input the segment after `/`, output the end of segment.
+ @param end The end of entire JSON pointer.
+ @param arr JSON array (yyjson_val/yyjson_mut_val, based on `imu`).
+ @param imu `arr` is immutable.
+ @return The matched value, or NULL if not matched.
+ */
+static_inline void *pointer_read_arr(const char **ptr,
+                                     const char *end,
+                                     void *arr,
+                                     bool imu) {
+    const char *hdr = *ptr;
+    const char *cur = hdr;
+    u64 idx = 0;
     u8 add;
     
-    add = (u8)(*ptr++ - '0');
-    if (add == 0) {
-        *idx = 0;
-        *end = ptr;
-        return true;
+    /* start with 0 */
+    if (cur < end && *cur == '0') {
+        *ptr = cur + 1;
+        return imu ? (void *)yyjson_arr_get_first(arr):
+                 (void *)yyjson_mut_arr_get_first(arr);
     }
-    if (add > 9) return false;
     
-    num = add;
-    for (i = 0; i < U64_SAFE_DIG; i++) {
-        if ((add = (u8)(ptr[i] - '0')) <= 9) {
-            num = add + num * 10;
-        } else {
-            *idx = (usize)num;
-            *end = ptr + i;
-            return num < (u64)USIZE_MAX;
-        }
+    /* read whole number */
+    if (cur + U64_SAFE_DIG < end) end = cur + U64_SAFE_DIG;
+    while (cur < end && (add = *(u8 *)cur - '0') <= 9) {
+        cur++;
+        idx = idx * 10 + add;
     }
-    return false;
+    if (cur == hdr) return NULL;
+    *ptr = cur;
+    return imu ? (void *)yyjson_arr_get(arr, idx):
+             (void *)yyjson_mut_arr_get(arr, idx);
 }
 
-static_inline bool pointer_read_str(const char *ptr, const char **end,
-                                    char *buf, const char **str, usize *len) {
-    const char *hdr = ptr;
-    char *dst = buf;
-    usize distance;
+/**
+ Get value from JSON object with a path segment (object key).
+ @param ptr Input the segment after `/`, output the end of segment.
+ @param end The end of entire JSON pointer.
+ @param obj JSON object (yyjson_val/yyjson_mut_val, based on `imu`).
+ @param imu `obj` is immutable.
+ @return The matched value, or NULL if not matched.
+ */
+static_inline void *pointer_read_obj(const char **ptr,
+                                     const char *end,
+                                     void *obj,
+                                     bool imu) {
+#define BUF_SIZE 512
+#define is_escaped(cur) ((cur) < end && (*(cur) == '0' || *(cur) == '1'))
+#define is_unescaped(cur) ((cur) < end && *(cur) != '/' && *(cur) != '~')
+#define is_completed(cur) ((cur) == end || *(cur) == '/')
     
-    /* skip unescaped characters, do not validate encoding */
-    while (true) {
-#define skip_expr(i) \
-        if (likely(pointer_char_table[(u8)ptr[i]])) {} else { ptr += i; break; }
-        repeat8_incr(skip_expr)
-#undef skip_expr
-        ptr += 8;
-    }
-    distance = (usize)(ptr - hdr);
-    if (likely(*ptr != '~')) {
-        *end = ptr;
-        *str = hdr;
-        *len = distance;
-        return true;
+    const char *hdr = *ptr;
+    const char *cur = hdr;
+    yyjson_obj_iter i_iter;
+    yyjson_mut_obj_iter m_iter;
+    void *key;
+    
+    /* skip unescaped characters */
+    while (is_unescaped(cur)) cur++;
+    if (likely(is_completed(cur))) {
+        *ptr = cur;
+        return imu ? (void *)yyjson_obj_getn(obj, hdr, cur - hdr):
+                 (void *)yyjson_mut_obj_getn(obj, hdr, cur - hdr);
     }
     
-    /* copy escaped string */
-    memcpy(dst, hdr, distance);
-    dst += distance;
-    ptr += 1;
-    if (*ptr != '0' && *ptr != '1') return false;
-    *dst++ = (char)(*ptr++ == '0' ? '~' : '/');
-    while (true) {
-        if (pointer_char_table[(u8)*ptr]) {
-            *dst++ = *ptr++;
-        } else if (*ptr != '~') {
-            *end = ptr;
-            *str = buf;
-            *len = (usize)(dst - buf);
-            return true;
-        } else {
-            ptr++;
-            if (*ptr != '0' && *ptr != '1') return false;
-            *dst++ = (char)(*ptr++ == '0' ? '~' : '/');
+    /* copy escaped characters to buffer */
+    if (likely(end - hdr <= BUF_SIZE)) {
+        char buf[BUF_SIZE];
+        char *dst = buf + (cur - hdr);
+        memcpy(buf, hdr, cur - hdr);
+        while (true) {
+            if (is_unescaped(cur)) {
+                *dst++ = *cur++;
+            } else if (is_completed(cur)) {
+                *ptr = cur;
+                return imu ? (void *)yyjson_obj_getn(obj, buf, dst - buf):
+                         (void *)yyjson_mut_obj_getn(obj, buf, dst - buf);
+            } else {
+                cur++; /* skip '~' */
+                if (unlikely(!is_escaped(cur))) return NULL;
+                *dst++ = (char)(*cur++ == '0' ? '~' : '/');
+            }
         }
     }
+    
+    /* compare byte by byte */
+    cur = hdr;
+    if (imu) yyjson_obj_iter_init(obj, &i_iter);
+    else yyjson_mut_obj_iter_init(obj, &m_iter);
+    while ((key = imu ? (void *)yyjson_obj_iter_next(&i_iter):
+                    (void *)yyjson_mut_obj_iter_next(&m_iter))) {
+        const char *kstr = unsafe_yyjson_get_str(key);
+        const char *kend = kstr + unsafe_yyjson_get_len(key);
+        while (kstr < kend) {
+            if (is_unescaped(cur) && *kstr == *cur) {
+                kstr += 1;
+                cur += 1;
+            } else if (cur < end && *cur == '~' && is_escaped(cur + 1) &&
+                       *kstr == (*(cur + 1) == '0' ? '~' : '/')) {
+                kstr += 1;
+                cur += 2;
+            } else {
+                break;
+            }
+        }
+        if (kstr == kend && is_completed(cur)) {
+            *ptr = cur;
+            return imu ? (void *)yyjson_obj_iter_get_val(key):
+                     (void *)yyjson_mut_obj_iter_get_val(key);
+        }
+    }
+    return NULL;
+    
+#undef BUF_SIZE
+#undef is_escaped
+#undef is_unescaped
+#undef is_completed
 }
 
 yyjson_api yyjson_val *unsafe_yyjson_get_pointer(yyjson_val *val,
                                                  const char *ptr,
-                                                 size_t len) {
-    char tmp[512];
-    char *buf;
-    
-    if (likely(len <= sizeof(tmp))) {
-        buf = tmp;
-    } else {
-        buf = (char *)malloc(len);
-        if (!buf) return NULL;
-    }
-    
-    ptr++;
+                                                 usize len) {
+    const char *end = ptr + len;
+    ptr++; /* skip '/' */
     while (true) {
         if (yyjson_is_obj(val)) {
-            const char *key;
-            usize key_len;
-            if (pointer_read_str(ptr, &ptr, buf, &key, &key_len)) {
-                val = yyjson_obj_getn(val, key, key_len);
-            } else {
-                val = NULL;
-            }
+            val = pointer_read_obj(&ptr, end, val, true);
         } else if (yyjson_is_arr(val)) {
-            usize idx;
-            if (pointer_read_index(ptr, &ptr, &idx)) {
-                val = yyjson_arr_get(val, idx);
-            } else {
-                val = NULL;
-            }
+            val = pointer_read_arr(&ptr, end, val, true);
         } else {
             val = NULL;
         }
-        if (val && *ptr == '\0') {
-            if (unlikely(len > sizeof(tmp))) free(buf);
-            return val;
-        }
-        if (*ptr++ == '/') continue;
-        if (unlikely(len > sizeof(tmp))) free(buf);
-        return NULL;
+        if (!val || ptr == end) return val;
+        if (*ptr++ != '/') return NULL;
     }
 }
 
 yyjson_api yyjson_mut_val *unsafe_yyjson_mut_get_pointer(yyjson_mut_val *val,
                                                          const char *ptr,
-                                                         size_t len) {
-    char tmp[512];
-    char *buf;
-    
-    if (likely(len <= sizeof(tmp))) {
-        buf = tmp;
-    } else {
-        buf = (char *)malloc(len);
-        if (!buf) return NULL;
-    }
-    
-    ptr++;
+                                                         usize len) {
+    const char *end = ptr + len;
+    ptr++; /* skip '/' */
     while (true) {
         if (yyjson_mut_is_obj(val)) {
-            const char *key;
-            usize key_len;
-            if (pointer_read_str(ptr, &ptr, buf, &key, &key_len)) {
-                val = yyjson_mut_obj_getn(val, key, key_len);
-            } else {
-                val = NULL;
-            }
+            val = pointer_read_obj(&ptr, end, val, false);
         } else if (yyjson_mut_is_arr(val)) {
-            usize idx;
-            if (pointer_read_index(ptr, &ptr, &idx)) {
-                val = yyjson_mut_arr_get(val, idx);
-            } else {
-                val = NULL;
-            }
+            val = pointer_read_arr(&ptr, end, val, false);
         } else {
             val = NULL;
         }
-        if (val && *ptr == '\0') {
-            if (unlikely(len > sizeof(tmp))) free(buf);
-            return val;
-        }
-        if (*ptr++ == '/') continue;
-        if (unlikely(len > sizeof(tmp))) free(buf);
-        return NULL;
+        if (!val || ptr == end) return val;
+        if (*ptr++ != '/') return NULL;
     }
 }
 
@@ -1683,7 +1662,7 @@ yyjson_api yyjson_mut_val *unsafe_yyjson_mut_get_pointer(yyjson_mut_val *val,
 yyjson_api yyjson_mut_val *yyjson_merge_patch(yyjson_mut_doc *doc,
                                               yyjson_val *orig,
                                               yyjson_val *patch) {
-    size_t idx, max;
+    usize idx, max;
     yyjson_val *key, *orig_val, *patch_val, local_orig;
     yyjson_mut_val *builder, *mut_key, *mut_val, *merged_val;
     
@@ -4603,8 +4582,8 @@ static_inline yyjson_doc *read_root_minify(u8 *hdr,
         val_tmp = (yyjson_val *)alc.realloc(alc.ctx, (void *)val_hdr, \
             alc_len * sizeof(yyjson_val)); \
         if ((!val_tmp)) goto fail_alloc; \
-        val = val_tmp + (size_t)(val - val_hdr); \
-        ctn = val_tmp + (size_t)(ctn - val_hdr); \
+        val = val_tmp + (usize)(val - val_hdr); \
+        ctn = val_tmp + (usize)(ctn - val_hdr); \
         val_hdr = val_tmp; \
         val_end = val_tmp + (alc_len - 2); \
     } \
@@ -4986,8 +4965,8 @@ static_inline yyjson_doc *read_root_pretty(u8 *hdr,
         val_tmp = (yyjson_val *)alc.realloc(alc.ctx, (void *)val_hdr, \
             alc_len * sizeof(yyjson_val)); \
         if ((!val_tmp)) goto fail_alloc; \
-        val = val_tmp + (size_t)(val - val_hdr); \
-        ctn = val_tmp + (size_t)(ctn - val_hdr); \
+        val = val_tmp + (usize)(val - val_hdr); \
+        ctn = val_tmp + (usize)(ctn - val_hdr); \
         val_hdr = val_tmp; \
         val_end = val_tmp + (alc_len - 2); \
     } \
@@ -5539,7 +5518,7 @@ yyjson_doc *yyjson_read_file(const char *path,
     /* read file */
     if (file_size > 0) {
         /* read the entire file in one call */
-        buf_size = (size_t)file_size + YYJSON_PADDING_SIZE;
+        buf_size = (usize)file_size + YYJSON_PADDING_SIZE;
         buf = alc.malloc(alc.ctx, buf_size);
         if (buf == NULL) {
             return_err(MEMORY_ALLOCATION, "fail to alloc memory");
