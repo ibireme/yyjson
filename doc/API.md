@@ -32,6 +32,7 @@
 * [Number Processing](#number-processing)
     * [Number Reader](#number-reader)
     * [Number Writer](#number-writer)
+* [Text Encoding](#text-encoding)
 * [Memory Allocator](#memory-allocator)
     * [Single allocator for multiple JSON](#single-allocator-for-multiple-json)
     * [Stack memory allocator](#stack-memory-allocator)
@@ -746,10 +747,17 @@ yyjson_obj_foreach(obj, idx, max, key, val) {
 `yyjson` allows you to query JSON value with `JSON Pointer` ([RFC 6901](https://tools.ietf.org/html/rfc6901)).
 
 ```c
-yyjson_val *yyjson_get_pointer(yyjson_val *val, const char *pointer);
-yyjson_val *yyjson_doc_get_pointer(yyjson_doc *doc, const char *pointer);
-yyjson_mut_val *yyjson_mut_get_pointer(yyjson_mut_val *val, const char *pointer);
-yyjson_mut_val *yyjson_mut_doc_get_pointer(yyjson_mut_doc *doc, const char *pointer);
+// pointer is a null-terminated string
+yyjson_val *yyjson_get_pointer(yyjson_val *val, const char *ptr);
+yyjson_val *yyjson_doc_get_pointer(yyjson_doc *doc, const char *ptr);
+yyjson_mut_val *yyjson_mut_get_pointer(yyjson_mut_val *val, const char *ptr);
+yyjson_mut_val *yyjson_mut_doc_get_pointer(yyjson_mut_doc *doc, const char *ptr);
+
+// pointer with string length, allow NUL (Unicode U+0000) characters inside
+yyjson_val *yyjson_get_pointern(yyjson_val *val, const char *ptr, size_t len);
+yyjson_val *yyjson_doc_get_pointern(yyjson_doc *doc, const char *ptr, size_t len);
+yyjson_mut_val *yyjson_mut_get_pointern(yyjson_mut_val *val, const char *ptr, size_t len);
+yyjson_mut_val *yyjson_mut_doc_get_pointern(yyjson_mut_doc *doc, const char *ptr, size_t len);
 ```
 
 For example, given the JSON document:
@@ -770,8 +778,9 @@ The following JSON strings evaluate to the accompanying values:
 | `""` | `the whole document` |
 | `"/size"`| `3` |
 | `"/users/0"` | `{"id": 1, "name": "Harry"}` |
-| `"/users/1/name"` | `"Ron"` | 
-| `"/none"` | NULL | 
+| `"/users/1/name"` | `"Ron"` |
+| `"/no_match"` | NULL |
+| `"no_slash"` | NULL |
 
 
 ---------------
@@ -1164,8 +1173,24 @@ You can also use `YYJSON_WRITE_INF_AND_NAN_AS_NULL` to write inf/nan number as `
 
 
 
+# Text Encoding
+
+yyjson only support UTF-8 encoding without BOM, as specified in [RFC 8259](https://datatracker.ietf.org/doc/html/rfc8259#section-8.1):
+
+>   JSON text exchanged between systems that are not part of a closed ecosystem MUST be encoded using UTF-8.
+> 
+>   Implementations MUST NOT add a byte order mark (U+FEFF) to the beginning of a networked-transmitted JSON text.
+
+By default, yyjson performs a strict utf-8 encoding validation on the text during serialization and deserialization. An error will be reported when an invalid text encoding is encountered.
+
+You could use `YYJSON_READ_ALLOW_INVALID_UNICODE` and `YYJSON_WRITE_ALLOW_INVALID_UNICODE` flag to allow invalid unicode encoding. However, you should be aware that the result of serialization/deserialization may contain invalid strings, which can be used by other code and may pose security risks.
+
+
+
 # Memory Allocator
-yyjson use libc's `malloc()`, `realloc()` and `free()` as default allocator, but yyjson allows you to customize the memory allocator to achieve better performance or lower memory usage.
+yyjson does not call libc's memory allocation functions (malloc/realloc/free) **directly**. When memory allocation is needed, yyjson's API takes a parameter named `alc` that allows the caller to pass in an allocator. If the `alc` is NULL, yyjson will use the default memory allocator, which is a simple wrapper of libc's functions.
+
+Custom memory allocator allows you to take more control over memory allocation, here are a few examples:
 
 ### Single allocator for multiple JSON
 If you need to parse multiple small JSON, you can use a single allocator with pre-allocated buffer to avoid frequent memory allocation.
@@ -1218,22 +1243,22 @@ Sample code:
 
 #include <mimalloc.h>
 
-static void *my_malloc_func(void *ctx, size_t size) {
+static void *priv_malloc(void *ctx, size_t size) {
     return mi_malloc(size);
 }
 
-static void *my_realloc_func(void *ctx, void *ptr, size_t size) {
+static void *priv_realloc(void *ctx, void *ptr, size_t size) {
     return mi_realloc(ptr, size);
 }
 
-static void my_free_func(void *ctx, void *ptr) {
+static void priv_free(void *ctx, void *ptr) {
     mi_free(ptr);
 }
 
-static const yyjson_alc MY_ALC = {
-    my_malloc_func,
-    my_realloc_func,
-    my_free_func,
+static const yyjson_alc PRIV_ALC = {
+    priv_malloc,
+    priv_realloc,
+    priv_free,
     NULL
 };
 
@@ -1333,4 +1358,4 @@ However, there are some special conditions that you need to be aware of:
 1. You use libc's `setlocale()` function to change locale.
 2. Your environment does not use IEEE 754 floating-point (e.g. some IBM mainframes) or you explicitly specified the `YYJSON_DISABLE_FAST_FP_CONV` flag at build time.
 
-When you meet both of these conditions, you should avoid call `setlocale()` while other thread is parsing JSON, otherwise an error may be returned for JSON floating point number parsing.
+When you meet **both** of these conditions, you should avoid call `setlocale()` while other thread is parsing JSON, otherwise an error may be returned for JSON floating point number parsing.
