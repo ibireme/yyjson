@@ -1181,9 +1181,9 @@ yyjson only support UTF-8 encoding without BOM, as specified in [RFC 8259](https
 > 
 >   Implementations MUST NOT add a byte order mark (U+FEFF) to the beginning of a networked-transmitted JSON text.
 
-By default, yyjson performs a strict utf-8 encoding validation on the text during serialization and deserialization. An error will be reported when an invalid text encoding is encountered.
+By default, yyjson performs a strict UTF-8 encoding validation on input strings in reader and writer. An error will be reported when an invalid character is encountered.
 
-You could use `YYJSON_READ_ALLOW_INVALID_UNICODE` and `YYJSON_WRITE_ALLOW_INVALID_UNICODE` flag to allow invalid unicode encoding. However, you should be aware that the result of serialization/deserialization may contain invalid strings, which can be used by other code and may pose security risks.
+You could use `YYJSON_READ_ALLOW_INVALID_UNICODE` and `YYJSON_WRITE_ALLOW_INVALID_UNICODE` flag to allow invalid unicode encoding. However, you should be aware that the result of reader/writer may contain invalid characters, which can be used by other code and may pose security risks.
 
 
 
