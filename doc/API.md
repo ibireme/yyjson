@@ -32,7 +32,9 @@
 * [Number Processing](#number-processing)
     * [Number Reader](#number-reader)
     * [Number Writer](#number-writer)
-* [Text Encoding](#text-encoding)
+* [Text Processing](#text-processing)
+    * [Character Encoding](#character-encoding)
+    * [NUL Character](#nul-character)
 * [Memory Allocator](#memory-allocator)
     * [Single allocator for multiple JSON](#single-allocator-for-multiple-json)
     * [Stack memory allocator](#stack-memory-allocator)
@@ -1173,22 +1175,44 @@ You can also use `YYJSON_WRITE_INF_AND_NAN_AS_NULL` to write inf/nan number as `
 
 
 
-# Text Encoding
+# Text Processing
 
-yyjson only support UTF-8 encoding without BOM, as specified in [RFC 8259](https://datatracker.ietf.org/doc/html/rfc8259#section-8.1):
+### Character Encoding
+yyjson only supports UTF-8 encoding without BOM, as specified in [RFC 8259](https://datatracker.ietf.org/doc/html/rfc8259#section-8.1):
 
 >   JSON text exchanged between systems that are not part of a closed ecosystem MUST be encoded using UTF-8.
-> 
 >   Implementations MUST NOT add a byte order mark (U+FEFF) to the beginning of a networked-transmitted JSON text.
 
-By default, yyjson performs a strict UTF-8 encoding validation on input strings in reader and writer. An error will be reported when an invalid character is encountered.
+By default, yyjson performs a strict UTF-8 encoding validation on input strings. An error will be reported when an invalid character is encountered.
 
-You could use `YYJSON_READ_ALLOW_INVALID_UNICODE` and `YYJSON_WRITE_ALLOW_INVALID_UNICODE` flag to allow invalid unicode encoding. However, you should be aware that the result of reader/writer may contain invalid characters, which can be used by other code and may pose security risks.
+You could use `YYJSON_READ_ALLOW_INVALID_UNICODE` and `YYJSON_WRITE_ALLOW_INVALID_UNICODE` flag to allow invalid unicode encoding. However, you should be aware that the result value from yyjson may contain invalid characters, which can be used by other code and may pose security risks.
+
+### NUL Character
+yyjson supports the `NUL` character (also known as `null terminator`, Unicode `U+0000`, ASCII `\0`).
+
+When reading JSON, `\u0000` will be unescaped to `NUL`. If a string contains `NUL`, the length obtained with strlen() will be inaccurate, and you should use yyjson_get_len() instead to get the real length.
+
+When building JSON, the input string is treated as null-terminated. If you need to pass in a string with `NUL` inside, you should use the API with the `n` suffix and pass in the real length.
+
+For example:
+```c
+// null-terminated string
+yyjson_mut_str(doc, str);
+yyjson_obj_get(obj, str);
+
+// any string, with or without null terminator
+yyjson_mut_strn(doc, str, len);
+yyjson_obj_getn(obj, str, len);
+
+// C++ string
+std::string sstr = ...;
+yyjson_obj_getn(obj, sstr.data(), sstr.length());
+```
 
 
 
 # Memory Allocator
-yyjson does not call libc's memory allocation functions (malloc/realloc/free) **directly**. When memory allocation is needed, yyjson's API takes a parameter named `alc` that allows the caller to pass in an allocator. If the `alc` is NULL, yyjson will use the default memory allocator, which is a simple wrapper of libc's functions.
+yyjson does not call libc's memory allocation functions (malloc/realloc/free) **directly**. When memory allocation is required, yyjson's API takes a parameter named `alc` that allows the caller to pass in an allocator. If the `alc` is NULL, yyjson will use the default memory allocator, which is a simple wrapper of libc's functions.
 
 Custom memory allocator allows you to take more control over memory allocation, here are a few examples:
 
@@ -1220,7 +1244,7 @@ free(buf);
 ```
 
 ### Stack memory allocator
-If the JSON is small enough, you can use stack memory only to read or write it.
+If the JSON is small enough, you can use stack memory to read or write it.
 
 Sample code:
 ```c
@@ -1263,12 +1287,12 @@ static const yyjson_alc PRIV_ALC = {
 };
 
 // Read with custom allocator
-yyjson_doc *doc = yyjson_doc_read_opts(dat, len, 0, &MY_ALC, NULL);
+yyjson_doc *doc = yyjson_doc_read_opts(dat, len, 0, &PRIV_ALC, NULL);
 ...
 yyjson_doc_free(doc);
 
 // Write with custom allocator
-yyjson_alc *alc = &MY_ALC;
+yyjson_alc *alc = &PRIV_ALC;
 char *json = yyjson_doc_write(doc, 0, alc, NULL, NULL);
 ...
 alc->free(alc->ctx, json);
