@@ -1,5 +1,5 @@
 /*==============================================================================
- * Utilities for single thread test and benchmark.
+ * Utilities for single thread test (C99, Win/Mac/Linux).
  *
  * Copyright (C) 2018 YaoYuan <ibireme@gmail.com>.
  * Released under the MIT license (MIT).
@@ -20,57 +20,9 @@
 #ifdef _WIN32
 #   include <windows.h>
 #   include <io.h>
-#   include <intrin.h>
 #else
-#   ifdef __APPLE__
-#       include <TargetConditionals.h>
-#       include <mach/mach_init.h>
-#       include <mach/mach_time.h>
-#       include <mach/thread_policy.h>
-#       include <mach/thread_act.h>
-#       include <sys/types.h>
-#       include <sys/sysctl.h>
-#       include <sys/utsname.h>
-#   else
-#       ifndef _GNU_SOURCE
-#           define _GNU_SOURCE
-#       endif
-#       ifndef __USE_GNU
-#           define __USE_GNU
-#       endif
-#   endif
-#   include <sys/time.h>
-#   include <pthread.h>
-#   include <sched.h>
 #   include <dirent.h>
 #   include <sys/stat.h>
-#endif
-
-/* architecture */
-#if defined(__x86_64) || defined(__x86_64__) || \
-    defined(__amd64) || defined(__amd64__) || \
-    defined(_M_AMD64) || defined(_M_X64)
-#   define YY_ARCH_X64 1
-#   define YY_ARCH_64  1
-#elif defined(i386) || defined(__i386) || defined(__i386__) || \
-    defined(_X86_) || defined(__X86__) || defined(_M_IX86) || \
-    defined(__I86__) || defined(__IA32__) || defined(__THW_INTEL)
-#   define YY_ARCH_X86 1
-#   define YY_ARCH_32  1
-#elif defined(__arm64) || defined(__arm64__) || \
-    defined(__aarch64__) || defined(_M_ARM64)
-#   define YY_ARCH_ARM64 1
-#   define YY_ARCH_64    1
-#elif defined(__arm) || defined(__arm__) || defined(_ARM_) || \
-    defined(_ARM) || defined(_M_ARM) || defined(__TARGET_ARCH_ARM)
-#   define YY_ARCH_ARM32 1
-#   define YY_ARCH_32    1
-#endif
-
-#if !YY_ARCH_64 && YY_ARCH_32
-#   if defined(_LP64) || defined(__LP64__) || defined(__64BIT__)
-#       define YY_ARCH_64 1
-#   endif
 #endif
 
 /* compiler builtin check (clang) */
@@ -146,56 +98,6 @@
 #   endif
 #endif
 
-/* stdint */
-#if YY_HAS_STDINT_H || yy_has_include(<stdint.h>) || \
-    _MSC_VER >= 1600 || (__STDC__ >= 1 && __STDC_VERSION__ >= 199901L) || \
-    defined(_STDINT_H) || defined(_STDINT_H_) || defined(__CLANG_STDINT_H) || \
-    defined(_STDINT_H_INCLUDED)
-#   include <stdint.h>
-#elif defined(_MSC_VER)
-#   if _MSC_VER < 1300
-typedef signed char         int8_t;
-typedef signed short        int16_t;
-typedef signed int          int32_t;
-typedef unsigned char       uint8_t;
-typedef unsigned short      uint16_t;
-typedef unsigned int        uint32_t;
-typedef signed __int64      int64_t;
-typedef unsigned __int64    uint64_t;
-#   else
-typedef signed __int8       int8_t;
-typedef signed __int16      int16_t;
-typedef signed __int32      int32_t;
-typedef unsigned __int8     uint8_t;
-typedef unsigned __int16    uint16_t;
-typedef unsigned __int32    uint32_t;
-typedef signed __int64      int64_t;
-typedef unsigned __int64    uint64_t;
-#   endif
-#endif
-
-/* stdbool */
-#if YY_HAS_STDBOOL_H || yy_has_include(<stdbool.h>) || \
-    _MSC_VER >= 1800 || (__STDC__ >= 1 && __STDC_VERSION__ >= 199901L)
-#   include <stdbool.h>
-#elif !defined(__bool_true_false_are_defined)
-#   define __bool_true_false_are_defined 1
-#   if defined(__cplusplus)
-#       if defined(__GNUC__) && !defined(__STRICT_ANSI__)
-#           define _Bool bool
-#           if __cplusplus < 201103L
-#               define bool bool
-#               define false false
-#               define true true
-#           endif
-#       endif
-#   else
-#       define bool unsigned char
-#       define true 1
-#       define false 0
-#   endif
-#endif
-
 /* assert */
 #define yy_assert(expr) do { \
     if (!(expr)) { \
@@ -254,102 +156,36 @@ typedef size_t      usize;
 
 
 
-/*==============================================================================
- * Timer
- *============================================================================*/
+// =============================================================================
+// Pseudo Random Number Generator
+// =============================================================================
 
-/** Structure holding a timestamp. */
-typedef struct yy_time yy_time;
+/// Reset the random number generator with a seed (default 0).
+void yy_rand_reset(u64 seed);
 
-/** Get current wall time to a structure. */
-static yy_inline void yy_time_get_current(yy_time *t);
+/// Generate a uniformly distributed 32-bit random integer.
+u32 yy_rand_u32(void);
+/// Generate a uniformly distributed 32-bit integer, where 0 <= r < bound.
+u32 yy_rand_u32_uniform(u32 bound);
+/// Generate a uniformly distributed 32-bit integer, where min <= r <= max.
+u32 yy_rand_u32_range(u32 min, u32 max);
 
-/** Convert time structure to seconds. */
-static yy_inline f64 yy_time_to_seconds(yy_time *t);
+/// Generate a uniformly distributed 64-bit integer number.
+u64 yy_rand_u64(void);
+/// Generate a uniformly distributed 64-bit integer, where 0 <= r < bound.
+u64 yy_rand_u64_uniform(u64 bound);
+/// Generate a uniformly distributed 64-bit integer, where min <= r <= max.
+u64 yy_rand_u64_range(u64 min, u64 max);
 
-/** Get current wall time in seconds. */
-static yy_inline f64 yy_time_get_seconds(void);
+/// Generate a uniformly distributed random float, where 0.0 <= r < 1.0.
+f32 yy_rand_f32(void);
+/// Generate a uniformly distributed float number, where min <= r < max.
+f32 yy_rand_f32_range(f32 min, f32 max);
 
-/** A high-resolution, low-overhead, fixed-frequency timer for benchmark. */
-static yy_inline u64 yy_time_get_ticks(void);
-
-
-
-/*==============================================================================
- * CPU
- *============================================================================*/
-
-/** Try to increase the priority of the current thread.
-    This method may used to reduce context switches of current thread. */
-bool yy_cpu_setup_priority(void);
-
-/** Let CPU 'spinning' for a while.
-    This function may used to warm up CPU from power saving mode and
-    stabilize the CPU frequency. */
-void yy_cpu_spin(f64 second);
-
-/** Measure current CPU frequency.
-    This function may take about 1 second on 1GHz CPU.
-    This function may returns inaccurate result in debug mode.
-    You should pre-test it to ensure that it works on your CPU. */
-void yy_cpu_measure_freq(void);
-
-/** Returns CPU frequency in Hz.
-    You should call yy_cpu_measure_freq() at least once before calling this
-    function. */
-u64 yy_cpu_get_freq(void);
-
-/** Returns tick per second.
-    You should call yy_cpu_measure_freq() at least once before calling this
-    function. This function may used with yy_time_get_ticks() for benchmark. */
-u64 yy_cpu_get_tick_per_sec(void);
-
-/** Returns cpu cycle tick.
-    You should call yy_cpu_measure_freq() at least once before calling this
-    function. This function may used with yy_time_get_ticks() for benchmark. */
-f64 yy_cpu_get_cycle_per_tick(void);
-
-
-
-/*==============================================================================
- * Environment
- *============================================================================*/
-
-/** Returns OS description. */
-const char *yy_env_get_os_desc(void);
-
-/** Returns CPU description. */
-const char *yy_env_get_cpu_desc(void);
-
-/** Returns compiler description. */
-const char *yy_env_get_compiler_desc(void);
-
-
-
-/*==============================================================================
- * Random Number Generator
- *============================================================================*/
-
-/** Reset the random number generator with default seed. */
-void yy_random_reset(void);
-
-/** Generate a uniformly distributed 32-bit random number. */
-u32 yy_random32(void);
-
-/** Generate a uniformly distributed number, where 0 <= r < bound. */
-u32 yy_random32_uniform(u32 bound);
-
-/** Generate a uniformly distributed number, where min <= r <= max. */
-u32 yy_random32_range(u32 min, u32 max);
-
-/** Generate a uniformly distributed 64-bit random number. */
-u64 yy_random64(void);
-
-/** Generate a uniformly distributed number, where 0 <= r < bound. */
-u64 yy_random64_uniform(u64 bound);
-
-/** Generate a uniformly distributed number, where min <= r <= max. */
-u64 yy_random64_range(u64 min, u64 max);
+/// Generate a uniformly distributed random double, where 0.0 <= r < 1.0.
+f64 yy_rand_f64(void);
+/// Generate a uniformly distributed number, where min <= r < max.
+f64 yy_rand_f64_range(f64 min, f64 max);
 
 
 
@@ -362,7 +198,9 @@ u64 yy_random64_range(u64 min, u64 max);
 #else
 #define YY_DIR_SEPARATOR '/'
 #endif
+
 #define YY_MAX_PATH 4096
+
 
 
 /** Combine multiple component into a path, store the result to the buffer.
@@ -478,42 +316,6 @@ bool yy_buf_append(yy_buf *buf, u8 *dat, usize len);
 
 
 /*==============================================================================
- * String Builder
- *============================================================================*/
-
-/** A string builder */
-typedef struct yy_buf yy_sb;
-
-/** Initialize a string builder with capacity. */
-bool yy_sb_init(yy_sb *buf, usize len);
-
-/** Release the string builder. */
-void yy_sb_release(yy_sb *buf);
-
-/** Returns the length of string. */
-usize yy_sb_get_len(yy_sb *sb);
-
-/** Returns the inner string */
-char *yy_sb_get_str(yy_sb *sb);
-
-/** Copies and returns the string, should be released with free(). */
-char *yy_sb_copy_str(yy_sb *sb, usize *len);
-
-/** Append string. */
-bool yy_sb_append(yy_sb *sb, const char *str);
-
-/** Append string and escape html. */
-bool yy_sb_append_html(yy_sb *sb, const char *str);
-
-/** Append string and escape single character. */
-bool yy_sb_append_esc(yy_sb *sb, char esc, const char *str);
-
-/** Append string with format. */
-bool yy_sb_printf(yy_sb *sb, const char *fmt, ...);
-
-
-
-/*==============================================================================
  * Data Reader
  *============================================================================*/
 
@@ -541,119 +343,6 @@ char *yy_dat_read_line(yy_dat *dat, usize *len);
     The cursor will moved to next line.
     The return value should be release with free(). */
 char *yy_dat_copy_line(yy_dat *dat, usize *len);
-
-
-
-/*==============================================================================
- * Timer (Private)
- *============================================================================*/
-
-#if defined(_WIN32)
-
-struct yy_time {
-    LARGE_INTEGER counter;
-};
-
-static yy_inline void yy_time_get_current(yy_time *t) {
-    QueryPerformanceCounter(&t->counter);
-}
-
-static yy_inline f64 yy_time_to_seconds(yy_time *t) {
-    LARGE_INTEGER freq;
-    QueryPerformanceFrequency(&freq);
-    return (f64)t->counter.QuadPart / (f64)freq.QuadPart;
-}
-
-#else
-
-struct yy_time {
-    struct timeval now;
-};
-
-static yy_inline void yy_time_get_current(yy_time *t) {
-    gettimeofday(&t->now, NULL);
-}
-
-static yy_inline f64 yy_time_to_seconds(yy_time *t) {
-    return (f64)t->now.tv_sec + (f64)t->now.tv_usec / 1000.0 / 1000.0;
-}
-
-#endif
-
-static yy_inline f64 yy_time_get_seconds(void) {
-    yy_time t;
-    yy_time_get_current(&t);
-    return yy_time_to_seconds(&t);
-}
-
-#if defined(_WIN32) && (defined(_M_IX86) || defined(_M_AMD64))
-#    pragma intrinsic(__rdtsc)
-#endif
-
-static yy_inline u64 yy_time_get_ticks() {
-    /*
-     RDTSC is a fixed-frequency timer on modern x86 CPU,
-     and may not match to CPU clock cycles.
-     */
-#if defined(_WIN32)
-#   if defined(_M_IX86) || defined(_M_AMD64)
-    return __rdtsc();
-#   else
-    LARGE_INTEGER now;
-    QueryPerformanceCounter(&now);
-    return (u64)now.QuadPart;
-#   endif
-    
-#elif defined(__i386__) || defined(__i386)
-    u64 tsc;
-    __asm volatile("rdtsc" : "=a"(tsc));
-    return tsc;
-    
-#elif defined(__x86_64__) || defined(__x86_64) || \
-defined(__amd64__) || defined(__amd64)
-    u64 lo, hi;
-    __asm volatile("rdtsc" : "=a"(lo), "=d"(hi));
-    return (hi << 32u) | lo;
-    
-#elif defined(__ia64__)
-    u64 tsc;
-    __asm volatile("mov %0 = ar.itc" : "=r"(tsc));
-    return tsc;
-    
-    /*
-     We can use several counter registers in the ARM CPU:
-     
-     CNTPCT_EL0: physical counter
-     CNTVCT_EL0: virtual counter (physical counter - offset)
-     PMCCNTR_EL0: performance monitors control cycle count register
-     
-     The physical counter (and virtual counter) runs at a fixed frequency which
-     is different with the CPU cycle rate. For example: Apple A10 max clock rate
-     is 2.34GHz, but the physical counter frequency is fixed to 24MHz.
-     
-     Some of these registers are optional, or may be disabled in user mode.
-     For example: read CNTVCT_EL0 or PMCCNTR_EL0 in iPhone may get
-     'EXC_BAD_INSTRUCTION' exception.
-     */
-#elif defined(__aarch64__)
-    u64 tsc;
-#   if defined(__APPLE__)
-    /* used by mach_absolute_time(), see mach_absolute_time.s */
-    __asm volatile("mrs %0, cntpct_el0" : "=r"(tsc));
-#   else
-    __asm volatile("mrs %0, cntvct_el0" : "=r"(tsc));
-#   endif
-    return tsc;
-    
-#elif defined(__ARM_ARCH) && defined(__APPLE__)
-    return mach_absolute_time();
-    
-#else
-    struct timeval now;
-    gettimeofday(&now, NULL);
-    return (u64)now.tv_sec * 1000000 + now.tv_usec;
-#endif
-}
 
 
 

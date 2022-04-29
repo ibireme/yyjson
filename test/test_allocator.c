@@ -163,13 +163,13 @@ yy_test_case(test_allocator) {
     }
     {   // random
         memset(mem, 0, sizeof(mem));
-        yy_random_reset();
+        yy_rand_reset(0);
         for (int p = 0; p < 50000; p++) {
-            int i = yy_random32_uniform(16);
-            usize rsize = yy_random32_uniform(1024 + 16);
+            int i = yy_rand_u32_uniform(16);
+            usize rsize = yy_rand_u32_uniform(1024 + 16);
             void *tmp = mem[i];
             if (tmp) {
-                if (yy_random32_uniform(4) == 0) {
+                if (yy_rand_u32_uniform(4) == 0) {
                     tmp = alc.realloc(alc.ctx, tmp, rsize);
                     if (tmp) mem[i] = tmp;
                 } else {

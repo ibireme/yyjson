@@ -1,5 +1,5 @@
 /*==============================================================================
- * Utilities for single thread test and benchmark.
+ * Utilities for single thread test (C99, Win/Mac/Linux).
  *
  * Copyright (C) 2018 YaoYuan <ibireme@gmail.com>.
  * Released under the MIT license (MIT).
@@ -7,470 +7,81 @@
 
 #include "yy_test_utils.h"
 
-#define REPEAT_2(x)   x x
-#define REPEAT_4(x)   REPEAT_2(REPEAT_2(x))
-#define REPEAT_8(x)   REPEAT_2(REPEAT_4(x))
-#define REPEAT_16(x)  REPEAT_2(REPEAT_8(x))
-#define REPEAT_32(x)  REPEAT_2(REPEAT_16(x))
-#define REPEAT_64(x)  REPEAT_2(REPEAT_32(x))
-#define REPEAT_128(x) REPEAT_2(REPEAT_64(x))
-#define REPEAT_256(x) REPEAT_2(REPEAT_128(x))
-#define REPEAT_512(x) REPEAT_2(REPEAT_256(x))
 
 
+// =============================================================================
+// Pseudo Random Number Generator (SplitMix)
+// A constant seed should be used to ensure repeatability of benchmark.
+// =============================================================================
 
-/*==============================================================================
- * CPU
- *============================================================================*/
+static u64 yy_rand_seed = 0;
 
-bool yy_cpu_setup_priority(void) {
-#if defined(_WIN32)
-    BOOL ret1 = SetPriorityClass(GetCurrentProcess(), REALTIME_PRIORITY_CLASS);
-    BOOL ret2 = SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_TIME_CRITICAL);
-    return ret1 && ret2;
-#else
-    int policy;
-    struct sched_param param;
-    pthread_t thread = pthread_self();
-    pthread_getschedparam(thread, &policy, &param);
-    param.sched_priority = sched_get_priority_max(policy);
-    if (param.sched_priority != -1) {
-        return pthread_setschedparam(pthread_self(), policy, &param) == 0;
-    }
-    return false;
-#endif
+void yy_rand_reset(u64 seed) {
+    yy_rand_seed = seed;
 }
 
-void yy_cpu_spin(f64 second) {
-    f64 end = yy_time_get_seconds() + second;
-    while (yy_time_get_seconds() < end) {
-        volatile int x = 0;
-        while (x < 1000) x++;
-    }
+u32 yy_rand_u32(void) {
+    u64 z = (yy_rand_seed += 0x9e3779b97f4a7c15ull);
+    z = (z ^ (z >> 33)) * 0x62a9d9ed799705f5ull;
+    z = (z ^ (z >> 28)) * 0xcb24d0a5c88c35b3ull;
+    return (u32)(z >> 32);
 }
 
-#define YY_CPU_RUN_INST_COUNT_A (8192 * 4 * (32 + 64))
-#define YY_CPU_RUN_INST_COUNT_B (8192 * 4 * (128))
-
-/* These functions contains some `add` instructions with data dependence.
-   This file should be compiled with optimization flag on.
-   We hope that each line of the code in the inner loop may compiled as
-   an `add` instruction, each `add` instruction takes 1 cycle, and inner kernel
-   can fit in the L1i cache. Try: https://godbolt.org/z/d3GP1b */
-
-u32 yy_cpu_run_seq_vals[8];
-
-void yy_cpu_run_seq_a(void) {
-    u32 loop = 8192;
-    u32 v1 = yy_cpu_run_seq_vals[1];
-    u32 v2 = yy_cpu_run_seq_vals[2];
-    u32 v3 = yy_cpu_run_seq_vals[3];
-    u32 v4 = yy_cpu_run_seq_vals[4];
-    do {
-        REPEAT_32( v1 += v4; v2 += v1; v3 += v2; v4 += v3; )
-        REPEAT_64( v1 += v4; v2 += v1; v3 += v2; v4 += v3; )
-    } while (--loop);
-    yy_cpu_run_seq_vals[0] = v1;
-}
-
-void yy_cpu_run_seq_b(void) {
-    u32 loop = 8192;
-    u32 v1 = yy_cpu_run_seq_vals[1];
-    u32 v2 = yy_cpu_run_seq_vals[2];
-    u32 v3 = yy_cpu_run_seq_vals[3];
-    u32 v4 = yy_cpu_run_seq_vals[4];
-    do {
-        REPEAT_128( v1 += v4; v2 += v1; v3 += v2; v4 += v3; )
-    } while (--loop);
-    yy_cpu_run_seq_vals[0] = v1;
-}
-
-static u64 yy_cycle_per_sec = 0;
-static u64 yy_tick_per_sec = 0;
-
-void yy_cpu_measure_freq(void) {
-#define warmup_count 8
-#define measure_count 128
-    yy_time p1, p2;
-    u64 ticks_a[measure_count];
-    u64 ticks_b[measure_count];
-    
-    /* warm up CPU caches and stabilize the frequency */
-    for (int i = 0; i < warmup_count; i++) {
-        yy_cpu_run_seq_a();
-        yy_cpu_run_seq_b();
-        yy_time_get_current(&p1);
-        yy_time_get_ticks();
-    }
-    
-    /* run sequence a and b repeatedly, record ticks and times */
-    yy_time_get_current(&p1);
-    u64 t1 = yy_time_get_ticks();
-    for (int i = 0; i < measure_count; i++) {
-        u64 s1 = yy_time_get_ticks();
-        yy_cpu_run_seq_a();
-        u64 s2 = yy_time_get_ticks();
-        yy_cpu_run_seq_b();
-        u64 s3 = yy_time_get_ticks();
-        ticks_a[i] = s2 - s1;
-        ticks_b[i] = s3 - s2;
-    }
-    u64 t2 = yy_time_get_ticks();
-    yy_time_get_current(&p2);
-    
-    /* calculate tick count per second, this value is high precision */
-    f64 total_seconds = yy_time_to_seconds(&p2) - yy_time_to_seconds(&p1);
-    u64 total_ticks = t2 - t1;
-    yy_tick_per_sec = (u64)((f64)total_ticks / total_seconds);
-    
-    /* find the minimum ticks of each sequence to avoid inaccurate values
-       caused by context switching, etc. */
-    for (int i = 1; i < measure_count; i++) {
-        if (ticks_a[i] < ticks_a[0]) ticks_a[0] = ticks_a[i];
-        if (ticks_b[i] < ticks_b[0]) ticks_b[0] = ticks_b[i];
-    }
-    
-    /* use the difference between two sequences to eliminate the overhead of
-       loops and function calls */
-    u64 one_ticks = ticks_b[0] - ticks_a[0];
-    u64 one_insts = YY_CPU_RUN_INST_COUNT_B - YY_CPU_RUN_INST_COUNT_A;
-    yy_cycle_per_sec = (u64)((f64)one_insts / (f64)one_ticks * (f64)yy_tick_per_sec);
-#undef warmup_count
-#undef measure_count
-}
-
-u64 yy_cpu_get_freq(void) {
-    return yy_cycle_per_sec;
-}
-
-u64 yy_cpu_get_tick_per_sec(void) {
-    return yy_tick_per_sec;
-}
-
-f64 yy_cpu_get_cycle_per_tick(void) {
-    return (f64)yy_cycle_per_sec / (f64)yy_tick_per_sec;
-}
-
-
-/*==============================================================================
- * Environment
- *============================================================================*/
-
-const char *yy_env_get_os_desc(void) {
-#if defined(__MINGW64__)
-    return "Windows (MinGW-w64)";
-#elif defined(__MINGW32__)
-    return "Windows (MinGW)";
-#elif defined(__CYGWIN__) && defined(ARCH_64_DEFINED)
-    return "Windows (Cygwin x64)";
-#elif defined(__CYGWIN__)
-    return "Windows (Cygwin x86)";
-#elif defined(_WIN64)
-    return "Windows 64-bit";
-#elif defined(_WIN32)
-    return "Windows 32-bit";
-    
-#elif defined(__APPLE__)
-#   if defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE
-#       if defined(YY_ARCH_64)
-    return "iOS 64-bit";
-#       else
-    return "iOS 32-bit";
-#       endif
-#   elif defined(TARGET_OS_OSX) && TARGET_OS_OSX
-#       if defined(YY_ARCH_64)
-    return "macOS 64-bit";
-#       else
-    return "macOS 32-bit";
-#       endif
-#   else
-#       if defined(YY_ARCH_64)
-    return "Apple OS 64-bit";
-#       else
-    return "Apple OS 32-bit";
-#       endif
-#   endif
-    
-#elif defined(__ANDROID__)
-#   if defined(YY_ARCH_64)
-    return "Android 64-bit";
-#   else
-    return "Android 32-bit";
-#   endif
-    
-#elif defined(__linux__) || defined(__linux) || defined(__gnu_linux__)
-#   if defined(YY_ARCH_64)
-    return "Linux 64-bit";
-#   else
-    return "Linux 32-bit";
-#   endif
-    
-#elif defined(__BSD__) || defined(__FreeBSD__)
-#   if defined(YY_ARCH_64)
-    return "BSD 64-bit";
-#   else
-    return "BSD 32-bit";
-#   endif
-    
-#else
-#   if defined(YY_ARCH_64)
-    return "Unknown OS 64-bit";
-#   else
-    return "Unknown OS 32-bit";
-#   endif
-#endif
-}
-
-const char *yy_env_get_cpu_desc(void) {
-#if defined(__APPLE__)
-    static char brand[256] = {0};
-    size_t size = sizeof(brand);
-    static bool finished = false;
-    struct utsname sysinfo;
-    
-    if (finished) return brand;
-    /* works for macOS */
-    if (sysctlbyname("machdep.cpu.brand_string", (void *)brand, &size, NULL, 0) == 0) {
-        if (strlen(brand) > 0) finished = true;
-    }
-    /* works for iOS, returns device model such as "iPhone9,1 ARM64_T8010" */
-    if (!finished) {
-        uname(&sysinfo);
-        const char *model = sysinfo.machine;
-        const char *cpu = sysinfo.version;
-        if (cpu) {
-            cpu = strstr(cpu, "RELEASE_");
-            if (cpu) cpu += 8;
-        }
-        if (model || cpu) {
-            snprintf(brand, sizeof(brand), "%s %s", model ? model : "", cpu ? cpu : "");
-            finished = true;
-        }
-    }
-    if (!finished) {
-        snprintf(brand, sizeof(brand), "Unknown CPU");
-        finished = true;
-    }
-    return brand;
-    
-#elif defined(_WIN32)
-#if defined(__x86_64__) || defined(__amd64__) || \
-    defined(_M_IX86) || defined(_M_AMD64)
-    static char brand[0x40] = { 0 };
-    static bool finished = false;
-    int cpui[4] = { 0 };
-    int nexids, i;
-    
-    if (finished) return brand;
-    __cpuid(cpui, 0x80000000);
-    nexids = cpui[0];
-    if (nexids >= 0x80000004) {
-        for (i = 2; i <= 4; i++) {
-            memset(cpui, 0, sizeof(cpui));
-            __cpuidex(cpui, i + 0x80000000, 0);
-            memcpy(brand + (i - 2) * sizeof(cpui), cpui, sizeof(cpui));
-        }
-        finished = true;
-    }
-    if (!finished || strlen(brand) == 0) {
-        snprintf(brand, sizeof(brand), "Unknown CPU");
-        finished = true;
-    }
-    return brand;
-#   else
-    return "Unknown CPU";
-#   endif
-    
-#else
-#   define BUF_LENGTH 1024
-    static char buf[BUF_LENGTH], *res = NULL;
-    static bool finished = false;
-    const char *prefixes[] = {
-        "model name", /* x86 */
-        "CPU part",   /* arm */
-        "cpu model\t",/* mips */
-        "cpu\t"       /* powerpc */
-    };
-    int i, len;
-    FILE *fp;
-    
-    if (res) return res;
-    fp = fopen("/proc/cpuinfo", "r");
-    if (fp) {
-        while (!res) {
-            memset(buf, 0, BUF_LENGTH);
-            if (fgets(buf, BUF_LENGTH - 1, fp) == NULL) break;
-            for (i = 0; i < (int)(sizeof(prefixes) / sizeof(char *)) && !res; i++) {
-                if (strncmp(prefixes[i], buf, strlen(prefixes[i])) == 0) {
-                    res = buf + strlen(prefixes[i]);
-                }
-            }
-        }
-        fclose(fp);
-    }
-    if (res) {
-        while (*res == ' ' || *res == '\t' || *res == ':') res++;
-        for (i = 0, len = (int)strlen(res); i < len; i++) {
-            if (res[i] == '\t') res[i] = ' ';
-            if (res[i] == '\r' || res[i] == '\n') res[i] = '\0';
-        }
-    } else {
-        res = "Unknown CPU";
-    }
-    finished = true;
-    return res;
-#endif
-}
-
-const char *yy_env_get_compiler_desc(void) {
-    static char buf[512] = {0};
-    static bool finished = false;
-    if (finished) return buf;
-
-#if defined(__ICL) || defined(__ICC) || defined(__INTEL_COMPILER)
-    int v, r; /* version, revision */
-#   if defined(__INTEL_COMPILER)
-    v = __INTEL_COMPILER;
-#   elif defined(__ICC)
-    v = __ICC;
-#   else
-    v = __ICL;
-#   endif
-    r = (v - (v / 100) * 100) / 10;
-    v = v / 100;
-    snprintf(buf, sizeof(buf), "Intel C++ Compiler %d.%d", v, r);
-    
-#elif defined(__ARMCC_VERSION)
-    int v, r;
-    v = __ARMCC_VERSION; /* PVVbbbb or Mmmuuxx */
-    r = (v - (v / 1000000) * 1000000) / 1000;
-    v = v / 1000000;
-    snprintf(buf, sizeof(buf), "ARM Compiler %d.%d", v, r);
-    
-#elif defined(_MSC_VER)
-    /* https://docs.microsoft.com/en-us/cpp/preprocessor/predefined-macros */
-    const char *vc;
-#   if _MSC_VER >= 1930
-    vc = "";
-#   elif _MSC_VER >= 1920
-    vc = " 2019";
-#   elif _MSC_VER >= 1910
-    vc = " 2017";
-#   elif _MSC_VER >= 1900
-    vc = " 2015";
-#   elif _MSC_VER >= 1800
-    vc = " 2013";
-#   elif _MSC_VER >= 1700
-    vc = " 2012";
-#   elif _MSC_VER >= 1600
-    vc = " 2010";
-#   elif _MSC_VER >= 1500
-    vc = " 2008";
-#   elif _MSC_VER >= 1400
-    vc = " 2005";
-#   elif _MSC_VER >= 1310
-    vc = " 7.1";
-#   elif _MSC_VER >= 1300
-    vc = " 7.0";
-#   elif _MSC_VER >= 1200
-    vc = " 6.0";
-#   else
-    vc = "";
-#   endif
-    snprintf(buf, sizeof(buf), "Microsoft Visual C++%s (%d)", vc, _MSC_VER);
-    
-#elif defined(__clang__)
-#   if defined(__apple_build_version__)
-    /* Apple versions: https://en.wikipedia.org/wiki/Xcode#Latest_versions */
-    snprintf(buf, sizeof(buf), "Clang %d.%d.%d (Apple version)",
-             __clang_major__, __clang_minor__, __clang_patchlevel__);
-#   else
-    snprintf(buf, sizeof(buf), "Clang %d.%d.%d",
-             __clang_major__, __clang_minor__, __clang_patchlevel__);
-#   endif
-    
-#elif defined(__GNUC__)
-    const char *ext;
-#   if defined(__CYGWIN__)
-    ext = " (Cygwin)";
-#   elif defined(__MINGW64__)
-    ext = " (MinGW-w64)";
-#   elif defined(__MINGW32__)
-    ext = " (MinGW)";
-#   else
-    ext = "";
-#   endif
-#   if defined(__GNUC_PATCHLEVEL__)
-    snprintf(buf, sizeof(buf), "GCC %d.%d.%d%s", __GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__, ext);
-#   else
-    snprintf(buf, sizeof(buf), "GCC %d.%d%s", __GNUC__, __GNUC_MINOR__, ext);
-#   endif
-    
-#else
-    snprintf(buf, sizeof(buf), "Unknown Compiler");
-#endif
-    
-    finished = true;
-    return buf;
-}
-
-
-
-/*==============================================================================
- * Random Number Generator
- * PCG random: http://www.pcg-random.org
- * A fixed seed should be used to ensure repeatability of the test or benchmark.
- *============================================================================*/
-
-#define YY_RANDOM_STATE_INIT (((u64)0x853C49E6U << 32) + 0x748FEA9BU)
-#define YY_RANDOM_INC_INIT (((u64)0xDA3E39CBU << 32) + 0x94B95BDBU)
-#define YY_RANDOM_MUL (((u64)0x5851F42DU << 32) + 0x4C957F2DU)
-
-static u64 yy_random_state = YY_RANDOM_STATE_INIT;
-static u64 yy_random_inc = YY_RANDOM_INC_INIT;
-
-void yy_random_reset(void) {
-    yy_random_state = YY_RANDOM_STATE_INIT;
-    yy_random_inc = YY_RANDOM_INC_INIT;
-}
-
-u32 yy_random32(void) {
-    u32 xorshifted, rot;
-    u64 oldstate = yy_random_state;
-    yy_random_state = oldstate * YY_RANDOM_MUL + yy_random_inc;
-    xorshifted = (u32)(((oldstate >> 18) ^ oldstate) >> 27);
-    rot = (u32)(oldstate >> 59);
-    return (xorshifted >> rot) | (xorshifted << (((u32)-(i32)rot) & 31));
-}
-
-u32 yy_random32_uniform(u32 bound) {
-    u32 r, threshold = (u32)(-(i32)bound) % bound;
-    if (bound < 2) return 0;
+u32 yy_rand_u32_uniform(u32 bound) {
+    if (yy_unlikely(bound < 2)) return 0;
     while (true) {
-        r = yy_random32();
-        if (r >= threshold) return r % bound;
+        u32 r = yy_rand_u32();
+        u32 x = r % bound;
+        if (r - x <= (u32)(-(i32)bound)) return x;
     }
 }
 
-u32 yy_random32_range(u32 min, u32 max) {
-    return yy_random32_uniform(max - min + 1) + min;
+u32 yy_rand_u32_range(u32 min, u32 max) {
+    return yy_rand_u32_uniform(max - min + 1) + min;
 }
 
-u64 yy_random64(void) {
-    return (u64)yy_random32() << 32 | yy_random32();
+u64 yy_rand_u64(void) {
+    u64 z = (yy_rand_seed += 0x9e3779b97f4a7c15ull);
+    z = (z ^ (z >> 30)) * 0xbf58476d1ce4e5b9ull;
+    z = (z ^ (z >> 27)) * 0x94d049bb133111ebull;
+    return (z ^ (z >> 31));
 }
 
-u64 yy_random64_uniform(u64 bound) {
-    u64 r, threshold = ((u64)-(i64)bound) % bound;
-    if (bound < 2) return 0;
+u64 yy_rand_u64_uniform(u64 bound) {
+    if (yy_unlikely(bound < 2)) return 0;
     while (true) {
-        r = yy_random64();
-        if (r >= threshold) return r % bound;
+        u64 r = yy_rand_u64();
+        u64 x = r % bound;
+        if (r - x <= (u64)(-(i64)bound)) return x;
     }
 }
 
-u64 yy_random64_range(u64 min, u64 max) {
-    return yy_random64_uniform(max - min + 1) + min;
+u64 yy_rand_u64_range(u64 min, u64 max) {
+    return yy_rand_u64_uniform(max - min + 1) + min;
+}
+
+f32 yy_rand_f32(void) {
+    while (true) {
+        u32 r = yy_rand_u32();
+        u32 x = ~(u32)0;
+        if (r != x) return (f32)r / (f32)x;
+    }
+}
+
+f32 yy_rand_f32_range(f32 min, f32 max) {
+    return min + (max - min) * yy_rand_f32();
+}
+
+f64 yy_rand_f64(void) {
+    while (true) {
+        u64 r = yy_rand_u64();
+        u64 x = ~(u64)0;
+        if (r != x) return (f64)r / (f64)x;
+    }
+}
+
+f64 yy_rand_f64_range(f64 min, f64 max) {
+    return min + (max - min) * yy_rand_f64();
 }
 
 
@@ -939,146 +550,6 @@ bool yy_buf_append(yy_buf *buf, u8 *dat, usize len) {
 
 
 /*==============================================================================
- * String Builder
- *============================================================================*/
-
-bool yy_sb_init(yy_sb *sb, usize len) {
-    return yy_buf_init(sb, len);
-}
-
-void yy_sb_release(yy_sb *sb) {
-    yy_buf_release(sb);
-}
-
-usize yy_sb_get_len(yy_sb *sb) {
-    if (!sb) return 0;
-    return sb->cur - sb->hdr;
-}
-
-char *yy_sb_get_str(yy_sb *sb) {
-    if (!sb || !sb->hdr) return NULL;
-    if (sb->cur >= sb->end) {
-        if (!yy_buf_grow(sb, 1)) return NULL;
-    }
-    *sb->cur = '\0';
-    return (char *)sb->hdr;
-}
-
-char *yy_sb_copy_str(yy_sb *sb, usize *len) {
-    if (!sb || !sb->hdr) return NULL;
-    usize sb_len = sb->cur - sb->hdr;
-    char *str = (char *)malloc(sb_len + 1);
-    if (!str) return NULL;
-    memcpy(str, sb->hdr, sb_len);
-    str[sb_len] = '\0';
-    if (len) *len = sb_len;
-    return str;
-}
-
-bool yy_sb_append(yy_sb *sb, const char *str) {
-    if (!str) return false;
-    usize len = strlen(str);
-    if (!yy_buf_grow(sb, len + 1)) return false;
-    memcpy(sb->cur, str, len);
-    sb->cur += len;
-    return true;
-}
-
-bool yy_sb_append_html(yy_sb *sb, const char *str) {
-    if (!sb || !str) return false;
-    const char *cur = str;
-    usize hdr_pos = sb->cur - sb->hdr;
-    while (true) {
-        usize esc_len;
-        const char *esc;
-        if (*cur == '\0') break;
-        switch (*cur) {
-            case '"': esc = "&quot;"; esc_len = 6; break;
-            case '&': esc = "&amp;"; esc_len = 5; break;
-            case '\'': esc = "&#39;"; esc_len = 5; break;
-            case '<': esc = "&lt;"; esc_len = 4; break;
-            case '>': esc = "&gt;"; esc_len = 4; break;
-            default: esc = NULL; esc_len = 0; break;
-        }
-        if (esc_len) {
-            usize len = cur - str;
-            if (!yy_buf_grow(sb, len + esc_len + 1)) {
-                sb->cur = sb->hdr + hdr_pos;
-                return false;
-            }
-            memcpy(sb->cur, str, len);
-            sb->cur += len;
-            memcpy(sb->cur, esc, esc_len);
-            sb->cur += esc_len;
-            str = cur + 1;
-        }
-        cur++;
-    }
-    if (cur != str) {
-        if (!yy_sb_append(sb, str)) {
-            sb->cur = sb->hdr + hdr_pos;
-            return false;
-        }
-    }
-    return true;
-}
-
-bool yy_sb_append_esc(yy_sb *sb, char esc, const char *str) {
-    if (!sb || !str) return false;
-    const char *cur = str;
-    usize hdr_pos = sb->cur - sb->hdr;
-    while (true) {
-        char c = *cur;
-        if (c == '\0') break;
-        if (c == '\\') {
-            if (*(cur++) == '\0') break;
-            else continue;
-        }
-        if (c == esc) {
-            usize len = cur - str + 2;
-            if (!yy_buf_grow(sb, len + 1)) {
-                sb->cur = sb->hdr + hdr_pos;
-                return false;
-            }
-            memcpy(sb->cur, str, len - 2);
-            sb->cur[len - 2] = '\\';
-            sb->cur[len - 1] = esc;
-            sb->cur += len;
-            str = cur + 1;
-        }
-        cur++;
-    }
-    if (cur != str) {
-        if (!yy_sb_append(sb, str)) {
-            sb->cur = sb->hdr + hdr_pos;
-            return false;
-        }
-    }
-    return true;
-}
-
-bool yy_sb_printf(yy_sb *sb, const char *fmt, ...) {
-    if (!sb || !fmt) return false;
-    usize incr_size = 64;
-    int len = 0;
-    do {
-        if (!yy_buf_grow(sb, incr_size + 1)) return false;
-        va_list args;
-        va_start(args, fmt);
-        len = vsnprintf((char *)sb->cur, incr_size, fmt, args);
-        va_end(args);
-        if (len < 0) return false; /* error */
-        if ((usize)len < incr_size) break; /* success */
-        if (incr_size * 2 < incr_size) return false; /* overflow */
-        incr_size *= 2;
-    } while (true);
-    sb->cur += len;
-    return true;
-}
-
-
-
-/*==============================================================================
  * Data Reader
  *============================================================================*/
 
@@ -1112,6 +583,7 @@ void yy_dat_release(yy_dat *dat) {
 void yy_dat_reset(yy_dat *dat) {
     if (dat) dat->cur = dat->hdr;
 }
+
 char *yy_dat_read_line(yy_dat *dat, usize *len) {
     if (len) *len = 0;
     if (!dat || dat->cur >= dat->end) return NULL;

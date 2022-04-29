@@ -344,7 +344,7 @@ static void test_json_write(yyjson_alc *alc) {
     for (len = 0; len <= 128; len++) {
         char *str = len ? malloc(len) : (char *)1;
         for (usize i = 0; i < len; i++) {
-            str[i] = 'a' + (yy_random32() % 26);
+            str[i] = 'a' + (yy_rand_u32() % 26);
         }
         
         char *json = malloc(len + 3);

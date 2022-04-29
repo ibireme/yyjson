@@ -56,7 +56,7 @@ static yy_inline int f64_str_get_digits(const char *str) {
 /** Get random double. */
 static yy_inline f64 rand_f64(void) {
     while (true) {
-        u64 u = yy_random64();
+        u64 u = yy_rand_u64();
         f64 f = f64_from_u64_raw(u);
         if (isfinite(f)) return f;
     };
@@ -462,30 +462,30 @@ static void test_random_int(void) {
     char *end;
     int count = 10000;
     
-    yy_random_reset();
+    yy_rand_reset(0);
     for (int i = 0; i < count; i++) {
-        u64 rnd = yy_random64();
+        u64 rnd = yy_rand_u64();
         end = buf + snprintf(buf, 32, "%llu%c", rnd, '\0') - 1;
         test_uint(buf, end - buf);
     }
     
-    yy_random_reset();
+    yy_rand_reset(0);
     for (int i = 0; i < count; i++) {
-        i64 rnd = (i64)(yy_random64() | ((u64)1 << 63));
+        i64 rnd = (i64)(yy_rand_u64() | ((u64)1 << 63));
         end = buf + snprintf(buf, 32, "%lld%c", rnd, '\0') - 1;
         test_sint(buf, end - buf);
     }
     
-    yy_random_reset();
+    yy_rand_reset(0);
     for (int i = 0; i < count; i++) {
-        u32 rnd = yy_random32();
+        u32 rnd = yy_rand_u32();
         end = buf + snprintf(buf, 32, "%u%c", rnd, '\0') - 1;
         test_uint(buf, end - buf);
     }
     
-    yy_random_reset();
+    yy_rand_reset(0);
     for (int i = 0; i < count; i++) {
-        i32 rnd = (i32)(yy_random32() | ((u32)1 << 31));
+        i32 rnd = (i32)(yy_rand_u32() | ((u32)1 << 31));
         end = buf + snprintf(buf, 32, "%i%c", rnd, '\0') - 1;
         test_sint(buf, end - buf);
     }
@@ -496,7 +496,7 @@ static void test_random_real(void) {
     char *end;
     int count = 10000;
     
-    yy_random_reset();
+    yy_rand_reset(0);
     for (int i = 0; i < count; i++) {
         f64 rnd = rand_f64();
         if (isinf(rnd) || isnan(rnd)) continue;
