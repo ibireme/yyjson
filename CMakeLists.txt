@@ -6,12 +6,17 @@ cmake_minimum_required(VERSION 3.5)
 project(yyjson VERSION 0.4.0)
 
 
+
 # ------------------------------------------------------------------------------
-# Compile Options, see yyjson.h for more explanation.
-option(YYJSON_DISABLE_READER "Disable JSON reader" OFF)
-option(YYJSON_DISABLE_WRITER "Disable JSON writer" OFF)
-option(YYJSON_DISABLE_FAST_FP_CONV "Disable custom floating-point number conversion" OFF)
-option(YYJSON_DISABLE_NON_STANDARD "Disable non-standard JSON support" OFF)
+# Build Type
+if(XCODE OR MSVC)
+    set(CMAKE_CONFIGURATION_TYPES "Debug;Release" CACHE STRING "" FORCE)
+endif()
+if(NOT CMAKE_BUILD_TYPE)
+    message(STATUS "No build type selected, default to: Release")
+    set(CMAKE_BUILD_TYPE Release)
+endif()
+
 
 
 # ------------------------------------------------------------------------------
@@ -25,15 +30,27 @@ option(YYJSON_ENABLE_SANITIZE "Enable sanitizer for tests" OFF)
 option(YYJSON_ENABLE_FASTMATH "Enable fast-math for tests" OFF)
 
 
+
 # ------------------------------------------------------------------------------
-# Build Type
-if(XCODE OR MSVC)
-    set(CMAKE_CONFIGURATION_TYPES "Debug;Release" CACHE STRING "" FORCE)
+# Compilation options, see yyjson.h for more explanation
+option(YYJSON_DISABLE_READER "Disable JSON reader" OFF)
+option(YYJSON_DISABLE_WRITER "Disable JSON writer" OFF)
+option(YYJSON_DISABLE_FAST_FP_CONV "Disable custom floating-point number conversion" OFF)
+option(YYJSON_DISABLE_NON_STANDARD "Disable non-standard JSON support" OFF)
+
+if(YYJSON_DISABLE_READER)
+    add_definitions(-DYYJSON_DISABLE_READER)
 endif()
-if(NOT CMAKE_BUILD_TYPE)
-    message(STATUS "No build type selected, default to: Release")
-    set(CMAKE_BUILD_TYPE Release)
+if(YYJSON_DISABLE_WRITER)
+    add_definitions(-DYYJSON_DISABLE_WRITER)
 endif()
+if(YYJSON_DISABLE_FAST_FP_CONV)
+    add_definitions(-DYYJSON_DISABLE_FAST_FP_CONV)
+endif()
+if(YYJSON_DISABLE_NON_STANDARD)
+    add_definitions(-DYYJSON_DISABLE_NON_STANDARD)
+endif()
+
 
 
 # ------------------------------------------------------------------------------
@@ -42,21 +59,6 @@ add_library(yyjson src/yyjson.h src/yyjson.c)
 target_include_directories(yyjson PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>)
 set_target_properties(yyjson PROPERTIES VERSION ${PROJECT_VERSION})
 
-
-# ------------------------------------------------------------------------------
-# Compiler Flags
-if(YYJSON_DISABLE_READER)
-    add_definitions(-DYYJSON_DISABLE_READER=1)
-endif()
-if(YYJSON_DISABLE_WRITER)
-    add_definitions(-DYYJSON_DISABLE_WRITER=1)
-endif()
-if(YYJSON_DISABLE_FAST_FP_CONV)
-    add_definitions(-DYYJSON_DISABLE_FAST_FP_CONV=1)
-endif()
-if(YYJSON_DISABLE_NON_STANDARD)
-    add_definitions(-DYYJSON_DISABLE_NON_STANDARD=1)
-endif()
 
 
 # ------------------------------------------------------------------------------
@@ -112,6 +114,7 @@ if(BUILD_SHARED_LIBS)
 endif()
 
 
+
 # ------------------------------------------------------------------------------
 # Install
 include(GNUInstallDirs)
@@ -127,6 +130,7 @@ install(EXPORT yyjson-targets
         NAMESPACE yyjson::
         DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/yyjson")
 install(FILES src/yyjson.h DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}")
+
 
 
 # ------------------------------------------------------------------------------
@@ -352,6 +356,7 @@ if(YYJSON_BUILD_TESTS)
 endif()
 
 
+
 # ------------------------------------------------------------------------------
 # Fuzzing
 if (YYJSON_BUILD_FUZZER)
@@ -373,6 +378,7 @@ if (YYJSON_BUILD_FUZZER)
         message(WARNING "LibFuzzer requires LLVM Clang as compiler")
     endif()
 endif()
+
 
 
 # ------------------------------------------------------------------------------

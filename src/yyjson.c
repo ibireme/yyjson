@@ -39,7 +39,12 @@
 #   pragma warning(disable:4706) /* assignment within conditional expression */
 #endif
 
-/* version, same as YYJSON_VERSION_HEX */
+
+
+/*==============================================================================
+ * Version
+ *============================================================================*/
+
 yyjson_api uint32_t yyjson_version(void) {
     return YYJSON_VERSION_HEX;
 }
@@ -161,7 +166,7 @@ yyjson_api uint32_t yyjson_version(void) {
  If we are sure that there's no similar error described above, we can define the
  YYJSON_DOUBLE_MATH_CORRECT as 1 to enable the fast path calculation. This is
  not an accurate detection, it's just try to avoid the error at compiler time.
- An accurate detection can be done at runtime:
+ An accurate detection can be done at run-time:
  
      bool is_double_math_correct(void) {
          volatile double r = 43683.0;
@@ -289,7 +294,7 @@ yyjson_api uint32_t yyjson_version(void) {
 #   define YYJSON_ENDIAN YYJSON_BIG_ENDIAN
 
 #else
-#   define YYJSON_ENDIAN 0 /* unknown endian, detect at runtime */
+#   define YYJSON_ENDIAN 0 /* unknown endian, detect at run-time */
 #endif
 
 /*
@@ -1492,6 +1497,8 @@ bool unsafe_yyjson_mut_equals(yyjson_mut_val *lhs, yyjson_mut_val *rhs) {
     }
 }
 
+
+
 /*==============================================================================
  * JSON Pointer
  *============================================================================*/
@@ -1717,6 +1724,60 @@ yyjson_api yyjson_mut_val *yyjson_merge_patch(yyjson_mut_doc *doc,
         if (!patch_val) {
             mut_key = yyjson_val_mut_copy(doc, key);
             mut_val = yyjson_val_mut_copy(doc, orig_val);
+            if (!yyjson_mut_obj_add(builder, mut_key, mut_val)) return NULL;
+        }
+    }
+    
+    return builder;
+}
+
+yyjson_api yyjson_mut_val *yyjson_mut_merge_patch(yyjson_mut_doc *doc,
+                                                  yyjson_mut_val *orig,
+                                                  yyjson_mut_val *patch) {
+    usize idx, max;
+    yyjson_mut_val *key, *orig_val, *patch_val, local_orig;
+    yyjson_mut_val *builder, *mut_key, *mut_val, *merged_val;
+    
+    if (unlikely(!yyjson_mut_is_obj(patch))) {
+        return yyjson_mut_val_mut_copy(doc, patch);
+    }
+    
+    builder = yyjson_mut_obj(doc);
+    if (unlikely(!builder)) return NULL;
+    
+    if (!yyjson_mut_is_obj(orig)) {
+        orig = &local_orig;
+        orig->tag = builder->tag;
+        orig->uni = builder->uni;
+    }
+    
+    /* Merge items modified by the patch. */
+    yyjson_mut_obj_foreach(patch, idx, max, key, patch_val) {
+        /* null indicates the field is removed. */
+        if (unsafe_yyjson_is_null(patch_val)) {
+            continue;
+        }
+        mut_key = yyjson_mut_val_mut_copy(doc, key);
+        orig_val = yyjson_mut_obj_getn(orig,
+                                       unsafe_yyjson_get_str(key),
+                                       unsafe_yyjson_get_len(key));
+        merged_val = yyjson_mut_merge_patch(doc, orig_val, patch_val);
+        if (!yyjson_mut_obj_add(builder, mut_key, merged_val)) return NULL;
+    }
+    
+    /* Exit early, if orig is not contributing to the final result. */
+    if (orig == &local_orig) {
+        return builder;
+    }
+    
+    /* Copy over any items that weren't modified by the patch. */
+    yyjson_mut_obj_foreach(orig, idx, max, key, orig_val) {
+        patch_val = yyjson_mut_obj_getn(patch,
+                                        unsafe_yyjson_get_str(key),
+                                        unsafe_yyjson_get_len(key));
+        if (!patch_val) {
+            mut_key = yyjson_mut_val_mut_copy(doc, key);
+            mut_val = yyjson_mut_val_mut_copy(doc, orig_val);
             if (!yyjson_mut_obj_add(builder, mut_key, mut_val)) return NULL;
         }
     }
@@ -2443,6 +2504,7 @@ static_inline void pow10_table_get_exp(i32 exp10, i32 *exp2) {
 }
 
 #endif
+
 
 
 #if !YYJSON_DISABLE_READER
@@ -3808,6 +3870,8 @@ digi_finish:
 #undef return_f64
 #undef return_f64_raw
 }
+
+
 
 #else /* FP_READER */
 
@@ -5769,7 +5833,7 @@ static_inline u8 *write_u64(u64 val, u8 *buf) {
  * Number Writer
  *============================================================================*/
 
-#if YYJSON_HAS_IEEE_754 && !YYJSON_DISABLE_FAST_FP_CONV
+#if YYJSON_HAS_IEEE_754 && !YYJSON_DISABLE_FAST_FP_CONV  /* FP_WRITER */
 
 /** Trailing zero count table for number 0 to 99.
     (generate with misc/make_tables.c) */

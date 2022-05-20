@@ -5,7 +5,7 @@
 * [Use CMake as a dependency](#use-cmake-as-a-dependency)
 * [Use CMake to generate project](#use-cmake-to-generate-project)
 * [Testing With CMake and CTest](#testing-with-cmake-and-ctest)
-* [Compile Flags](#compile-flags)
+* [Compile-time Options](#compile-time-options)
 
 
 ------
@@ -47,7 +47,7 @@ Supported CMake options:
 - `-DYYJSON_DISABLE_FAST_FP_CONV=ON` Disable fast floating-pointer conversion.
 - `-DYYJSON_DISABLE_NON_STANDARD=ON` Disable non-standard JSON support at compile time.
 
-See [compile flags](#compile-flags) for details.
+See [compile-time options](#compile-time-options) for details.
 
 # Use CMake as a dependency
 
@@ -57,7 +57,7 @@ add_subdirectory(vendor/yyjson)
 target_link_libraries(your_target yyjson)
 ```
 
-You may also add some compile flag for yyjson library:
+You may also add some build options for yyjson library:
 ```cmake
 set(YYJSON_DISABLE_NON_STANDARD ON CACHE INTERNAL "")
 add_subdirectory(vendor/yyjson)
@@ -133,13 +133,13 @@ cmake --build .
 ```
 
 
-# Compile Flags
-`yyjson` supports some compile flags, you can define these macros as `1` to disable some features at compile time.
+# Compile-time Options
+`yyjson` supports some compile-time options, you can define these macros as `1` to disable some features at compile time.
 
 ●**YYJSON_DISABLE_READER**<br/>
 Define it as 1 to disable the JSON reader.<br/>
-This flag can reduce the binary size if you don't need to read JSON.<br/>
-These functions will be disabled by this flag:
+This option can reduce the binary size if you don't need to read JSON.<br/>
+These functions will be disabled by this option:
 
 ```
 yyjson_read_opts()
@@ -149,8 +149,8 @@ yyjson_read()
 
 ●**YYJSON_DISABLE_WRITER**<br/>
 Define it as 1 to disable the JSON writer.<br/>
-This flag can reduce the binary size if you don't need to write JSON.<br/>
-These functions will be disabled by this flag:
+This option can reduce the binary size if you don't need to write JSON.<br/>
+These functions will be disabled by this option:
 
 ```
 yyjson_write_opts()

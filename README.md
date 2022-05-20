@@ -83,7 +83,7 @@ Since `yyjson` is ANSI C compatible, no other configuration is needed typically.
 
 `yyjson` has been tested with the following compilers: `gcc`, `clang`, `msvc`, `icc`, `tcc`. If you find a compile error, please [report a bug](https://github.com/ibireme/yyjson/issues/new?template=bug_report.md).
 
-`yyjson` has all features enabled by default, but you can trim out some of them by adding compile flags. For example, disable JSON writer to reduce the binary size when you don't need serialization, or disable comments support to improve parsing performance. See [compile flags](https://github.com/ibireme/yyjson/blob/master/doc/BuildAndTest.md#compile-flags) for details.
+`yyjson` has all features enabled by default, but you can trim out some of them by adding compile-time options. For example, disable JSON writer to reduce the binary size when you don't need serialization, or disable comments support to improve parsing performance. See [compile-time options](https://github.com/ibireme/yyjson/blob/master/doc/BuildAndTest.md#compile-time-options) for details.
 
 ### CMake
 Clone the repository and create build directory:

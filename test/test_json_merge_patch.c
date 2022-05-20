@@ -1,32 +1,45 @@
 #include "yyjson.h"
 #include "yy_test_utils.h"
 
-static void test_one(const char *original_json,
+static void test_one(const char *orig_json,
                      const char *patch_json,
-                     const char *want_result_json) {
+                     const char *expt_json) {
 #if !YYJSON_DISABLE_READER
-    yyjson_doc *original_doc = yyjson_read(original_json, strlen(original_json), 0);
-    yyjson_doc *patch_doc = yyjson_read(patch_json, strlen(patch_json), 0);
-    yyjson_doc *want_result_doc = yyjson_read(want_result_json, strlen(want_result_json), 0);
-    yyjson_mut_doc *mut_want_result_doc = yyjson_doc_mut_copy(want_result_doc, NULL);
+    yyjson_doc *i_orig_doc = yyjson_read(orig_json, strlen(orig_json), 0);
+    yyjson_doc *i_patch_doc = yyjson_read(patch_json, strlen(patch_json), 0);
+    yyjson_doc *i_expe_doc = yyjson_read(expt_json, strlen(expt_json), 0);
+    yyjson_mut_doc *m_orig_doc = yyjson_doc_mut_copy(i_orig_doc, NULL);
+    yyjson_mut_doc *m_patch_doc = yyjson_doc_mut_copy(i_patch_doc, NULL);
+    yyjson_mut_doc *m_expe_doc = yyjson_doc_mut_copy(i_expe_doc, NULL);
     
-    yyjson_mut_doc *result_doc = yyjson_mut_doc_new(NULL);
-    yyjson_mut_val *result = yyjson_merge_patch(result_doc, original_doc->root, patch_doc->root);
+    yyjson_mut_doc *doc = yyjson_mut_doc_new(NULL);
+    yyjson_mut_val *ret1 = yyjson_merge_patch(doc, i_orig_doc->root, i_patch_doc->root);
+    yyjson_mut_val *ret2 = yyjson_mut_merge_patch(doc, m_orig_doc->root, m_patch_doc->root);
     
-    yy_assert(yyjson_mut_equals(mut_want_result_doc->root, result));
+    yy_assert(yyjson_mut_equals(m_expe_doc->root, ret1));
+    yy_assert(yyjson_mut_equals(m_expe_doc->root, ret2));
     
     yy_assert(yyjson_merge_patch(NULL, NULL, NULL) == NULL);
-    yy_assert(yyjson_merge_patch(NULL, original_doc->root, NULL) == NULL);
-    yy_assert(yyjson_merge_patch(NULL, NULL, patch_doc->root) == NULL);
-    yy_assert(yyjson_merge_patch(NULL, original_doc->root, patch_doc->root) == NULL);
-    yy_assert(yyjson_merge_patch(result_doc, original_doc->root, NULL) == NULL);
-    yy_assert(yyjson_merge_patch(result_doc, NULL, patch_doc->root) != NULL);
+    yy_assert(yyjson_merge_patch(NULL, i_orig_doc->root, NULL) == NULL);
+    yy_assert(yyjson_merge_patch(NULL, NULL, i_patch_doc->root) == NULL);
+    yy_assert(yyjson_merge_patch(NULL, i_orig_doc->root, i_patch_doc->root) == NULL);
+    yy_assert(yyjson_merge_patch(doc, i_orig_doc->root, NULL) == NULL);
+    yy_assert(yyjson_merge_patch(doc, NULL, i_patch_doc->root) != NULL);
     
-    yyjson_mut_doc_free(result_doc);
-    yyjson_mut_doc_free(mut_want_result_doc);
-    yyjson_doc_free(want_result_doc);
-    yyjson_doc_free(patch_doc);
-    yyjson_doc_free(original_doc);
+    yy_assert(yyjson_mut_merge_patch(NULL, NULL, NULL) == NULL);
+    yy_assert(yyjson_mut_merge_patch(NULL, m_orig_doc->root, NULL) == NULL);
+    yy_assert(yyjson_mut_merge_patch(NULL, NULL, m_patch_doc->root) == NULL);
+    yy_assert(yyjson_mut_merge_patch(NULL, m_orig_doc->root, m_patch_doc->root) == NULL);
+    yy_assert(yyjson_mut_merge_patch(doc, m_orig_doc->root, NULL) == NULL);
+    yy_assert(yyjson_mut_merge_patch(doc, NULL, m_patch_doc->root) != NULL);
+    
+    yyjson_mut_doc_free(doc);
+    yyjson_mut_doc_free(m_expe_doc);
+    yyjson_mut_doc_free(m_patch_doc);
+    yyjson_mut_doc_free(m_orig_doc);
+    yyjson_doc_free(i_expe_doc);
+    yyjson_doc_free(i_patch_doc);
+    yyjson_doc_free(i_orig_doc);
 #endif
 }
 

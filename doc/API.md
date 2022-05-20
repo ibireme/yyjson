@@ -28,7 +28,7 @@
     * [Mutable JSON Object Creation](#mutable-json-object-creation-api)
     * [Mutable JSON Object Modification](#mutable-json-object-modification-api)
     * [Mutable JSON Object Modification (Convenience)](#mutable-json-object-modification-convenience-api)
-    * [JSON Merge Path](#json-merge-path)
+    * [JSON Merge Pacth](#json-merge-pacth)
 * [Number Processing](#number-processing)
     * [Number Reader](#number-reader)
     * [Number Writer](#number-writer)
@@ -1128,7 +1128,7 @@ bool yyjson_mut_obj_remove_str(yyjson_mut_val *obj, const char *key);
 bool yyjson_mut_obj_remove_strn(yyjson_mut_val *obj, const char *key, size_t len);
 ```
 
-### JSON Merge Path
+### JSON Merge Patch
 Creates and returns a merge-patched JSON value (RFC 7386).
 Returns NULL if the patch could not be applied.
 Specification and example: <https://tools.ietf.org/html/rfc7386>
@@ -1153,8 +1153,6 @@ it will parse numbers according to these rules by default:<br/>
 * If a number does not match the [JSON](https://www.json.org) standard, it will report an error.
 
 You can use `YYJSON_READ_ALLOW_INF_AND_NAN` flag to allow `nan` and `inf` number/literal, see [reader flag](#reader-flag) for details.
-
-See [reader flag](#reader-flag) for details.
 
 ### Number writer
 yyjson has a built-in high-performance number writer,<br/>
@@ -1188,9 +1186,9 @@ By default, yyjson performs a strict UTF-8 encoding validation on input strings.
 You could use `YYJSON_READ_ALLOW_INVALID_UNICODE` and `YYJSON_WRITE_ALLOW_INVALID_UNICODE` flag to allow invalid unicode encoding. However, you should be aware that the result value from yyjson may contain invalid characters, which can be used by other code and may pose security risks.
 
 ### NUL Character
-yyjson supports the `NUL` character (also known as `null terminator`, Unicode `U+0000`, ASCII `\0`).
+yyjson supports the `NUL` character (also known as `null terminator`, or Unicode `U+0000`, ASCII `\0`).
 
-When reading JSON, `\u0000` will be unescaped to `NUL`. If a string contains `NUL`, the length obtained with strlen() will be inaccurate, and you should use yyjson_get_len() instead to get the real length.
+When reading JSON, `\u0000` will be unescaped to `NUL`. If a string contains `NUL`, the length obtained with strlen() will be inaccurate, and you should use yyjson_get_len() to get the real length.
 
 When building JSON, the input string is treated as null-terminated. If you need to pass in a string with `NUL` inside, you should use the API with the `n` suffix and pass in the real length.
 
