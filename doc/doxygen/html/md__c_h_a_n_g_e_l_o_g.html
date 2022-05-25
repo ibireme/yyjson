@@ -35,7 +35,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname"><a href="index.html">yyjson</a><span id="projectnumber">&#160;0.4.0</span>
+   <div id="projectname"><a href="index.html">yyjson</a><span id="projectnumber">&#160;0.5.0</span>
    </div>
    <div id="projectbrief">A high performance C JSON library.</div>
   </td>
@@ -98,56 +98,85 @@ $(document).ready(function(){initNavTree('md__c_h_a_n_g_e_l_o_g.html',''); initR
 <div class="contents">
 <div class="textblock"><p >All notable changes to this project will be documented in this file.</p>
 <h1><a class="anchor" id="autotoc_md85"></a>
-0.4.0 (2021-12-12)</h1>
+0.5.0 (2022-05-25)</h1>
 <h3><a class="anchor" id="autotoc_md86"></a>
 Added</h3>
 <ul>
-<li>Add <code>YYJSON_WRITE_INF_AND_NAN_AS_NULL</code> flag for JSON writer.</li>
-<li>Add <code>merge_path()</code> function for JSON Merge-Path API (RFC 7386).</li>
-<li>Add <code>obj_replace()</code> and <code>obj_insert()</code> function for object modification.</li>
-<li>Add <code>obj_iter_get()</code> function for faster object query.</li>
-<li>Add <code><a class="el" href="yyjson_8h.html#a874f912f9c023bc353d1a770798017a1">yyjson_version()</a></code> function.</li>
+<li>Add LibFuzzer support.</li>
+<li>Add Doxygen support.</li>
+<li>Add functions to support serializing a single JSON value.</li>
+<li>Add <code><a class="el" href="yyjson_8h.html#a6ee1dc133fa773528286cd0b25300cb2">yyjson_mut_doc_mut_copy()</a></code>, <code><a class="el" href="yyjson_8h.html#a66761be40cfb010086ec798ddb44018f">yyjson_mut_val_mut_copy()</a></code>, <code><a class="el" href="yyjson_8h.html#aad64266ebfbdd2a9627050cf1f3f48d7">yyjson_mut_merge_patch()</a></code> function for mutable input.</li>
+<li>Add <code><a class="el" href="yyjson_8h.html#adabd9eb44fac843109d6bc79f12ff6ff">yyjson_equals()</a></code> and <code><a class="el" href="yyjson_8h.html#ab0a5c5a568b7f2c0a6301149f0f6aa84">yyjson_mut_equals()</a></code> function to compare two values.</li>
+<li>Add <code><a class="el" href="yyjson_8h.html#a13d5da22b245b8242d9c5c6bd6b3582b">yyjson_mut_obj_remove_key()</a></code> and <code><a class="el" href="yyjson_8h.html#a36b5cade5e5cfecd47e9ae584078e2b4">yyjson_mut_obj_remove_keyn()</a></code> to make it easier to remove a key.</li>
+<li>Add <code>YYJSON_READ_NUMBER_AS_RAW</code> option and <code>RAW</code> type support.</li>
+<li>Add <code>YYJSON_READ_ALLOW_INVALID_UNICODE</code> and <code>YYJSON_WRITE_ALLOW_INVALID_UNICODE</code> options to allow invalid unicode.</li>
 </ul>
 <h3><a class="anchor" id="autotoc_md87"></a>
+Changed</h3>
+<ul>
+<li>Change <code><a class="el" href="yyjson_8h.html#a660d533ce8b661e85c5b14e4e99e5085">yyjson_mut_obj_remove()</a></code> return type from <code>bool</code> to <code><a class="el" href="yyjson_8h.html#structyyjson__mut__val">yyjson_mut_val</a> *</code>.</li>
+<li>Rewrite string serialization function, validate unicode encoding by default.</li>
+<li>Rewrite the JSON Pointer implementation, remove internal malloc() calls.</li>
+</ul>
+<h3><a class="anchor" id="autotoc_md88"></a>
+Fixed</h3>
+<ul>
+<li>Make the code work correctly with setlocale() function and fast-math flag: #54</li>
+<li>Fix negative infinity literals read error: #64</li>
+<li>Fix non null-terminated string write error.</li>
+<li>Fix incorrect behavior of <code>YYJSON_DISABLE_NON_STANDARD</code> flag: #80</li>
+</ul>
+<h1><a class="anchor" id="autotoc_md89"></a>
+0.4.0 (2021-12-12)</h1>
+<h3><a class="anchor" id="autotoc_md90"></a>
+Added</h3>
+<ul>
+<li>Add <code>YYJSON_WRITE_INF_AND_NAN_AS_NULL</code> flag for JSON writer.</li>
+<li>Add <code><a class="el" href="yyjson_8h.html#a9026faa4e022392c28e8f9afa553362f">yyjson_merge_patch()</a></code> function for JSON Merge-Path API (RFC 7386).</li>
+<li>Add <code><a class="el" href="yyjson_8h.html#a964840d68d5d27ad2e16c63b4b2475b6">yyjson_mut_obj_replace()</a></code> and <code><a class="el" href="yyjson_8h.html#a98e9f97614fce2a6187473eeb35274e8">yyjson_mut_obj_insert()</a></code> function for object modification.</li>
+<li>Add <code><a class="el" href="yyjson_8h.html#a1f3b09c4f279287f8af93b3754a41e85">yyjson_obj_iter_get()</a></code> and <code><a class="el" href="yyjson_8h.html#a9e79f1480256c6e2e8dfbf61da9cd853">yyjson_mut_obj_iter_get()</a></code> function for faster object search.</li>
+<li>Add <code><a class="el" href="yyjson_8h.html#a874f912f9c023bc353d1a770798017a1">yyjson_version()</a></code> function.</li>
+</ul>
+<h3><a class="anchor" id="autotoc_md91"></a>
 Changed</h3>
 <ul>
 <li>Replace <code>YYJSON_DISABLE_COMMENT_READER</code> and <code>YYJSON_DISABLE_INF_AND_NAN_READER</code> with <code>YYJSON_DISABLE_NON_STANDARD</code> compiler flag.</li>
 <li>Replace <code>YYJSON_DISABLE_FP_READER</code> and <code>YYJSON_DISABLE_FP_WRITER</code> with <code>YYJSON_DISABLE_FAST_FP_CONV</code> compiler flag.</li>
 </ul>
-<h3><a class="anchor" id="autotoc_md88"></a>
+<h3><a class="anchor" id="autotoc_md92"></a>
 Fixed</h3>
 <ul>
 <li>Fix compiler warning with <code>-Wconversion</code></li>
 <li>Fix compiler error for GCC 4.4 (#53) and MSVC 6.0 (#55)</li>
 </ul>
-<h1><a class="anchor" id="autotoc_md89"></a>
+<h1><a class="anchor" id="autotoc_md93"></a>
 0.3.0 (2021-05-25)</h1>
-<h3><a class="anchor" id="autotoc_md90"></a>
+<h3><a class="anchor" id="autotoc_md94"></a>
 Added</h3>
 <ul>
 <li>Add <code>JSON Pointer</code> support.</li>
 <li>Add CMake install target.</li>
 </ul>
-<h3><a class="anchor" id="autotoc_md91"></a>
+<h3><a class="anchor" id="autotoc_md95"></a>
 Changed</h3>
 <ul>
 <li>Improve performance for some arch which doesn't support unaligned memory access.</li>
 </ul>
-<h3><a class="anchor" id="autotoc_md92"></a>
+<h3><a class="anchor" id="autotoc_md96"></a>
 Fixed</h3>
 <ul>
 <li>Fix some compiler warning for GCC and Clang.</li>
 <li>Fix MSVC build error on UWP (uninitialized local variable).</li>
 <li>Fix stream file reading error on some platform.</li>
 </ul>
-<h1><a class="anchor" id="autotoc_md93"></a>
+<h1><a class="anchor" id="autotoc_md97"></a>
 0.2.0 (2020-12-12)</h1>
-<h3><a class="anchor" id="autotoc_md94"></a>
+<h3><a class="anchor" id="autotoc_md98"></a>
 Added</h3>
 <ul>
 <li>Add swift package manager support.</li>
 </ul>
-<h3><a class="anchor" id="autotoc_md95"></a>
+<h3><a class="anchor" id="autotoc_md99"></a>
 Changed</h3>
 <ul>
 <li>Improve JSON reader performance for gcc.</li>
@@ -155,19 +184,19 @@ Changed</h3>
 <li>Rewrite double number writer with Schubfach algorithm: #4.</li>
 <li>Strict UTF-8 validation for JSON reader.</li>
 </ul>
-<h3><a class="anchor" id="autotoc_md96"></a>
+<h3><a class="anchor" id="autotoc_md100"></a>
 Removed</h3>
 <ul>
 <li>Remove <code>YYJSON_READ_FASTFP</code> compiler flag.</li>
 </ul>
-<h3><a class="anchor" id="autotoc_md97"></a>
+<h3><a class="anchor" id="autotoc_md101"></a>
 Fixed</h3>
 <ul>
 <li>Fix a compile error for old version gcc on linux: #7.</li>
 </ul>
-<h1><a class="anchor" id="autotoc_md98"></a>
+<h1><a class="anchor" id="autotoc_md102"></a>
 0.1.0 (2020-10-26)</h1>
-<h3><a class="anchor" id="autotoc_md99"></a>
+<h3><a class="anchor" id="autotoc_md103"></a>
 Added</h3>
 <ul>
 <li>Initial release.</li>
