@@ -1,3 +1,6 @@
+# API Reference
+
+
 # Table of Contents
 
 * [Read JSON](#read-json)
@@ -129,7 +132,7 @@ yyjson_doc_free(doc);
 yyjson provides a set of flags for JSON reader.<br/>
 You can use a single flag, or combine multiple flags with bitwise `|` operator.
 
-●**YYJSON_READ_NOFLAG = 0**<br/>
+● **YYJSON_READ_NOFLAG = 0**<br/>
 
 This is the default flag for JSON reader (RFC-8259 or ECMA-404 compliant):
 
@@ -141,7 +144,7 @@ This is the default flag for JSON reader (RFC-8259 or ECMA-404 compliant):
 - Report error if string contains invalid UTF-8 character or BOM.
 - Report error on trailing commas, comments, `inf` and `nan` literals.
 
-●**YYJSON_READ_INSITU**<br/>
+● **YYJSON_READ_INSITU**<br/>
 Read the input data in-situ.<br/>
 This option allows the reader to modify and use input data to store string values, which can increase reading speed slightly. The caller should hold the input data before free the document. The input data must be padded by at least `YYJSON_PADDING_SIZE` byte. For example: "[1,2]" should be "[1,2]\0\0\0\0", length should be 5.
 
@@ -159,7 +162,7 @@ yyjson_doc_free(doc);
 free(buf); // the input dat should free after document.
 ```
 
-●**YYJSON_READ_STOP_WHEN_DONE**<br/>
+● **YYJSON_READ_STOP_WHEN_DONE**<br/>
 Stop when done instead of issues an error if there's additional content after a JSON document.<br/> 
 This option may used to parse small pieces of JSON in larger data, such as [NDJSON](https://en.wikipedia.org/wiki/JSON_streaming).<br/>
 
@@ -188,7 +191,7 @@ while (true) {
 free(dat);
 ```
 
-●**YYJSON_READ_ALLOW_TRAILING_COMMAS**<br/>
+● **YYJSON_READ_ALLOW_TRAILING_COMMAS**<br/>
 Allow single trailing comma at the end of an object or array, for example:
 
 ```
@@ -203,7 +206,7 @@ Allow single trailing comma at the end of an object or array, for example:
 ]
 ```
 
-●**YYJSON_READ_ALLOW_COMMENTS**<br/>
+● **YYJSON_READ_ALLOW_COMMENTS**<br/>
 Allow C-style single line and multiple line comments, for example:
 
 ```
@@ -213,7 +216,7 @@ Allow C-style single line and multiple line comments, for example:
 }
 ```
 
-●**YYJSON_READ_ALLOW_INF_AND_NAN**<br/>
+● **YYJSON_READ_ALLOW_INF_AND_NAN**<br/>
 Allow nan/inf number or literal (case-insensitive), such as 1e999, NaN, Inf, -Infinity, for example:
 
 ```
@@ -226,7 +229,7 @@ Allow nan/inf number or literal (case-insensitive), such as 1e999, NaN, Inf, -In
 }
 ```
 
-●**YYJSON_READ_NUMBER_AS_RAW**<br/>
+● **YYJSON_READ_NUMBER_AS_RAW**<br/>
 Read numbers as raw strings without parsing, allowing you to keep arbitrarily large numbers. 
 
 You can use these functions to extract raw strings:
@@ -236,7 +239,7 @@ const char *yyjson_get_raw(yyjson_val *val);
 size_t yyjson_get_len(yyjson_val *val)
 ```
 
-●**YYJSON_READ_ALLOW_INVALID_UNICODE**<br/>
+● **YYJSON_READ_ALLOW_INVALID_UNICODE**<br/>
 Allow reading invalid unicode when parsing string values, for example:
 ```
 "\x80xyz"
@@ -404,7 +407,7 @@ alc.free(alc.ctx, json);
 yyjson provides a set of flags for JSON writer.<br/>
 You can use a single flag, or combine multiple flags with bitwise `|` operator.
 
-●**YYJSON_WRITE_NOFLAG = 0**<br/>
+● **YYJSON_WRITE_NOFLAG = 0**<br/>
 This is the default flag for JSON writer:
 
 - Write JSON minify.
@@ -412,10 +415,10 @@ This is the default flag for JSON writer:
 - Report error on invalid UTF-8 string.
 - Do not escape unicode or slash. 
 
-●**YYJSON_WRITE_PRETTY**<br/>
+● **YYJSON_WRITE_PRETTY**<br/>
 Write JSON pretty with 4 space indent.
 
-●**YYJSON_WRITE_ESCAPE_UNICODE**<br/>
+● **YYJSON_WRITE_ESCAPE_UNICODE**<br/>
 Escape unicode as `\uXXXX`, make the output ASCII only, for example:
 
 ```json
@@ -423,7 +426,7 @@ Escape unicode as `\uXXXX`, make the output ASCII only, for example:
 ["Aliz\\u00E9e, \\uD83D\\uDE0A"]
 ```
 
-●**YYJSON_WRITE_ESCAPE_SLASHES**<br/>
+● **YYJSON_WRITE_ESCAPE_SLASHES**<br/>
 Escape `/` as `\/`, for example:
 
 ```json
@@ -431,7 +434,7 @@ Escape `/` as `\/`, for example:
 ["https:\/\/github.com"]
 ```
 
-●**YYJSON_WRITE_ALLOW_INF_AND_NAN**<br/>
+● **YYJSON_WRITE_ALLOW_INF_AND_NAN**<br/>
 Write inf/nan number as `Infinity` and `NaN` literals.<br/>
 Note that this output is **NOT** standard JSON and may be rejected by other JSON libraries, for example:
 
@@ -439,7 +442,7 @@ Note that this output is **NOT** standard JSON and may be rejected by other JSON
 {"not a number":NaN,"large number":Infinity}
 ```
 
-●**YYJSON_WRITE_INF_AND_NAN_AS_NULL**<br/>
+● **YYJSON_WRITE_INF_AND_NAN_AS_NULL**<br/>
 Write inf/nan number as `null` literal.<br/>
 This flag will override `YYJSON_WRITE_ALLOW_INF_AND_NAN` flag, for example:
 
@@ -447,7 +450,7 @@ This flag will override `YYJSON_WRITE_ALLOW_INF_AND_NAN` flag, for example:
 {"not a number":null,"large number":null}
 ```
 
-●**YYJSON_WRITE_ALLOW_INVALID_UNICODE**<br/>
+● **YYJSON_WRITE_ALLOW_INVALID_UNICODE**<br/>
 Allow invalid unicode when encoding string values.
 
 Invalid characters in string value will be copied byte by byte. If `YYJSON_WRITE_ESCAPE_UNICODE` flag is also set, invalid character will be escaped as `\uFFFD` (replacement character).
@@ -676,7 +679,7 @@ Same as `yyjson_obj_get(), but you can pass an explicit string length.
 yyjson_val *yyjson_obj_getn(yyjson_val *obj, const char *key, size_t key_len);
 ```
 
-If the order of object's key is known at compile time, you can use this method to avoid searching the entire object:
+If the order of object's key is known at compile-time, you can use this method to avoid searching the entire object:
 ```c
 // { "x":1, "y":2, "z":3 }
 yyjson_val *obj = ...;

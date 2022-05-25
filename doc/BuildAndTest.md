@@ -1,3 +1,6 @@
+# Build And Test
+
+
 # Table of Contents
 
 * [Import Manually](#import-manually)
@@ -38,6 +41,7 @@ Supported CMake options:
 - `-DYYJSON_BUILD_TESTS=ON` Build all tests.
 - `-DYYJSON_BUILD_FUZZER=ON` Build fuzzer with LibFuzzing.
 - `-DYYJSON_BUILD_MISC=ON` Build misc.
+- `-DYYJSON_BUILD_DOC=ON` Build documentation with doxygen.
 - `-DYYJSON_ENABLE_COVERAGE=ON` Enable code coverage for tests.
 - `-DYYJSON_ENABLE_VALGRIND=ON` Enable valgrind memory checker for tests.
 - `-DYYJSON_ENABLE_SANITIZE=ON` Enable sanitizer for tests.
@@ -45,7 +49,7 @@ Supported CMake options:
 - `-DYYJSON_DISABLE_READER=ON` Disable JSON reader if you don't need it.
 - `-DYYJSON_DISABLE_WRITER=ON` Disable JSON writer if you don't need it.
 - `-DYYJSON_DISABLE_FAST_FP_CONV=ON` Disable fast floating-pointer conversion.
-- `-DYYJSON_DISABLE_NON_STANDARD=ON` Disable non-standard JSON support at compile time.
+- `-DYYJSON_DISABLE_NON_STANDARD=ON` Disable non-standard JSON support at compile-time.
 
 See [compile-time options](#compile-time-options) for details.
 
@@ -134,9 +138,9 @@ cmake --build .
 
 
 # Compile-time Options
-`yyjson` supports some compile-time options, you can define these macros as `1` to disable some features at compile time.
+`yyjson` supports some compile-time options, you can define these macros as `1` to disable some features at compile-time.
 
-●**YYJSON_DISABLE_READER**<br/>
+● **YYJSON_DISABLE_READER**<br/>
 Define it as 1 to disable the JSON reader.<br/>
 This option can reduce the binary size if you don't need to read JSON.<br/>
 These functions will be disabled by this option:
@@ -147,7 +151,7 @@ yyjson_read_file()
 yyjson_read()
 ```
 
-●**YYJSON_DISABLE_WRITER**<br/>
+● **YYJSON_DISABLE_WRITER**<br/>
 Define it as 1 to disable the JSON writer.<br/>
 This option can reduce the binary size if you don't need to write JSON.<br/>
 These functions will be disabled by this option:
@@ -161,12 +165,12 @@ yyjson_mut_write_file()
 yyjson_mut_write()
 ```
 
-●**YYJSON_DISABLE_FAST_FP_CONV**<br/>
+● **YYJSON_DISABLE_FAST_FP_CONV**<br/>
 Define as 1 to disable the fast floating-point number conversion in yyjson,<br/>
 and use libc's `strtod/snprintf` instead. This may reduce binary size,<br/>
 but slow down floating-point reading and writing speed.
 
-●**YYJSON_DISABLE_NON_STANDARD**<br/>
+● **YYJSON_DISABLE_NON_STANDARD**<br/>
 Define as 1 to disable non-standard JSON support at compile time:<br/>
     - Reading and writing inf/nan literal, such as 'NaN', '-Infinity'.<br/>
     - Single line and multiple line comments.<br/>
@@ -178,8 +182,8 @@ This may also invalidate these options:<br/>
     - YYJSON_WRITE_ALLOW_INF_AND_NAN<br/>
 This may reduce binary size, and increase performance slightly.
 
-●**YYJSON_EXPORTS**<br/>
+● **YYJSON_EXPORTS**<br/>
 Define it as 1 to export symbols when building the library as Windows DLL.
 
-●**YYJSON_IMPORTS**<br/>
+● **YYJSON_IMPORTS**<br/>
 Define it as 1 to import symbols when using the library as Windows DLL.

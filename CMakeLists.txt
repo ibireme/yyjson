@@ -24,6 +24,7 @@ endif()
 option(YYJSON_BUILD_TESTS "Build all tests" OFF)
 option(YYJSON_BUILD_FUZZER "Build fuzzer" OFF)
 option(YYJSON_BUILD_MISC "Build misc" OFF)
+option(YYJSON_BUILD_DOC "Build documentation with doxygen" OFF)
 option(YYJSON_ENABLE_COVERAGE "Enable code coverage for tests" OFF)
 option(YYJSON_ENABLE_VALGRIND "Enable valgrind memory checker for tests" OFF)
 option(YYJSON_ENABLE_SANITIZE "Enable sanitizer for tests" OFF)
@@ -405,5 +406,29 @@ if(YYJSON_BUILD_MISC)
     )
     if(XCODE)
         set_default_xcode_property(make_tables)
+    endif()
+endif()
+
+
+
+# ------------------------------------------------------------------------------
+# Doxygen
+if(YYJSON_BUILD_DOC)
+    find_package(Doxygen)
+    if(DOXYGEN_FOUND)
+        message(STATUS "Doxygen found")
+        
+        set(DOXYGEN_IN "${CMAKE_CURRENT_SOURCE_DIR}/doc/doxygen/Doxyfile.in")
+        set(DOXYGEN_OUT "${CMAKE_CURRENT_BINARY_DIR}/Doxyfile")
+        configure_file(${DOXYGEN_IN} ${DOXYGEN_OUT} @ONLY)
+        message(STATUS "Doxygen will output to ${CMAKE_CURRENT_BINARY_DIR}/doxygen/html")
+        
+        add_custom_target(yyjson_doc ALL
+            COMMAND ${DOXYGEN_EXECUTABLE} "${CMAKE_CURRENT_BINARY_DIR}/Doxyfile"
+            WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+            COMMENT "Generating documentation with Doxygen"
+            VERBATIM)
+    else()
+        message(WARNING "Doxygen not found")
     endif()
 endif()

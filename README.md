@@ -25,7 +25,7 @@ A high performance JSON library written in ANSI C.
 # Performance
 Benchmark project and dataset: [yyjson_benchmark](https://github.com/ibireme/yyjson_benchmark)
 
-The simdjson's new `On Demand` API is faster if most JSON fields are known at compile time.
+The simdjson's new `On Demand` API is faster if most JSON fields are known at compile-time.
 This benchmark project only checks the DOM API, a new benchmark will be added later.
 
 #### AWS EC2 (AMD EPYC 7R32, gcc 9.3)
@@ -112,7 +112,7 @@ Supported CMake options:
 - `-DYYJSON_DISABLE_READER=ON` Disable JSON reader if you don't need it.
 - `-DYYJSON_DISABLE_WRITER=ON` Disable JSON writer if you don't need it.
 - `-DYYJSON_DISABLE_FAST_FP_CONV=ON` Disable fast floating-point number conversion.
-- `-DYYJSON_DISABLE_NON_STANDARD=ON` Disable non-standard JSON support at compile time.
+- `-DYYJSON_DISABLE_NON_STANDARD=ON` Disable non-standard JSON support at compile-time.
 
 [More details](https://github.com/ibireme/yyjson/blob/master/doc/BuildAndTest.md)
 

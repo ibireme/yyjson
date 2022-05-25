@@ -527,6 +527,7 @@ static void test_number_locale(void) {
     test_with_file("real_pass_4.txt", NUM_TYPE_REAL);
     test_with_file("real_pass_5.txt", NUM_TYPE_REAL);
     test_with_file("real_pass_6.txt", NUM_TYPE_REAL);
+    test_with_file("real_pass_7.txt", NUM_TYPE_REAL);
     test_with_file("nan_inf_literal_pass.txt", NUM_TYPE_INF_NAN_LITERAL);
     test_with_file("nan_inf_literal_fail.txt", NUM_TYPE_FAIL);
     test_random_int();
