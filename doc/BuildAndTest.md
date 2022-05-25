@@ -142,45 +142,60 @@ cmake --build .
 
 ● **YYJSON_DISABLE_READER**<br/>
 Define it as 1 to disable the JSON reader.<br/>
-This option can reduce the binary size if you don't need to read JSON.<br/>
-These functions will be disabled by this option:
-
-```
+This will disable these functions at compile-time:
+```c
 yyjson_read_opts()
 yyjson_read_file()
 yyjson_read()
-```
+ ```
+This will reduce the binary size by about 60%.
 
 ● **YYJSON_DISABLE_WRITER**<br/>
-Define it as 1 to disable the JSON writer.<br/>
-This option can reduce the binary size if you don't need to write JSON.<br/>
-These functions will be disabled by this option:
+Define as 1 to disable JSON writer if you don't need to serialize JSON.
 
-```
-yyjson_write_opts()
-yyjson_write_file()
+This will disable these functions at compile-time:
+```c
 yyjson_write()
-yyjson_mut_write_opts()
-yyjson_mut_write_file()
+yyjson_write_file()
+yyjson_write_opts()
+yyjson_val_write()
+yyjson_val_write_file()
+yyjson_val_write_opts()
 yyjson_mut_write()
+yyjson_mut_write_file()
+yyjson_mut_write_opts()
+yyjson_mut_val_write()
+yyjson_mut_val_write_file()
+yyjson_mut_val_write_opts()
 ```
+
+This will reduce the binary size by about 30%.
 
 ● **YYJSON_DISABLE_FAST_FP_CONV**<br/>
-Define as 1 to disable the fast floating-point number conversion in yyjson,<br/>
-and use libc's `strtod/snprintf` instead. This may reduce binary size,<br/>
-but slow down floating-point reading and writing speed.
+ Define as 1 to disable the fast floating-point number conversion in yyjson,
+ and use libc's `strtod/snprintf` instead.
+ 
+ This will reduce binary size by about 30%, but significantly slow down
+ floating-point reading and writing speed.
 
 ● **YYJSON_DISABLE_NON_STANDARD**<br/>
-Define as 1 to disable non-standard JSON support at compile time:<br/>
-    - Reading and writing inf/nan literal, such as 'NaN', '-Infinity'.<br/>
-    - Single line and multiple line comments.<br/>
-    - Single trailing comma at the end of an object or array.<br/>
-This may also invalidate these options:<br/>
-    - YYJSON_READ_ALLOW_INF_AND_NAN<br/>
-    - YYJSON_READ_ALLOW_COMMENTS<br/>
-    - YYJSON_READ_ALLOW_TRAILING_COMMAS<br/>
-    - YYJSON_WRITE_ALLOW_INF_AND_NAN<br/>
-This may reduce binary size, and increase performance slightly.
+Define as 1 to disable non-standard JSON support at compile-time:
+
+- Reading and writing inf/nan literal, such as 'NaN', '-Infinity'.
+- Single line and multiple line comments.
+- Single trailing comma at the end of an object or array.
+- Invalid unicode in string value.
+
+This will also invalidate these run-time options:
+
+- YYJSON_READ_ALLOW_INF_AND_NAN
+- YYJSON_READ_ALLOW_COMMENTS
+- YYJSON_READ_ALLOW_TRAILING_COMMAS
+- YYJSON_READ_ALLOW_INVALID_UNICODE
+- YYJSON_WRITE_ALLOW_INF_AND_NAN
+- YYJSON_WRITE_ALLOW_INVALID_UNICODE
+
+This will reduce binary size by about 10%, and increase performance slightly.
 
 ● **YYJSON_EXPORTS**<br/>
 Define it as 1 to export symbols when building the library as Windows DLL.

@@ -192,44 +192,61 @@ Compile-time Options</h1>
 <p ><code>yyjson</code> supports some compile-time options, you can define these macros as <code>1</code> to disable some features at compile-time.</p>
 <p >● <b>YYJSON_DISABLE_READER</b><br  />
  Define it as 1 to disable the JSON reader.<br  />
- This option can reduce the binary size if you don't need to read JSON.<br  />
- These functions will be disabled by this option:</p>
-<div class="fragment"><div class="line">yyjson_read_opts()</div>
-<div class="line">yyjson_read_file()</div>
-<div class="line">yyjson_read()</div>
-</div><!-- fragment --><p >● <b>YYJSON_DISABLE_WRITER</b><br  />
- Define it as 1 to disable the JSON writer.<br  />
- This option can reduce the binary size if you don't need to write JSON.<br  />
- These functions will be disabled by this option:</p>
-<div class="fragment"><div class="line">yyjson_write_opts()</div>
-<div class="line">yyjson_write_file()</div>
-<div class="line">yyjson_write()</div>
-<div class="line">yyjson_mut_write_opts()</div>
-<div class="line">yyjson_mut_write_file()</div>
-<div class="line">yyjson_mut_write()</div>
-</div><!-- fragment --><p >● <b>YYJSON_DISABLE_FAST_FP_CONV</b><br  />
- Define as 1 to disable the fast floating-point number conversion in yyjson,<br  />
- and use libc's <code>strtod/snprintf</code> instead. This may reduce binary size,<br  />
- but slow down floating-point reading and writing speed.</p>
+ This will disable these functions at compile-time: </p><div class="fragment"><div class="line"><a class="code hl_function" href="yyjson_8h.html#acf234d21f0cb4b7fc89381ef25e9f0a8">yyjson_read_opts</a>()</div>
+<div class="line"><a class="code hl_function" href="yyjson_8h.html#a605ac08b083fb65331d7fa5eb5d32225">yyjson_read_file</a>()</div>
+<div class="line"><a class="code hl_function" href="yyjson_8h.html#aeab3c2a1d86225e5b181fb1bba7587d4">yyjson_read</a>()</div>
+<div class="ttc" id="ayyjson_8h_html_a605ac08b083fb65331d7fa5eb5d32225"><div class="ttname"><a href="yyjson_8h.html#a605ac08b083fb65331d7fa5eb5d32225">yyjson_read_file</a></div><div class="ttdeci">yyjson_api yyjson_doc * yyjson_read_file(const char *path, yyjson_read_flag flg, const yyjson_alc *alc, yyjson_read_err *err)</div></div>
+<div class="ttc" id="ayyjson_8h_html_acf234d21f0cb4b7fc89381ef25e9f0a8"><div class="ttname"><a href="yyjson_8h.html#acf234d21f0cb4b7fc89381ef25e9f0a8">yyjson_read_opts</a></div><div class="ttdeci">yyjson_api yyjson_doc * yyjson_read_opts(char *dat, size_t len, yyjson_read_flag flg, const yyjson_alc *alc, yyjson_read_err *err)</div></div>
+<div class="ttc" id="ayyjson_8h_html_aeab3c2a1d86225e5b181fb1bba7587d4"><div class="ttname"><a href="yyjson_8h.html#aeab3c2a1d86225e5b181fb1bba7587d4">yyjson_read</a></div><div class="ttdeci">yyjson_api_inline yyjson_doc * yyjson_read(const char *dat, size_t len, yyjson_read_flag flg)</div><div class="ttdef"><b>Definition:</b> yyjson.h:738</div></div>
+</div><!-- fragment --><p> This will reduce the binary size by about 60%.</p>
+<p >● <b>YYJSON_DISABLE_WRITER</b><br  />
+ Define as 1 to disable JSON writer if you don't need to serialize JSON.</p>
+<p >This will disable these functions at compile-time: </p><div class="fragment"><div class="line"><a class="code hl_function" href="yyjson_8h.html#ad231975496ac3788fe5d69804e295443">yyjson_write</a>()</div>
+<div class="line"><a class="code hl_function" href="yyjson_8h.html#a2d82bd0dc78358326b03e28b9acc19e4">yyjson_write_file</a>()</div>
+<div class="line"><a class="code hl_function" href="yyjson_8h.html#a43ccc01254525cef16699e72079e3e49">yyjson_write_opts</a>()</div>
+<div class="line"><a class="code hl_function" href="yyjson_8h.html#a00409eb59aee687f7778d00510b59d38">yyjson_val_write</a>()</div>
+<div class="line"><a class="code hl_function" href="yyjson_8h.html#a725cc27bd7bd37c1d18c41589abd34db">yyjson_val_write_file</a>()</div>
+<div class="line"><a class="code hl_function" href="yyjson_8h.html#a79720744960c9b4fdabbfb28379bbeb4">yyjson_val_write_opts</a>()</div>
+<div class="line"><a class="code hl_function" href="yyjson_8h.html#a881e2ee3f487385810829df8bc675f1f">yyjson_mut_write</a>()</div>
+<div class="line"><a class="code hl_function" href="yyjson_8h.html#ad2a7aa77fa66a593536e3d7c3edb1d7a">yyjson_mut_write_file</a>()</div>
+<div class="line"><a class="code hl_function" href="yyjson_8h.html#a7af42d62aa1583986c687c5cd10b010e">yyjson_mut_write_opts</a>()</div>
+<div class="line"><a class="code hl_function" href="yyjson_8h.html#a700da5ce5bf8bb9d3739cc73a0f51cdf">yyjson_mut_val_write</a>()</div>
+<div class="line"><a class="code hl_function" href="yyjson_8h.html#adf8b2d3c8b57e85d58108d58c68b0db5">yyjson_mut_val_write_file</a>()</div>
+<div class="line"><a class="code hl_function" href="yyjson_8h.html#abdaf14b79fe803289070c0e5d5a705b8">yyjson_mut_val_write_opts</a>()</div>
+<div class="ttc" id="ayyjson_8h_html_a00409eb59aee687f7778d00510b59d38"><div class="ttname"><a href="yyjson_8h.html#a00409eb59aee687f7778d00510b59d38">yyjson_val_write</a></div><div class="ttdeci">yyjson_api_inline char * yyjson_val_write(const yyjson_val *val, yyjson_write_flag flg, size_t *len)</div><div class="ttdef"><b>Definition:</b> yyjson.h:1114</div></div>
+<div class="ttc" id="ayyjson_8h_html_a2d82bd0dc78358326b03e28b9acc19e4"><div class="ttname"><a href="yyjson_8h.html#a2d82bd0dc78358326b03e28b9acc19e4">yyjson_write_file</a></div><div class="ttdeci">yyjson_api bool yyjson_write_file(const char *path, const yyjson_doc *doc, yyjson_write_flag flg, const yyjson_alc *alc, yyjson_write_err *err)</div></div>
+<div class="ttc" id="ayyjson_8h_html_a43ccc01254525cef16699e72079e3e49"><div class="ttname"><a href="yyjson_8h.html#a43ccc01254525cef16699e72079e3e49">yyjson_write_opts</a></div><div class="ttdeci">yyjson_api char * yyjson_write_opts(const yyjson_doc *doc, yyjson_write_flag flg, const yyjson_alc *alc, size_t *len, yyjson_write_err *err)</div></div>
+<div class="ttc" id="ayyjson_8h_html_a700da5ce5bf8bb9d3739cc73a0f51cdf"><div class="ttname"><a href="yyjson_8h.html#a700da5ce5bf8bb9d3739cc73a0f51cdf">yyjson_mut_val_write</a></div><div class="ttdeci">yyjson_api_inline char * yyjson_mut_val_write(const yyjson_mut_val *val, yyjson_write_flag flg, size_t *len)</div><div class="ttdef"><b>Definition:</b> yyjson.h:1192</div></div>
+<div class="ttc" id="ayyjson_8h_html_a725cc27bd7bd37c1d18c41589abd34db"><div class="ttname"><a href="yyjson_8h.html#a725cc27bd7bd37c1d18c41589abd34db">yyjson_val_write_file</a></div><div class="ttdeci">yyjson_api bool yyjson_val_write_file(const char *path, const yyjson_val *val, yyjson_write_flag flg, const yyjson_alc *alc, yyjson_write_err *err)</div></div>
+<div class="ttc" id="ayyjson_8h_html_a79720744960c9b4fdabbfb28379bbeb4"><div class="ttname"><a href="yyjson_8h.html#a79720744960c9b4fdabbfb28379bbeb4">yyjson_val_write_opts</a></div><div class="ttdeci">yyjson_api char * yyjson_val_write_opts(const yyjson_val *val, yyjson_write_flag flg, const yyjson_alc *alc, size_t *len, yyjson_write_err *err)</div></div>
+<div class="ttc" id="ayyjson_8h_html_a7af42d62aa1583986c687c5cd10b010e"><div class="ttname"><a href="yyjson_8h.html#a7af42d62aa1583986c687c5cd10b010e">yyjson_mut_write_opts</a></div><div class="ttdeci">yyjson_api char * yyjson_mut_write_opts(const yyjson_mut_doc *doc, yyjson_write_flag flg, const yyjson_alc *alc, size_t *len, yyjson_write_err *err)</div></div>
+<div class="ttc" id="ayyjson_8h_html_a881e2ee3f487385810829df8bc675f1f"><div class="ttname"><a href="yyjson_8h.html#a881e2ee3f487385810829df8bc675f1f">yyjson_mut_write</a></div><div class="ttdeci">yyjson_api_inline char * yyjson_mut_write(const yyjson_mut_doc *doc, yyjson_write_flag flg, size_t *len)</div><div class="ttdef"><b>Definition:</b> yyjson.h:1033</div></div>
+<div class="ttc" id="ayyjson_8h_html_abdaf14b79fe803289070c0e5d5a705b8"><div class="ttname"><a href="yyjson_8h.html#abdaf14b79fe803289070c0e5d5a705b8">yyjson_mut_val_write_opts</a></div><div class="ttdeci">yyjson_api char * yyjson_mut_val_write_opts(const yyjson_mut_val *val, yyjson_write_flag flg, const yyjson_alc *alc, size_t *len, yyjson_write_err *err)</div></div>
+<div class="ttc" id="ayyjson_8h_html_ad231975496ac3788fe5d69804e295443"><div class="ttname"><a href="yyjson_8h.html#ad231975496ac3788fe5d69804e295443">yyjson_write</a></div><div class="ttdeci">yyjson_api_inline char * yyjson_write(const yyjson_doc *doc, yyjson_write_flag flg, size_t *len)</div><div class="ttdef"><b>Definition:</b> yyjson.h:953</div></div>
+<div class="ttc" id="ayyjson_8h_html_ad2a7aa77fa66a593536e3d7c3edb1d7a"><div class="ttname"><a href="yyjson_8h.html#ad2a7aa77fa66a593536e3d7c3edb1d7a">yyjson_mut_write_file</a></div><div class="ttdeci">yyjson_api bool yyjson_mut_write_file(const char *path, const yyjson_mut_doc *doc, yyjson_write_flag flg, const yyjson_alc *alc, yyjson_write_err *err)</div></div>
+<div class="ttc" id="ayyjson_8h_html_adf8b2d3c8b57e85d58108d58c68b0db5"><div class="ttname"><a href="yyjson_8h.html#adf8b2d3c8b57e85d58108d58c68b0db5">yyjson_mut_val_write_file</a></div><div class="ttdeci">yyjson_api bool yyjson_mut_val_write_file(const char *path, const yyjson_mut_val *val, yyjson_write_flag flg, const yyjson_alc *alc, yyjson_write_err *err)</div></div>
+</div><!-- fragment --><p >This will reduce the binary size by about 30%.</p>
+<p >● <b>YYJSON_DISABLE_FAST_FP_CONV</b><br  />
+ Define as 1 to disable the fast floating-point number conversion in yyjson, and use libc's <code>strtod/snprintf</code> instead.</p>
+<p >This will reduce binary size by about 30%, but significantly slow down floating-point reading and writing speed.</p>
 <p >● <b>YYJSON_DISABLE_NON_STANDARD</b><br  />
- Define as 1 to disable non-standard JSON support at compile time:<br  />
-</p><ul>
-<li>Reading and writing inf/nan literal, such as 'NaN', '-Infinity'.<br  />
-</li>
-<li>Single line and multiple line comments.<br  />
-</li>
-<li>Single trailing comma at the end of an object or array.<br  />
- This may also invalidate these options:<br  />
-</li>
-<li>YYJSON_READ_ALLOW_INF_AND_NAN<br  />
-</li>
-<li>YYJSON_READ_ALLOW_COMMENTS<br  />
-</li>
-<li>YYJSON_READ_ALLOW_TRAILING_COMMAS<br  />
-</li>
-<li>YYJSON_WRITE_ALLOW_INF_AND_NAN<br  />
- This may reduce binary size, and increase performance slightly.</li>
+ Define as 1 to disable non-standard JSON support at compile-time:</p>
+<ul>
+<li>Reading and writing inf/nan literal, such as 'NaN', '-Infinity'.</li>
+<li>Single line and multiple line comments.</li>
+<li>Single trailing comma at the end of an object or array.</li>
+<li>Invalid unicode in string value.</li>
 </ul>
+<p >This will also invalidate these run-time options:</p>
+<ul>
+<li>YYJSON_READ_ALLOW_INF_AND_NAN</li>
+<li>YYJSON_READ_ALLOW_COMMENTS</li>
+<li>YYJSON_READ_ALLOW_TRAILING_COMMAS</li>
+<li>YYJSON_READ_ALLOW_INVALID_UNICODE</li>
+<li>YYJSON_WRITE_ALLOW_INF_AND_NAN</li>
+<li>YYJSON_WRITE_ALLOW_INVALID_UNICODE</li>
+</ul>
+<p >This will reduce binary size by about 10%, and increase performance slightly.</p>
 <p >● <b>YYJSON_EXPORTS</b><br  />
  Define it as 1 to export symbols when building the library as Windows DLL.</p>
 <p >● <b>YYJSON_IMPORTS</b><br  />

@@ -18,7 +18,7 @@ A high performance JSON library written in ANSI C.
 - **Developer Friendly**: only one `h` and one `c` file, easy to integrate.
 
 # Limitations
-- An array or object is stored as some [data structure](https://github.com/ibireme/yyjson/blob/master/doc/DataStructure.md) like linked list, access elements with index or key is slower than iterator.
+- An array or object is stored as some [data structure](https://ibireme.github.io/yyjson/doc/doxygen/html/md_doc__data_structure.html) like linked list, access elements with index or key is slower than iterator.
 - Duplicate keys are allowed in an object, and the order of the keys is preserved.
 - JSON parsing result is immutable, a `mutable copy` is required for modification.
 
@@ -83,7 +83,7 @@ Since `yyjson` is ANSI C compatible, no other configuration is needed typically.
 
 `yyjson` has been tested with the following compilers: `gcc`, `clang`, `msvc`, `icc`, `tcc`. If you find a compile error, please [report a bug](https://github.com/ibireme/yyjson/issues/new?template=bug_report.md).
 
-`yyjson` has all features enabled by default, but you can trim out some of them by adding compile-time options. For example, disable JSON writer to reduce the binary size when you don't need serialization, or disable comments support to improve parsing performance. See [compile-time options](https://github.com/ibireme/yyjson/blob/master/doc/BuildAndTest.md#compile-time-options) for details.
+`yyjson` has all features enabled by default, but you can trim out some of them by adding compile-time options. For example, disable JSON writer to reduce the binary size when you don't need serialization, or disable comments support to improve parsing performance. See [compile-time options](https://ibireme.github.io/yyjson/doc/doxygen/html/md_doc__build_and_test.html#autotoc_md26) for details.
 
 ### CMake
 Clone the repository and create build directory:
@@ -114,7 +114,7 @@ Supported CMake options:
 - `-DYYJSON_DISABLE_FAST_FP_CONV=ON` Disable fast floating-point number conversion.
 - `-DYYJSON_DISABLE_NON_STANDARD=ON` Disable non-standard JSON support at compile-time.
 
-[More details](https://github.com/ibireme/yyjson/blob/master/doc/BuildAndTest.md)
+[More details](https://ibireme.github.io/yyjson/doc/doxygen/html/md_doc__build_and_test.html)
 
 # Sample Code
 
@@ -233,9 +233,10 @@ yyjson_mut_doc_free(doc);
 ```
 
 # Documentation
-* [Build and test](https://github.com/ibireme/yyjson/blob/master/doc/BuildAndTest.md)
-* [API and sample code](https://github.com/ibireme/yyjson/blob/master/doc/API.md)
-* [Data structure](https://github.com/ibireme/yyjson/blob/master/doc/DataStructure.md)
+* [Build and test](https://ibireme.github.io/yyjson/doc/doxygen/html/md_doc__build_and_test.html)
+* [API and sample code](https://ibireme.github.io/yyjson/doc/doxygen/html/md_doc__a_p_i.html)
+* [Data structure](https://ibireme.github.io/yyjson/doc/doxygen/html/md_doc__data_structure.html)
+* [Changelog](https://ibireme.github.io/yyjson/doc/doxygen/html/md__c_h_a_n_g_e_l_o_g.html)
 
 # TODO
 * [x] Add documentation page.
