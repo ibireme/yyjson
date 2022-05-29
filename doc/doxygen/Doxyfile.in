@@ -10,11 +10,12 @@ INLINE_SIMPLE_STRUCTS  = YES
 TYPEDEF_HIDES_STRUCT   = YES
 EXTRACT_STATIC         = YES
 HIDE_UNDOC_MEMBERS     = YES
+LAYOUT_FILE            = @CMAKE_CURRENT_SOURCE_DIR@/doc/doxygen/DoxyLayout.xml
 INPUT                  = @CMAKE_CURRENT_SOURCE_DIR@/src/yyjson.h \
                          @CMAKE_CURRENT_SOURCE_DIR@/README.md \
                          @CMAKE_CURRENT_SOURCE_DIR@/doc/BuildAndTest.md \
-                         @CMAKE_CURRENT_SOURCE_DIR@/doc/DataStructure.md \
                          @CMAKE_CURRENT_SOURCE_DIR@/doc/API.md \
+                         @CMAKE_CURRENT_SOURCE_DIR@/doc/DataStructure.md \
                          @CMAKE_CURRENT_SOURCE_DIR@/CHANGELOG.md
 IMAGE_PATH             = @CMAKE_CURRENT_SOURCE_DIR@/doc/images
 USE_MDFILE_AS_MAINPAGE = README.md

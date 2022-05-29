@@ -1,5 +1,4 @@
 var searchData=
 [
-  ['val_5fpool_0',['val_pool',['../yyjson_8h.html#a5607c9ba393206ad94ecd90fbeb59017',1,'yyjson_mut_doc']]],
-  ['val_5fread_1',['val_read',['../yyjson_8h.html#ac12f7aed42260b8d2ede0fded3f72167',1,'yyjson_doc']]]
+  ['uni_0',['uni',['../yyjson_8h.html#a3a07ac3ac97c66ae9b23efeab600d013',1,'yyjson_val::uni()'],['../yyjson_8h.html#a2f30e3958bf136b4e8453a0e78b43d0f',1,'yyjson_mut_val::uni()']]]
 ];

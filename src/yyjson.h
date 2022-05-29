@@ -3263,6 +3263,9 @@ typedef union yyjson_val_uni {
     size_t      ofs;
 } yyjson_val_uni;
 
+/**
+ Immutable JSON value, 16 bytes.
+ */
 struct yyjson_val {
     uint64_t tag; /**< type, subtype and length */
     yyjson_val_uni uni; /**< payload */
@@ -3818,22 +3821,28 @@ yyjson_api_inline yyjson_val *yyjson_obj_iter_getn(yyjson_obj_iter *iter,
  * Mutable JSON Structure (Implementation)
  *============================================================================*/
 
-/*
+/**
  Mutable JSON value, 24 bytes.
  The 'tag' and 'uni' field is same as immutable value.
  The 'next' field links all elements inside the container to be a cycle.
  */
 struct yyjson_mut_val {
-    uint64_t tag;
-    yyjson_val_uni uni;
-    yyjson_mut_val *next;
+    uint64_t tag; /**< type, subtype and length */
+    yyjson_val_uni uni; /**< payload */
+    yyjson_mut_val *next; /**< the next value in circular linked list */
 };
 
+/**
+ A memory chunk in string memory pool.
+ */
 typedef struct yyjson_str_chunk {
     struct yyjson_str_chunk *next;
     /* flexible array member here */
 } yyjson_str_chunk;
 
+/**
+ A memory pool to hold all strings in a mutable document.
+ */
 typedef struct yyjson_str_pool {
     char *cur; /* cursor inside current chunk */
     char *end; /* the end of current chunk */
@@ -3842,11 +3851,17 @@ typedef struct yyjson_str_pool {
     yyjson_str_chunk *chunks; /* a linked list of chunks, nullable */
 } yyjson_str_pool;
 
+/**
+ A memory chunk in value memory pool.
+ */
 typedef struct yyjson_val_chunk {
     struct yyjson_val_chunk *next;
     /* flexible array member here */
 } yyjson_val_chunk;
 
+/**
+ A memory pool to hold all values in a mutable document.
+ */
 typedef struct yyjson_val_pool {
     yyjson_mut_val *cur; /* cursor inside current chunk */
     yyjson_mut_val *end; /* the end of current chunk */

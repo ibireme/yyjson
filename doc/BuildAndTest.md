@@ -1,23 +1,26 @@
-# Build And Test
+Build and Test
+==============
+
+There are several ways to integrate yyjson into your project: source code, package manager, and CMake.
 
 
-# Table of Contents
+# Source code
+yyjson aims to provide a cross-platform JSON library, so it was written in ANSI C (actually C99, but compatible with strict C89). You can copy `yyjson.h` and `yyjson.c` to your project and start using it without any configuration.
 
-* [Import Manually](#import-manually)
-* [Use CMake to build library](#use-cmake-to-build-library)
-* [Use CMake as a dependency](#use-cmake-as-a-dependency)
-* [Use CMake to generate project](#use-cmake-to-generate-project)
-* [Testing With CMake and CTest](#testing-with-cmake-and-ctest)
-* [Compile-time Options](#compile-time-options)
+yyjson has been tested with the following compilers: `gcc`, `clang`, `msvc`, `icc`, `tcc`. If you get a compile error, please [report a bug](https://github.com/ibireme/yyjson/issues/new?template=bug_report.md).
+
+yyjson has all features enabled by default, but you can trim out some of them by adding compile-time options. For example, disable JSON writer to reduce the binary size when you don't need serialization, or disable comments support to improve parsing performance. See `Compile-time Options` for details.
 
 
-------
-# Import Manually
-`yyjson` aims to provide a cross-platform JSON library, so it was written in ANSI C (actually C99, but compatible with strict C89). You can copy `yyjson.h` and `yyjson.c` to your project and start using it without any configuration.
+# Package manager
 
-If you get a compile error, please [report a bug](https://github.com/ibireme/yyjson/issues/new?template=bug_report.md).
+You can use some popular package managers to download and install yyjson, such as `vcpkg`, `conan`, and `xmake`. The yyjson package in these package managers is kept up to date by community contributors. If the version is out of date, please create an issue or pull request on their repository.
 
-# Use CMake to build library
+
+# CMake
+
+## Use CMake to build a library
+
 Clone the repository and create build directory:
 ```shell
 git clone https://github.com/ibireme/yyjson.git
@@ -51,9 +54,8 @@ Supported CMake options:
 - `-DYYJSON_DISABLE_FAST_FP_CONV=ON` Disable fast floating-pointer conversion.
 - `-DYYJSON_DISABLE_NON_STANDARD=ON` Disable non-standard JSON support at compile-time.
 
-See [compile-time options](#compile-time-options) for details.
 
-# Use CMake as a dependency
+## Use CMake as a dependency
 
 You may add the `yyjson` subdirectory to your CMakeFile.txt, and link it to your target:
 ```cmake
@@ -68,7 +70,7 @@ add_subdirectory(vendor/yyjson)
 target_link_libraries(your_target yyjson)
 ```
 
-# Use CMake to generate project
+## Use CMake to generate project
 If you want to build or debug `yyjson` with another compiler or IDE, try these commands:
 ```shell
 # Clang for Linux/Unix:
@@ -95,31 +97,40 @@ cmake .. -G Xcode -DCMAKE_SYSTEM_NAME=iOS
 cmake .. -G Xcode -DYYJSON_BUILD_TESTS=ON
 ```
 
+## Use CMake to generate documentation
 
-# Testing With CMake and CTest
+yyjson uses [doxygen](https://www.doxygen.nl/) to generate the documentation (you must have `doxygen` installed):
+```shell
+cmake .. -DYYJSON_BUILD_DOC=ON
+cmake --build .
+```
+After executing this script, doxygen will output the generated html files to `build/doxygen/html`. You can also read the pre-generated document online: https://ibireme.github.io/yyjson/doc/doxygen/html/
 
-Build and run all tests.
+
+## Testing With CMake and CTest
+
+Build and run all tests:
 ```shell
 cmake .. -DYYJSON_BUILD_TESTS=ON
 cmake --build .
 ctest --output-on-failure
 ```
 
-Build and run tests with valgrind memory checker, you must have `valgrind` installed.
+Build and run tests with [valgrind](https://valgrind.org/) memory checker (you must have `valgrind` installed):
 ```shell
 cmake .. -DYYJSON_BUILD_TESTS=ON -DYYJSON_ENABLE_VALGRIND=ON
 cmake --build .
 ctest --output-on-failure
 ```
 
-Build and run tests with sanitizer, compiler should be `gcc` or `clang`.
+Build and run tests with sanitizer (compiler should be `gcc` or `clang`):
 ```shell
 cmake .. -DYYJSON_BUILD_TESTS=ON -DYYJSON_ENABLE_SANITIZE=ON
 cmake --build .
 ctest --output-on-failure
 ```
 
-Build and run code coverage, compiler should be `gcc`.
+Build and run code coverage (compiler should be `gcc`):
 ```shell
 cmake .. -DCMAKE_BUILD_TYPE=Debug -DYYJSON_BUILD_TESTS=ON -DYYJSON_ENABLE_COVERAGE=ON
 cmake --build . --config Debug
@@ -129,7 +140,7 @@ lcov -c -d ./CMakeFiles/yyjson.dir/src -o cov.info
 genhtml cov.info -o ./cov_report
 ```
 
-Build and run fuzz test with LibFuzzer, compiler should be `LLVM Clang`, `Apple Clang` or `gcc` is not supported.
+Build and run fuzz test with [LibFuzzer](https://llvm.org/docs/LibFuzzer.html) (compiler should be `LLVM Clang`, `Apple Clang` or `gcc` is not supported):
 ```shell
 cmake .. -DYYJSON_BUILD_FUZZER=ON -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
 cmake --build .
@@ -138,7 +149,7 @@ cmake --build .
 
 
 # Compile-time Options
-`yyjson` supports some compile-time options, you can define these macros as `1` to disable some features at compile-time.
+yyjson supports some compile-time options, you can define these macros as `1` to disable some features at compile-time.
 
 ● **YYJSON_DISABLE_READER**<br/>
 Define it as 1 to disable the JSON reader.<br/>
@@ -148,11 +159,11 @@ yyjson_read_opts()
 yyjson_read_file()
 yyjson_read()
  ```
-This will reduce the binary size by about 60%.
+This will reduce the binary size by about 60%.<br/>
+It is recommended when you don't need to parse JSON.
 
 ● **YYJSON_DISABLE_WRITER**<br/>
-Define as 1 to disable JSON writer if you don't need to serialize JSON.
-
+Define as 1 to disable JSON writer.<br/>
 This will disable these functions at compile-time:
 ```c
 yyjson_write()
@@ -168,15 +179,15 @@ yyjson_mut_val_write()
 yyjson_mut_val_write_file()
 yyjson_mut_val_write_opts()
 ```
-
-This will reduce the binary size by about 30%.
+This will reduce the binary size by about 30%.<br/>
+It is recommended when you don't need to serialize JSON.
 
 ● **YYJSON_DISABLE_FAST_FP_CONV**<br/>
- Define as 1 to disable the fast floating-point number conversion in yyjson,
- and use libc's `strtod/snprintf` instead.
- 
- This will reduce binary size by about 30%, but significantly slow down
- floating-point reading and writing speed.
+Define as 1 to disable the fast floating-point number conversion in yyjson,
+ and use libc's `strtod/snprintf` instead.<br/>
+This will reduce binary size by about 30%, but significantly slow down
+ floating-point reading and writing speed.<br/>
+It is recommended when you don't need to deal with JSON that contains a lot of floating point numbers.
 
 ● **YYJSON_DISABLE_NON_STANDARD**<br/>
 Define as 1 to disable non-standard JSON support at compile-time:
@@ -187,15 +198,17 @@ Define as 1 to disable non-standard JSON support at compile-time:
 - Invalid unicode in string value.
 
 This will also invalidate these run-time options:
+```c
+YYJSON_READ_ALLOW_INF_AND_NAN
+YYJSON_READ_ALLOW_COMMENTS
+YYJSON_READ_ALLOW_TRAILING_COMMAS
+YYJSON_READ_ALLOW_INVALID_UNICODE
+YYJSON_WRITE_ALLOW_INF_AND_NAN
+YYJSON_WRITE_ALLOW_INVALID_UNICODE
+```
 
-- YYJSON_READ_ALLOW_INF_AND_NAN
-- YYJSON_READ_ALLOW_COMMENTS
-- YYJSON_READ_ALLOW_TRAILING_COMMAS
-- YYJSON_READ_ALLOW_INVALID_UNICODE
-- YYJSON_WRITE_ALLOW_INF_AND_NAN
-- YYJSON_WRITE_ALLOW_INVALID_UNICODE
-
-This will reduce binary size by about 10%, and increase performance slightly.
+This will reduce binary size by about 10%, and increase performance slightly.<br/>
+It is recommended when you don't need to deal with non-standard JSON.
 
 ● **YYJSON_EXPORTS**<br/>
 Define it as 1 to export symbols when building the library as Windows DLL.

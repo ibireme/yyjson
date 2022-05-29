@@ -1,51 +1,70 @@
-# API Reference
+API
+===
 
 
-# Table of Contents
 
-* [Read JSON](#read-json)
-    * [Read JSON from string](#read-json-from-string)
-    * [Read JSON from file](#read-json-from-file)
-    * [Read JSON with options](#read-json-with-options)
-    * [Reader flag](#reader-flag)
-* [Write JSON](#write-json)
-    * [Write JSON to string](#write-json-to-string)
-    * [Write JSON to file](#write-json-to-file)
-    * [Write JSON with options](#write-json-with-options)
-    * [Writer flag](#writer-flag)
-* [Access JSON Document](#access-json-document)
-    * [JSON Document](#json-document-api)
-    * [JSON Value](#json-value-api)
-    * [JSON Value Content](#json-value-content-api)
-    * [JSON Array](#json-array-api)
-    * [JSON Array Iterator](#json-array-iterator-api)
-    * [JSON Object](#json-object-api)
-    * [JSON Object Iterator](#json-object-iterator-api)
-    * [JSON Pointer](#json-pointer)
-* [Create JSON Document](#create-json-document)
-    * [Mutable Document API](#mutable-document-api)
-    * [Mutable JSON Value Creation](#mutable-json-value-creation-api)
-    * [Mutable JSON Array Creation](#mutable-json-array-creation-api)
-    * [Mutable JSON Array Modification](#mutable-json-array-modification-api)
-    * [Mutable JSON Array Modification (Convenience)](#mutable-json-array-modification-convenience-api)
-    * [Mutable JSON Object Creation](#mutable-json-object-creation-api)
-    * [Mutable JSON Object Modification](#mutable-json-object-modification-api)
-    * [Mutable JSON Object Modification (Convenience)](#mutable-json-object-modification-convenience-api)
-    * [JSON Merge Pacth](#json-merge-pacth)
-* [Number Processing](#number-processing)
-    * [Number Reader](#number-reader)
-    * [Number Writer](#number-writer)
-* [Text Processing](#text-processing)
-    * [Character Encoding](#character-encoding)
-    * [NUL Character](#nul-character)
-* [Memory Allocator](#memory-allocator)
-    * [Single allocator for multiple JSON](#single-allocator-for-multiple-json)
-    * [Stack memory allocator](#stack-memory-allocator)
-    * [Use third-party allocator library](#use-third-party-allocator-library)
-* [Mutable and Immutable](#mutable-and-immutable)
-* [Null Check](#null-check)
-* [Thread Safe](#thread-safe)
-* [Locale Dependent](#locale-dependent)
+
+# API Design
+
+## API prefix
+
+All public functions and structs are prefixed with `yyjson_`, and all constants are prefixed with `YYJSON_`.
+
+## API for immutable/mutable data
+
+yyjson have 2 types of data structures: immutable and mutable:
+
+|type|immutable|mutable|
+|---|---|---|
+|JSON value|yyjson_val|yyjson_mut_val|
+|JSON document|yyjson_doc|yyjson_mut_doc|
+
+When reading a JSON, yyjson returns immutable document and values;<br/>
+When building a JSON, yyjson creates mutable document and values;<br/>
+The document holds memory for all its JSON values and strings.<br/>
+
+For most immutable APIs, you can just add a `mut` after `yyjson_` to get the mutable version, for example:
+```c
+char *yyjson_write(yyjson_doc *doc, ...);
+char *yyjson_mut_write(yyjson_mut_doc *doc, ...);
+
+bool yyjson_is_str(yyjson_val *val);
+bool yyjson_mut_is_str(yyjson_mut_val *val);
+```
+
+yyjson also provides some functions to convert immutable into mutable:<br/>
+
+```c
+yyjson_mut_doc *yyjson_doc_mut_copy(yyjson_doc *doc, yyjson_alc *alc);
+yyjson_mut_val *yyjson_val_mut_copy(yyjson_mut_doc *doc, yyjson_val *val);
+```
+
+## API for string
+yyjson supports strings with or without null-terminator.<br/>
+When you need to use a non null-terminated string, or you know the length of the string explicitly, you can use a function that ends with `n`, for example:
+```c
+// null-terminated is required
+bool yyjson_equals_str(yyjson_val *val, const char *str);
+
+// null-terminator is not required
+bool yyjson_equals_strn(yyjson_val *val, const char *str, size_t len);
+```
+
+When creating JSON, yyjson treats strings as constants for better performance. When your string will be modified, you should use a function with a `cpy` to copy the string to the document, for example:
+```c
+// reference only, null-terminated is required
+yyjson_mut_val *yyjson_mut_str(yyjson_mut_doc *doc, const char *str);
+
+// reference only, null-terminator is not required
+yyjson_mut_val *yyjson_mut_strn(yyjson_mut_doc *doc, const char *str, size_t len);
+
+// copied, null-terminated is required
+yyjson_mut_val *yyjson_mut_strcpy(yyjson_mut_doc *doc, const char *str);
+
+// copied, null-terminator is not required
+yyjson_mut_val *yyjson_mut_strncpy(yyjson_mut_doc *doc, const char *str, size_t len);
+```
+
 
 
 ---------------
@@ -54,10 +73,10 @@ yyjson provides 3 methods for reading JSON,<br/>
 each method accepts an input of UTF-8 data or file,<br/>
 returns a document if succeeds, or returns NULL if fails.
 
-### Read JSON from string
+## Read JSON from string
 The `dat` should be a UTF-8 string, null-terminator is not required.<br/>
 The `len` is the byte length of `dat`.<br/>
-The `flg` is reader flag, pass 0 if you don't need it, see [reader flag](#reader-flag) for details.<br/>
+The `flg` is reader flag, pass 0 if you don't need it, see `reader flag` for details.<br/>
 If input is invalid, `NULL` is returned.
 
 ```c
@@ -74,11 +93,11 @@ if (doc) {...}
 yyjson_doc_free(doc);
 ```
 
-### Read JSON from file
+## Read JSON from file
 
 The `path` is JSON file path.<br/>
-The `flg` is reader flag, pass 0 if you don't need it, see [reader flag](#reader-flag) for details.<br/>
-The `alc` is memory allocator, pass NULL if you don't need it, see [memory allocator](#memory-allocator) for details.<br/>
+The `flg` is reader flag, pass 0 if you don't need it, see `reader flag` for details.<br/>
+The `alc` is memory allocator, pass NULL if you don't need it, see `memory allocator` for details.<br/>
 The `err` is a pointer to receive error message, pass NULL if you don't need it.<br/>
 If input is invalid, `NULL` is returned.
 
@@ -97,11 +116,11 @@ if (doc) {...}
 yyjson_doc_free(doc);
 ```
 
-### Read JSON with options
+## Read JSON with options
 The `dat` should be a UTF-8 string, you can pass a const string if you don't use `YYJSON_READ_INSITU` flag.<br/>
 The `len` is the `dat`'s length in bytes.<br/>
-The `flg` is reader flag, pass 0 if you don't need it, see [reader flag](#reader-flag) for details.<br/>
-The `alc` is memory allocator, pass NULL if you don't need it, see [memory allocator](#memory-allocator) for details.<br/>
+The `flg` is reader flag, pass 0 if you don't need it, see `reader flag` for details.<br/>
+The `alc` is memory allocator, pass NULL if you don't need it, see `memory allocator` for details.<br/>
 The `err` is a pointer to receive error message, pass NULL if you don't need it.<br/>
 
 ```c
@@ -128,11 +147,11 @@ else printf("read error: %s code: %u at position: %ld\n", err.msg, err.code, err
 yyjson_doc_free(doc);
 ```
 
-### Reader flag
+## Reader flag
 yyjson provides a set of flags for JSON reader.<br/>
 You can use a single flag, or combine multiple flags with bitwise `|` operator.
 
-● **YYJSON_READ_NOFLAG = 0**<br/>
+● **YYJSON_READ_NOFLAG**<br/>
 
 This is the default flag for JSON reader (RFC-8259 or ECMA-404 compliant):
 
@@ -240,17 +259,15 @@ size_t yyjson_get_len(yyjson_val *val)
 ```
 
 ● **YYJSON_READ_ALLOW_INVALID_UNICODE**<br/>
-Allow reading invalid unicode when parsing string values, for example:
+Allow reading invalid unicode when parsing string values (non-standard),
+for example:
 ```
 "\x80xyz"
 "\xF0\x81\x81\x81"
 ```
-Invalid characters will be allowed to appear in the string values, but
-invalid escape sequences will still be reported as errors.
+Invalid characters will be allowed to appear in the string values, but invalid escape sequences will still be reported as errors. This flag does not affect the performance of correctly encoded strings.
 
-This flag does not affect the performance of correctly encoded string.
-
-*Be careful when dealing with malformed unicode strings!*
+***Warning***: strings in JSON values may contain incorrect encoding when this option is used, you need to handle these strings carefully to avoid security risks.
 
 
 ---------------
@@ -258,9 +275,9 @@ This flag does not affect the performance of correctly encoded string.
 yyjson provides 3 methods for writing JSON,<br/>
 each method accepts an input of JSON document or root value, returns a UTF-8 string or file.
 
-### Write JSON to string
+## Write JSON to string
 The `doc/val` is JSON document or root value, if you pass NULL, you will get NULL result.<br/>
-The `flg` is writer flag, pass 0 if you don't need it, see [writer flag](#writer-flag) for details.<br/>
+The `flg` is writer flag, pass 0 if you don't need it, see `writer flag` for details.<br/>
 The `len` is a pointer to receive output length, pass NULL if you don't need it.<br/>
 This function returns a new JSON string, or NULL if error occurs.<br/>
 The string is encoded as UTF-8 with a null-terminator. <br/>
@@ -299,11 +316,11 @@ printf("%s\n", json);
 free(json);
 ```
 
-### Write JSON to file
+## Write JSON to file
 The `path` is output JSON file path, If the path is invalid, you will get an error. If the file is not empty, the content will be discarded.<br/>
 The `doc/val` is JSON document or root value, if you pass NULL, you will get an error.<br/>
-The `flg` is writer flag, pass 0 if you don't need it, see [writer flag](#writer-flag) for details.<br/>
-The `alc` is memory allocator, pass NULL if you don't need it, see [memory allocator](#memory-allocator) for details.<br/>
+The `flg` is writer flag, pass 0 if you don't need it, see `writer flag` for details.<br/>
+The `alc` is memory allocator, pass NULL if you don't need it, see `memory allocator` for details.<br/>
 The `err` is a pointer to receive error message, pass NULL if you don't need it.<br/>
 This function returns true on success, or false if error occurs.<br/>
 
@@ -341,10 +358,10 @@ bool suc = yyjson_write_file("tmp/test.json", doc, YYJSON_WRITE_PRETTY, NULL, NU
 if (suc) printf("OK");
 ```
 
-### Write JSON with options
+## Write JSON with options
 The `doc/val` is JSON document or root value, if you pass NULL, you will get NULL result.<br/>
-The `flg` is writer flag, pass 0 if you don't need it, see [writer flag](#writer-flag) for details.<br/>
-The `alc` is memory allocator, pass NULL if you don't need it, see [memory allocator](#memory-allocator) for details.<br/>
+The `flg` is writer flag, pass 0 if you don't need it, see `writer flag` for details.<br/>
+The `alc` is memory allocator, pass NULL if you don't need it, see `memory allocator` for details.<br/>
 The `len` is a pointer to receive output length, pass NULL if you don't need it.<br/>
 The `err` is a pointer to receive error message, pass NULL if you don't need it.<br/>
 
@@ -403,7 +420,7 @@ alc.free(alc.ctx, json);
 ```
 
 
-### Writer flag
+## Writer flag
 yyjson provides a set of flags for JSON writer.<br/>
 You can use a single flag, or combine multiple flags with bitwise `|` operator.
 
@@ -461,7 +478,7 @@ This flag does not affect the performance of correctly encoded string.
 ---------------
 # Access JSON Document
 
-### JSON Document API
+## JSON Document API
 
 Returns the root value of this JSON document.
 ```c
@@ -483,11 +500,11 @@ Release the JSON document and free the memory.
 void yyjson_doc_free(yyjson_doc *doc);
 ```
 
-### JSON Value API
+## JSON Value API
 Returns true if the JSON value is specified type.<br/>
 Returns false if the input is `NULL` or not the specified type.<br/>
 
-This set of APIs also have version for mutable values, see [mutable and immutable](#mutable-and-immutable) for details.
+This set of APIs also have version for mutable values, see `mutable and immutable` for details.
 
 ```c
 bool yyjson_is_null(yyjson_val *val); // null
@@ -507,9 +524,9 @@ bool yyjson_is_ctn(yyjson_val *val); // array or object
 
 
 
-### JSON Value Content API
+## JSON Value Content API
 Returns the content or type of a JSON value.<br/>
-This set of APIs also have version for mutable values, see [mutable and immutable](#mutable-and-immutable) for details.
+This set of APIs also have version for mutable values, see `mutable and immutable` for details.
 
 <br/>
 
@@ -573,9 +590,9 @@ Same as `yyjson_equals_str(), but you can pass an explicit string length.
 bool yyjson_equals_strn(yyjson_val *val, const char *str, size_t len);
 ```
 
-### JSON Array API
+## JSON Array API
 Returns the property or child value of a JSON array.<br/>
-This set of APIs also have version for mutable values, see [mutable and immutable](#mutable-and-immutable) for details.
+This set of APIs also have version for mutable values, see `mutable and immutable` for details.
 
 <br/>
 
@@ -601,7 +618,7 @@ Note tha this function takes a **linear search time** if array is not flat.
 yyjson_val *yyjson_arr_get_last(yyjson_val *arr);
 ```
 
-### JSON Array Iterator API
+## JSON Array Iterator API
 You can use two methods to traverse an array:<br/>
 
 Sample code (iterator):
@@ -656,9 +673,9 @@ yyjson_mut_arr_foreach(arr, idx, max, val) {
 ```
 
 
-### JSON Object API
+## JSON Object API
 Returns the property or child value of a JSON object.<br/>
-This set of APIs also have version for mutable values, see [mutable and immutable](#mutable-and-immutable) for details.
+This set of APIs also have version for mutable values, see `mutable and immutable` for details.
 
 <br/>
 
@@ -691,7 +708,7 @@ if (yyjson_obj_iter_init(obj, &iter)) {
 }
 ```
 
-### JSON Object Iterator API
+## JSON Object Iterator API
 You can use two methods to traverse an object:<br/>
 
 Sample code (iterator):
@@ -748,8 +765,8 @@ yyjson_obj_foreach(obj, idx, max, key, val) {
 }
 ```
 
-### JSON Pointer
-`yyjson` allows you to query JSON value with `JSON Pointer` ([RFC 6901](https://tools.ietf.org/html/rfc6901)).
+## JSON Pointer
+yyjson allows you to query JSON value with `JSON Pointer` ([RFC 6901](https://tools.ietf.org/html/rfc6901)).
 
 ```c
 // pointer is a null-terminated string
@@ -818,11 +835,11 @@ yyjson_mut_doc_free(doc);
 ```
 
 
-### Mutable Document API
+## Mutable Document API
 
 Creates and returns a new mutable JSON document, returns NULL on error.<br/>
 If allocator is NULL, the default allocator will be used.
-The `alc` is memory allocator, pass NULL if you don't need it, see [memory allocator](#memory-allocator) for details.<br/>
+The `alc` is memory allocator, pass NULL if you don't need it, see `memory allocator` for details.<br/>
 ```c
 yyjson_mut_doc *yyjson_mut_doc_new(yyjson_alc *alc);
 ```
@@ -839,7 +856,7 @@ void yyjson_mut_doc_set_root(yyjson_mut_doc *doc, yyjson_mut_val *root);
 ```
 
 Copies and returns a new mutable document from input, returns NULL on error.<br/>
-The `alc` is memory allocator, pass NULL if you don't need it, see [memory allocator](#memory-allocator) for details.<br/>
+The `alc` is memory allocator, pass NULL if you don't need it, see `memory allocator` for details.<br/>
 ```c
 yyjson_mut_doc *yyjson_doc_mut_copy(yyjson_doc *doc, yyjson_alc *alc);
 ```
@@ -850,7 +867,7 @@ The memory was managed by document. */
 yyjson_mut_val *yyjson_val_mut_copy(yyjson_mut_doc *doc, yyjson_val *val);
 ```
 
-### Mutable JSON Value Creation API
+## Mutable JSON Value Creation API
 You can use these functions to create mutable JSON value,<br/>
 The value's memory is held by the document.<br/>
 <br/>
@@ -924,7 +941,7 @@ yyjson_mut_val *yyjson_mut_strncpy(yyjson_mut_doc *doc, const char *str, size_t 
 ```
 
 
-### Mutable JSON Array Creation API
+## Mutable JSON Array Creation API
 
 Creates and returns an empty mutable array, returns NULL on error.
 ```c
@@ -965,7 +982,7 @@ const char strs[3] = {"Jan", "Feb", "Mar"};
 yyjson_mut_val *arr = yyjson_mut_arr_with_str(doc, strs, 3);
 ```
 
-### Mutable JSON Array Modification API
+## Mutable JSON Array Modification API
 
 Inserts a value into an array at a given index, returns false on error.<br/>
 Note that Tthis function takes a **linear search time**.
@@ -1016,7 +1033,7 @@ Removes all values in this array.
 bool yyjson_mut_arr_clear(yyjson_mut_val *arr);
 ```
 
-### Mutable JSON Array Modification Convenience API
+## Mutable JSON Array Modification Convenience API
 
 Adds a value at the end of this array, returns false on error.
 ```c
@@ -1047,7 +1064,7 @@ Returns the new object, or NULL on error.
 yyjson_mut_val *yyjson_mut_arr_add_obj(yyjson_mut_doc *doc, yyjson_mut_val *arr);
 ```
 
-### Mutable JSON Object Creation API
+## Mutable JSON Object Creation API
 
 Creates and returns a mutable object, returns NULL on error.
 ```c
@@ -1080,7 +1097,7 @@ const char *pairs[] = {"name", "Harry", "type", "student", "id", "888999"};
 yyjson_mut_obj_with_kv(doc, pairs, 3);
 ```
 
-### Mutable JSON Object Modification API
+## Mutable JSON Object Modification API
 Adds a key-value pair at the end of the object. The key must be a string.<br/>
 This function allows duplicated key in one object.
 ```
@@ -1105,7 +1122,7 @@ Removes all key-value pairs in this object.
 bool yyjson_mut_obj_clear(yyjson_mut_val *obj);
 ```
 
-### Mutable JSON Object Modification Convenience API
+## Mutable JSON Object Modification Convenience API
 Adds a key-value pair at the end of the object. The key is not copied.<br/>
 Note that these functions allow duplicated key in one object.
 
@@ -1131,7 +1148,7 @@ bool yyjson_mut_obj_remove_str(yyjson_mut_val *obj, const char *key);
 bool yyjson_mut_obj_remove_strn(yyjson_mut_val *obj, const char *key, size_t len);
 ```
 
-### JSON Merge Patch
+## JSON Merge Patch
 Creates and returns a merge-patched JSON value (RFC 7386).
 Returns NULL if the patch could not be applied.
 Specification and example: <https://tools.ietf.org/html/rfc7386>
@@ -1145,7 +1162,7 @@ yyjson_mut_val *yyjson_merge_patch(yyjson_mut_doc *doc,
 ---------------
 # Number Processing
 
-### Number reader
+## Number reader
 yyjson has a built-in high-performance number reader,<br/>
 it will parse numbers according to these rules by default:<br/>
 
@@ -1155,9 +1172,9 @@ it will parse numbers according to these rules by default:<br/>
 * If a `real` number overflow (infinity), it will report an error.
 * If a number does not match the [JSON](https://www.json.org) standard, it will report an error.
 
-You can use `YYJSON_READ_ALLOW_INF_AND_NAN` flag to allow `nan` and `inf` number/literal, see [reader flag](#reader-flag) for details.
+You can use `YYJSON_READ_ALLOW_INF_AND_NAN` flag to allow `nan` and `inf` number/literal, see `reader flag` for details.
 
-### Number writer
+## Number writer
 yyjson has a built-in high-performance number writer,<br/>
 it will write numbers according to these rules by default:<br/>
 
@@ -1170,7 +1187,7 @@ it will write numbers according to these rules by default:<br/>
 * Floating-point number writer should generate shortest correctly rounded decimal representation.
 
 You can use `YYJSON_WRITE_ALLOW_INF_AND_NAN` flag to write inf/nan number as `Infinity` and `NaN` literals without error,
-but this is not standard JSON, see [writer flag](#writer-flag) for details.
+but this is not standard JSON, see `writer flag` for details.
 
 You can also use `YYJSON_WRITE_INF_AND_NAN_AS_NULL` to write inf/nan number as `null` without error.
 
@@ -1178,17 +1195,17 @@ You can also use `YYJSON_WRITE_INF_AND_NAN_AS_NULL` to write inf/nan number as `
 
 # Text Processing
 
-### Character Encoding
+## Character Encoding
 yyjson only supports UTF-8 encoding without BOM, as specified in [RFC 8259](https://datatracker.ietf.org/doc/html/rfc8259#section-8.1):
 
->   JSON text exchanged between systems that are not part of a closed ecosystem MUST be encoded using UTF-8.
->   Implementations MUST NOT add a byte order mark (U+FEFF) to the beginning of a networked-transmitted JSON text.
+> JSON text exchanged between systems that are not part of a closed ecosystem MUST be encoded using UTF-8.
+> Implementations MUST NOT add a byte order mark (U+FEFF) to the beginning of a networked-transmitted JSON text.
 
 By default, yyjson performs a strict UTF-8 encoding validation on input strings. An error will be reported when an invalid character is encountered.
 
 You could use `YYJSON_READ_ALLOW_INVALID_UNICODE` and `YYJSON_WRITE_ALLOW_INVALID_UNICODE` flag to allow invalid unicode encoding. However, you should be aware that the result value from yyjson may contain invalid characters, which can be used by other code and may pose security risks.
 
-### NUL Character
+## NUL Character
 yyjson supports the `NUL` character (also known as `null terminator`, or Unicode `U+0000`, ASCII `\0`).
 
 When reading JSON, `\u0000` will be unescaped to `NUL`. If a string contains `NUL`, the length obtained with strlen() will be inaccurate, and you should use yyjson_get_len() to get the real length.
@@ -1217,7 +1234,7 @@ yyjson does not call libc's memory allocation functions (malloc/realloc/free) **
 
 Custom memory allocator allows you to take more control over memory allocation, here are a few examples:
 
-### Single allocator for multiple JSON
+## Single allocator for multiple JSON
 If you need to parse multiple small JSON, you can use a single allocator with pre-allocated buffer to avoid frequent memory allocation.
 
 Sample code:
@@ -1244,7 +1261,7 @@ for(int i = 0, i < your_json_file_count; i++) {
 free(buf);
 ```
 
-### Stack memory allocator
+## Stack memory allocator
 If the JSON is small enough, you can use stack memory to read or write it.
 
 Sample code:
@@ -1258,7 +1275,7 @@ yyjson_doc *doc = yyjson_read_opts(dat, len, 0, &alc, NULL);
 yyjson_doc_free(doc); // this is optional, as the memory is on stack
 ```
 
-### Use third-party allocator library
+## Use third-party allocator library
 You can use a third-party high-performance memory allocator for yyjson,<br/>
 such as [jemalloc](https://github.com/jemalloc/jemalloc), [tcmalloc](https://github.com/google/tcmalloc), [mimalloc](https://github.com/microsoft/mimalloc).
 
@@ -1302,43 +1319,9 @@ alc->free(alc->ctx, json);
 
 
 
-# Mutable and Immutable
-yyjson have 2 types of data structures: immutable and mutable:
-
-|type|immutable|mutable|
-|---|---|---|
-|JSON value|yyjson_val|yyjson_mut_val|
-|JSON document|yyjson_doc|yyjson_mut_doc|
-
-When reading a JSON, yyjson returns immutable document and values;<br/>
-When building a JSON, yyjson creates mutable document and values.<br/>
-yyjson also provides some methods to convert immutable document into mutable document:<br/>
-
-```c
-yyjson_mut_doc *yyjson_doc_mut_copy(yyjson_doc *doc, yyjson_alc *alc);
-yyjson_mut_val *yyjson_val_mut_copy(yyjson_mut_doc *doc, yyjson_val *val);
-```
-
-For most immutable APIs, you can just add a `mut` prefix to get the mutable version,
-for example:
-
-```c
-char *yyjson_write(yyjson_doc *doc, yyjson_write_flag flg, size_t *len);
-char *yyjson_mut_write(yyjson_mut_doc *doc, yyjson_write_flag flg, size_t *len);
-
-bool yyjson_is_str(yyjson_val *val);
-bool yyjson_mut_is_str(yyjson_mut_val *val);
-
-yyjson_type yyjson_get_type(yyjson_val *val);
-yyjson_type yyjson_mut_get_type(yyjson_mut_val *val);
-```
-
-See [data structure](https://github.com/ibireme/yyjson/blob/master/doc/DataStructure.md) for more details.
-
-
 
 # Null Check
-`yyjson`'s public API will do `null check` for every input parameters to avoid crashes.
+yyjson's public API will do `null check` for every input parameters to avoid crashes.
 
 For example, when reading a JSON, you don't need to do null check or type check on each value:
 ```c

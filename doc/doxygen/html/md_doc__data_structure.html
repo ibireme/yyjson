@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=11"/>
 <meta name="generator" content="Doxygen 1.9.4"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>yyjson: Data Structure Details</title>
+<title>yyjson: Data Structures</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -93,7 +93,7 @@ $(document).ready(function(){initNavTree('md_doc__data_structure.html',''); init
 </div>
 
 <div><div class="header">
-  <div class="headertitle"><div class="title">Data Structure Details </div></div>
+  <div class="headertitle"><div class="title">Data Structures </div></div>
 </div><!--header-->
 <div class="contents">
 <div class="textblock"><p >yyjson has 2 types of data structures: immutable and mutable.</p>
@@ -103,7 +103,7 @@ $(document).ready(function(){initNavTree('md_doc__data_structure.html',''); init
  <br  />
  Note that the data structures described in this document are private, and you should use public API to access them.</p>
 <hr  />
- <h1><a class="anchor" id="autotoc_md29"></a>
+ <h1><a class="anchor" id="autotoc_md76"></a>
 Immutable Value</h1>
 <p >Each JSON value is stored in an immutable <code><a class="el" href="yyjson_8h.html#structyyjson__val">yyjson_val</a></code> struct: </p><div class="fragment"><div class="line"><span class="keyword">struct </span><a class="code hl_struct" href="yyjson_8h.html#structyyjson__val">yyjson_val</a> {</div>
 <div class="line">    uint64_t <a class="code hl_variable" href="yyjson_8h.html#ab589c80e05e4e65fa28e23acc1ee8255">tag</a>;</div>
@@ -116,14 +116,14 @@ Immutable Value</h1>
 <div class="line">        <span class="keywordtype">size_t</span>      ofs;</div>
 <div class="line">    } <a class="code hl_variable" href="yyjson_8h.html#a3a07ac3ac97c66ae9b23efeab600d013">uni</a>;</div>
 <div class="line">}</div>
-<div class="ttc" id="ayyjson_8h_html_a3a07ac3ac97c66ae9b23efeab600d013"><div class="ttname"><a href="yyjson_8h.html#a3a07ac3ac97c66ae9b23efeab600d013">yyjson_val::uni</a></div><div class="ttdeci">yyjson_val_uni uni</div><div class="ttdef"><b>Definition:</b> yyjson.h:3268</div></div>
-<div class="ttc" id="ayyjson_8h_html_ab589c80e05e4e65fa28e23acc1ee8255"><div class="ttname"><a href="yyjson_8h.html#ab589c80e05e4e65fa28e23acc1ee8255">yyjson_val::tag</a></div><div class="ttdeci">uint64_t tag</div><div class="ttdef"><b>Definition:</b> yyjson.h:3267</div></div>
-<div class="ttc" id="ayyjson_8h_html_structyyjson__val"><div class="ttname"><a href="yyjson_8h.html#structyyjson__val">yyjson_val</a></div><div class="ttdef"><b>Definition:</b> yyjson.h:3266</div></div>
+<div class="ttc" id="ayyjson_8h_html_a3a07ac3ac97c66ae9b23efeab600d013"><div class="ttname"><a href="yyjson_8h.html#a3a07ac3ac97c66ae9b23efeab600d013">yyjson_val::uni</a></div><div class="ttdeci">yyjson_val_uni uni</div><div class="ttdef"><b>Definition:</b> yyjson.h:3271</div></div>
+<div class="ttc" id="ayyjson_8h_html_ab589c80e05e4e65fa28e23acc1ee8255"><div class="ttname"><a href="yyjson_8h.html#ab589c80e05e4e65fa28e23acc1ee8255">yyjson_val::tag</a></div><div class="ttdeci">uint64_t tag</div><div class="ttdef"><b>Definition:</b> yyjson.h:3270</div></div>
+<div class="ttc" id="ayyjson_8h_html_structyyjson__val"><div class="ttname"><a href="yyjson_8h.html#structyyjson__val">yyjson_val</a></div><div class="ttdef"><b>Definition:</b> yyjson.h:3269</div></div>
 </div><!-- fragment --><p> <img src="struct_ival.svg" alt="" style="pointer-events: none;" class="inline" title="yyjson_val"/>    </p>
 <p >The lower 8 bits of <code>tag</code> stores the type of value.<br  />
  The higher 56 bits of <code>tag</code> stores the size of value (string length, object size or array size).</p>
 <p >Modern 64-bit processors are typically limited to supporting fewer than 64 bits for RAM addresses (<a href="https://en.wikipedia.org/wiki/RAM_limit">Wikipedia</a>). For example, Intel64, AMD64 and ARMv8 has a 52-bit (4PB) physical address limit. So we can safely store type and size into a 64 bits <code>tag</code>.</p>
-<h1><a class="anchor" id="autotoc_md30"></a>
+<h1><a class="anchor" id="autotoc_md77"></a>
 Immutable Document</h1>
 <p >A JSON document stores all strings in a <b>contiguous</b> memory area.<br  />
  Each string is unescaped in-place and ended with a null-terminator.<br  />
@@ -140,10 +140,10 @@ yyjson_val</div></div>
 <div class="caption">
 yyjson_val</div></div>
     <hr  />
- <h1><a class="anchor" id="autotoc_md32"></a>
+ <h1><a class="anchor" id="autotoc_md79"></a>
 Mutable Value</h1>
 <p >Each mutable JSON value is stored in an <code><a class="el" href="yyjson_8h.html#structyyjson__mut__val">yyjson_mut_val</a></code> struct: </p><div class="fragment"><div class="line"><span class="keyword">struct </span><a class="code hl_struct" href="yyjson_8h.html#structyyjson__mut__val">yyjson_mut_val</a> {</div>
-<div class="line">    uint64_t tag;</div>
+<div class="line">    uint64_t <a class="code hl_variable" href="yyjson_8h.html#a5fd1ae5bada624c9687acce330eef7aa">tag</a>;</div>
 <div class="line">    <span class="keyword">union </span>{</div>
 <div class="line">        uint64_t    u64;</div>
 <div class="line">        int64_t     i64;</div>
@@ -151,13 +151,16 @@ Mutable Value</h1>
 <div class="line">        <span class="keyword">const</span> <span class="keywordtype">char</span> *str;</div>
 <div class="line">        <span class="keywordtype">void</span>       *ptr;</div>
 <div class="line">        <span class="keywordtype">size_t</span>      ofs;</div>
-<div class="line">    } uni;</div>
-<div class="line">    <a class="code hl_struct" href="yyjson_8h.html#structyyjson__mut__val">yyjson_mut_val</a> *next;</div>
+<div class="line">    } <a class="code hl_variable" href="yyjson_8h.html#a2f30e3958bf136b4e8453a0e78b43d0f">uni</a>;</div>
+<div class="line">    <a class="code hl_struct" href="yyjson_8h.html#structyyjson__mut__val">yyjson_mut_val</a> *<a class="code hl_variable" href="yyjson_8h.html#a172090776a18e45190c933fb3294c07c">next</a>;</div>
 <div class="line">}</div>
-<div class="ttc" id="ayyjson_8h_html_structyyjson__mut__val"><div class="ttname"><a href="yyjson_8h.html#structyyjson__mut__val">yyjson_mut_val</a></div><div class="ttdef"><b>Definition:</b> yyjson.h:3826</div></div>
+<div class="ttc" id="ayyjson_8h_html_a172090776a18e45190c933fb3294c07c"><div class="ttname"><a href="yyjson_8h.html#a172090776a18e45190c933fb3294c07c">yyjson_mut_val::next</a></div><div class="ttdeci">yyjson_mut_val * next</div><div class="ttdef"><b>Definition:</b> yyjson.h:3832</div></div>
+<div class="ttc" id="ayyjson_8h_html_a2f30e3958bf136b4e8453a0e78b43d0f"><div class="ttname"><a href="yyjson_8h.html#a2f30e3958bf136b4e8453a0e78b43d0f">yyjson_mut_val::uni</a></div><div class="ttdeci">yyjson_val_uni uni</div><div class="ttdef"><b>Definition:</b> yyjson.h:3831</div></div>
+<div class="ttc" id="ayyjson_8h_html_a5fd1ae5bada624c9687acce330eef7aa"><div class="ttname"><a href="yyjson_8h.html#a5fd1ae5bada624c9687acce330eef7aa">yyjson_mut_val::tag</a></div><div class="ttdeci">uint64_t tag</div><div class="ttdef"><b>Definition:</b> yyjson.h:3830</div></div>
+<div class="ttc" id="ayyjson_8h_html_structyyjson__mut__val"><div class="ttname"><a href="yyjson_8h.html#structyyjson__mut__val">yyjson_mut_val</a></div><div class="ttdef"><b>Definition:</b> yyjson.h:3829</div></div>
 </div><!-- fragment --><p> <img src="struct_mval.svg" alt="" style="pointer-events: none;" class="inline" title="yyjson_val"/>    </p>
 <p >The <code>tag</code> and <code>uni</code> field is same as immutable value, the <code>next</code> field is used to build linked list.</p>
-<h1><a class="anchor" id="autotoc_md33"></a>
+<h1><a class="anchor" id="autotoc_md80"></a>
 Mutable Document</h1>
 <p >A mutable JSON document is composed of multiple <code><a class="el" href="yyjson_8h.html#structyyjson__mut__val">yyjson_mut_val</a></code>.</p>
 <p >The child values of an <code>object</code> or <code>array</code> are linked as a cycle,<br  />

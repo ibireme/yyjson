@@ -1,7 +1,7 @@
 /*
  Note
  
- This file was copy from David Gay's website:
+ This file is copied from David Gay's website:
  http://www.netlib.org/fp/dtoa.c
  http://www.netlib.org/fp/g_fmt.c
  

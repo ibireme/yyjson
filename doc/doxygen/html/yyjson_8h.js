@@ -33,7 +33,11 @@ var yyjson_8h =
       [ "max", "yyjson_8h.html#a05ac3955547a4be055542f922564ded6", null ],
       [ "obj", "yyjson_8h.html#addf8b34eb1d89a54df0482acbd29872c", null ]
     ] ],
-    [ "yyjson_mut_val", "yyjson_8h.html#structyyjson__mut__val", null ],
+    [ "yyjson_mut_val", "yyjson_8h.html#structyyjson__mut__val", [
+      [ "next", "yyjson_8h.html#a172090776a18e45190c933fb3294c07c", null ],
+      [ "tag", "yyjson_8h.html#a5fd1ae5bada624c9687acce330eef7aa", null ],
+      [ "uni", "yyjson_8h.html#a2f30e3958bf136b4e8453a0e78b43d0f", null ]
+    ] ],
     [ "yyjson_str_chunk", "yyjson_8h.html#structyyjson__str__chunk", null ],
     [ "yyjson_str_pool", "yyjson_8h.html#structyyjson__str__pool", null ],
     [ "yyjson_val_chunk", "yyjson_8h.html#structyyjson__val__chunk", null ],

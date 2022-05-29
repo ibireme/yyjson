@@ -1,9 +1,10 @@
-# yyjson
 
-[![Build](https://img.shields.io/github/workflow/status/ibireme/yyjson/cmake?style=flat-square)](https://github.com/ibireme/yyjson/actions)
-[![Codecov](https://img.shields.io/codecov/c/gh/ibireme/yyjson?style=flat-square)](https://codecov.io/gh/ibireme/yyjson)
-[![License](https://img.shields.io/github/license/ibireme/yyjson?color=blue&style=flat-square)](https://github.com/ibireme/yyjson/blob/master/LICENSE)
-[![Version](https://img.shields.io/github/v/release/ibireme/yyjson?color=orange&style=flat-square)](https://github.com/ibireme/yyjson/releases)
+# Introduction
+
+[![Build](https://flat.badgen.net/github/status/ibireme/yyjson/master/)](https://github.com/ibireme/yyjson/actions)
+[![Codecov](https://flat.badgen.net/codecov/c/github/ibireme/yyjson)](https://codecov.io/gh/ibireme/yyjson)
+[![License](https://flat.badgen.net/github/license/ibireme/yyjson)](https://github.com/ibireme/yyjson/blob/master/LICENSE)
+[![Version](https://flat.badgen.net/github/release/ibireme/yyjson?color=orange)](https://github.com/ibireme/yyjson/releases)
 
 A high performance JSON library written in ANSI C.
 
@@ -75,46 +76,6 @@ More benchmark reports with interactive charts (update 2020-12-12)
     * low penalty for misaligned memory access
 * A modern compiler with good optimizer.
 
-# Build and test
-
-### Manually
-Just copy `yyjson.h` and `yyjson.c` to your project and start using it.
-Since `yyjson` is ANSI C compatible, no other configuration is needed typically.
-
-`yyjson` has been tested with the following compilers: `gcc`, `clang`, `msvc`, `icc`, `tcc`. If you find a compile error, please [report a bug](https://github.com/ibireme/yyjson/issues/new?template=bug_report.md).
-
-`yyjson` has all features enabled by default, but you can trim out some of them by adding compile-time options. For example, disable JSON writer to reduce the binary size when you don't need serialization, or disable comments support to improve parsing performance. See [compile-time options](https://ibireme.github.io/yyjson/doc/doxygen/html/md_doc__build_and_test.html#autotoc_md26) for details.
-
-### CMake
-Clone the repository and create build directory:
-```shell
-git clone https://github.com/ibireme/yyjson.git
-mkdir build
-cd build
-```
-Build static library:
-```shell
-cmake .. 
-cmake --build .
-```
-
-Build static library and run tests:
-```shell
-cmake .. -DYYJSON_BUILD_TESTS=ON
-cmake --build .
-ctest
-```
-
-Supported CMake options:
-
-- `-DBUILD_SHARED_LIBS=ON` Build shared library instead of static library.
-- `-DYYJSON_BUILD_TESTS=ON` Build all tests.
-- `-DYYJSON_DISABLE_READER=ON` Disable JSON reader if you don't need it.
-- `-DYYJSON_DISABLE_WRITER=ON` Disable JSON writer if you don't need it.
-- `-DYYJSON_DISABLE_FAST_FP_CONV=ON` Disable fast floating-point number conversion.
-- `-DYYJSON_DISABLE_NON_STANDARD=ON` Disable non-standard JSON support at compile-time.
-
-[More details](https://ibireme.github.io/yyjson/doc/doxygen/html/md_doc__build_and_test.html)
 
 # Sample Code
 
@@ -233,10 +194,11 @@ yyjson_mut_doc_free(doc);
 ```
 
 # Documentation
-* [Build and test](https://ibireme.github.io/yyjson/doc/doxygen/html/md_doc__build_and_test.html)
-* [API and sample code](https://ibireme.github.io/yyjson/doc/doxygen/html/md_doc__a_p_i.html)
-* [Data structure](https://ibireme.github.io/yyjson/doc/doxygen/html/md_doc__data_structure.html)
-* [Changelog](https://ibireme.github.io/yyjson/doc/doxygen/html/md__c_h_a_n_g_e_l_o_g.html)
+* [Home Page](https://ibireme.github.io/yyjson/doc/doxygen/html/)
+    * [Build and test](https://ibireme.github.io/yyjson/doc/doxygen/html/md_doc__build_and_test.html)
+    * [API and sample code](https://ibireme.github.io/yyjson/doc/doxygen/html/md_doc__a_p_i.html)
+    * [Data structure](https://ibireme.github.io/yyjson/doc/doxygen/html/md_doc__data_structure.html)
+    * [Changelog](https://ibireme.github.io/yyjson/doc/doxygen/html/md__c_h_a_n_g_e_l_o_g.html)
 
 # TODO
 * [x] Add documentation page.

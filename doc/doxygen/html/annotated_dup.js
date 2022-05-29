@@ -6,7 +6,7 @@ var annotated_dup =
     [ "yyjson_mut_arr_iter", "yyjson_8h.html#structyyjson__mut__arr__iter", "yyjson_8h_structyyjson__mut__arr__iter" ],
     [ "yyjson_mut_doc", "yyjson_8h.html#structyyjson__mut__doc", "yyjson_8h_structyyjson__mut__doc" ],
     [ "yyjson_mut_obj_iter", "yyjson_8h.html#structyyjson__mut__obj__iter", "yyjson_8h_structyyjson__mut__obj__iter" ],
-    [ "yyjson_mut_val", "yyjson_8h.html#structyyjson__mut__val", null ],
+    [ "yyjson_mut_val", "yyjson_8h.html#structyyjson__mut__val", "yyjson_8h_structyyjson__mut__val" ],
     [ "yyjson_obj_iter", "yyjson_8h.html#structyyjson__obj__iter", "yyjson_8h_structyyjson__obj__iter" ],
     [ "yyjson_read_err", "yyjson_8h.html#structyyjson__read__err", "yyjson_8h_structyyjson__read__err" ],
     [ "yyjson_str_chunk", "yyjson_8h.html#structyyjson__str__chunk", null ],
