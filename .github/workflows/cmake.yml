@@ -110,7 +110,7 @@ jobs:
         ctest -C Release --output-on-failure
 
 
-  gcc4:
+  gcc4_x64:
     runs-on: ubuntu-18.04
     steps:
     - uses: actions/checkout@v2
@@ -124,6 +124,24 @@ jobs:
         mkdir build
         cd build
         cmake .. -DCMAKE_C_COMPILER=gcc-4.8 -DCMAKE_CXX_COMPILER=g++-4.8 -DYYJSON_BUILD_TESTS=ON
+        cmake --build . --config Release
+        ctest -C Release --output-on-failure
+
+
+  gcc4_x86:
+    runs-on: ubuntu-18.04
+    steps:
+    - uses: actions/checkout@v2
+    
+    - name: Prepare
+      shell: bash
+      run: sudo apt update; sudo apt install g++-4.8
+
+    - name: Build and Test
+      run: |
+        mkdir build
+        cd build
+        cmake .. -DCMAKE_C_COMPILER=gcc-4.8 -DCMAKE_CXX_COMPILER=g++-4.8 -DYYJSON_BUILD_TESTS=ON -DYYJSON_FORCE_32_BIT=ON
         cmake --build . --config Release
         ctest -C Release --output-on-failure
 

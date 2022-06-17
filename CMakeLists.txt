@@ -20,7 +20,7 @@ endif()
 
 
 # ------------------------------------------------------------------------------
-# Build Options
+# Build Options for tests and docs
 option(YYJSON_BUILD_TESTS "Build all tests" OFF)
 option(YYJSON_BUILD_FUZZER "Build fuzzer" OFF)
 option(YYJSON_BUILD_MISC "Build misc" OFF)
@@ -29,6 +29,7 @@ option(YYJSON_ENABLE_COVERAGE "Enable code coverage for tests" OFF)
 option(YYJSON_ENABLE_VALGRIND "Enable valgrind memory checker for tests" OFF)
 option(YYJSON_ENABLE_SANITIZE "Enable sanitizer for tests" OFF)
 option(YYJSON_ENABLE_FASTMATH "Enable fast-math for tests" OFF)
+option(YYJSON_FORCE_32_BIT "Force 32-bit for tests (gcc/clang/icc)" OFF)
 
 
 
@@ -91,7 +92,7 @@ elseif(MSVC)
     target_compile_options(yyjson PRIVATE $<$<C_COMPILER_ID:MSVC>:${YYJSON_FLAGS}>)
     target_compile_options(yyjson PRIVATE $<$<CXX_COMPILER_ID:MSVC>:${YYJSON_FLAGS}>)
     
-elseif(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
+elseif(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang|Intel")
     set(YYJSON_FLAGS "")
     if(YYJSON_ENABLE_FASTMATH)
         set(YYJSON_FLAGS "-ffast-math")
@@ -100,6 +101,11 @@ elseif(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
     target_compile_options(yyjson PRIVATE $<$<COMPILE_LANGUAGE:C>:${YYJSON_FLAGS}>)
     target_compile_options(yyjson PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${YYJSON_FLAGS}>)
     
+    if(YYJSON_FORCE_32_BIT)
+        set(CMAKE_C_FLAGS -m32)
+        set(CMAKE_CXX_FLAGS -m32)
+    endif()
+
 endif()
 
 include(CheckIncludeFile)
