@@ -907,7 +907,7 @@ static_inline void u128_mul_add(u64 a, u64 b, u64 c, u64 *hi, u64 *lo) {
     u64 h, l, t;
     u128_mul(a, b, &h, &l);
     t = l + c;
-    h += ((t < l) | (t < c));
+    h += (u64)(((t < l) | (t < c)));
     *hi = h;
     *lo = t;
 #endif
@@ -1558,11 +1558,11 @@ static_inline void *pointer_read_arr(const char **ptr,
         cur++;
         idx = idx * 10 + add;
     }
-    if (cur == hdr) return NULL;
+    if (cur == hdr || idx >= (u64)USIZE_MAX) return NULL;
     *ptr = cur;
     return mut
-        ? (void *)yyjson_mut_arr_get(m_arr, idx)
-        : (void *)yyjson_arr_get(i_arr, idx);
+        ? (void *)yyjson_mut_arr_get(m_arr, (usize)idx)
+        : (void *)yyjson_arr_get(i_arr, (usize)idx);
 }
 
 /**
@@ -7307,8 +7307,8 @@ doc_begin:
 val_begin:
     val_type = unsafe_yyjson_get_type(val);
     if (val_type == YYJSON_TYPE_STR) {
-        is_key = ((u8)ctn_obj & (u8)~ctn_len);
-        no_indent = ((u8)ctn_obj & (u8)ctn_len);
+        is_key = (bool)((u8)ctn_obj & (u8)~ctn_len);
+        no_indent = (bool)((u8)ctn_obj & (u8)ctn_len);
         str_len = unsafe_yyjson_get_len(val);
         str_ptr = (const u8 *)unsafe_yyjson_get_str(val);
         check_str_len(str_len);
@@ -7321,7 +7321,7 @@ val_begin:
         goto val_end;
     }
     if (val_type == YYJSON_TYPE_NUM) {
-        no_indent = ((u8)ctn_obj & (u8)ctn_len);
+        no_indent = (bool)((u8)ctn_obj & (u8)ctn_len);
         incr_len(32 + (no_indent ? 0 : level * 4));
         cur = write_indent(cur, no_indent ? 0 : level);
         cur = write_number(cur, val, flg);
@@ -7332,7 +7332,7 @@ val_begin:
     }
     if ((val_type & (YYJSON_TYPE_ARR & YYJSON_TYPE_OBJ)) ==
                     (YYJSON_TYPE_ARR & YYJSON_TYPE_OBJ)) {
-        no_indent = ((u8)ctn_obj & (u8)ctn_len);
+        no_indent = (bool)((u8)ctn_obj & (u8)ctn_len);
         ctn_len_tmp = unsafe_yyjson_get_len(val);
         ctn_obj_tmp = (val_type == YYJSON_TYPE_OBJ);
         if (unlikely(ctn_len_tmp == 0)) {
@@ -7359,7 +7359,7 @@ val_begin:
         }
     }
     if (val_type == YYJSON_TYPE_BOOL) {
-        no_indent = ((u8)ctn_obj & (u8)ctn_len);
+        no_indent = (bool)((u8)ctn_obj & (u8)ctn_len);
         incr_len(16 + (no_indent ? 0 : level * 4));
         cur = write_indent(cur, no_indent ? 0 : level);
         cur = write_bool(cur, unsafe_yyjson_get_bool(val));
@@ -7367,7 +7367,7 @@ val_begin:
         goto val_end;
     }
     if (val_type == YYJSON_TYPE_NULL) {
-        no_indent = ((u8)ctn_obj & (u8)ctn_len);
+        no_indent = (bool)((u8)ctn_obj & (u8)ctn_len);
         incr_len(16 + (no_indent ? 0 : level * 4));
         cur = write_indent(cur, no_indent ? 0 : level);
         cur = write_null(cur);
@@ -7795,8 +7795,8 @@ doc_begin:
 val_begin:
     val_type = unsafe_yyjson_get_type(val);
     if (val_type == YYJSON_TYPE_STR) {
-        is_key = ((u8)ctn_obj & (u8)~ctn_len);
-        no_indent = ((u8)ctn_obj & (u8)ctn_len);
+        is_key = (bool)((u8)ctn_obj & (u8)~ctn_len);
+        no_indent = (bool)((u8)ctn_obj & (u8)ctn_len);
         str_len = unsafe_yyjson_get_len(val);
         str_ptr = (const u8 *)unsafe_yyjson_get_str(val);
         check_str_len(str_len);
@@ -7809,7 +7809,7 @@ val_begin:
         goto val_end;
     }
     if (val_type == YYJSON_TYPE_NUM) {
-        no_indent = ((u8)ctn_obj & (u8)ctn_len);
+        no_indent = (bool)((u8)ctn_obj & (u8)ctn_len);
         incr_len(32 + (no_indent ? 0 : level * 4));
         cur = write_indent(cur, no_indent ? 0 : level);
         cur = write_number(cur, (yyjson_val *)val, flg);
@@ -7820,7 +7820,7 @@ val_begin:
     }
     if ((val_type & (YYJSON_TYPE_ARR & YYJSON_TYPE_OBJ)) ==
                     (YYJSON_TYPE_ARR & YYJSON_TYPE_OBJ)) {
-        no_indent = ((u8)ctn_obj & (u8)ctn_len);
+        no_indent = (bool)((u8)ctn_obj & (u8)ctn_len);
         ctn_len_tmp = unsafe_yyjson_get_len(val);
         ctn_obj_tmp = (val_type == YYJSON_TYPE_OBJ);
         if (unlikely(ctn_len_tmp == 0)) {
@@ -7849,7 +7849,7 @@ val_begin:
         }
     }
     if (val_type == YYJSON_TYPE_BOOL) {
-        no_indent = ((u8)ctn_obj & (u8)ctn_len);
+        no_indent = (bool)((u8)ctn_obj & (u8)ctn_len);
         incr_len(16 + (no_indent ? 0 : level * 4));
         cur = write_indent(cur, no_indent ? 0 : level);
         cur = write_bool(cur, unsafe_yyjson_get_bool(val));
@@ -7857,7 +7857,7 @@ val_begin:
         goto val_end;
     }
     if (val_type == YYJSON_TYPE_NULL) {
-        no_indent = ((u8)ctn_obj & (u8)ctn_len);
+        no_indent = (bool)((u8)ctn_obj & (u8)ctn_len);
         incr_len(16 + (no_indent ? 0 : level * 4));
         cur = write_indent(cur, no_indent ? 0 : level);
         cur = write_null(cur);
