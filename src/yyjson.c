@@ -6020,8 +6020,8 @@ static_inline u64 round_to_odd(u64 hi, u64 lo, u64 cp) {
  The output significand is shortest decimal but may have trailing zeros.
  
  This function use the Schubfach algorithm:
- Raffaello Giulietti, The Schubfach way to render doubles (4th version), 2021.
- https://drive.google.com/file/d/1IEeATSVnEE6TkrHlCYNY2GjaraBjOT4f
+ Raffaello Giulietti, The Schubfach way to render doubles (5th version), 2022.
+ https://drive.google.com/file/d/1gp5xv4CAa78SVgCeWfGqqI4FfYYYuNFb
  https://mail.openjdk.java.net/pipermail/core-libs-dev/2021-November/083536.html
  https://github.com/openjdk/jdk/pull/3402 (Java implementation)
  https://github.com/abolz/Drachennest (C++ implementation)
