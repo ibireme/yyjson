@@ -224,7 +224,8 @@ static void test_real_read(const char *line, usize len, f64 num) {
         u64 ret_raw;
         i64 ulp;
         
-#if !YYJSON_DISABLE_FAST_FP_CONV
+#if !YYJSON_DISABLE_FAST_FP_CONV && !defined(__i386)
+        // TODO: strtod_gay() may get 1 ulp error in i386, fix it later
         // 0 ulp error
         doc = yyjson_read(line, len, 0);
         val = yyjson_doc_get_root(doc);
@@ -278,7 +279,11 @@ static void test_real_write(const char *line, usize len, f64 num) {
 #endif
     } else {
         yy_assert(strcmp(str, str_nan_inf) == 0);
-        yy_assertf(strtod_gay(str, NULL) == num,
+        f64 gay_num = strtod_gay(str, NULL);
+        u64 gay_raw, num_raw;
+        memcpy((void *)&gay_raw, (void *)&gay_num, 8);
+        memcpy((void *)&num_raw, (void *)&num, 8);
+        yy_assertf(gay_raw == num_raw,
                    "real number write value not match:\nexpect: %s\nreturn: %s\n",
                    line, str);
         
