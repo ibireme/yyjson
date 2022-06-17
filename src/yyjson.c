@@ -6211,6 +6211,7 @@ static_noinline u8 *write_f64_raw(u8 *buf, u64 raw, yyjson_write_flag flg) {
             /* write with scientific notation */
             /* such as 1.234e56 */
             u8 *end = write_u64_len_15_to_17_trim(buf + 1, sig_dec);
+            end -= (end == buf + 2); /* remove '.0', e.g. 2.0e34 -> 2e134 */
             exp_dec += sig_len - 1;
             hdr[0] = hdr[1];
             hdr[1] = '.';
