@@ -2,6 +2,12 @@
 All notable changes to this project will be documented in this file.
 
 
+## 0.5.1 (2022-06017)
+#### Fixed
+- Fix run-time error when compiling as cpp and 32-bit (g++-5 -m32 -fPIC) #85
+- Fix incurrect output number format, remove unnecessary digits (e.g. 2.0e34 -> 2e34).
+
+
 ## 0.5.0 (2022-05-25)
 #### Added
 - Add LibFuzzer support.
