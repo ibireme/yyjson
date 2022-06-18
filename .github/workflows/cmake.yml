@@ -9,223 +9,31 @@ on:
       - '**.md'
 
 jobs:
-  linux:
+
+  multi_arch:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        build_type:
-          - Debug
-          - Release
-        build_flag:
-          - Default
-          - ReduceBinary
-        checker:
-          - Valgrind
-          - Sanitizer
-          - None
+        arch: [arm32v7, riscv64]
 
     steps:
     - uses: actions/checkout@v2
 
-    - name: Prepare
-      shell: bash
-      run: sudo apt update; sudo apt install valgrind
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v2
 
-    - name: CMake
-      shell: bash
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
+
+    - name: CMake and CTest
       run: |
-        BUILD_OPTIONS="-DYYJSON_BUILD_TESTS=ON"
-        if [ "${{matrix.build_flag}}" == "ReduceBinary" ]; then
-          BUILD_OPTIONS="${BUILD_OPTIONS} -DYYJSON_DISABLE_FAST_FP_CONV=ON"
-          BUILD_OPTIONS="${BUILD_OPTIONS} -DYYJSON_DISABLE_NON_STANDARD=ON"
-        fi
-        if [ "${{matrix.checker}}" == "Valgrind" ]; then
-          BUILD_OPTIONS="${BUILD_OPTIONS} -DYYJSON_ENABLE_VALGRIND=ON"
-        fi
-        if [ "${{matrix.checker}}" == "Sanitizer" ]; then
-          BUILD_OPTIONS="${BUILD_OPTIONS} -DYYJSON_ENABLE_SANITIZE=ON"
-        fi
-        cmake -E make_directory ${{runner.workspace}}/build
-        cd ${{runner.workspace}}/build
-        cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=${{matrix.build_type}} $BUILD_OPTIONS
-
-    - name: Build
-      shell: bash
-      working-directory: ${{runner.workspace}}/build
-      run: cmake --build . --config ${{matrix.build_type}}
-    
-    - name: Test
-      shell: bash
-      working-directory: ${{runner.workspace}}/build
-      run: ctest -C ${{matrix.build_type}} --output-on-failure
-
-
-  macos:
-    runs-on: macos-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        build_option:
-          - Default
-          - DisableFastFPConv
-          - DisableNonStandard
-    steps:
-    - uses: actions/checkout@v2
-    - name: CMake
-      shell: bash
-      run: |
-        if [ "${{matrix.build_flag}}" == "DisableFastFPConv" ]; then
-          BUILD_OPTIONS="-DYYJSON_DISABLE_FAST_FP_CONV=ON"
-        elif [ "${{ matrix.build_flag }}" == "DisableNonStandard" ]; then
-          BUILD_OPTIONS="-DYYJSON_DISABLE_NON_STANDARD=ON"
-        else
-          BUILD_OPTIONS=""
-        fi
-        cmake -E make_directory ${{runner.workspace}}/build
-        cd ${{runner.workspace}}/build
-        cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=Release -DYYJSON_BUILD_TESTS=ON $BUILD_OPTIONS
-
-    - name: Build
-      shell: bash
-      working-directory: ${{runner.workspace}}/build
-      run: cmake --build . --config Release
-    
-    - name: Test
-      shell: bash
-      working-directory: ${{runner.workspace}}/build
-      run: ctest -C Release --output-on-failure
-
-
-  windows:
-    runs-on: windows-latest
-    steps:
-    - uses: actions/checkout@v2
-    - name: Build and Test
-      run: |
-        mkdir build
-        cd build
-        cmake .. -DCMAKE_BUILD_TYPE=Release -DYYJSON_BUILD_TESTS=ON
-        cmake --build . --config Release
-        ctest -C Release --output-on-failure
-
-
-  gcc4:
-    runs-on: ubuntu-18.04
-    steps:
-    - uses: actions/checkout@v2
-    
-    - name: Prepare
-      shell: bash
-      run: sudo apt update; sudo apt install g++-4.8
-
-    - name: Build and Test
-      run: |
-        mkdir build
-        cd build
-        cmake .. -DCMAKE_C_COMPILER=gcc-4.8 -DCMAKE_CXX_COMPILER=g++-4.8 -DYYJSON_BUILD_TESTS=ON
-        cmake --build . --config Release
-        ctest -C Release --output-on-failure
-
-
-  i386:
-    runs-on: ubuntu-18.04
-    steps:
-    - uses: actions/checkout@v2
-    
-    - name: Prepare
-      shell: bash
-      run: sudo apt update; sudo apt install g++-5 gcc-5-multilib
-
-    - name: Build and Test
-      run: |
-        mkdir build
-        cd build
-        cmake .. -DCMAKE_C_COMPILER=gcc-5 -DCMAKE_CXX_COMPILER=g++-5 -DYYJSON_BUILD_TESTS=ON -DYYJSON_FORCE_32_BIT=ON
-        cmake --build . --config Release
-        ctest -C Release --output-on-failure
-
-
-  tinycc:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v2
-    
-    - name: Prepare
-      shell: bash
-      run: sudo apt update; sudo apt install tcc
-
-    - name: Build and Test
-      run: |
-        mkdir build
-        cd build
-        cmake .. -DCMAKE_C_COMPILER=tcc -DYYJSON_BUILD_TESTS=ON
-        cmake --build . --config Release
-        ctest -C Release --output-on-failure
-
-
-  fastmath:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v2
-    - name: Build and Test
-      run: |
-        mkdir build
-        cd build
-        cmake .. -DYYJSON_ENABLE_FASTMATH=ON -DCMAKE_BUILD_TYPE=Release -DYYJSON_BUILD_TESTS=ON
-        cmake --build . --config Release
-        ctest -C Release --output-on-failure
-
-
-  reader:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v2
-    - name: Build and Test
-      run: |
-        mkdir build
-        cd build
-        cmake .. -DYYJSON_DISABLE_WRITER=ON -DCMAKE_BUILD_TYPE=Release -DYYJSON_BUILD_TESTS=ON
-        cmake --build . --config Release
-        ctest -C Release --output-on-failure
-
-
-  writer:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v2
-    - name: Build and Test
-      run: |
-        mkdir build
-        cd build
-        cmake .. -DYYJSON_DISABLE_READER=ON -DCMAKE_BUILD_TYPE=Release -DYYJSON_BUILD_TESTS=ON
-        cmake --build . --config Release
-        ctest -C Release --output-on-failure
-
-
-  fuzzing:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v2
-    - name: Fuzzing
-      run: |
-        mkdir build
-        cd build
-        cmake .. -DYYJSON_BUILD_FUZZER=ON -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
-        cmake --build . --config Release
-        ctest -C Release --output-on-failure
-
-
-  codecov:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v2
-    - name: CodeCov
-      shell: bash
-      run: |
-        mkdir build
-        cd build
-        cmake .. -DCMAKE_BUILD_TYPE=Debug -DYYJSON_BUILD_TESTS=ON -DYYJSON_ENABLE_COVERAGE=ON
-        cmake --build . --config Debug
-        ctest
-        bash <(curl -s https://codecov.io/bash) || echo "Codecov did not collect coverage reports"
+          docker run ${{ matrix.arch }}/ubuntu bash -e -c '
+            apt update
+            apt install cmake
+            mkdir build
+            cd build
+            cmake .. -DYYJSON_BUILD_TESTS=ON
+            cmake --build . --config Release
+            ctest -C Release --output-on-failure
+          '
