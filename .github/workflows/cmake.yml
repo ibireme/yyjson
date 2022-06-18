@@ -28,12 +28,12 @@ jobs:
 
     - name: CMake and CTest
       run: |
-          docker run ${{ matrix.arch }}/ubuntu bash -e -c '
+          docker run "$PWD:/yyjson" ${{ matrix.arch }}/ubuntu bash -e -c '
             apt-get update
             apt-get install -y gcc g++ cmake
             mkdir build
             cd build
-            cmake .. -DYYJSON_BUILD_TESTS=ON
+            cmake ../yyjson -DYYJSON_BUILD_TESTS=ON
             cmake --build . --config Release
             ctest -C Release --output-on-failure
           '
