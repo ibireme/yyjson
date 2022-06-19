@@ -161,8 +161,8 @@ if(YYJSON_BUILD_TESTS)
         set(CMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED "NO")
         set(CMAKE_XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY "")
         set(YYJSON_TEST_DATA ${CMAKE_CURRENT_SOURCE_DIR}/test/data)
-
-        # Add test cases to XCTest
+        
+        # Add all test cases to XCTest: c/cpp files prefixed with 'test_'
         file(GLOB YYJSON_TEST_SOURCE
             "test/test_*.c"
             "test/test_*.cpp"
@@ -239,7 +239,7 @@ if(YYJSON_BUILD_TESTS)
             target_compile_options(yyjson_test_utils PRIVATE $<$<COMPILE_LANGUAGE:C>:-std=gnu99>)
         endif()
 
-        # Add test cases
+        # Add all test cases: c/cpp files prefixed with 'test_'
         file(GLOB YYJSON_TEST_SOURCE
             "test/test_*.c"
             "test/test_*.cpp"

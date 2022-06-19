@@ -342,7 +342,7 @@ fail:
     }
     
     int i = 0, icount = 0;
-    for(; i < buf.gl_matchc; i++) {
+    for(; i < (int)buf.gl_pathc; i++) {
         const char *one_path = buf.gl_pathv[i];
         if (!one_path) continue;
         size_t one_len = strlen(one_path);
