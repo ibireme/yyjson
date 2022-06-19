@@ -1,5 +1,8 @@
 name: cmake
 
+env:
+  FORCE_COLOR: 1
+
 on:
   push:
     paths-ignore:
@@ -29,6 +32,7 @@ jobs:
     - name: CMake and CTest
       run: |
           docker run -v "$PWD:/yyjson" ${{ matrix.arch }}/ubuntu bash -e -c '
+            FORCE_COLOR=1
             apt-get update
             apt-get install -y gcc g++ cmake
             mkdir build

@@ -6,7 +6,10 @@
  *============================================================================*/
 
 #include "yy_test_utils.h"
-
+#if yy_has_include(<glob.h>) && defined(__linux__)
+#   define YY_HAS_GLOB 1
+#   include <glob.h>
+#endif
 
 
 // =============================================================================
@@ -231,8 +234,8 @@ bool yy_path_is_dir(const char *path) {
 }
 
 
-
-static int strcmp_func(void const *a, void const *b) {
+// sort function for dir read
+int yy_dir_strcmp_func(void const *a, void const *b) {
     char const *astr = *(char const **)a;
     char const *bstr = *(char const **)b;
     return strcmp(astr, bstr);
@@ -286,7 +289,7 @@ char **yy_dir_read_opts(const char *path, int *count, bool full) {
     } while (_findnext(handle, &entry) == 0);
     _findclose(handle);
     
-    if (idx > 1) qsort(names, idx, sizeof(char *), strcmp_func);
+    if (idx > 1) qsort(names, idx, sizeof(char *), yy_dir_strcmp_func);
     names[idx] = NULL;
     if (count) *count = idx;
     return names;
@@ -296,6 +299,70 @@ fail:
     if (search) free(search);
     if (names) free(names);
     return NULL;
+    
+#elif defined(YY_HAS_GLOB)
+    // readdir() may fail for 32-bit user-static qemu on 64-bit host
+    // use glob() instead: https://gitlab.com/qemu-project/qemu/-/issues/263
+    
+    if (count) *count = 0;
+    if (!path) return NULL;
+    size_t path_len = strlen(path);
+    if (!path_len) return NULL;
+    
+    char *patt = calloc(1, path_len * 2 + 4);
+    if (!patt) return NULL;
+    for (size_t i = 0, p = 0; i < path_len; i++, p++) {
+        char c = path[i];
+        if (c == '*') patt[p++] = '\\';
+        patt[p] = c;
+        if (i + 1 == path_len) {
+            if (patt[p] != '/') patt[++p] = '/';
+            patt[++p] = '*';
+        }
+    }
+    
+    glob_t buf = { 0 };
+    int flag = 0;
+#ifdef GLOB_NOESCAPE
+    flag |= GLOB_NOESCAPE;
+#endif
+#ifdef GLOB_PERIOD
+    flag |= GLOB_PERIOD;
+#endif
+    if (glob(patt, flag, NULL, &buf)) {
+        free((void *)patt);
+        globfree(&buf);
+        return NULL;
+    }
+    free((void *)patt);
+    char **names = calloc(buf.gl_pathc + 1, sizeof(char *));
+    if (!names) {
+        globfree(&buf);
+        return NULL;
+    }
+    
+    int i = 0, icount = 0;
+    for(; i < buf.gl_matchc; i++) {
+        const char *one_path = buf.gl_pathv[i];
+        if (!one_path) continue;
+        size_t one_len = strlen(one_path);
+        if (!one_len) continue;
+        const char *one_name = one_path + one_len;
+        while (one_name > one_path && *(one_name - 1) != '/') one_name--;
+        const char *one = full ? one_path : one_name;
+        one = strdup(one);
+        if (!one) {
+            for (i = 0; i < icount; i++) free((void *)names[i]);
+            globfree(&buf);
+            free((void *)names);
+            return NULL;
+        }
+        names[icount++] = (char *)one;
+    }
+    globfree(&buf);
+    
+    if (count) *count = icount;
+    return names;
     
 #else
     DIR *dir = NULL;
@@ -337,7 +404,7 @@ fail:
         idx++;
     }
     closedir(dir);
-    if (idx > 1) qsort(names, idx, sizeof(char *), strcmp_func);
+    if (idx > 1) qsort(names, idx, sizeof(char *), yy_dir_strcmp_func);
     names[idx] = NULL;
     if (count) *count = idx;
     return names;
