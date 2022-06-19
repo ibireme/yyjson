@@ -114,7 +114,7 @@ jobs:
     - name: Build
       shell: bash
       working-directory: ${{runner.workspace}}/build
-      run: cmake --build . Release
+      run: cmake --build . --config Release
     
     - name: Test
       shell: bash
