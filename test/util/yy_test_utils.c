@@ -349,6 +349,7 @@ fail:
         if (!one_len) continue;
         const char *one_name = one_path + one_len;
         while (one_name > one_path && *(one_name - 1) != '/') one_name--;
+        if (!strcmp(one_name, ".") || !strcmp(one_name, "..")) continue;
         const char *one = full ? one_path : one_name;
         one = strdup(one);
         if (!one) {
