@@ -84,7 +84,7 @@ if(XCODE)
     set_xcode_property(yyjson OTHER_CFLAGS[variant=Release] ${YYJSON_FLAGS})
     
 elseif(MSVC)
-    set(YYJSON_FLAGS "/permissive- /utf-8")
+    set(YYJSON_FLAGS "/utf-8")
     if(YYJSON_ENABLE_FASTMATH)
         set(YYJSON_FLAGS "${YYJSON_FLAGS} /fp:fast")
     endif()
@@ -238,7 +238,7 @@ if(YYJSON_BUILD_TESTS)
         if(COMPILER_SUPPORTS_GNU99)
             target_compile_options(yyjson_test_utils PRIVATE $<$<COMPILE_LANGUAGE:C>:-std=gnu99>)
         endif()
-
+        
         # Add all test cases: c/cpp files prefixed with 'test_'
         file(GLOB YYJSON_TEST_SOURCE
             "test/test_*.c"
@@ -249,10 +249,15 @@ if(YYJSON_BUILD_TESTS)
             add_executable(${SRC_NAME} ${SRC_FILE})
             target_link_libraries(${SRC_NAME} PRIVATE yyjson yyjson_test_utils)
             
+            if(MSVC)
+                target_compile_options(${SRC_NAME} PRIVATE $<$<C_COMPILER_ID:MSVC>:/utf-8>)
+                target_compile_options(${SRC_NAME} PRIVATE $<$<CXX_COMPILER_ID:MSVC>:/utf-8>)
+            endif()
+            
             if(COMPILER_SUPPORTS_GNU99)
                 target_compile_options(${SRC_NAME} PRIVATE $<$<COMPILE_LANGUAGE:C>:-std=gnu99>)
             endif()
-
+            
             if(MEMORYCHECK_COMMAND)
                 add_test(NAME ${SRC_NAME}
                          COMMAND "${MEMORYCHECK_COMMAND}" ${MEMORYCHECK_COMMAND_OPTIONS} "${CMAKE_CURRENT_BINARY_DIR}/${SRC_NAME}")

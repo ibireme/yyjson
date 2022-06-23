@@ -90,7 +90,7 @@ static void fp_force_eval(double x) {
 #endif
 static const double toint = 1/EPS;
 
-static double ceil(double x) {
+static double fp_ceil(double x) {
     union {double f; uint64_t i;} u;
     memcpy((void *)&u, (void *)&x, sizeof(uint64_t));
     
@@ -576,11 +576,11 @@ static const uint64_t Double_kExponentMask = DOUBLE_CONVERSION_UINT64_2PART_C(0x
 static const uint64_t Double_kSignificandMask = DOUBLE_CONVERSION_UINT64_2PART_C(0x000FFFFF, FFFFFFFF);
 static const uint64_t Double_kHiddenBit = DOUBLE_CONVERSION_UINT64_2PART_C(0x00100000, 00000000);
 static const uint64_t Double_kQuietNanBit = DOUBLE_CONVERSION_UINT64_2PART_C(0x00080000, 00000000);
-static const int Double_kPhysicalSignificandSize = 52;  // Excludes the hidden bit.
-static const int Double_kSignificandSize = 53;
-static const int Double_kExponentBias = 0x3FF + Double_kPhysicalSignificandSize;
-static const int Double_kMaxExponent = 0x7FF - Double_kExponentBias;
-static const int Double_kDenormalExponent = -Double_kExponentBias + 1;
+#define Double_kPhysicalSignificandSize ((int)52)  // Excludes the hidden bit.
+#define Double_kSignificandSize ((int)53)
+#define Double_kExponentBias ((int)(0x3FF + Double_kPhysicalSignificandSize))
+#define Double_kMaxExponent ((int)(0x7FF - Double_kExponentBias))
+#define Double_kDenormalExponent  ((int)(-Double_kExponentBias + 1))
 static const uint64_t Double_kInfinity = DOUBLE_CONVERSION_UINT64_2PART_C(0x7FF00000, 00000000);
 #if (defined(__mips__) && !defined(__mips_nan2008)) || defined(__hppa__)
 static const uint64_t Double_kNaN = DOUBLE_CONVERSION_UINT64_2PART_C(0x7FF7FFFF, FFFFFFFF);
@@ -828,11 +828,11 @@ static const uint32_t Single_kExponentMask = 0x7F800000;
 static const uint32_t Single_kSignificandMask = 0x007FFFFF;
 static const uint32_t Single_kHiddenBit = 0x00800000;
 static const uint32_t Single_kQuietNanBit = 0x00400000;
-static const int Single_kPhysicalSignificandSize = 23;  // Excludes the hidden bit.
-static const int Single_kSignificandSize = 24;
-static const int Single_kExponentBias = 0x7F + Single_kPhysicalSignificandSize;
-static const int Single_kDenormalExponent = -Single_kExponentBias + 1;
-static const int Single_kMaxExponent = 0xFF - Single_kExponentBias;
+#define Single_kPhysicalSignificandSize ((int)23)  // Excludes the hidden bit.
+#define Single_kSignificandSize ((int)24)
+#define Single_kExponentBias ((int)(0x7F + Single_kPhysicalSignificandSize))
+#define Single_kDenormalExponent ((int)(-Single_kExponentBias + 1))
+#define Single_kMaxExponent ((int)(0xFF - Single_kExponentBias))
 static const uint32_t Single_kInfinity = 0x7F800000;
 #if (defined(__mips__) && !defined(__mips_nan2008)) || defined(__hppa__)
 static const uint32_t Single_kNaN = 0x7FBFFFFF;
@@ -999,16 +999,16 @@ typedef uint64_t Bignum_DoubleChunk;
 // 3584 = 128 * 28. We can represent 2^3584 > 10^1000 accurately.
 // This bignum can encode much bigger numbers, since it contains an
 // exponent.
-static const int Bignum_kMaxSignificantBits = 3584;
+#define Bignum_kMaxSignificantBits ((int)3584)
 static const int Bignum_kChunkSize = sizeof(Bignum_Chunk) * 8;
 static const int Bignum_kDoubleChunkSize = sizeof(Bignum_DoubleChunk) * 8;
 // With bigit size of 28 we loose some bits, but a double still fits easily
 // into two chunks, and more importantly we can use the Comba multiplication.
-static const int Bignum_kBigitSize = 28;
+#define Bignum_kBigitSize ((int)28)
 static const Bignum_Chunk Bignum_kBigitMask = (1 << Bignum_kBigitSize) - 1;
 // Every instance allocates kBigitLength chunks on the stack. Bignums cannot
 // grow. There are no checks if the stack-allocated space is sufficient.
-static const int Bignum_kBigitCapacity = Bignum_kMaxSignificantBits / Bignum_kBigitSize;
+#define Bignum_kBigitCapacity ((int)(Bignum_kMaxSignificantBits / Bignum_kBigitSize))
 
 typedef struct Bignum {
     // The Bignum's value is value(bigits_buffer_) * 2^(exponent_ * kBigitSize),
@@ -1017,7 +1017,7 @@ typedef struct Bignum {
     // significant bits.
     int16_t used_bigits;
     int16_t exponent;
-    Bignum_Chunk bigits_buffer[128]; // Bignum_kBigitCapacity == 128
+    Bignum_Chunk bigits_buffer[Bignum_kBigitCapacity];
 } Bignum;
 
 
@@ -1398,21 +1398,21 @@ static void Bignum_MultiplyByUInt64(Bignum *b, uint64_t factor) {
 }
 
 static void Bignum_MultiplyByPowerOfTen(Bignum *b, int exponent) {
-    static const uint64_t kFive27 = DOUBLE_CONVERSION_UINT64_2PART_C(0x6765c793, fa10079d);
-    static const uint16_t kFive1 = 5;
-    static const uint16_t kFive2 = kFive1 * 5;
-    static const uint16_t kFive3 = kFive2 * 5;
-    static const uint16_t kFive4 = kFive3 * 5;
-    static const uint16_t kFive5 = kFive4 * 5;
-    static const uint16_t kFive6 = kFive5 * 5;
-    static const uint32_t kFive7 = kFive6 * 5;
-    static const uint32_t kFive8 = kFive7 * 5;
-    static const uint32_t kFive9 = kFive8 * 5;
-    static const uint32_t kFive10 = kFive9 * 5;
-    static const uint32_t kFive11 = kFive10 * 5;
-    static const uint32_t kFive12 = kFive11 * 5;
-    static const uint32_t kFive13 = kFive12 * 5;
-    static const uint32_t kFive1_to_12[] =
+    const uint64_t kFive27 = DOUBLE_CONVERSION_UINT64_2PART_C(0x6765c793, fa10079d);
+    const uint16_t kFive1 = 5;
+    const uint16_t kFive2 = kFive1 * 5;
+    const uint16_t kFive3 = kFive2 * 5;
+    const uint16_t kFive4 = kFive3 * 5;
+    const uint16_t kFive5 = kFive4 * 5;
+    const uint16_t kFive6 = kFive5 * 5;
+    const uint32_t kFive7 = kFive6 * 5;
+    const uint32_t kFive8 = kFive7 * 5;
+    const uint32_t kFive9 = kFive8 * 5;
+    const uint32_t kFive10 = kFive9 * 5;
+    const uint32_t kFive11 = kFive10 * 5;
+    const uint32_t kFive12 = kFive11 * 5;
+    const uint32_t kFive13 = kFive12 * 5;
+    const uint32_t kFive1_to_12[] =
       { kFive1, kFive2, kFive3, kFive4, kFive5, kFive6,
         kFive7, kFive8, kFive9, kFive10, kFive11, kFive12 };
     
@@ -2229,7 +2229,7 @@ static int BignumEstimatePower(int exponent) {
     
     // For doubles len(f) == 53 (don't forget the hidden bit).
     const int kSignificandSize = Double_kSignificandSize;
-    double estimate = ceil((exponent + kSignificandSize - 1) * k1Log10 - 1e-10);
+    double estimate = fp_ceil((exponent + kSignificandSize - 1) * k1Log10 - 1e-10);
     return (int)(estimate);
 }
 
@@ -2487,7 +2487,7 @@ static void Cache_GetCachedPowerForDecimalExponent(int requested_exponent,
 
 
 /// ============================================================================
-#pragma mark - cached-powers.cc
+/// cached-powers.cc
 /// ============================================================================
 
 typedef struct CachedPower {
@@ -2594,7 +2594,7 @@ static void Cache_GetCachedPowerForBinaryExponentRange(int min_exponent,
                                                        DiyFp *power,
                                                        int *decimal_exponent) {
     int kQ = DiyFp_kSignificandSize;
-    double k = ceil((min_exponent + kQ - 1) * Cache_kD_1_LOG2_10);
+    double k = fp_ceil((min_exponent + kQ - 1) * Cache_kD_1_LOG2_10);
     int foo = Cache_kCachedPowersOffset;
     int index = (foo + (int)(k) - 1) / Cache_kDecimalExponentDistance + 1;
     DOUBLE_CONVERSION_ASSERT(0 <= index && index < (int)(DOUBLE_CONVERSION_ARRAY_SIZE(kCachedPowers)));
@@ -3797,7 +3797,7 @@ static const int Strtod_kExactPowersOfTenSize = DOUBLE_CONVERSION_ARRAY_SIZE(Str
 // Maximum number of significant digits in the decimal representation.
 // In fact the value is 772 (see conversions.cc), but to give us some margin
 // we round up to 780.
-static const int Strtod_kMaxSignificantDecimalDigits = 780;
+#define Strtod_kMaxSignificantDecimalDigits ((int)780)
 
 static Vector Strtod_TrimLeadingZeros(Vector *buffer) {
     for (int i = 0; i < buffer->length; i++) {
@@ -4557,7 +4557,7 @@ static bool S2D_ConsumeFirstCharacter(char ch,
 // mean of 2 adjacent doubles (that could have up to 769 digits) the result
 // must be rounded to the bigger one unless the tail consists of zeros, so
 // we don't need to preserve all the digits.
-static const int S2D_kMaxSignificantDigits = 772;
+#define S2D_kMaxSignificantDigits ((int)772)
 
 static const char S2D_kWhitespaceTable7[] = { 32, 13, 10, 9, 11, 12 };
 static const int S2D_kWhitespaceTable7Length = DOUBLE_CONVERSION_ARRAY_SIZE(S2D_kWhitespaceTable7);
@@ -5008,7 +5008,7 @@ static double StringToIeee(StringToDoubleConverter *conv,
     // The longest form of simplified number is: "-<significant digits>.1eXXX\0".
     const int kBufferSize = S2D_kMaxSignificantDigits + 10;
     DOUBLE_CONVERSION_STACK_UNINITIALIZED char
-        buffer[kBufferSize];  // NOLINT: size is known at compile time.
+        buffer[S2D_kMaxSignificantDigits + 10 /* kBufferSize */];
     int buffer_pos = 0;
     
     // Copy significant digits of the integer part (if any) to the buffer.
@@ -5225,18 +5225,18 @@ typedef struct DoubleToStringConverter {
 // When calling ToFixed with a double > 10^kMaxFixedDigitsBeforePoint
 // or a requested_digits parameter > kMaxFixedDigitsAfterPoint then the
 // function returns false.
-static const int D2S_kMaxFixedDigitsBeforePoint = 60;
-static const int D2S_kMaxFixedDigitsAfterPoint = 100;
+#define D2S_kMaxFixedDigitsBeforePoint ((int)60)
+#define D2S_kMaxFixedDigitsAfterPoint ((int)100)
 
 // When calling ToExponential with a requested_digits
 // parameter > kMaxExponentialDigits then the function returns false.
-static const int D2S_kMaxExponentialDigits = 120;
+#define D2S_kMaxExponentialDigits ((int)120)
 
 // When calling ToPrecision with a requested_digits
 // parameter < kMinPrecisionDigits or requested_digits > kMaxPrecisionDigits
 // then the function returns false.
-static const int D2S_kMinPrecisionDigits = 1;
-static const int D2S_kMaxPrecisionDigits = 120;
+#define D2S_kMinPrecisionDigits  ((int)1)
+#define D2S_kMaxPrecisionDigits ((int)120)
 
 // The maximal number of digits that are needed to emit a double in base 10.
 // A higher precision can be achieved by using more digits, but the shortest
@@ -5244,13 +5244,13 @@ static const int D2S_kMaxPrecisionDigits = 120;
 // kBase10MaximalLength.
 // Note that DoubleToAscii null-terminates its input. So the given buffer
 // should be at least kBase10MaximalLength + 1 characters long.
-static const int D2S_kBase10MaximalLength = 17;
+#define D2S_kBase10MaximalLength  ((int)17)
 
 // The maximal number of digits that are needed to emit a single in base 10.
 // A higher precision can be achieved by using more digits, but the shortest
 // accurate representation of any single will never use more digits than
 // kBase10MaximalLengthSingle.
-static const int D2S_kBase10MaximalLengthSingle = 9;
+#define D2S_kBase10MaximalLengthSingle ((int)9)
 
 // The length of the longest string that 'ToShortest' can produce when the
 // converter is instantiated with EcmaScript defaults (see
@@ -5258,7 +5258,7 @@ static const int D2S_kBase10MaximalLengthSingle = 9;
 // This value does not include the trailing '\0' character.
 // This amount of characters is needed for negative values that hit the
 // 'decimal_in_shortest_low' limit. For example: "-0.0000033333333333333333"
-static const int D2S_kMaxCharsEcmaScriptShortest = 25;
+#define D2S_kMaxCharsEcmaScriptShortest ((int)25)
 
 typedef enum D2S_Flags {
     D2S_NO_FLAGS = 0,
@@ -5679,7 +5679,7 @@ static void D2S_CreateExponentialRepresentation(DoubleToStringConverter *conv,
     DOUBLE_CONVERSION_ASSERT(exponent < 1e4);
     // Changing this constant requires updating the comment of DoubleToStringConverter constructor
     const int kMaxExponentLength = 5;
-    char buffer[kMaxExponentLength + 1];
+    char buffer[5 /* kMaxExponentLength */ + 1];
     buffer[kMaxExponentLength] = '\0';
     int first_char_pos = kMaxExponentLength;
     if (exponent == 0) {
@@ -5759,7 +5759,7 @@ static bool D2S_ToShortestIeeeNumber(DoubleToStringConverter *conv,
     int decimal_point;
     bool sign;
     const int kDecimalRepCapacity = D2S_kBase10MaximalLength + 1;
-    char decimal_rep[kDecimalRepCapacity];
+    char decimal_rep[D2S_kBase10MaximalLength + 1]; // kDecimalRepCapacity
     int decimal_rep_length;
 
     D2S_DoubleToAscii(value, mode, 0, decimal_rep, kDecimalRepCapacity,
@@ -5805,7 +5805,7 @@ static bool D2S_ToFixed(DoubleToStringConverter *conv,
     // Add space for the '\0' byte.
     const int kDecimalRepCapacity =
         D2S_kMaxFixedDigitsBeforePoint + D2S_kMaxFixedDigitsAfterPoint + 1;
-    char decimal_rep[kDecimalRepCapacity];
+    char decimal_rep[D2S_kMaxFixedDigitsBeforePoint + D2S_kMaxFixedDigitsAfterPoint + 1]; // kDecimalRepCapacity
     int decimal_rep_length;
     D2S_DoubleToAscii(value, DtoaMode_FIXED, requested_digits,
                       decimal_rep, kDecimalRepCapacity,
@@ -5838,7 +5838,7 @@ static bool D2S_ToExponential(DoubleToStringConverter *conv,
     // Add space for digit before the decimal point and the '\0' character.
     const int kDecimalRepCapacity = D2S_kMaxExponentialDigits + 2;
     DOUBLE_CONVERSION_ASSERT(kDecimalRepCapacity > D2S_kBase10MaximalLength);
-    char decimal_rep[kDecimalRepCapacity];
+    char decimal_rep[D2S_kMaxExponentialDigits + 2]; // kDecimalRepCapacity
 #ifndef NDEBUG
     // Problem: there is an assert in StringBuilder::AddSubstring() that
     // will pass this buffer to strlen(), and this buffer is not generally
@@ -5895,7 +5895,7 @@ static bool D2S_ToPrecision(DoubleToStringConverter *conv,
     bool sign;
     // Add one for the terminating null character.
     const int kDecimalRepCapacity = D2S_kMaxPrecisionDigits + 1;
-    char decimal_rep[kDecimalRepCapacity];
+    char decimal_rep[D2S_kMaxPrecisionDigits + 1]; // kDecimalRepCapacity
     int decimal_rep_length;
     
     D2S_DoubleToAscii(value, DtoaMode_PRECISION, precision,

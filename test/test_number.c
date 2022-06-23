@@ -38,7 +38,7 @@ static yy_inline u64 f64_to_u64_raw(f64 f) {
 static yy_inline f64 f64_from_u64_raw(u64 u) {
     f64 f;
     memcpy((void *)&f, (void *)&u, sizeof(u64));
-    return u;
+    return f;
 }
 
 /// Get a random finite double number.
@@ -92,6 +92,24 @@ static yy_inline num_type check_json_num(const char *str) {
     return NUM_TYPE_FAIL;
 }
 
+
+
+#if !YYJSON_DISABLE_FAST_FP_CONV && GOO_HAS_IEEE_754
+
+/// read double from string
+static usize f64_read(const char *str, f64 *val) {
+    int str_len = (int)strlen(str);
+    *val = goo_strtod(str, &str_len);
+    return (usize)str_len;
+}
+
+/// write double to string
+static usize f64_write(char *buf, usize len, f64 val) {
+    return (usize)goo_dtoa(val, buf, (int)len);
+}
+
+#else
+
 /// Get locale decimal point.
 static char locale_decimal_point(void) {
     struct lconv *conv = localeconv();
@@ -103,11 +121,6 @@ static char locale_decimal_point(void) {
 
 /// read double from string
 static usize f64_read(const char *str, f64 *val) {
-#if !YYJSON_DISABLE_FAST_FP_CONV && GOO_HAS_IEEE_754
-    int str_len = (int)strlen(str);
-    *val = goo_strtod(str, &str_len);
-    return (usize)str_len;
-#else
     if (locale_decimal_point() != '.') {
         char *dup = yy_str_copy(str);
         for (char *cur = dup; *cur; cur++) {
@@ -124,14 +137,10 @@ static usize f64_read(const char *str, f64 *val) {
         usize len = end ? (end - str) : 0;
         return len;
     }
-#endif
 }
 
 /// write double to string
 static usize f64_write(char *buf, usize len, f64 val) {
-#if !YYJSON_DISABLE_FAST_FP_CONV && GOO_HAS_IEEE_754
-    return (usize)goo_dtoa(val, buf, (int)len);
-#else
     int out_len = snprintf(buf, len, "%.17g", val);
     if (out_len < 1 || out_len >= (int)len) return 0;
     if (locale_decimal_point() != '.') {
@@ -152,8 +161,9 @@ static usize f64_write(char *buf, usize len, f64 val) {
         out_len += 2;
     }
     return out_len;
-#endif
 }
+
+#endif
 
 
 
@@ -394,8 +404,8 @@ static void test_real(const char *line, usize len) {
     f64 val;
     usize read_len = f64_read(line, &val);
     yy_assertf(len == read_len,
-               "f64_read() failed: %s\ninput length: %s\nread length: %s\n",
-               line, len, read_len);
+               "f64_read() failed: %s\ninput length: %d\nread length: %d\n",
+               line, (int)len, (int)read_len);
     yy_assertf(!isnan(val),
                "f64_read() failed: %s\nread as NaN", line);
     test_real_read(line, len, val);
@@ -479,8 +489,8 @@ static void test_nan_inf(const char *line, usize len) {
     f64 val;
     usize read_len = f64_read(line, &val);
     yy_assertf(len == read_len,
-               "f64_read() failed: %s\ninput length: %s\nread length: %s\n",
-               line, len, read_len);
+               "f64_read() failed: %s\ninput length: %d\nread length: %d\n",
+               line, (int)len, (int)read_len);
     yy_assertf(isnan(val) || isinf(val),
                "f64_read() failed: %s\nexpect: NaN or Inf, out: %.17g", line, val);
     test_nan_inf_read(line, len, val);
