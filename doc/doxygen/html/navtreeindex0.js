@@ -24,11 +24,12 @@ var NAVTREEINDEX0 =
 "index.html#autotoc_md3":[0,2],
 "index.html#autotoc_md7":[0,3],
 "md__c_h_a_n_g_e_l_o_g.html":[4],
+"md__c_h_a_n_g_e_l_o_g.html#autotoc_md101":[4,5],
 "md__c_h_a_n_g_e_l_o_g.html#autotoc_md82":[4,0],
-"md__c_h_a_n_g_e_l_o_g.html#autotoc_md86":[4,1],
-"md__c_h_a_n_g_e_l_o_g.html#autotoc_md90":[4,2],
-"md__c_h_a_n_g_e_l_o_g.html#autotoc_md94":[4,3],
-"md__c_h_a_n_g_e_l_o_g.html#autotoc_md99":[4,4],
+"md__c_h_a_n_g_e_l_o_g.html#autotoc_md84":[4,1],
+"md__c_h_a_n_g_e_l_o_g.html#autotoc_md88":[4,2],
+"md__c_h_a_n_g_e_l_o_g.html#autotoc_md92":[4,3],
+"md__c_h_a_n_g_e_l_o_g.html#autotoc_md96":[4,4],
 "md_doc__a_p_i.html":[2],
 "md_doc__a_p_i.html#autotoc_md24":[2,0],
 "md_doc__a_p_i.html#autotoc_md25":[2,0,0],
@@ -248,6 +249,5 @@ var NAVTREEINDEX0 =
 "yyjson_8h.html#a6c2526c5ad89f0addaae26f356ecf609":[5,0,0,0,7,1],
 "yyjson_8h.html#a6df6d46adbd674a53cbfc049d49ec5c5":[5,0,0,0,127],
 "yyjson_8h.html#a6e891b4020dd6325d6eacb5e108da3c4":[5,0,0,0,215],
-"yyjson_8h.html#a6ee1dc133fa773528286cd0b25300cb2":[5,0,0,0,152],
-"yyjson_8h.html#a6efba736a610baa629bf2a0b0a41d4a9":[5,0,0,0,109]
+"yyjson_8h.html#a6ee1dc133fa773528286cd0b25300cb2":[5,0,0,0,152]
 };
