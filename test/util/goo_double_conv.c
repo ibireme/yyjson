@@ -40,7 +40,6 @@
 #include <string.h>
 #include <limits.h>
 #include <assert.h>
-#include <math.h>
 
 
 
@@ -72,6 +71,48 @@
 #   pragma warning(disable:4127) /* conditional expression is constant */
 #   pragma warning(disable:4706) /* assignment within conditional expression */
 #endif
+
+
+
+/// ============================================================================
+/// ceil.c
+/// ============================================================================
+
+static void fp_force_eval(double x) {
+    volatile double y;
+    y = x;
+}
+
+#if FLT_EVAL_METHOD==0 || FLT_EVAL_METHOD==1
+#define EPS DBL_EPSILON
+#elif FLT_EVAL_METHOD==2
+#define EPS LDBL_EPSILON
+#endif
+static const double toint = 1/EPS;
+
+static double ceil(double x) {
+    union {double f; uint64_t i;} u;
+    memcpy((void *)&u, (void *)&x, sizeof(uint64_t));
+    
+    int e = u.i >> 52 & 0x7ff;
+    double y;
+    
+    if (e >= 0x3ff+52 || x == 0)
+        return x;
+    /* y = int(x) - x, where int(x) is an integer neighbor of x */
+    if (u.i >> 63)
+        y = x - toint + toint - x;
+    else
+        y = x + toint - toint - x;
+    /* special case because of non-nearest rounding modes */
+    if (e <= 0x3ff-1) {
+        fp_force_eval(y);
+        return u.i >> 63 ? -0.0 : 1;
+    }
+    if (y < 0)
+        return x + y + 1;
+    return x + y;
+}
 
 
 
