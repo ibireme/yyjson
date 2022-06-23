@@ -232,7 +232,7 @@ if(YYJSON_BUILD_TESTS)
         # Add dependency
         add_library(yyjson_test_utils
             test/util/yy_test_utils.c
-            test/util/david_gay_dtoa.c
+            test/util/goo_double_conv.c
         )
         target_include_directories(yyjson_test_utils PUBLIC test/util)
         if(COMPILER_SUPPORTS_GNU99)

@@ -130,6 +130,34 @@
     void name(void)
 #endif
 
+/* snprintf and vsnprintf before Visual Studio 2015 (14.0) */
+#ifdef _MSC_VER
+#   if _MSC_VER < 1900
+#       ifndef vsnprintf
+#           define vsnprintf yy_msvc_vsnprintf
+#       endif
+#       ifndef snprintf
+#           define snprintf yy_msvc_snprintf
+#       endif
+static yy_inline int yy_msvc_vsnprintf(char *buf, size_t size,
+                                       const char *format, va_list vlist) {
+    int count = -1;
+    if (size != 0) count = _vsnprintf_s(buf, size, _TRUNCATE, format, vlist);
+    if (count == -1) count = _vscprintf(format, vlist);
+    return count;
+}
+static yy_inline int yy_msvc_snprintf(char *buf, size_t size,
+                                      const char *format, ...) {
+    int count;
+    va_list vlist;
+    va_start(vlist, format);
+    count = yy_msvc_vsnprintf(buf, size, format, vlist);
+    va_end(vlist);
+    return count;
+}
+#   endif
+#endif
+
 
 
 #ifdef __cplusplus

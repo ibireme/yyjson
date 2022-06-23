@@ -1,5 +1,6 @@
 #include "yyjson.h"
 #include "yy_test_utils.h"
+#include "goo_double_conv.h"
 #include <locale.h>
 
 #if defined(__clang__)
@@ -11,40 +12,55 @@
 #endif
 
 
+
 #if !YYJSON_DISABLE_READER && !YYJSON_DISABLE_WRITER
 
 /*==============================================================================
  * Number converter
  *============================================================================*/
 
-#include "david_gay_dtoa.h"
+typedef enum {
+    NUM_TYPE_FAIL,
+    NUM_TYPE_SINT,
+    NUM_TYPE_UINT,
+    NUM_TYPE_REAL,
+    NUM_TYPE_INF_NAN_LITERAL,
+} num_type;
 
-/** Structure used to avoid type-based aliasing rule. */
-typedef union {
-    f64 f;
-    u64 u;
-} f64_uni;
-
-/** Convert double to raw. */
+/// Convert double to raw.
 static yy_inline u64 f64_to_u64_raw(f64 f) {
-    f64_uni uni;
-    uni.f = f;
-    return uni.u;
+    u64 u;
+    memcpy((void *)&u, (void *)&f, sizeof(u64));
+    return u;
 }
 
-/** Convert raw to double. */
+/// Convert raw to double.
 static yy_inline f64 f64_from_u64_raw(u64 u) {
-    f64_uni uni;
-    uni.u = u;
-    return uni.f;
+    f64 f;
+    memcpy((void *)&f, (void *)&u, sizeof(u64));
+    return u;
 }
 
-/** Get the number of significant digit from a valid floating number string. */
-static yy_inline int f64_str_get_digits(const char *str) {
+/// Get a random finite double number.
+static yy_inline f64 rand_f64(void) {
+    while (true) {
+        u64 u = yy_rand_u64();
+        f64 f = f64_from_u64_raw(u);
+        if (isfinite(f)) return f;
+    };
+}
+
+/// Whether this character is digit.
+static yy_inline bool char_is_digit(char c) {
+    return '0' <= c && c <= '9';
+}
+
+/// Get the number of significant digit from a floating-point number string.
+static yy_inline int str_get_sig_len(const char *str) {
     const char *cur = str, *dot = NULL, *hdr = NULL, *end = NULL;
     for (; *cur && *cur != 'e' && *cur != 'E' ; cur++) {
         if (*cur == '.') dot = cur;
-        else if ('0' < *cur && *cur <= '9') {
+        else if (char_is_digit(*cur)) {
             if (!hdr) hdr = cur;
             end = cur;
         }
@@ -53,14 +69,92 @@ static yy_inline int f64_str_get_digits(const char *str) {
     return (int)((end - hdr + 1) - (hdr < dot && dot < end));
 }
 
-/** Get random double. */
-static yy_inline f64 rand_f64(void) {
-    while (true) {
-        u64 u = yy_rand_u64();
-        f64 f = f64_from_u64_raw(u);
-        if (isfinite(f)) return f;
-    };
+/// Check JSON number format and return type (FAIL/SINT/UINT/REAL).
+static yy_inline num_type check_json_num(const char *str) {
+    bool sign = (*str == '-');
+    str += sign;
+    if (!char_is_digit(*str)) return NUM_TYPE_FAIL;
+    if (*str == '0' && char_is_digit(str[1])) return NUM_TYPE_FAIL;
+    while (char_is_digit(*str)) str++;
+    if (*str == '\0') return sign ? NUM_TYPE_SINT : NUM_TYPE_UINT;
+    if (*str == '.') {
+        str++;
+        if (!char_is_digit(*str)) return NUM_TYPE_FAIL;
+        while (char_is_digit(*str)) str++;
+    }
+    if (*str == 'e' || *str == 'E') {
+        str++;
+        if (*str == '-' || *str == '+') str++;
+        if (!char_is_digit(*str)) return NUM_TYPE_FAIL;
+        while (char_is_digit(*str)) str++;
+    }
+    if (*str == '\0') return NUM_TYPE_REAL;
+    return NUM_TYPE_FAIL;
 }
+
+/// Get locale decimal point.
+static char locale_decimal_point(void) {
+    struct lconv *conv = localeconv();
+    char c = conv->decimal_point[0];
+    yy_assertf(c && conv->decimal_point[1] == '\0',
+               "locale decimal point is invalid: %s\n", conv->decimal_point);
+    return c;
+}
+
+/// read double from string
+static usize f64_read(const char *str, f64 *val) {
+#if !YYJSON_DISABLE_FAST_FP_CONV && GOO_HAS_IEEE_754
+    int str_len = (int)strlen(str);
+    *val = goo_strtod(str, &str_len);
+    return (usize)str_len;
+#else
+    if (locale_decimal_point() != '.') {
+        char *dup = yy_str_copy(str);
+        for (char *cur = dup; *cur; cur++) {
+            if (*cur == '.') *cur = locale_decimal_point();
+        }
+        char *end = NULL;
+        *val = strtod(dup, &end);
+        usize len = end ? (end - dup) : 0;
+        free((void *)dup);
+        return len;
+    } else {
+        char *end = NULL;
+        *val = strtod(str, &end);
+        usize len = end ? (end - str) : 0;
+        return len;
+    }
+#endif
+}
+
+/// write double to string
+static usize f64_write(char *buf, usize len, f64 val) {
+#if !YYJSON_DISABLE_FAST_FP_CONV && GOO_HAS_IEEE_754
+    return (usize)goo_dtoa(val, buf, (int)len);
+#else
+    int out_len = snprintf(buf, len, "%.17g", val);
+    if (out_len < 1 || out_len >= (int)len) return 0;
+    if (locale_decimal_point() != '.') {
+        char c = locale_decimal_point();
+        for (int i = 0; i < out_len; i++) {
+            if (buf[i] == c) buf[i] = '.';
+        }
+    }
+    if (out_len >= 3 && !strncmp(buf, "inf", 3)) return snprintf(buf, len, "Infinity");
+    if (out_len >= 4 && !strncmp(buf, "+inf", 4)) return snprintf(buf, len, "Infinity");
+    if (out_len >= 4 && !strncmp(buf, "-inf", 4)) return snprintf(buf, len, "-Infinity");
+    if (out_len >= 3 && !strncmp(buf, "nan", 3)) return snprintf(buf, len, "NaN");
+    if (out_len >= 4 && !strncmp(buf, "-nan", 4)) return snprintf(buf, len, "NaN");
+    if (out_len >= 4 && !strncmp(buf, "+nan", 4)) return snprintf(buf, len, "NaN");
+    if (!strchr(buf, '.') && !strchr(buf, 'e') && !strchr(buf, 'e')) {
+        if ((usize)out_len + 3 >= len) return 0;
+        memcpy(buf + out_len, ".0", 3);
+        out_len += 2;
+    }
+    return out_len;
+#endif
+}
+
 
 
 /*==============================================================================
@@ -81,7 +175,7 @@ static void test_uint_read(const char *line, usize len, u64 num) {
     
     yyjson_doc_free(doc);
     
-    /* read number as raw */
+    // read number as raw
     doc = yyjson_read(line, len, YYJSON_READ_NUMBER_AS_RAW);
     val = yyjson_doc_get_root(doc);
     yy_assertf(yyjson_is_raw(val),
@@ -114,10 +208,12 @@ static void test_uint_write(const char *line, u64 num) {
 }
 
 static void test_uint(const char *line, usize len) {
+    yy_assertf(check_json_num(line) == NUM_TYPE_UINT,
+               "input is not uint: %s\n", line);
     u64 num = strtoull(line, NULL, 10);
     test_uint_read(line, len, num);
     
-    char buf[32];
+    char buf[32] = { 0 };
     snprintf(buf, 32, "%llu%c", num, '\0');
     test_uint_write(buf, num);
 }
@@ -142,7 +238,7 @@ static void test_sint_read(const char *line, usize len, i64 num) {
     
     yyjson_doc_free(doc);
     
-    /* read number as raw */
+    // read number as raw
     doc = yyjson_read(line, len, YYJSON_READ_NUMBER_AS_RAW);
     val = yyjson_doc_get_root(doc);
     yy_assertf(yyjson_is_raw(val),
@@ -172,13 +268,16 @@ static void test_sint_write(const char *line, i64 num) {
 }
 
 static void test_sint(const char *line, usize len) {
+    yy_assertf(check_json_num(line) == NUM_TYPE_SINT,
+               "input is not sint: %s\n", line);
+    
     i64 num = strtoll(line, NULL, 10);
     test_sint_read(line, len, num);
     
-    char buf[32];
+    char buf[32] = { 0 };
     snprintf(buf, 32, "%lld%c", num, '\0');
     test_sint_write(buf, num);
-    num = (i64)((u64)~num + 1); /* num = -num, avoid ubsan */
+    num = (i64)((u64)~num + 1); // num = -num, avoid ubsan
     snprintf(buf, 32, "%lld%c", num, '\0');
     test_sint_write(buf, num);
 }
@@ -195,11 +294,13 @@ static void test_real_read(const char *line, usize len, f64 num) {
     yyjson_doc *doc;
     yyjson_val *val;
     if (isinf(num)) {
+        // read number as JSON value
         doc = yyjson_read(line, len, 0);
         val = yyjson_doc_get_root(doc);
         yy_assertf(!doc, "num %s should fail, but returns %.17g\n",
                    line, yyjson_get_real(val));
         
+        // read number as raw string
         doc = yyjson_read(line, len, YYJSON_READ_NUMBER_AS_RAW);
         val = yyjson_doc_get_root(doc);
         yy_assertf(yyjson_is_raw(val),
@@ -210,6 +311,7 @@ static void test_real_read(const char *line, usize len, f64 num) {
         yyjson_doc_free(doc);
         
 #if !YYJSON_DISABLE_NON_STANDARD
+        // read number as JSON value
         doc = yyjson_read(line, len, YYJSON_READ_ALLOW_INF_AND_NAN);
         val = yyjson_doc_get_root(doc);
         ret = yyjson_get_real(val);
@@ -224,8 +326,6 @@ static void test_real_read(const char *line, usize len, f64 num) {
         u64 ret_raw;
         i64 ulp;
         
-#if !YYJSON_DISABLE_FAST_FP_CONV && !defined(__i386)
-        // TODO: strtod_gay() may get 1 ulp error in i386, fix it later
         // 0 ulp error
         doc = yyjson_read(line, len, 0);
         val = yyjson_doc_get_root(doc);
@@ -237,20 +337,6 @@ static void test_real_read(const char *line, usize len, f64 num) {
                    "string %s should be read as %.17g, but returns %.17g\n",
                    line, num, ret);
         yyjson_doc_free(doc);
-#else
-        // strtod, should be 0 ulp error, but may get 1 ulp error in some env
-        doc = yyjson_read(line, len, 0);
-        val = yyjson_doc_get_root(doc);
-        ret = yyjson_get_real(val);
-        ret_raw = f64_to_u64_raw(ret);
-        ulp = (i64)num_raw - (i64)ret_raw;
-        if (ulp < 0) ulp = -ulp;
-        yy_assertf(yyjson_is_real(val) && ulp <= 1,
-                   "string %s should be read as %.17g, but returns %.17g\n",
-                   line, num, ret);
-        yyjson_doc_free(doc);
-#endif
-
     }
 #endif
 }
@@ -279,19 +365,19 @@ static void test_real_write(const char *line, usize len, f64 num) {
 #endif
     } else {
         yy_assert(strcmp(str, str_nan_inf) == 0);
-        f64 gay_num = strtod_gay(str, NULL);
-        u64 gay_raw, num_raw;
-        memcpy((void *)&gay_raw, (void *)&gay_num, 8);
-        memcpy((void *)&num_raw, (void *)&num, 8);
-        yy_assertf(gay_raw == num_raw,
+        f64 dst_num;
+        yy_assert(f64_read(str, &dst_num) == strlen(str));
+        u64 dst_raw = f64_to_u64_raw(dst_num);
+        u64 num_raw = f64_to_u64_raw(num);
+        yy_assertf(dst_raw == num_raw,
                    "real number write value not match:\nexpect: %s\nreturn: %s\n",
                    line, str);
-        
-#if !YYJSON_DISABLE_FAST_FP_CONV
-        yy_assertf(f64_str_get_digits(str) == f64_str_get_digits(line),
+        yy_assertf(str_get_sig_len(str) == str_get_sig_len(line),
                    "real number write value not shortest:\nexpect: %s\nreturn: %s\n",
                    line, str);
-#endif
+        yy_assertf(check_json_num(str) == NUM_TYPE_REAL,
+                   "real number write value not valid JSON format: %s\nreturn: %s\n",
+                   line, str);
     }
     
     yyjson_mut_doc_free(doc);
@@ -302,14 +388,23 @@ static void test_real_write(const char *line, usize len, f64 num) {
 }
 
 static void test_real(const char *line, usize len) {
-    char *end = NULL;
-    f64 gay = strtod_gay(line, &end);
-    yy_assertf(end && len == (usize)(end - line) && !isnan(gay), "strtod_gay fail: %s\n", line);
-    test_real_read(line, len, gay);
+    yy_assertf(check_json_num(line) != NUM_TYPE_FAIL,
+               "input is not number: %s\n", line);
     
-    char buf[32];
-    end = dtoa_gay(gay, buf);
-    test_real_write(buf, end - buf, gay);
+    f64 val;
+    usize read_len = f64_read(line, &val);
+    yy_assertf(len == read_len,
+               "f64_read() failed: %s\ninput length: %s\nread length: %s\n",
+               line, len, read_len);
+    yy_assertf(!isnan(val),
+               "f64_read() failed: %s\nread as NaN", line);
+    test_real_read(line, len, val);
+    
+    char buf[32] = { 0 };
+    usize write_len = f64_write(buf, sizeof(buf), val);
+    yy_assertf(write_len > 0,
+               "f64_write() fail: %s\n", line);
+    test_real_write(buf, write_len, val);
 }
 
 
@@ -324,13 +419,13 @@ static void test_nan_inf_read(const char *line, usize len, f64 num) {
     yyjson_doc *doc;
     yyjson_val *val;
     
-    /* read fail */
+    // read fail
     doc = yyjson_read(line, len, 0);
     yy_assertf(doc == NULL, "number %s should fail in default mode\n", line);
     doc = yyjson_read(line, len, YYJSON_READ_NUMBER_AS_RAW);
     yy_assertf(doc == NULL, "number %s should fail in raw mode\n", line);
     
-    /* read allow */
+    // read allow
     doc = yyjson_read(line, len, YYJSON_READ_ALLOW_INF_AND_NAN);
     val = yyjson_doc_get_root(doc);
     ret = yyjson_get_real(val);
@@ -342,7 +437,7 @@ static void test_nan_inf_read(const char *line, usize len, f64 num) {
     }
     yyjson_doc_free(doc);
     
-    /* read raw */
+    // read raw
     doc = yyjson_read(line, len, YYJSON_READ_ALLOW_INF_AND_NAN | YYJSON_READ_NUMBER_AS_RAW);
     val = yyjson_doc_get_root(doc);
     yy_assertf(yyjson_is_raw(val),
@@ -378,17 +473,23 @@ static void test_nan_inf_write(const char *line, usize len, f64 num) {
 }
 
 static void test_nan_inf(const char *line, usize len) {
-    char *end = NULL;
-    f64 gay = strtod_gay(line, &end);
-    yy_assertf(end && len == (usize)(end - line), "strtod_gay fail: %s\n", line);
-    yy_assert(isnan(gay) || isinf(gay));
+    yy_assertf(check_json_num(line) == NUM_TYPE_FAIL,
+               "input should not be a valid JSON number: %s\n", line);
     
-    test_nan_inf_read(line, len, gay);
+    f64 val;
+    usize read_len = f64_read(line, &val);
+    yy_assertf(len == read_len,
+               "f64_read() failed: %s\ninput length: %s\nread length: %s\n",
+               line, len, read_len);
+    yy_assertf(isnan(val) || isinf(val),
+               "f64_read() failed: %s\nexpect: NaN or Inf, out: %.17g", line, val);
+    test_nan_inf_read(line, len, val);
     
-    char buf[32];
-    end = dtoa_gay(gay, buf);
-    if (isnan(gay)) memcpy(buf, "NaN\0", 4);
-    test_nan_inf_write(buf, end - buf, gay);
+    char buf[32] = { 0 };
+    usize write_len = f64_write(buf, sizeof(buf), val);
+    yy_assertf(write_len > 0,
+               "f64_write() fail: %s\n", line);
+    test_nan_inf_write(buf, write_len, val);
 }
 
 
@@ -416,14 +517,6 @@ static void test_fail(const char *line, usize len) {
 /*==============================================================================
  * Test with input file
  *============================================================================*/
-
-typedef enum {
-    NUM_TYPE_FAIL,
-    NUM_TYPE_SINT,
-    NUM_TYPE_UINT,
-    NUM_TYPE_REAL,
-    NUM_TYPE_INF_NAN_LITERAL,
-} num_type;
 
 static void test_with_file(const char *name, num_type type) {
     char path[YY_MAX_PATH];
@@ -463,7 +556,7 @@ static void test_with_file(const char *name, num_type type) {
  *============================================================================*/
 
 static void test_random_int(void) {
-    char buf[32];
+    char buf[32] = { 0 };
     char *end;
     int count = 10000;
     
@@ -497,15 +590,16 @@ static void test_random_int(void) {
 }
 
 static void test_random_real(void) {
-    char buf[32];
+    char buf[32] = { 0 };
     char *end;
     int count = 10000;
     
     yy_rand_reset(0);
     for (int i = 0; i < count; i++) {
         f64 rnd = rand_f64();
-        if (isinf(rnd) || isnan(rnd)) continue;
-        end = dtoa_gay(rnd, buf);
+        usize out_len = f64_write(buf, sizeof(buf), rnd);
+        end = buf + out_len;
+        yy_assertf(out_len > 0, "f64_write() fail: %.17g\n", rnd);
         if (!yy_str_contains(buf, "e") && !yy_str_contains(buf, ".")) {
             *end++ = '.';
             *end++ = '0';
@@ -540,9 +634,9 @@ static void test_number_locale(void) {
 }
 
 yy_test_case(test_number) {
-    setlocale(LC_ALL, "C");
+    setlocale(LC_ALL, "C");     // decimal point is '.'
     test_number_locale();
-    setlocale(LC_ALL, "fr_FR");
+    setlocale(LC_ALL, "fr_FR"); // decimal point is ','
     test_number_locale();
 }
 
