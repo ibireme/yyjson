@@ -303,7 +303,7 @@ yyjson_api uint32_t yyjson_version(void) {
 /*
  Unaligned memory access detection.
  
- Some architectures cannot perform unaligned memory accesse, or unaligned memory
+ Some architectures cannot perform unaligned memory access, or unaligned memory
  accesses can have a large performance penalty. Modern compilers can make some
  optimizations for unaligned access. For example: https://godbolt.org/z/Ejo3Pa
  
@@ -371,7 +371,7 @@ yyjson_api uint32_t yyjson_version(void) {
  JSON, the ratios below are used to determine the initial memory size.
  
  A too large ratio will waste memory, and a too small ratio will cause multiple
- memory growths and degrade performance. Currently these ratios are generated
+ memory growths and degrade performance. Currently, these ratios are generated
  with some commonly used JSON datasets.
  */
 #define YYJSON_READER_ESTIMATED_PRETTY_RATIO 16
@@ -6200,7 +6200,7 @@ static_noinline u8 *write_f64_raw(u8 *buf, u64 raw, yyjson_write_flag flg) {
             /* write with scientific notation */
             /* such as 1.234e56 */
             u8 *end = write_u64_len_15_to_17_trim(buf + 1, sig_dec);
-            end -= (end == buf + 2); /* remove '.0', e.g. 2.0e34 -> 2e134 */
+            end -= (end == buf + 2); /* remove '.0', e.g. 2.0e34 -> 2e34 */
             exp_dec += sig_len - 1;
             hdr[0] = hdr[1];
             hdr[1] = '.';

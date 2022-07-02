@@ -109,7 +109,7 @@ var NAVTREE =
       [ "Mutable Document", "md_doc__data_structure.html#autotoc_md80", null ]
     ] ],
     [ "Changelog", "md__c_h_a_n_g_e_l_o_g.html", [
-      [ "0.5.1 (2022-06017)", "md__c_h_a_n_g_e_l_o_g.html#autotoc_md82", null ],
+      [ "0.5.1 (2022-06-17)", "md__c_h_a_n_g_e_l_o_g.html#autotoc_md82", null ],
       [ "0.5.0 (2022-05-25)", "md__c_h_a_n_g_e_l_o_g.html#autotoc_md84", null ],
       [ "0.4.0 (2021-12-12)", "md__c_h_a_n_g_e_l_o_g.html#autotoc_md88", null ],
       [ "0.3.0 (2021-05-25)", "md__c_h_a_n_g_e_l_o_g.html#autotoc_md92", null ],
