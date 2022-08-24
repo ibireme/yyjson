@@ -495,7 +495,7 @@ typedef struct yyjson_alc {
  
  @param alc The allocator to be initialized.
     If this parameter is NULL, the function will fail and return false.
-    If `buf` or `size` is invalid, this parameter is left unmodified.
+    If `buf` or `size` is invalid, this parameter is set to an empty allocator.
  @param buf The buffer memory for this allocator.
     If this parameter is NULL, the function will fail and return false.
  @param size The size of `buf`, in bytes.

@@ -984,6 +984,25 @@ static const yyjson_alc YYJSON_DEFAULT_ALC = {
     NULL
 };
 
+static void *null_malloc(void *ctx, usize size) {
+    return NULL;
+}
+
+static void *null_realloc(void *ctx, void *ptr, usize size) {
+    return NULL;
+}
+
+static void null_free(void *ctx, void *ptr) {
+    return;
+}
+
+static const yyjson_alc YYJSON_NULL_ALC = {
+    null_malloc,
+    null_realloc,
+    null_free,
+    NULL
+};
+
 
 
 /*==============================================================================
@@ -1122,7 +1141,9 @@ bool yyjson_alc_pool_init(yyjson_alc *alc, void *buf, usize size) {
     pool_chunk *chunk;
     pool_ctx *ctx;
     
-    if (unlikely(!alc || size < sizeof(pool_ctx) * 4)) return false;
+    if (unlikely(!alc)) return false;
+    *alc = YYJSON_NULL_ALC;
+    if (size < sizeof(pool_ctx) * 4) return false;
     ctx = (pool_ctx *)mem_align_up(buf, sizeof(pool_ctx));
     if (unlikely(!ctx)) return false;
     size -= (usize)((u8 *)ctx - (u8 *)buf);

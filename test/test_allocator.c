@@ -7,8 +7,25 @@ yy_test_case(test_allocator) {
     void *buf, *mem[16];
     
     yy_assert(!yyjson_alc_pool_init(NULL, NULL, 0));
+    
+    memset(&alc, 0, sizeof(alc));
     yy_assert(!yyjson_alc_pool_init(&alc, NULL, 0));
+    yy_assert(!alc.malloc(NULL, 1));
+    yy_assert(!alc.realloc(NULL, NULL, 1));
+    alc.free(NULL, NULL);
+    
+    memset(&alc, 0, sizeof(alc));
     yy_assert(!yyjson_alc_pool_init(&alc, NULL, 1024));
+    yy_assert(!alc.malloc(NULL, 1));
+    yy_assert(!alc.realloc(NULL, NULL, 1));
+    alc.free(NULL, NULL);
+    
+    char small_buf[10];
+    memset(&alc, 0, sizeof(alc));
+    yy_assert(!yyjson_alc_pool_init(&alc, small_buf, sizeof(small_buf)));
+    yy_assert(!alc.malloc(NULL, 1));
+    yy_assert(!alc.realloc(NULL, NULL, 1));
+    alc.free(NULL, NULL);
     
     size = 8 * sizeof(void *) - 1;
     buf = malloc(size);
@@ -18,6 +35,7 @@ yy_test_case(test_allocator) {
     size = 1024;
     buf = malloc(size);
     yy_assert(yyjson_alc_pool_init(&alc, buf, size));
+    
     
     {   // suc and fail
         mem[0] = alc.malloc(alc.ctx, 0);
