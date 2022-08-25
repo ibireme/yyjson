@@ -16,6 +16,19 @@ yyjson has all features enabled by default, but you can trim out some of them by
 
 You can use some popular package managers to download and install yyjson, such as `vcpkg`, `conan`, and `xmake`. The yyjson package in these package managers is kept up to date by community contributors. If the version is out of date, please create an issue or pull request on their repository.
 
+## Use vcpkg
+
+You can build and install yyjson using [vcpkg](https://github.com/Microsoft/vcpkg/) dependency manager:
+
+```shell
+git clone https://github.com/Microsoft/vcpkg.git
+cd vcpkg
+./bootstrap-vcpkg.sh  # ./bootstrap-vcpkg.bat for Powershell
+./vcpkg integrate install
+./vcpkg install yyjson
+```
+
+If the version is out of date, please [create an issue or pull request](https://github.com/Microsoft/vcpkg) on the vcpkg repository.
 
 # CMake
 
