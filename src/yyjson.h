@@ -5829,18 +5829,21 @@ yyjson_api_inline bool yyjson_mut_obj_rename_keyn(yyjson_mut_doc *doc,
                                                   size_t len,
                                                   const char *new_key,
                                                   size_t new_len) {
-    yyjson_mut_val *old_key, *new_val = NULL;
+    char *cpy_key = NULL;
+    yyjson_mut_val *old_key;
     yyjson_mut_obj_iter iter;
     if (!doc || !obj || !key || !new_key) return false;
     yyjson_mut_obj_iter_init(obj, &iter);
     while ((old_key = yyjson_mut_obj_iter_next(&iter))) {
         if (unsafe_yyjson_equals_strn((void *)old_key, key, len)) {
-            if (!new_val) new_val = yyjson_mut_strn(doc, new_key, new_len);
-            if (!new_val) return false;
-            yyjson_mut_set_strn(old_key, new_val->uni.str, new_len);
+            if (!cpy_key) {
+                cpy_key = unsafe_yyjson_mut_strncpy(doc, new_key, new_len);
+                if (!cpy_key) return false;
+            }
+            yyjson_mut_set_strn(old_key, cpy_key, new_len);
         }
     }
-    return new_val != NULL;
+    return cpy_key != NULL;
 }
 
 
