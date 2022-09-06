@@ -1883,6 +1883,24 @@ static void test_json_mut_obj_api(void) {
     yyjson_mut_doc_free(doc);
 }
 
+#if !YYJSON_DISABLE_READER
+static void test_json_mut_doc_api_one(const char *json_str) {
+    yyjson_doc *json = yyjson_read(json_str, strlen(json_str), 0);
+    yyjson_mut_doc *json_cp = yyjson_doc_mut_copy(json, NULL);
+    yyjson_mut_doc *json_mut_cp = yyjson_mut_doc_mut_copy(json_cp, NULL);
+    yy_assert(yyjson_mut_equals(json_cp->root, json_mut_cp->root) == true);
+    yyjson_doc *idoc_cp = yyjson_mut_doc_imut_copy(json_cp, NULL);
+    yy_assert(yyjson_equals(json->root, idoc_cp->root) == true);
+    yyjson_doc *ival_cp = yyjson_mut_val_imut_copy(json_cp->root, NULL);
+    yy_assert(yyjson_equals(json->root, idoc_cp->root) == true);
+    yyjson_doc_free(json);
+    yyjson_mut_doc_free(json_cp);
+    yyjson_mut_doc_free(json_mut_cp);
+    yyjson_doc_free(idoc_cp);
+    yyjson_doc_free(ival_cp);
+}
+#endif
+
 static void test_json_mut_doc_api(void) {
     {
         yyjson_mut_doc_set_root(NULL, NULL);
@@ -1914,16 +1932,12 @@ static void test_json_mut_doc_api(void) {
         yy_assert(!yyjson_doc_mut_copy(idoc, NULL));
         yyjson_doc_free(idoc);
     }
-    {
-        const char *json_str = "{\"a\":{\"b\":[-1,2,1.0,2.0,true,false,null]}}";
-        yyjson_doc *json = yyjson_read(json_str, strlen(json_str), 0);
-        yyjson_mut_doc *json_cp = yyjson_doc_mut_copy(json, NULL);
-        yyjson_mut_doc *json_mut_cp = yyjson_mut_doc_mut_copy(json_cp, NULL);
-        yy_assert(yyjson_mut_equals(json_cp->root, json_mut_cp->root) == true);
-        yyjson_doc_free(json);
-        yyjson_mut_doc_free(json_cp);
-        yyjson_mut_doc_free(json_mut_cp);
-    }
+    test_json_mut_doc_api_one("\"\"");
+    test_json_mut_doc_api_one("\"abc\"");
+    test_json_mut_doc_api_one("123");
+    test_json_mut_doc_api_one("[1,2,3]");
+    test_json_mut_doc_api_one("{\"a\":1}");
+    test_json_mut_doc_api_one("{\"a\":{\"b\":[-1,2,1.0,2.0,true,false,null]}}");
 #endif
 }
 
