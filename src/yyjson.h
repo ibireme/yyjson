@@ -3273,6 +3273,34 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_obj_remove_str(
 yyjson_api_inline yyjson_mut_val *yyjson_mut_obj_remove_strn(
     yyjson_mut_val *obj, const char *key, size_t len);
 
+/** Replaces all matching keys with the new key.
+    Returns true if at least one key was renamed.
+    The `key` and `new_key` should be a null-terminated UTF-8 string.
+    The `new_key` is copied and held by doc.
+    
+    @warning This function takes a linear search time.
+    If `new_key` already exists, it will cause duplicate keys.
+ */
+yyjson_api_inline bool yyjson_mut_obj_rename_key(yyjson_mut_doc *doc,
+                                                 yyjson_mut_val *obj,
+                                                 const char *key,
+                                                 const char *new_key);
+
+/** Replaces all matching keys with the new key.
+    Returns true if at least one key was renamed.
+    The `key` and `new_key` should be a UTF-8 string,
+    null-terminator is not required. The `new_key` is copied and held by doc.
+    
+    @warning This function takes a linear search time.
+    If `new_key` already exists, it will cause duplicate keys.
+ */
+yyjson_api_inline bool yyjson_mut_obj_rename_keyn(yyjson_mut_doc *doc,
+                                                  yyjson_mut_val *obj,
+                                                  const char *key,
+                                                  size_t len,
+                                                  const char *new_key,
+                                                  size_t new_len);
+
 
 
 /*==============================================================================
@@ -5784,6 +5812,35 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_obj_remove_strn(
         return val_removed;
     }
     return NULL;
+}
+
+yyjson_api_inline bool yyjson_mut_obj_rename_key(yyjson_mut_doc *doc,
+                                                 yyjson_mut_val *obj,
+                                                 const char *key,
+                                                 const char *new_key) {
+    if (!key || !new_key) return false;
+    return yyjson_mut_obj_rename_keyn(doc, obj, key, strlen(key),
+                                      new_key, strlen(new_key));
+}
+
+yyjson_api_inline bool yyjson_mut_obj_rename_keyn(yyjson_mut_doc *doc,
+                                                  yyjson_mut_val *obj,
+                                                  const char *key,
+                                                  size_t len,
+                                                  const char *new_key,
+                                                  size_t new_len) {
+    yyjson_mut_val *old_key, *new_val = NULL;
+    yyjson_mut_obj_iter iter;
+    if (!doc || !obj || !key || !new_key) return false;
+    yyjson_mut_obj_iter_init(obj, &iter);
+    while ((old_key = yyjson_mut_obj_iter_next(&iter))) {
+        if (unsafe_yyjson_equals_strn((void *)old_key, key, len)) {
+            if (!new_val) new_val = yyjson_mut_strn(doc, new_key, new_len);
+            if (!new_val) return false;
+            yyjson_mut_set_strn(old_key, new_val->uni.str, new_len);
+        }
+    }
+    return new_val != NULL;
 }
 
 
