@@ -1497,7 +1497,7 @@ yyjson_api yyjson_doc *yyjson_mut_val_imut_copy(yyjson_mut_val *mval,
     /* create doc and val pool */
     hdr_size = size_align_up(sizeof(yyjson_doc), sizeof(yyjson_val));
     buf_size = hdr_size + val_num * sizeof(yyjson_val);
-    doc = alc->malloc(alc->ctx, buf_size);
+    doc = (yyjson_doc *)alc->malloc(alc->ctx, buf_size);
     if (!doc) return NULL;
     memset(doc, 0, sizeof(yyjson_doc));
     val_hdr = (yyjson_val *)((char *)(void *)doc + hdr_size);
@@ -1506,7 +1506,7 @@ yyjson_api yyjson_doc *yyjson_mut_val_imut_copy(yyjson_mut_val *mval,
     
     /* create str pool */
     if (str_sum > 0) {
-        str_hdr = alc->malloc(alc->ctx, str_sum);
+        str_hdr = (char *)alc->malloc(alc->ctx, str_sum);
         doc->str_pool = str_hdr;
         if (!str_hdr) {
             alc->free(alc->ctx, (void *)doc);
