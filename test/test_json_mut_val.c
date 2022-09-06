@@ -1927,6 +1927,20 @@ static void test_json_mut_doc_api(void) {
     
 #if !YYJSON_DISABLE_READER
     {
+        yyjson_doc *idoc = yyjson_read("1", 1, 0);
+        idoc->root = NULL;
+        yy_assert(!yyjson_doc_mut_copy(idoc, NULL));
+        yyjson_doc_free(idoc);
+    }
+    test_json_mut_doc_api_one("\"\"");
+    test_json_mut_doc_api_one("\"abc\"");
+    test_json_mut_doc_api_one("123");
+    test_json_mut_doc_api_one("[1,2,3]");
+    test_json_mut_doc_api_one("{\"a\":1}");
+    test_json_mut_doc_api_one("{\"a\":{\"b\":[-1,2,1.0,2.0,true,false,null]}}");
+#endif
+#if !YYJSON_DISABLE_READER && !YYJSON_DISABLE_WRITER
+    {
         const char *json_src = "{\"a\":1,\"b\":2}";
         const char *json_dst = "{\"c\":1,\"b\":2}";
         yyjson_doc *idoc = yyjson_read(json_src, strlen(json_src), 0);
@@ -1939,18 +1953,6 @@ static void test_json_mut_doc_api(void) {
         yyjson_mut_doc_free(mdoc);
         free(new_json);
     }
-    {
-        yyjson_doc *idoc = yyjson_read("1", 1, 0);
-        idoc->root = NULL;
-        yy_assert(!yyjson_doc_mut_copy(idoc, NULL));
-        yyjson_doc_free(idoc);
-    }
-    test_json_mut_doc_api_one("\"\"");
-    test_json_mut_doc_api_one("\"abc\"");
-    test_json_mut_doc_api_one("123");
-    test_json_mut_doc_api_one("[1,2,3]");
-    test_json_mut_doc_api_one("{\"a\":1}");
-    test_json_mut_doc_api_one("{\"a\":{\"b\":[-1,2,1.0,2.0,true,false,null]}}");
 #endif
 }
 
