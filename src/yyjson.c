@@ -1487,7 +1487,10 @@ yyjson_api yyjson_doc *yyjson_mut_val_imut_copy(yyjson_mut_val *mval,
     usize val_num = 0, str_sum = 0, hdr_size, buf_size;
     yyjson_doc *doc = NULL;
     yyjson_val *val_hdr = NULL;
-    char *str_hdr = NULL;
+    
+    /* This value should be NULL here. Setting a non-null value suppresses
+       warning from the clang analyzer. */
+    char *str_hdr = (char *)(void *)&str_sum;
     if (!mval) return NULL;
     if (!alc) alc = (yyjson_alc *)&YYJSON_DEFAULT_ALC;
     
