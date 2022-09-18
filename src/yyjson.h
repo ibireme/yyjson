@@ -836,7 +836,7 @@ static const yyjson_write_flag YYJSON_WRITE_INF_AND_NAN_AS_NULL     = 1 << 4;
     If `YYJSON_WRITE_ESCAPE_UNICODE` flag is also set, invalid character will be
     escaped as `U+FFFD` (replacement character).
     This flag does not affect the performance of correctly encoded strings. */
-static const yyjson_read_flag YYJSON_WRITE_ALLOW_INVALID_UNICODE    = 1 << 5;
+static const yyjson_write_flag YYJSON_WRITE_ALLOW_INVALID_UNICODE   = 1 << 5;
 
 
 
