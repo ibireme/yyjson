@@ -4383,7 +4383,11 @@ skip_ascii_end:
      MSVC, Clang, ICC can generate expected instructions without this hint.
      */
 #if YYJSON_IS_REAL_GCC
-    __asm volatile("":"=m"(*src)::);
+    #ifdef YYJSON_ENABLE_QNX_SYSTEM
+        __asm volatile("":"=m"(*src):);
+    #else
+        __asm volatile("":"=m"(*src)::);
+    #endif
 #endif
     if (likely(*src == '"')) {
         val->tag = ((u64)(src - cur) << YYJSON_TAG_BIT) | YYJSON_TYPE_STR;
@@ -4499,9 +4503,15 @@ copy_ascii:
          });
      */
 #if YYJSON_IS_REAL_GCC
-#   define expr_jump(i) \
-    if (likely(!(char_is_ascii_stop(src[i])))) {} \
-    else { __asm volatile("":"=m"(src[i])::); goto copy_ascii_stop_##i; }
+    #ifdef YYJSON_ENABLE_QNX_SYSTEM
+        #   define expr_jump(i) \
+        if (likely(!(char_is_ascii_stop(src[i])))) {} \
+        else { __asm volatile("":"=m"(src[i]):); goto copy_ascii_stop_##i; }
+    #else
+        #   define expr_jump(i) \
+            if (likely(!(char_is_ascii_stop(src[i])))) {} \
+            else { __asm volatile("":"=m"(src[i])::); goto copy_ascii_stop_##i; }
+    #endif
 #else
 #   define expr_jump(i) \
     if (likely(!(char_is_ascii_stop(src[i])))) {} \

@@ -30,6 +30,12 @@
  *============================================================================*/
 
 /*
+ Define as 1 to enable yyjson in qnx system.
+ */
+#ifndef YYJSON_ENABLE_QNX_SYSTEM
+#endif
+
+/*
  Define as 1 to disable JSON reader if you don't need to parse JSON.
  
  This will disable these functions at compile-time:

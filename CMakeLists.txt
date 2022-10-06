@@ -35,11 +35,15 @@ option(YYJSON_FORCE_32_BIT "Force 32-bit for tests (gcc/clang/icc)" OFF)
 
 # ------------------------------------------------------------------------------
 # Compilation options, see yyjson.h for more explanation
+option(YYJSON_ENABLE_QNX_SYSTEM "enable yyjson in qnx system" OFF)
 option(YYJSON_DISABLE_READER "Disable JSON reader" OFF)
 option(YYJSON_DISABLE_WRITER "Disable JSON writer" OFF)
 option(YYJSON_DISABLE_FAST_FP_CONV "Disable custom floating-point number conversion" OFF)
 option(YYJSON_DISABLE_NON_STANDARD "Disable non-standard JSON support" OFF)
 
+if(YYJSON_ENABLE_QNX_SYSTEM)
+    add_definitions(-DYYJSON_ENABLE_QNX_SYSTEM)
+endif()
 if(YYJSON_DISABLE_READER)
     add_definitions(-DYYJSON_DISABLE_READER)
 endif()
