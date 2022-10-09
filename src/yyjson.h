@@ -36,6 +36,8 @@
     - yyjson_read_opts()
     - yyjson_read_file()
     - yyjson_read()
+    - yyjson_read_number()
+    - yyjson_mut_read_number()
  
  This will reduce the binary size by about 60%.
  */
@@ -799,6 +801,53 @@ yyjson_api_inline size_t yyjson_read_max_memory_usage(size_t len,
     return len * mul + pad;
 }
 
+/**
+ Read a JSON number.
+
+ This function is thread-safe when data is not modified by other threads.
+
+ @param dat The JSON data (UTF-8 without BOM), null-terminator is required.
+    If this parameter is NULL, the function will fail and return NULL.
+ @param val The output value where result is stored.
+    If this parameter is NULL, the function will fail and return NULL.
+    The value will hold either UINT or SINT or REAL number;
+ @param flg The JSON read options.
+    Multiple options can be combined with `|` operator. 0 means no options.
+    Suppors YYJSON_READ_NUMBER_AS_RAW and YYJSON_READ_ALLOW_INF_AND_NAN.
+ @param err A pointer to receive error information.
+    Pass NULL if you don't need error information.
+ @return If successful, a pointer to the character after the last character
+    used in the conversion, NULL if an error occurs.
+ */
+yyjson_api const char *yyjson_read_number(const char *dat,
+                                          yyjson_val *val,
+                                          yyjson_read_flag flg,
+                                          yyjson_read_err *err);
+
+/**
+ Read a JSON number.
+
+ This function is thread-safe when data is not modified by other threads.
+
+ @param dat The JSON data (UTF-8 without BOM), null-terminator is required.
+    If this parameter is NULL, the function will fail and return NULL.
+ @param val The output value where result is stored.
+    If this parameter is NULL, the function will fail and return NULL.
+    The value will hold either UINT or SINT or REAL number;
+ @param flg The JSON read options.
+    Multiple options can be combined with `|` operator. 0 means no options.
+    Suppors YYJSON_READ_NUMBER_AS_RAW and YYJSON_READ_ALLOW_INF_AND_NAN.
+ @param err A pointer to receive error information.
+    Pass NULL if you don't need error information.
+ @return If successful, a pointer to the character after the last character
+    used in the conversion, NULL if an error occurs.
+ */
+yyjson_api_inline const char *yyjson_mut_read_number(const char *dat,
+                                                     yyjson_mut_val *val,
+                                                     yyjson_read_flag flg,
+                                                     yyjson_read_err *err) {
+    return yyjson_read_number(dat, (yyjson_val *)val, flg, err);
+}
 
 
 /*==============================================================================

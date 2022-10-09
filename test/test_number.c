@@ -223,6 +223,28 @@ static void test_uint(const char *line, usize len) {
     u64 num = strtoull(line, NULL, 10);
     test_uint_read(line, len, num);
     
+    yyjson_val val;
+    const char *ptr = yyjson_read_number(line, &val, 0, NULL);
+    yy_assertf(ptr == &line[len], "uint num fail: %s\n", line);
+    
+    yy_assertf(yyjson_is_uint(&val),
+               "num should be read as uint: %s\n", line);
+    
+    u64 get = yyjson_get_uint(&val);
+    yy_assertf(num == get,
+               "uint num read not match:\nstr: %s\nreturn: %llu\nexpect: %llu\n",
+               line, get, num);
+    
+    ptr = yyjson_read_number(line, &val, YYJSON_READ_NUMBER_AS_RAW, NULL);
+    yy_assertf(ptr == &line[len], "uint num fail: %s\n", line);
+    
+    yy_assertf(yyjson_is_raw(&val),
+               "num should be read as raw: %s\n", line);
+    
+    yy_assertf(strcmp(line, yyjson_get_raw(&val)) == 0,
+               "uint num read as raw not match:\nstr: %s\nreturn: %s\n",
+               line, yyjson_get_raw(&val));
+    
     char buf[32] = { 0 };
     snprintf(buf, 32, "%llu%c", num, '\0');
     test_uint_write(buf, num);
@@ -239,7 +261,7 @@ static void test_sint_read(const char *line, usize len, i64 num) {
     yyjson_doc *doc = yyjson_read(line, len, 0);
     yyjson_val *val = yyjson_doc_get_root(doc);
     yy_assertf(yyjson_is_sint(val),
-               "num should be read as uint: %s\n", line);
+               "num should be read as sint: %s\n", line);
     
     i64 get = yyjson_get_sint(val);
     yy_assertf(num == get,
@@ -283,6 +305,28 @@ static void test_sint(const char *line, usize len) {
     
     i64 num = strtoll(line, NULL, 10);
     test_sint_read(line, len, num);
+    
+    yyjson_val val;
+    const char *ptr = yyjson_read_number(line, &val, 0, NULL);
+    yy_assertf(ptr == &line[len], "sint num fail: %s\n", line);
+    
+    yy_assertf(yyjson_is_sint(&val),
+               "num should be read as sint: %s\n", line);
+    
+    i64 get = yyjson_get_sint(&val);
+    yy_assertf(num == get,
+               "sint num read not match:\nstr: %s\nreturn: %lld\nexpect: %lld\n",
+               line, get, num);
+    
+    ptr = yyjson_read_number(line, &val, YYJSON_READ_NUMBER_AS_RAW, NULL);
+    yy_assertf(ptr == &line[len], "uint num fail: %s\n", line);
+    
+    yy_assertf(yyjson_is_raw(&val),
+               "num should be read as raw: %s\n", line);
+    
+    yy_assertf(strcmp(line, yyjson_get_raw(&val)) == 0,
+               "sint num read as raw not match:\nstr: %s\nreturn: %s\n",
+               line, yyjson_get_raw(&val));
     
     char buf[32] = { 0 };
     snprintf(buf, 32, "%lld%c", num, '\0');
@@ -401,20 +445,61 @@ static void test_real(const char *line, usize len) {
     yy_assertf(check_json_num(line) != NUM_TYPE_FAIL,
                "input is not number: %s\n", line);
     
-    f64 val;
-    usize read_len = f64_read(line, &val);
+    f64 num;
+    usize read_len = f64_read(line, &num);
     yy_assertf(len == read_len,
                "f64_read() failed: %s\ninput length: %d\nread length: %d\n",
                line, (int)len, (int)read_len);
-    yy_assertf(!isnan(val),
+    yy_assertf(!isnan(num),
                "f64_read() failed: %s\nread as NaN", line);
-    test_real_read(line, len, val);
+    test_real_read(line, len, num);
+    
+    yyjson_val val;
+    const char *ptr = yyjson_read_number(line, &val, 0, NULL);
+    
+    if (isinf(num)) {
+        yy_assertf(ptr == NULL, "num %s should fail, but returns %.17g\n",
+                   line, yyjson_get_real(&val));
+        
+#if !YYJSON_DISABLE_NON_STANDARD
+        ptr = yyjson_read_number(line, &val, YYJSON_READ_ALLOW_INF_AND_NAN, NULL);
+        yy_assertf(ptr == &line[len], "real num fail: %s\n", line);
+        
+        yy_assertf(yyjson_is_real(&val),
+                   "num should be read as real: %s\n", line);
+        
+        f64 get = yyjson_get_real(&val);
+        yy_assertf(isinf(get), "num should be read as inf: %s\n", line);
+#endif
+    } else {
+        yy_assertf(ptr == &line[len], "real num fail: %s\n", line);
+        
+        yy_assertf(yyjson_is_real(&val),
+                   "num should be read as real: %s\n", line);
+        
+        f64 get = yyjson_get_real(&val);
+        yy_assertf(f64_to_u64_raw(num) == f64_to_u64_raw(get),
+                   "real num read not match:\nstr: %s\n"
+                   "return: %.17g\n"
+                   "expect: %.17g\n",
+                   line, get, num);
+    }
+    
+    ptr = yyjson_read_number(line, &val, YYJSON_READ_NUMBER_AS_RAW, NULL);
+    yy_assertf(ptr == &line[len], "uint num fail: %s\n", line);
+    
+    yy_assertf(yyjson_is_raw(&val),
+               "num should be read as raw: %s\n", line);
+    
+    yy_assertf(strcmp(line, yyjson_get_raw(&val)) == 0,
+               "sint num read as raw not match:\nstr: %s\nreturn: %s\n",
+               line, yyjson_get_raw(&val));
     
     char buf[32] = { 0 };
-    usize write_len = f64_write(buf, sizeof(buf), val);
+    usize write_len = f64_write(buf, sizeof(buf), num);
     yy_assertf(write_len > 0,
                "f64_write() fail: %s\n", line);
-    test_real_write(buf, write_len, val);
+    test_real_write(buf, write_len, num);
 }
 
 
@@ -486,20 +571,24 @@ static void test_nan_inf(const char *line, usize len) {
     yy_assertf(check_json_num(line) == NUM_TYPE_FAIL,
                "input should not be a valid JSON number: %s\n", line);
     
-    f64 val;
-    usize read_len = f64_read(line, &val);
+    f64 num;
+    usize read_len = f64_read(line, &num);
     yy_assertf(len == read_len,
                "f64_read() failed: %s\ninput length: %d\nread length: %d\n",
                line, (int)len, (int)read_len);
-    yy_assertf(isnan(val) || isinf(val),
-               "f64_read() failed: %s\nexpect: NaN or Inf, out: %.17g", line, val);
-    test_nan_inf_read(line, len, val);
+    yy_assertf(isnan(num) || isinf(num),
+               "f64_read() failed: %s\nexpect: NaN or Inf, out: %.17g", line, num);
+    test_nan_inf_read(line, len, num);
+    
+    yyjson_val val;
+    const char *ptr = yyjson_read_number(line, &val, 0, NULL);
+    yy_assertf(ptr != &line[len], "num should fail: %s\n", line);
     
     char buf[32] = { 0 };
-    usize write_len = f64_write(buf, sizeof(buf), val);
+    usize write_len = f64_write(buf, sizeof(buf), num);
     yy_assertf(write_len > 0,
                "f64_write() fail: %s\n", line);
-    test_nan_inf_write(buf, write_len, val);
+    test_nan_inf_write(buf, write_len, num);
 }
 
 
@@ -517,8 +606,21 @@ static void test_fail(const char *line, usize len) {
     yy_assertf(doc == NULL, "num should fail: %s\n", line);
     doc = yyjson_read(line, len, YYJSON_READ_NUMBER_AS_RAW);
     yy_assertf(doc == NULL, "num should fail: %s\n", line);
-    doc = yyjson_read(line, len, YYJSON_READ_NUMBER_AS_RAW | YYJSON_READ_ALLOW_INF_AND_NAN);
+    doc = yyjson_read(line, len, YYJSON_READ_NUMBER_AS_RAW | 
+                                 YYJSON_READ_ALLOW_INF_AND_NAN);
     yy_assertf(doc == NULL, "num should fail: %s\n", line);
+    
+    yyjson_val val;
+    const char *ptr;
+    ptr = yyjson_read_number(line, &val, 0, NULL);
+    yy_assertf(ptr != &line[len], "num should fail: %s\n", line);
+    ptr = yyjson_read_number(line, &val, YYJSON_READ_ALLOW_INF_AND_NAN, NULL);
+    yy_assertf(ptr != &line[len], "num should fail: %s\n", line);
+    ptr = yyjson_read_number(line, &val, YYJSON_READ_NUMBER_AS_RAW, NULL);
+    yy_assertf(ptr != &line[len], "num should fail: %s\n", line);
+    ptr = yyjson_read_number(line, &val, YYJSON_READ_NUMBER_AS_RAW | 
+                                         YYJSON_READ_ALLOW_INF_AND_NAN, NULL);
+    yy_assertf(ptr != &line[len], "num should fail: %s\n", line);
 #endif
 }
 
@@ -557,6 +659,15 @@ static void test_with_file(const char *name, num_type type) {
     }
     
     yy_dat_release(&dat);
+    
+    yyjson_mut_val val;
+    const char *ptr;
+    ptr = yyjson_mut_read_number(NULL, &val, 0, NULL);
+    yy_assertf(ptr == NULL, "read line NULL should fail\n");
+    ptr = yyjson_mut_read_number("123", NULL, 0, NULL);
+    yy_assertf(ptr == NULL, "read val NULL should fail\n");
+    ptr = yyjson_mut_read_number(NULL, NULL, 0, NULL);
+    yy_assertf(ptr == NULL, "read line and val NULL should fail\n");
 }
 
 
