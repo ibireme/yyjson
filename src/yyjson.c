@@ -1189,7 +1189,7 @@ static_inline void unsafe_yyjson_val_pool_release(yyjson_val_pool *pool,
 }
 
 bool unsafe_yyjson_str_pool_grow(yyjson_str_pool *pool,
-                                 yyjson_alc *alc, usize len) {
+                                 const yyjson_alc *alc, usize len) {
     yyjson_str_chunk *chunk;
     usize size = len + sizeof(yyjson_str_chunk);
     size = yyjson_max(pool->chunk_size, size);
@@ -1207,7 +1207,7 @@ bool unsafe_yyjson_str_pool_grow(yyjson_str_pool *pool,
 }
 
 bool unsafe_yyjson_val_pool_grow(yyjson_val_pool *pool,
-                                 yyjson_alc *alc, usize count) {
+                                 const yyjson_alc *alc, usize count) {
     yyjson_val_chunk *chunk;
     usize size;
     
@@ -1477,13 +1477,13 @@ static usize yyjson_imut_copy(yyjson_val **val_ptr, char **buf_ptr,
 }
 
 yyjson_api yyjson_doc *yyjson_mut_doc_imut_copy(yyjson_mut_doc *mdoc,
-                                                yyjson_alc *alc) {
+                                                const yyjson_alc *alc) {
     if (!mdoc) return NULL;
     return yyjson_mut_val_imut_copy(mdoc->root, alc);
 }
 
 yyjson_api yyjson_doc *yyjson_mut_val_imut_copy(yyjson_mut_val *mval,
-                                                yyjson_alc *alc) {
+                                                const yyjson_alc *alc) {
     usize val_num = 0, str_sum = 0, hdr_size, buf_size;
     yyjson_doc *doc = NULL;
     yyjson_val *val_hdr = NULL;
@@ -1492,7 +1492,7 @@ yyjson_api yyjson_doc *yyjson_mut_val_imut_copy(yyjson_mut_val *mval,
        warning from the clang analyzer. */
     char *str_hdr = (char *)(void *)&str_sum;
     if (!mval) return NULL;
-    if (!alc) alc = (yyjson_alc *)&YYJSON_DEFAULT_ALC;
+    if (!alc) alc = &YYJSON_DEFAULT_ALC;
     
     /* traverse the input value to get pool size */
     yyjson_mut_stat(mval, &val_num, &str_sum);
