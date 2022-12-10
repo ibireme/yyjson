@@ -75,7 +75,7 @@ if(XCODE)
     endif()
     
     set_default_xcode_property(yyjson)
-    set_xcode_deployment_version(yyjson "10.11" "9.0" "9.0" "2.0")
+    set_xcode_deployment_version(yyjson "10.13" "11.0" "11.0" "4.0")
 
     set_xcode_property(yyjson GCC_C_LANGUAGE_STANDARD "c89")
     set_xcode_property(yyjson CLANG_CXX_LANGUAGE_STANDARD "c++98")
@@ -205,7 +205,7 @@ if(YYJSON_BUILD_TESTS)
         xctest_add_test(XCTest.yyjson yyjson_tests)
         
         set_default_xcode_property(yyjson_tests)
-        set_xcode_deployment_version(yyjson_tests "10.11" "9.0" "9.0" "2.0")
+        set_xcode_deployment_version(yyjson_tests "10.13" "11.0" "11.0" "4.0")
         
     else()
         # Check valgrind command
