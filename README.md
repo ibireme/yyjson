@@ -14,7 +14,7 @@ A high performance JSON library written in ANSI C.
 - **Standard**: strict compliance with [RFC 8259](https://tools.ietf.org/html/rfc8259) standard.
 - **Safe**: complete JSON form, number format and UTF-8 validation.
 - **Accuracy**: can read and write `int64`, `uint64` and `double` numbers accurately.
-- **Less Restriction**: support unlimited JSON level, `\u0000` and non null-terminated string.
+- **Flexible**: support unlimited JSON level, `\u0000` and non null-terminated string.
 - **Extendable**: options to allow comments, trailing commas, nan/inf, custom memory allocator.
 - **Developer Friendly**: only one `h` and one `c` file, easy to integrate.
 

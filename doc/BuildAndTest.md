@@ -1,11 +1,11 @@
-Build and Test
+Building and testing
 ==============
 
 There are several ways to integrate yyjson into your project: source code, package manager, and CMake.
 
 
 # Source code
-yyjson aims to provide a cross-platform JSON library, so it was written in ANSI C (actually C99, but compatible with strict C89). You can copy `yyjson.h` and `yyjson.c` to your project and start using it without any configuration.
+yyjson aims to provide a cross-platform JSON library, so it is written in ANSI C (actually C99, but compatible with strict C89). You can copy `yyjson.h` and `yyjson.c` to your project and start using it without any configuration.
 
 yyjson has been tested with the following compilers: `gcc`, `clang`, `msvc`, `icc`, `tcc`. If you get a compile error, please [report a bug](https://github.com/ibireme/yyjson/issues/new?template=bug_report.md).
 
@@ -62,28 +62,44 @@ Supported CMake options:
 - `-DYYJSON_ENABLE_VALGRIND=ON` Enable valgrind memory checker for tests.
 - `-DYYJSON_ENABLE_SANITIZE=ON` Enable sanitizer for tests.
 - `-DYYJSON_ENABLE_FASTMATH=ON` Enable fast-math for tests.
-- `-YYJSON_FORCE_32_BIT=ON` Force 32-bit for tests (gcc/clang/icc).
+- `-DYYJSON_FORCE_32_BIT=ON` Force 32-bit for tests (gcc/clang/icc).
 
 - `-DYYJSON_DISABLE_READER=ON` Disable JSON reader if you don't need it.
 - `-DYYJSON_DISABLE_WRITER=ON` Disable JSON writer if you don't need it.
-- `-DYYJSON_DISABLE_FAST_FP_CONV=ON` Disable fast floating-pointer conversion.
+- `-DYYJSON_DISABLE_FAST_FP_CONV=ON` Disable builtin fast floating-pointer conversion.
 - `-DYYJSON_DISABLE_NON_STANDARD=ON` Disable non-standard JSON support at compile-time.
 
 
 ## Use CMake as a dependency
 
-You may add the `yyjson` subdirectory to your CMakeFile.txt, and link it to your target:
+You can download and unzip yyjson to your project folder and link it in your `CMakeLists.txt` file:
 ```cmake
+# Add some options (optional)
+set(YYJSON_DISABLE_NON_STANDARD ON CACHE INTERNAL "")
+
+# Add the `yyjson` subdirectory
 add_subdirectory(vendor/yyjson)
-target_link_libraries(your_target yyjson)
+
+# Link yyjson to your target
+target_link_libraries(your_target PRIVATE yyjson)
 ```
 
-You may also add some build options for yyjson library:
+If your CMake version is higher than 3.14, you can use the following method to let CMake automatically download it:
 ```cmake
-set(YYJSON_DISABLE_NON_STANDARD ON CACHE INTERNAL "")
-add_subdirectory(vendor/yyjson)
-target_link_libraries(your_target yyjson)
+include(FetchContent)
+
+# Let CMake download yyjson
+FetchContent_Declare(
+    yyjson
+    GIT_REPOSITORY https://github.com/ibireme/yyjson.git
+    GIT_TAG master # master, or version number, e.g. 0.6.0
+)
+FetchContent_MakeAvailable(yyjson)
+
+# Link yyjson to your target
+target_link_libraries(your_target PRIVATE yyjson)
 ```
+
 
 ## Use CMake to generate project
 If you want to build or debug `yyjson` with another compiler or IDE, try these commands:
@@ -155,7 +171,7 @@ lcov -c -d ./CMakeFiles/yyjson.dir/src -o cov.info
 genhtml cov.info -o ./cov_report
 ```
 
-Build and run fuzz test with [LibFuzzer](https://llvm.org/docs/LibFuzzer.html) (compiler should be `LLVM Clang`, `Apple Clang` or `gcc` is not supported):
+Build and run fuzz test with [LibFuzzer](https://llvm.org/docs/LibFuzzer.html) (compiler should be `LLVM Clang`, while `Apple Clang` or `gcc` are not supported):
 ```shell
 cmake .. -DYYJSON_BUILD_FUZZER=ON -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
 cmake --build .
@@ -200,14 +216,13 @@ It is recommended when you don't need to serialize JSON.
 ● **YYJSON_DISABLE_FAST_FP_CONV**<br/>
 Define as 1 to disable the fast floating-point number conversion in yyjson,
  and use libc's `strtod/snprintf` instead.<br/>
-This will reduce binary size by about 30%, but significantly slow down
- floating-point reading and writing speed.<br/>
+This will reduce binary size by about 30%, but significantly slow down the floating-point read/write speed.<br/>
 It is recommended when you don't need to deal with JSON that contains a lot of floating point numbers.
 
 ● **YYJSON_DISABLE_NON_STANDARD**<br/>
 Define as 1 to disable non-standard JSON support at compile-time:
 
-- Reading and writing inf/nan literal, such as 'NaN', '-Infinity'.
+- Reading and writing inf/nan literal, such as `NaN`, `-Infinity`.
 - Single line and multiple line comments.
 - Single trailing comma at the end of an object or array.
 - Invalid unicode in string value.
