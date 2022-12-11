@@ -16,8 +16,9 @@ The library have 2 types of data structures: immutable and mutable:
 
 |type|immutable|mutable|
 |---|---|---|
-|JSON value|yyjson_val|yyjson_mut_val|
-|JSON document|yyjson_doc|yyjson_mut_doc|
+|document|yyjson_doc|yyjson_mut_doc|
+|value|yyjson_val|yyjson_mut_val|
+
 
 When reading a JSON, yyjson returns immutable documents and values;<br/>
 When building a JSON, yyjson creates mutable documents and values;<br/>
@@ -155,7 +156,7 @@ yyjson_doc_free(doc);
 The library provides a set of flags for JSON reader.<br/>
 You can use a single flag, or combine multiple flags with bitwise `|` operator.
 
-● **YYJSON_READ_NOFLAG**<br/>
+● **YYJSON_READ_NOFLAG = 0**<br/>
 
 This is the default flag for JSON reader (RFC-8259 or ECMA-404 compliant):
 
