@@ -23,7 +23,7 @@ var searchData=
   ['yyjson_5fread_5fstop_5fwhen_5fdone_20',['YYJSON_READ_STOP_WHEN_DONE',['../yyjson_8h.html#ad2fb99734b237a7af74924443fe5260e',1,'yyjson.h']]],
   ['yyjson_5fread_5fsuccess_21',['YYJSON_READ_SUCCESS',['../yyjson_8h.html#a5b8948d47748a81d6a4abf94949e0e88',1,'yyjson.h']]],
   ['yyjson_5fwrite_5fallow_5finf_5fand_5fnan_22',['YYJSON_WRITE_ALLOW_INF_AND_NAN',['../yyjson_8h.html#a38fa90e4cf75b0a78148de2058c1b3bd',1,'yyjson.h']]],
-  ['yyjson_5fwrite_5fallow_5finvalid_5funicode_23',['YYJSON_WRITE_ALLOW_INVALID_UNICODE',['../yyjson_8h.html#a57835e7f895e7533006340ad3abe0b80',1,'yyjson.h']]],
+  ['yyjson_5fwrite_5fallow_5finvalid_5funicode_23',['YYJSON_WRITE_ALLOW_INVALID_UNICODE',['../yyjson_8h.html#ae2709fd5ec704ef7a569d62195e4652d',1,'yyjson.h']]],
   ['yyjson_5fwrite_5ferror_5ffile_5fopen_24',['YYJSON_WRITE_ERROR_FILE_OPEN',['../yyjson_8h.html#a41cb8e304e08d7455f43c753bfa19b82',1,'yyjson.h']]],
   ['yyjson_5fwrite_5ferror_5ffile_5fwrite_25',['YYJSON_WRITE_ERROR_FILE_WRITE',['../yyjson_8h.html#a7910a72a728d4f245d43417a42e2e91a',1,'yyjson.h']]],
   ['yyjson_5fwrite_5ferror_5finvalid_5fparameter_26',['YYJSON_WRITE_ERROR_INVALID_PARAMETER',['../yyjson_8h.html#a7f123c4c3d850fd6c4e46a2b3aad4508',1,'yyjson.h']]],

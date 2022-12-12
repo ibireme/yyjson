@@ -2,6 +2,20 @@
 All notable changes to this project will be documented in this file.
 
 
+## 0.6.0 (2022-12-12)
+#### Added
+- Add functions to modify the content of a JSON value, for example `yyjson_set_int(yyjson_val *val, int num)`.
+- Add functions to copy from mutable doc to immutable doc.
+- Add functions to support renaming an object's key.
+- Add the `yyjson_read_number()` function to parse numeric strings.
+- Add a placeholder allocator if `yyjson_alc_pool_init()` fails.
+
+#### Fixed
+- Fix quite NaN on MIPS and HPPA arch.
+- Fixed compile error before `GCC 4.5` which doesn't support empty optional extended asm label.
+- When built-in floating point conversion is disabled, sprintf() output for floating point numbers is missing a decimal point, for example 123 should be 123.0.
+
+
 ## 0.5.1 (2022-06-17)
 #### Fixed
 - Fix run-time error when compiling as cpp and 32-bit (g++-5 -m32 -fPIC) #85

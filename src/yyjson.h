@@ -409,16 +409,16 @@ extern "C" {
 #define YYJSON_VERSION_MAJOR  0
 
 /** The minor version of yyjson. */
-#define YYJSON_VERSION_MINOR  5
+#define YYJSON_VERSION_MINOR  6
 
 /** The patch version of yyjson. */
-#define YYJSON_VERSION_PATCH  1
+#define YYJSON_VERSION_PATCH  0
 
 /** The version of yyjson in hex: `(major << 16) | (minor << 8) | (patch)`. */
-#define YYJSON_VERSION_HEX    0x000501
+#define YYJSON_VERSION_HEX    0x000600
 
 /** The version string of yyjson. */
-#define YYJSON_VERSION_STRING "0.5.1"
+#define YYJSON_VERSION_STRING "0.6.0"
 
 /** The version of yyjson in hex, same as `YYJSON_VERSION_HEX`. */
 yyjson_api uint32_t yyjson_version(void);
