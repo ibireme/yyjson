@@ -191,35 +191,10 @@ yyjson_api uint32_t yyjson_version(void) {
 #   else
 #       define YYJSON_DOUBLE_MATH_CORRECT 0
 #   endif
-#elif defined(__x86_64) || defined(__x86_64__) || \
-    defined(__amd64) || defined(__amd64__) || \
-    defined(_M_AMD64) || defined(_M_X64) || \
-    defined(__ia64) || defined(_IA64) || defined(__IA64__) ||  \
-    defined(__ia64__) || defined(_M_IA64) || defined(__itanium__) || \
-    defined(__arm64) || defined(__arm64__) || \
-    defined(__aarch64__) || defined(_M_ARM64) || \
-    defined(__arm) || defined(__arm__) || defined(_ARM_) || \
-    defined(_ARM) || defined(_M_ARM) || defined(__TARGET_ARCH_ARM) || \
-    defined(mips) || defined(__mips) || defined(__mips__) || \
-    defined(MIPS) || defined(_MIPS_) || defined(__MIPS__) || \
-    defined(_ARCH_PPC64) || defined(__PPC64__) || \
-    defined(__ppc64__) || defined(__powerpc64__) || \
-    defined(__powerpc) || defined(__powerpc__) || defined(__POWERPC__) || \
-    defined(__ppc__) || defined(__ppc) || defined(__PPC__) || \
-    defined(__sparcv9) || defined(__sparc_v9__) || \
-    defined(__sparc) || defined(__sparc__) || defined(__sparc64__) || \
-    defined(__alpha) || defined(__alpha__) || defined(_M_ALPHA) || \
-    defined(__or1k__) || defined(__OR1K__) || defined(OR1K) || \
-    defined(__hppa) || defined(__hppa__) || defined(__HPPA__) || \
-    defined(__riscv) || defined(__riscv__) || \
-    defined(__s390__) || defined(__avr32__) || defined(__SH4__) || \
-    defined(__e2k__) || defined(__arc__) || defined(__ARC64__) || \
-    defined(__loongarch__) || defined(__nios2__) || defined(__ghs) || \
-    defined(__microblaze__) || defined(__XTENSA__) || \
-    defined(__EMSCRIPTEN__) || defined(__wasm__)
-#   define YYJSON_DOUBLE_MATH_CORRECT 1
+#elif defined(__mc68000__) || defined(__pnacl__) || defined(__native_client__)
+#   define YYJSON_DOUBLE_MATH_CORRECT 0
 #else
-#   define YYJSON_DOUBLE_MATH_CORRECT 0 /* unknown, disable fast path */
+#   define YYJSON_DOUBLE_MATH_CORRECT 1
 #endif
 
 /*
