@@ -410,6 +410,10 @@ This is the default flag for JSON writer:
 ● **YYJSON_WRITE_PRETTY**<br/>
 Write JSON pretty with 4 space indent.
 
+● **YYJSON_WRITE_PRETTY_TWO_SPACES**<br/>
+Write JSON pretty with 2 space indent.
+This flag will override `YYJSON_WRITE_PRETTY` flag.
+
 ● **YYJSON_WRITE_ESCAPE_UNICODE**<br/>
 Escape unicode as `\uXXXX`, make the output ASCII only, for example:
 
