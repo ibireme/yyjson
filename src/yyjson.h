@@ -888,6 +888,10 @@ static const yyjson_write_flag YYJSON_WRITE_INF_AND_NAN_AS_NULL     = 1 << 4;
     This flag does not affect the performance of correctly encoded strings. */
 static const yyjson_write_flag YYJSON_WRITE_ALLOW_INVALID_UNICODE   = 1 << 5;
 
+/** Write JSON pretty with 2 space indent.
+    This flag will override `YYJSON_WRITE_PRETTY` flag. */
+static const yyjson_write_flag YYJSON_WRITE_PRETTY_TWO_SPACES       = 1 << 6;
+
 
 
 /** Result code for JSON writer */

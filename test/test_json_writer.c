@@ -746,6 +746,28 @@ yy_test_case(test_json_writer) {
         free(ret);
         yyjson_doc_free(doc);
     }
+    
+    
+    // test 2 space indent
+    {
+        const char *str =
+            "[\n"
+            "  123\n"
+            "]";
+        yyjson_doc *doc = yyjson_read(str, strlen(str), 0);
+        yyjson_mut_doc *mdoc = yyjson_doc_mut_copy(doc, NULL);
+        
+        char *ret = yyjson_write(doc, YYJSON_WRITE_PRETTY_TWO_SPACES, NULL);
+        yy_assert(strcmp(ret, str) == 0);
+        free(ret);
+        
+        char *mret = yyjson_mut_write(mdoc, YYJSON_WRITE_PRETTY_TWO_SPACES, NULL);
+        yy_assert(strcmp(mret, str) == 0);
+        free(mret);
+        
+        yyjson_doc_free(doc);
+        yyjson_mut_doc_free(mdoc);
+    }
 #endif
     
     // test build JSON on stack
