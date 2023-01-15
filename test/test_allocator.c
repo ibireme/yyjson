@@ -11,20 +11,20 @@ yy_test_case(test_allocator) {
     memset(&alc, 0, sizeof(alc));
     yy_assert(!yyjson_alc_pool_init(&alc, NULL, 0));
     yy_assert(!alc.malloc(NULL, 1));
-    yy_assert(!alc.realloc(NULL, NULL, 1));
+    yy_assert(!alc.realloc(NULL, NULL, 0, 1));
     alc.free(NULL, NULL);
     
     memset(&alc, 0, sizeof(alc));
     yy_assert(!yyjson_alc_pool_init(&alc, NULL, 1024));
     yy_assert(!alc.malloc(NULL, 1));
-    yy_assert(!alc.realloc(NULL, NULL, 1));
+    yy_assert(!alc.realloc(NULL, NULL, 0, 1));
     alc.free(NULL, NULL);
     
     char small_buf[10];
     memset(&alc, 0, sizeof(alc));
     yy_assert(!yyjson_alc_pool_init(&alc, small_buf, sizeof(small_buf)));
     yy_assert(!alc.malloc(NULL, 1));
-    yy_assert(!alc.realloc(NULL, NULL, 1));
+    yy_assert(!alc.realloc(NULL, NULL, 0, 1));
     alc.free(NULL, NULL);
     
     size = 8 * sizeof(void *) - 1;
@@ -112,9 +112,9 @@ yy_test_case(test_allocator) {
             alc.free(alc.ctx, mem[i]);
         }
         for (int i = 1; i < 16; i += 2) {
-            yy_assert(!alc.realloc(alc.ctx, mem[i], 0));
-            yy_assert(!alc.realloc(alc.ctx, mem[i], 1024));
-            mem[i] = alc.realloc(alc.ctx, mem[i], 16);
+            yy_assert(!alc.realloc(alc.ctx, mem[i], 0, 0));
+            yy_assert(!alc.realloc(alc.ctx, mem[i], 0, 1024));
+            mem[i] = alc.realloc(alc.ctx, mem[i], 0, 16);
             yy_assert(mem[i]);
             memset(mem[i], 0, 16);
         }
@@ -137,7 +137,7 @@ yy_test_case(test_allocator) {
             alc.free(alc.ctx, mem[i]);
         }
         for (int i = 1; i < 8; i += 2) {
-            mem[i] = alc.realloc(alc.ctx, mem[i], 1);
+            mem[i] = alc.realloc(alc.ctx, mem[i], 0, 1);
             yy_assert(mem[i]);
             memset(mem[i], 0, 1);
         }
@@ -160,7 +160,7 @@ yy_test_case(test_allocator) {
             alc.free(alc.ctx, mem[i]);
         }
         for (int i = 1; i < 8; i += 2) {
-            mem[i] = alc.realloc(alc.ctx, mem[i], 32);
+            mem[i] = alc.realloc(alc.ctx, mem[i], 0, 32);
             yy_assert(mem[i]);
             memset(mem[i], 0, 32);
         }
@@ -175,7 +175,7 @@ yy_test_case(test_allocator) {
     }
     {   // same space realloc
         mem[0] = alc.malloc(alc.ctx, 64);
-        mem[0] = alc.realloc(alc.ctx, mem[0], 128);
+        mem[0] = alc.realloc(alc.ctx, mem[0], 0, 128);
         yy_assert(mem[0]);
         alc.free(alc.ctx, mem[0]);
     }
@@ -188,7 +188,7 @@ yy_test_case(test_allocator) {
             void *tmp = mem[i];
             if (tmp) {
                 if (yy_rand_u32_uniform(4) == 0) {
-                    tmp = alc.realloc(alc.ctx, tmp, rsize);
+                    tmp = alc.realloc(alc.ctx, tmp, 0, rsize);
                     if (tmp) mem[i] = tmp;
                 } else {
                     alc.free(alc.ctx, tmp);

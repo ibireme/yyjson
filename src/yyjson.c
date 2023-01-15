@@ -944,7 +944,7 @@ static void *default_malloc(void *ctx, usize size) {
     return malloc(size);
 }
 
-static void *default_realloc(void *ctx, void *ptr, usize size) {
+static void *default_realloc(void *ctx, void *ptr, usize old_size, usize size) {
     return realloc(ptr, size);
 }
 
@@ -963,7 +963,7 @@ static void *null_malloc(void *ctx, usize size) {
     return NULL;
 }
 
-static void *null_realloc(void *ctx, void *ptr, usize size) {
+static void *null_realloc(void *ctx, void *ptr, usize old_size, usize size) {
     return NULL;
 }
 
@@ -1055,7 +1055,8 @@ static void pool_free(void *ctx_ptr, void *ptr) {
     }
 }
 
-static void *pool_realloc(void *ctx_ptr, void *ptr, usize size) {
+static void *pool_realloc(void *ctx_ptr, void *ptr,
+                          usize old_size, usize size) {
     pool_ctx *ctx = (pool_ctx *)ctx_ptr;
     pool_chunk *cur = ((pool_chunk *)ptr) - 1, *prev, *next, *tmp;
     usize free_size;
@@ -4772,9 +4773,11 @@ static_inline yyjson_doc *read_root_minify(u8 *hdr,
 #define val_incr() do { \
     val++; \
     if (unlikely(val >= val_end)) { \
+        usize alc_old = alc_len; \
         alc_len += alc_len / 2; \
         if ((alc_len >= alc_max)) goto fail_alloc; \
         val_tmp = (yyjson_val *)alc.realloc(alc.ctx, (void *)val_hdr, \
+            alc_old * sizeof(yyjson_val), \
             alc_len * sizeof(yyjson_val)); \
         if ((!val_tmp)) goto fail_alloc; \
         val = val_tmp + (usize)(val - val_hdr); \
@@ -5155,9 +5158,11 @@ static_inline yyjson_doc *read_root_pretty(u8 *hdr,
 #define val_incr() do { \
     val++; \
     if (unlikely(val >= val_end)) { \
+        usize alc_old = alc_len; \
         alc_len += alc_len / 2; \
         if ((alc_len >= alc_max)) goto fail_alloc; \
         val_tmp = (yyjson_val *)alc.realloc(alc.ctx, (void *)val_hdr, \
+            alc_old * sizeof(yyjson_val), \
             alc_len * sizeof(yyjson_val)); \
         if ((!val_tmp)) goto fail_alloc; \
         val = val_tmp + (usize)(val - val_hdr); \
@@ -5739,7 +5744,7 @@ yyjson_doc *yyjson_read_file(const char *path,
                 buf = alc.malloc(alc.ctx, buf_size);
                 if (!buf) return_err(MEMORY_ALLOCATION, "fail to alloc memory");
             } else {
-                tmp = alc.realloc(alc.ctx, buf, buf_size);
+                tmp = alc.realloc(alc.ctx, buf, buf_size - chunk_now, buf_size);
                 if (!tmp) return_err(MEMORY_ALLOCATION, "fail to alloc memory");
                 buf = tmp;
             }
@@ -7231,7 +7236,7 @@ static_inline u8 *yyjson_write_minify(const yyjson_val *root,
         alc_inc = size_align_up(alc_inc, sizeof(yyjson_write_ctx)); \
         if (size_add_is_overflow(alc_len, alc_inc)) goto fail_alloc; \
         alc_len += alc_inc; \
-        tmp = (u8 *)alc.realloc(alc.ctx, hdr, alc_len); \
+        tmp = (u8 *)alc.realloc(alc.ctx, hdr, alc_len - alc_inc, alc_len); \
         if (unlikely(!tmp)) goto fail_alloc; \
         ctx_len = (usize)(end - (u8 *)ctx); \
         ctx_tmp = (yyjson_write_ctx *)(void *)(tmp + (alc_len - ctx_len)); \
@@ -7403,7 +7408,7 @@ static_inline u8 *yyjson_write_pretty(const yyjson_val *root,
         alc_inc = size_align_up(alc_inc, sizeof(yyjson_write_ctx)); \
         if (size_add_is_overflow(alc_len, alc_inc)) goto fail_alloc; \
         alc_len += alc_inc; \
-        tmp = (u8 *)alc.realloc(alc.ctx, hdr, alc_len); \
+        tmp = (u8 *)alc.realloc(alc.ctx, hdr, alc_len - alc_inc, alc_len); \
         if (unlikely(!tmp)) goto fail_alloc; \
         ctx_len = (usize)(end - (u8 *)ctx); \
         ctx_tmp = (yyjson_write_ctx *)(void *)(tmp + (alc_len - ctx_len)); \
@@ -7714,7 +7719,7 @@ static_inline u8 *yyjson_mut_write_minify(const yyjson_mut_val *root,
         alc_inc = size_align_up(alc_inc, sizeof(yyjson_mut_write_ctx)); \
         if (size_add_is_overflow(alc_len, alc_inc)) goto fail_alloc; \
         alc_len += alc_inc; \
-        tmp = (u8 *)alc.realloc(alc.ctx, hdr, alc_len); \
+        tmp = (u8 *)alc.realloc(alc.ctx, hdr, alc_len - alc_inc, alc_len); \
         if (unlikely(!tmp)) goto fail_alloc; \
         ctx_len = (usize)(end - (u8 *)ctx); \
         ctx_tmp = (yyjson_mut_write_ctx *)(void *)(tmp + (alc_len - ctx_len)); \
@@ -7891,7 +7896,7 @@ static_inline u8 *yyjson_mut_write_pretty(const yyjson_mut_val *root,
         alc_inc = size_align_up(alc_inc, sizeof(yyjson_mut_write_ctx)); \
         if (size_add_is_overflow(alc_len, alc_inc)) goto fail_alloc; \
         alc_len += alc_inc; \
-        tmp = (u8 *)alc.realloc(alc.ctx, hdr, alc_len); \
+        tmp = (u8 *)alc.realloc(alc.ctx, hdr, alc_len - alc_inc, alc_len); \
         if (unlikely(!tmp)) goto fail_alloc; \
         ctx_len = (usize)(end - (u8 *)ctx); \
         ctx_tmp = (yyjson_mut_write_ctx *)(void *)(tmp + (alc_len - ctx_len)); \

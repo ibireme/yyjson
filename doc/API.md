@@ -1199,8 +1199,7 @@ yyjson_doc_free(doc); // this is optional, as the memory is on stack
 ```
 
 ## Use third-party allocator library
-You can use a third-party high-performance memory allocator for yyjson,<br/>
-such as [jemalloc](https://github.com/jemalloc/jemalloc), [tcmalloc](https://github.com/google/tcmalloc), [mimalloc](https://github.com/microsoft/mimalloc).
+You can use a third-party high-performance memory allocator for yyjson, such as [jemalloc](https://github.com/jemalloc/jemalloc), [tcmalloc](https://github.com/google/tcmalloc), [mimalloc](https://github.com/microsoft/mimalloc). You can also refer to the following code to implement your own allocator.
 
 Sample code:
 ```c
@@ -1208,23 +1207,28 @@ Sample code:
 
 #include <mimalloc.h>
 
+// same as malloc(size)
 static void *priv_malloc(void *ctx, size_t size) {
     return mi_malloc(size);
 }
 
-static void *priv_realloc(void *ctx, void *ptr, size_t size) {
+// same as realloc(ptr, size)
+// `old_size` is the size of the originally allocated memory
+static void *priv_realloc(void *ctx, void *ptr, size_t old_size, size_t size) {
     return mi_realloc(ptr, size);
 }
 
+// same as free(ptr)
 static void priv_free(void *ctx, void *ptr) {
     mi_free(ptr);
 }
 
+// the allocator object
 static const yyjson_alc PRIV_ALC = {
     priv_malloc,
     priv_realloc,
     priv_free,
-    NULL
+    NULL // `ctx` which will be passed into the functions above
 };
 
 // Read with custom allocator
