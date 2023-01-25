@@ -3041,7 +3041,7 @@ static_noinline bool read_number_raw(u8 **ptr,
         if (unlikely(ext)) {
             if (read_inf_or_nan(*hdr == '-', &cur, pre, val)) return_raw();
         }
-        return_err(cur - 1, "no digit after minus sign");
+        return_err(cur, "no digit after minus sign");
     }
     
     /* read integral part */
@@ -3060,7 +3060,7 @@ static_noinline bool read_number_raw(u8 **ptr,
     if (*cur == '.') {
         cur++;
         if (!digi_is_digit(*cur++)) {
-            return_err(cur - 1, "no digit after decimal point");
+            return_err(cur, "no digit after decimal point");
         }
         while (digi_is_digit(*cur)) cur++;
     }
@@ -3069,7 +3069,7 @@ static_noinline bool read_number_raw(u8 **ptr,
     if (digi_is_exp(*cur)) {
         cur += 1 + digi_is_sign(cur[1]);
         if (!digi_is_digit(*cur++)) {
-            return_err(cur - 1, "no digit after exponent sign");
+            return_err(cur, "no digit after exponent sign");
         }
         while (digi_is_digit(*cur)) cur++;
     }
@@ -3481,14 +3481,14 @@ static_inline bool read_number(u8 **ptr,
                     return true;
                 }
             }
-            return_err(cur - 1, "no digit after minus sign");
+            return_err(cur, "no digit after minus sign");
         }
         /* begin with 0 */
         if (likely(!digi_is_digit_or_fp(*++cur))) return_i64(0);
         if (likely(*cur == '.')) {
             dot_pos = cur++;
             if (unlikely(!digi_is_digit(*cur))) {
-                return_err(cur - 1, "no digit after decimal point");
+                return_err(cur, "no digit after decimal point");
             }
             while (unlikely(*cur == '0')) cur++;
             if (likely(digi_is_digit(*cur))) {
@@ -3504,7 +3504,7 @@ static_inline bool read_number(u8 **ptr,
         if (unlikely(digi_is_exp(*cur))) { /* 0 with any exponent is still 0 */
             cur += (usize)1 + digi_is_sign(cur[1]);
             if (unlikely(!digi_is_digit(*cur))) {
-                return_err(cur - 1, "no digit after exponent sign");
+                return_err(cur, "no digit after exponent sign");
             }
             while (digi_is_digit(*++cur));
         }
@@ -3638,7 +3638,7 @@ digi_frac_more:
     /* fraction part end */
 digi_frac_end:
     if (unlikely(dot_pos + 1 == cur)) {
-        return_err(cur - 1, "no digit after decimal point");
+        return_err(cur, "no digit after decimal point");
     }
     sig_end = cur;
     exp_sig = -(i64)((u64)(cur - dot_pos) - 1);
@@ -3658,7 +3658,7 @@ digi_exp_more:
     exp_sign = (*++cur == '-');
     cur += digi_is_sign(*cur);
     if (unlikely(!digi_is_digit(*cur))) {
-        return_err(cur - 1, "no digit after exponent sign");
+        return_err(cur, "no digit after exponent sign");
     }
     while (*cur == '0') cur++;
     
@@ -4056,7 +4056,7 @@ static_noinline bool read_number(u8 **ptr,
                 return true;
             }
         }
-        return_err(cur - 1, "no digit after minus sign");
+        return_err(cur, "no digit after minus sign");
     }
     if (*cur == '0') {
         cur++;
@@ -4106,7 +4106,7 @@ read_double:
         dot = cur;
         cur++;
         if (!digi_is_digit(*cur++)) {
-            return_err(cur - 1, "no digit after decimal point");
+            return_err(cur, "no digit after decimal point");
         }
         while (digi_is_digit(*cur)) cur++;
     }
@@ -4114,7 +4114,7 @@ read_double:
         /* skip exponent part */
         cur += 1 + digi_is_sign(cur[1]);
         if (!digi_is_digit(*cur++)) {
-            return_err(cur - 1, "no digit after exponent sign");
+            return_err(cur, "no digit after exponent sign");
         }
         while (digi_is_digit(*cur)) cur++;
     }
@@ -4896,6 +4896,7 @@ arr_val_begin:
         cur++;
         if (likely(ctn_len == 0)) goto arr_end;
         if (has_flag(ALLOW_TRAILING_COMMAS)) goto arr_end;
+        cur--;
         goto fail_trailing_comma;
     }
     if (char_is_space(*cur)) {
@@ -4973,6 +4974,7 @@ obj_key_begin:
         cur++;
         if (likely(ctn_len == 0)) goto obj_end;
         if (has_flag(ALLOW_TRAILING_COMMAS)) goto obj_end;
+        cur--;
         goto fail_trailing_comma;
     }
     if (char_is_space(*cur)) {
@@ -5095,7 +5097,10 @@ obj_end:
 doc_end:
     /* check invalid contents after json document */
     if (unlikely(cur < end) && !has_flag(STOP_WHEN_DONE)) {
-        if (has_flag(ALLOW_COMMENTS)) skip_spaces_and_comments(&cur);
+        if (has_flag(ALLOW_COMMENTS)) {
+            skip_spaces_and_comments(&cur);
+            if (byte_match_2(cur, "/*")) goto fail_comment;
+        }
         else while (char_is_space(*cur)) cur++;
         if (unlikely(cur < end)) goto fail_garbage;
     }
@@ -5296,6 +5301,7 @@ arr_val_begin:
         cur++;
         if (likely(ctn_len == 0)) goto arr_end;
         if (has_flag(ALLOW_TRAILING_COMMAS)) goto arr_end;
+        cur--;
         goto fail_trailing_comma;
     }
     if (char_is_space(*cur)) {
@@ -5390,6 +5396,7 @@ obj_key_begin:
         cur++;
         if (likely(ctn_len == 0)) goto obj_end;
         if (has_flag(ALLOW_TRAILING_COMMAS)) goto obj_end;
+        cur--;
         goto fail_trailing_comma;
     }
     if (char_is_space(*cur)) {
@@ -5521,7 +5528,10 @@ obj_end:
 doc_end:
     /* check invalid contents after json document */
     if (unlikely(cur < end) && !has_flag(STOP_WHEN_DONE)) {
-        if (has_flag(ALLOW_COMMENTS)) skip_spaces_and_comments(&cur);
+        if (has_flag(ALLOW_COMMENTS)) {
+            skip_spaces_and_comments(&cur);
+            if (byte_match_2(cur, "/*")) goto fail_comment;
+        }
         else while (char_is_space(*cur)) cur++;
         if (unlikely(cur < end)) goto fail_garbage;
     }

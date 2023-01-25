@@ -619,7 +619,7 @@ typedef uint32_t yyjson_read_code;
 /** Success, no error. */
 static const yyjson_read_code YYJSON_READ_SUCCESS                       = 0;
 
-/** Invalid parameter, such as NULL string or invalid file path. */
+/** Invalid parameter, such as NULL input string or 0 input length. */
 static const yyjson_read_code YYJSON_READ_ERROR_INVALID_PARAMETER       = 1;
 
 /** Memory allocation failure occurs. */

@@ -14,6 +14,11 @@
     test_allocator();
 }
 
+- (void)test_err_code {
+    extern void test_err_code(void);
+    test_err_code();
+}
+
 - (void)test_json_merge_patch {
     extern void test_json_merge_patch(void);
     test_json_merge_patch();
