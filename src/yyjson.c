@@ -5827,7 +5827,7 @@ const char *yyjson_read_number(const char *dat,
         hdr = buf;
         cur = hdr;
     } else {
-        hdr = alc->malloc(alc->ctx, dat_len + 1);
+        hdr = (u8 *)alc->malloc(alc->ctx, dat_len + 1);
         cur = hdr;
         if (unlikely(!hdr)) {
             return_err(cur, MEMORY_ALLOCATION, "memory allocation failed");
