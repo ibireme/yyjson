@@ -4105,17 +4105,19 @@ read_double:
         /* skip fraction part */
         dot = cur;
         cur++;
-        if (!digi_is_digit(*cur++)) {
+        if (!digi_is_digit(*cur)) {
             return_err(cur, "no digit after decimal point");
         }
+        cur++;
         while (digi_is_digit(*cur)) cur++;
     }
     if (digi_is_exp(*cur)) {
         /* skip exponent part */
         cur += 1 + digi_is_sign(cur[1]);
-        if (!digi_is_digit(*cur++)) {
+        if (!digi_is_digit(*cur)) {
             return_err(cur, "no digit after exponent sign");
         }
+        cur++;
         while (digi_is_digit(*cur)) cur++;
     }
     
@@ -5787,6 +5789,7 @@ yyjson_doc *yyjson_read_file(const char *path,
 const char *yyjson_read_number(const char *dat,
                                yyjson_val *val,
                                yyjson_read_flag flg,
+                               const yyjson_alc *alc,
                                yyjson_read_err *err) {
 #define return_err(_pos, _code, _msg) do { \
     err->pos = _pos > hdr ? (usize)(_pos - hdr) : 0; \
@@ -5802,14 +5805,36 @@ const char *yyjson_read_number(const char *dat,
     u8 **pre; /* previous raw end pointer */
     const char *msg;
     yyjson_read_err dummy_err;
-    if (!err) err = &dummy_err;
     
+#if !YYJSON_HAS_IEEE_754 || YYJSON_DISABLE_FAST_FP_CONV
+    u8 buf[128];
+    usize dat_len;
+#endif
+    
+    if (!err) err = &dummy_err;
     if (unlikely(!dat)) {
         return_err(cur, INVALID_PARAMETER, "input data is NULL");
     }
     if (unlikely(!val)) {
         return_err(cur, INVALID_PARAMETER, "output value is NULL");
     }
+    
+#if !YYJSON_HAS_IEEE_754 || YYJSON_DISABLE_FAST_FP_CONV
+    if (!alc) alc = &YYJSON_DEFAULT_ALC;
+    dat_len = strlen(dat);
+    if (dat_len < sizeof(buf)) {
+        memcpy(buf, dat, dat_len + 1);
+        hdr = buf;
+        cur = hdr;
+    } else {
+        hdr = alc->malloc(alc->ctx, dat_len + 1);
+        cur = hdr;
+        if (unlikely(!hdr)) {
+            return_err(cur, MEMORY_ALLOCATION, "memory allocation failed");
+        }
+        memcpy(hdr, dat, dat_len + 1);
+    }
+#endif
     
 #if YYJSON_DISABLE_NON_STANDARD
     ext = false;
@@ -5821,10 +5846,20 @@ const char *yyjson_read_number(const char *dat,
     raw_end = NULL;
     pre = raw ? &raw_end : NULL;
     
+#if !YYJSON_HAS_IEEE_754 || YYJSON_DISABLE_FAST_FP_CONV
+    if (!read_number(&cur, pre, ext, val, &msg)) {
+        if (dat_len >= sizeof(buf)) alc->free(alc->ctx, hdr);
+        return_err(cur, INVALID_NUMBER, msg);
+    }
+    if (dat_len >= sizeof(buf)) alc->free(alc->ctx, hdr);
+    if (raw) val->uni.str = dat;
+    return dat + (cur - hdr);
+#else
     if (!read_number(&cur, pre, ext, val, &msg)) {
         return_err(cur, INVALID_NUMBER, msg);
     }
     return (const char *)cur;
+#endif
     
 #undef return_err
 }

@@ -8,6 +8,10 @@ All notable changes to this project will be documented in this file.
 
 #### Changed
 - Change allocator's realloc function signature, add `old_size` parameter (just ignore the parameter if your allocator doesn't need it): #100
+- Change yyjson_read_number() function, add `alc` parameter.
+
+#### Fixed
+- Fix incorrect error code for some invalid input: #103
 
 
 ## 0.6.0 (2022-12-12)
