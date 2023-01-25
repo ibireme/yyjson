@@ -122,6 +122,32 @@ jobs:
       run: ctest -C Release --output-on-failure
 
 
+  linux_gcc5_i386:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v2
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
+
+    - name: CMake and CTest
+      run: |
+          docker run -v "$PWD:/yyjson" i386/ubuntu:16.04 bash -e -c '
+            FORCE_COLOR=1
+            CLICOLOR_FORCE=1
+            apt-get update
+            apt-get install -y gcc g++ cmake
+            mkdir build
+            cd build
+            cmake ../yyjson -DYYJSON_BUILD_TESTS=ON
+            cmake --build . --config Release
+            ctest -C Release --output-on-failure
+          '
+
+
   linux_gcc4:
     runs-on: ubuntu-18.04
     steps:
