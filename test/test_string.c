@@ -316,6 +316,14 @@ yy_test_case(test_string) {
         { "a\\/b", 4 },
     });
     
+    validate_read((string_set) {
+        { "abc\x20\x7F", 5 },
+        { "abc\x20\x7F", 5 },
+        { "abc\x20\x7F", 5 },
+        { "abc\x20\x7F", 5 },
+        { "abc\x20\x7F", 5 },
+    });
+    
     validate_read_write((string_set) {
         { "\"\\/\b\f\n\r\t", 8 },
         { "\\\"\\\\/\\b\\f\\n\\r\\t", 15 },

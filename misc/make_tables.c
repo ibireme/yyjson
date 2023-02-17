@@ -152,8 +152,10 @@ static const char_type CHAR_TYPE_NON_ASCII  = 1 << 3;
 static const char_type CHAR_TYPE_CONTAINER  = 1 << 4;
 /** Comment character: '/'. */
 static const char_type CHAR_TYPE_COMMENT    = 1 << 5;
-/** Line end character '\\n', '\\r', '\0'. */
+/** Line end character: '\\n', '\\r', '\0'. */
 static const char_type CHAR_TYPE_LINE_END   = 1 << 6;
+/** Hex character: [0-9a-fA-F]. */
+static const char_type CHAR_TYPE_HEX        = 1 << 7;
 
 static void make_char_table(void) {
     u8 table[256] = {0};
@@ -187,6 +189,16 @@ static void make_char_table(void) {
     table['\r'] |= CHAR_TYPE_LINE_END;
     table['\0'] |= CHAR_TYPE_LINE_END;
     
+    for (int i = '0'; i <= '9'; i++) {
+        table[i] |= CHAR_TYPE_HEX;
+    }
+    for (int i = 'a'; i <= 'f'; i++) {
+        table[i] |= CHAR_TYPE_HEX;
+    }
+    for (int i = 'A'; i <= 'F'; i++) {
+        table[i] |= CHAR_TYPE_HEX;
+    }
+
     int table_len = 256;
     int line_len = 8;
     printf("static const char_type char_table[256] = {\n");

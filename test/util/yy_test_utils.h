@@ -158,6 +158,15 @@ static yy_inline int yy_msvc_snprintf(char *buf, size_t size,
 #   endif
 #endif
 
+/* number of elements in c array */
+#define yy_nelems(x)  (sizeof(x) / sizeof((x)[0]))
+
+/* minimum */
+#define yy_min(a, b) ((a) < (b) ? (a) : (b))
+
+/* maximum */
+#define yy_max(a, b) ((a) > (b) ? (a) : (b))
+
 
 
 #ifdef __cplusplus
