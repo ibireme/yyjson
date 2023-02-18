@@ -630,7 +630,7 @@ static const yyjson_read_code YYJSON_READ_ERROR_MEMORY_ALLOCATION       = 2;
 /** Input JSON string is empty. */
 static const yyjson_read_code YYJSON_READ_ERROR_EMPTY_CONTENT           = 3;
 
-/** Unexpected content after document, such as `[1]abc`. */
+/** Unexpected content after document, such as `[123]abc`. */
 static const yyjson_read_code YYJSON_READ_ERROR_UNEXPECTED_CONTENT      = 4;
 
 /** Unexpected ending, such as `[123`. */

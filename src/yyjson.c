@@ -729,8 +729,7 @@ static_inline f64 normalized_u64_to_f64(u64 val) {
 
 /** Returns whether the size is overflow after increment. */
 static_inline bool size_add_is_overflow(usize size, usize add) {
-    usize val = size + add;
-    return (val < size) | (val < add);
+    return size > (size + add);
 }
 
 /** Returns whether the size is power of 2 (size should not be 0). */
@@ -3135,7 +3134,7 @@ static_noinline bool skip_spaces_and_comments(u8 **ptr) {
 
 /**
  Check truncated string.
- Returns true if `cur` match `lit` but is truncated.
+ Returns true if `cur` match `str` but is truncated.
  */
 static_inline bool is_truncated_str(u8 *cur, u8 *end,
                                     const char *str,

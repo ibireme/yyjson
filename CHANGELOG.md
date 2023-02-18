@@ -11,7 +11,7 @@ All notable changes to this project will be documented in this file.
 - Change yyjson_read_number() function, add `alc` parameter.
 
 #### Fixed
-- Fix incorrect error code for some invalid input: #103
+- Fix inaccurate error code for truncated JSON: #103
 
 
 ## 0.6.0 (2022-12-12)
