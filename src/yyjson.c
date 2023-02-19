@@ -3207,34 +3207,33 @@ static_noinline bool is_truncated_end(u8 *hdr, u8 *cur, u8 *end,
             u8 c0 = cur[0], c1 = cur[1], c2 = cur[2];
             if (len == 1) {
                 /* 2 bytes UTF-8, truncated */
-                if ((c0 & 0xE0) == 0xC0 && (c0 & 0x1E)) return true;
+                if ((c0 & 0xE0) == 0xC0 && (c0 & 0x1E) != 0x00) return true;
                 /* 3 bytes UTF-8, truncated */
                 if ((c0 & 0xF0) == 0xE0) return true;
                 /* 4 bytes UTF-8, truncated */
-                if ((c0 & 0xF8) == 0xF0) return true;
+                if ((c0 & 0xF8) == 0xF0 && (c0 & 0x07) <= 0x04) return true;
             }
             if (len == 2) {
                 /* 3 bytes UTF-8, truncated */
                 if ((c0 & 0xF0) == 0xE0 &&
-                    (c1 & 0xC0) == 0x80 &&
-                    !((c0 & 0x0F) == 0x00 && (c1 & 0x20) == 0x00) &&
-                    !((c0 & 0x0F) == 0x0D && (c1 & 0x20) == 0x20)) {
-                    return true;
+                    (c1 & 0xC0) == 0x80) {
+                    u8 pat = (u8)(((c0 & 0x0F) << 1) | ((c1 & 0x20) >> 5));
+                    return 0x01 <= pat && pat != 0x1B;
                 }
                 /* 4 bytes UTF-8, truncated */
                 if ((c0 & 0xF8) == 0xF0 &&
-                    (c1 & 0xC0) == 0x80 &&
-                    !((c0 & 0x07) == 0x00 && (c1 & 0x30) == 0x00)) {
-                    return true;
+                    (c1 & 0xC0) == 0x80) {
+                    u8 pat = (u8)(((c0 & 0x07) << 2) | ((c1 & 0x30) >> 4));
+                    return 0x01 <= pat && pat <= 0x10;
                 }
             }
             if (len == 3) {
                 /* 4 bytes UTF-8, truncated */
                 if ((c0 & 0xF8) == 0xF0 &&
                     (c1 & 0xC0) == 0x80 &&
-                    (c2 & 0xC0) == 0x80 &&
-                    !((c0 & 0x07) == 0x00 && (c1 & 0x30) == 0x00)) {
-                    return true;
+                    (c2 & 0xC0) == 0x80) {
+                    u8 pat = (u8)(((c0 & 0x07) << 2) | ((c1 & 0x30) >> 4));
+                    return 0x01 <= pat && pat <= 0x10;
                 }
             }
         }

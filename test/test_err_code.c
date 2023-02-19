@@ -436,6 +436,49 @@ static void test_read_err_code(void) {
     
     // invalid 4-bytes UTF-8
     memcpy(buf, "\"abcdefgh\"", 10);
+    buf[1] = 0xF0;
+    buf[2] = 0x80;
+    buf[3] = 0x80;
+    buf[3] = 0x80;
+    for (len = 2; len < 10; len++) {
+        memset(&err, -1, sizeof(err));
+        yyjson_doc_free(yyjson_read_opts((char *)buf, len, 0, NULL, &err));
+        if (len == 2) {
+            yy_assert(err.code == YYJSON_READ_ERROR_UNEXPECTED_END);
+            yy_assert(err.pos == len);
+        } else {
+            yy_assert(err.code == YYJSON_READ_ERROR_INVALID_STRING);
+            yy_assert(err.pos == 1);
+        }
+    }
+    memcpy(buf, "\"abcdefgh\"", 10);
+    buf[1] = 0xF4;
+    buf[2] = 0xA0;
+    buf[3] = 0x80;
+    buf[3] = 0x80;
+    for (len = 2; len < 10; len++) {
+        memset(&err, -1, sizeof(err));
+        yyjson_doc_free(yyjson_read_opts((char *)buf, len, 0, NULL, &err));
+        if (len == 2) {
+            yy_assert(err.code == YYJSON_READ_ERROR_UNEXPECTED_END);
+            yy_assert(err.pos == len);
+        } else {
+            yy_assert(err.code == YYJSON_READ_ERROR_INVALID_STRING);
+            yy_assert(err.pos == 1);
+        }
+    }
+    memcpy(buf, "\"abcdefgh\"", 10);
+    buf[1] = 0xF5;
+    buf[2] = 0x80;
+    buf[3] = 0x80;
+    buf[3] = 0x80;
+    for (len = 2; len < 10; len++) {
+        memset(&err, -1, sizeof(err));
+        yyjson_doc_free(yyjson_read_opts((char *)buf, len, 0, NULL, &err));
+        yy_assert(err.code == YYJSON_READ_ERROR_INVALID_STRING);
+        yy_assert(err.pos == 1);
+    }
+    memcpy(buf, "\"abcdefgh\"", 10);
     buf[1] = 0xF8;
     buf[2] = 0x80;
     buf[3] = 0x80;
