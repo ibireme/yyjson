@@ -142,6 +142,7 @@ static void test_json_mut_val_api(void) {
     yy_assert(yyjson_mut_get_sint(val) == (i64)123);
     yy_assert(yyjson_mut_get_int(val) == (i64)123);
     yy_assert(yyjson_mut_get_real(val) == (f64)0);
+    yy_assert(yyjson_mut_get_num(val) == (f64)123);
     yy_assert(yyjson_mut_get_bool(val) == false);
 
     yy_assert(yyjson_mut_sint(NULL, -123) == NULL);
@@ -152,6 +153,7 @@ static void test_json_mut_val_api(void) {
     yy_assert(yyjson_mut_get_sint(val) == (i64)-123);
     yy_assert(yyjson_mut_get_int(val) == (i64)-123);
     yy_assert(yyjson_mut_get_real(val) == (f64)0);
+    yy_assert(yyjson_mut_get_num(val) == (f64)-123);
 
     yy_assert(yyjson_mut_real(NULL, 123.0) == NULL);
     val = yyjson_mut_real(doc, 123.0);
@@ -161,6 +163,7 @@ static void test_json_mut_val_api(void) {
     yy_assert(yyjson_mut_get_sint(val) == (i64)0);
     yy_assert(yyjson_mut_get_int(val) == (i64)0);
     yy_assert(yyjson_mut_get_real(val) == (f64)123.0);
+    yy_assert(yyjson_mut_get_num(val) == (f64)123.0);
 
     yy_assert(yyjson_mut_arr(NULL) == NULL);
     val = yyjson_mut_arr(doc);

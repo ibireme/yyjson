@@ -94,6 +94,7 @@ static void test_json_val_api(void) {
     yy_assert(yyjson_get_sint(val) == (i64)123);
     yy_assert(yyjson_get_int(val) == (i64)123);
     yy_assert(yyjson_get_real(val) == (f64)0);
+    yy_assert(yyjson_get_num(val) == (f64)123);
     yy_assert(yyjson_get_bool(val) == false);
     yyjson_doc_free(doc);
     
@@ -106,6 +107,7 @@ static void test_json_val_api(void) {
     yy_assert(yyjson_get_sint(val) == (i64)-123);
     yy_assert(yyjson_get_int(val) == (i64)-123);
     yy_assert(yyjson_get_real(val) == (f64)0);
+    yy_assert(yyjson_get_num(val) == (f64)-123);
     yyjson_doc_free(doc);
     
     json = "123.0";
@@ -117,6 +119,7 @@ static void test_json_val_api(void) {
     yy_assert(yyjson_get_sint(val) == (i64)0);
     yy_assert(yyjson_get_int(val) == (i64)0);
     yy_assert(yyjson_get_real(val) == (f64)123.0);
+    yy_assert(yyjson_get_num(val) == (f64)123.0);
     yyjson_doc_free(doc);
     
     json = "\"abc\"";

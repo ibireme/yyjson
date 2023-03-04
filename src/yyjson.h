@@ -374,6 +374,18 @@
 #   endif
 #endif
 
+/**
+ Microsoft Visual C++ 6.0 doesn't support converting number from u64 to f64:
+ error C2520: conversion from unsigned __int64 to double not implemented.
+ */
+#ifndef YYJSON_U64_TO_F64_NO_IMPL
+#   if (0 < YYJSON_MSC_VER) && (YYJSON_MSC_VER <= 1200)
+#       define YYJSON_U64_TO_F64_NO_IMPL 1
+#   else
+#       define YYJSON_U64_TO_F64_NO_IMPL 0
+#   endif
+#endif
+
 
 
 /*==============================================================================
@@ -1393,6 +1405,10 @@ yyjson_api_inline int yyjson_get_int(yyjson_val *val);
     Returns 0.0 if `val` is NULL or type is not real(double). */
 yyjson_api_inline double yyjson_get_real(yyjson_val *val);
 
+/** Returns the content and typecast to `double` if the value is number.
+    Returns 0.0 if `val` is NULL or type is not number(uint/sint/real). */
+yyjson_api_inline double yyjson_get_num(yyjson_val *val);
+
 /** Returns the content if the value is string.
     Returns NULL if `val` is NULL or type is not string. */
 yyjson_api_inline const char *yyjson_get_str(yyjson_val *val);
@@ -1895,6 +1911,10 @@ yyjson_api_inline int yyjson_mut_get_int(yyjson_mut_val *val);
 /** Returns the content if the value is real number.
     Returns 0.0 if `val` is NULL or type is not real(double). */
 yyjson_api_inline double yyjson_mut_get_real(yyjson_mut_val *val);
+
+/** Returns the content and typecast to `double` if the value is number.
+    Returns 0.0 if `val` is NULL or type is not number(uint/sint/real). */
+yyjson_api_inline double yyjson_mut_get_num(yyjson_mut_val *val);
 
 /** Returns the content if the value is string.
     Returns NULL if `val` is NULL or type is not string. */
@@ -3618,6 +3638,28 @@ yyjson_api_inline double unsafe_yyjson_get_real(void *val) {
     return ((yyjson_val *)val)->uni.f64;
 }
 
+yyjson_api_inline double unsafe_yyjson_get_num(void *val) {
+    uint8_t type = unsafe_yyjson_get_tag(val);
+    if (type == (YYJSON_TYPE_NUM | YYJSON_SUBTYPE_REAL)) {
+        return ((yyjson_val *)val)->uni.f64;
+    } else if (type == (YYJSON_TYPE_NUM | YYJSON_SUBTYPE_SINT)) {
+        return (double)((yyjson_val *)val)->uni.i64;
+    } else if (type == (YYJSON_TYPE_NUM | YYJSON_SUBTYPE_UINT)) {
+#if YYJSON_U64_TO_F64_NO_IMPL
+        uint64_t msb = ((uint64_t)1) << 63;
+        uint64_t num = ((yyjson_val *)val)->uni.u64;
+        if ((num & msb) == 0) {
+            return (double)(int64_t)num;
+        } else {
+            return ((double)(int64_t)((num >> 1) | (num & 1))) * (double)2.0;
+        }
+#else
+        return (double)((yyjson_val *)val)->uni.u64;
+#endif
+    }
+    return 0.0;
+}
+
 yyjson_api_inline const char *unsafe_yyjson_get_str(void *val) {
     return ((yyjson_val *)val)->uni.str;
 }
@@ -3871,6 +3913,10 @@ yyjson_api_inline int yyjson_get_int(yyjson_val *val) {
 
 yyjson_api_inline double yyjson_get_real(yyjson_val *val) {
     return yyjson_is_real(val) ? unsafe_yyjson_get_real(val) : 0.0;
+}
+
+yyjson_api_inline double yyjson_get_num(yyjson_val *val) {
+    return val ?  unsafe_yyjson_get_num(val) : 0.0;
 }
 
 yyjson_api_inline const char *yyjson_get_str(yyjson_val *val) {
@@ -4391,6 +4437,10 @@ yyjson_api_inline int yyjson_mut_get_int(yyjson_mut_val *val) {
 
 yyjson_api_inline double yyjson_mut_get_real(yyjson_mut_val *val) {
     return yyjson_get_real((yyjson_val *)val);
+}
+
+yyjson_api_inline double yyjson_mut_get_num(yyjson_mut_val *val) {
+    return yyjson_get_num((yyjson_val *)val);
 }
 
 yyjson_api_inline const char *yyjson_mut_get_str(yyjson_mut_val *val) {

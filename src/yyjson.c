@@ -197,18 +197,6 @@ yyjson_api uint32_t yyjson_version(void) {
 #   define YYJSON_DOUBLE_MATH_CORRECT 1
 #endif
 
-/*
- Microsoft Visual C++ 6.0 doesn't support converting number from u64 to f64:
- error C2520: conversion from unsigned __int64 to double not implemented.
- */
-#ifndef YYJSON_U64_TO_F64_NO_IMPL
-#   if (0 < YYJSON_MSC_VER) && (YYJSON_MSC_VER <= 1200)
-#       define YYJSON_U64_TO_F64_NO_IMPL 1
-#   else
-#       define YYJSON_U64_TO_F64_NO_IMPL 0
-#   endif
-#endif
-
 /* endian */
 #if yyjson_has_include(<sys/types.h>)
 #    include <sys/types.h>
