@@ -3639,12 +3639,12 @@ yyjson_api_inline double unsafe_yyjson_get_real(void *val) {
 }
 
 yyjson_api_inline double unsafe_yyjson_get_num(void *val) {
-    uint8_t type = unsafe_yyjson_get_tag(val);
-    if (type == (YYJSON_TYPE_NUM | YYJSON_SUBTYPE_REAL)) {
+    uint8_t tag = unsafe_yyjson_get_tag(val);
+    if (tag == (YYJSON_TYPE_NUM | YYJSON_SUBTYPE_REAL)) {
         return ((yyjson_val *)val)->uni.f64;
-    } else if (type == (YYJSON_TYPE_NUM | YYJSON_SUBTYPE_SINT)) {
+    } else if (tag == (YYJSON_TYPE_NUM | YYJSON_SUBTYPE_SINT)) {
         return (double)((yyjson_val *)val)->uni.i64;
-    } else if (type == (YYJSON_TYPE_NUM | YYJSON_SUBTYPE_UINT)) {
+    } else if (tag == (YYJSON_TYPE_NUM | YYJSON_SUBTYPE_UINT)) {
 #if YYJSON_U64_TO_F64_NO_IMPL
         uint64_t msb = ((uint64_t)1) << 63;
         uint64_t num = ((yyjson_val *)val)->uni.u64;
@@ -3916,7 +3916,7 @@ yyjson_api_inline double yyjson_get_real(yyjson_val *val) {
 }
 
 yyjson_api_inline double yyjson_get_num(yyjson_val *val) {
-    return val ?  unsafe_yyjson_get_num(val) : 0.0;
+    return val ? unsafe_yyjson_get_num(val) : 0.0;
 }
 
 yyjson_api_inline const char *yyjson_get_str(yyjson_val *val) {
