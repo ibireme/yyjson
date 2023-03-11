@@ -145,15 +145,6 @@ install(FILES src/yyjson.h DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}")
 if(YYJSON_BUILD_TESTS)
     enable_testing()
     
-    # Compiler flag check
-    include(CheckCCompilerFlag)
-    include(CheckCXXCompilerFlag)
-    check_c_compiler_flag("-ansi" COMPILER_SUPPORTS_ANSI_C)
-    check_c_compiler_flag("-std=gnu99" COMPILER_SUPPORTS_GNU99)
-    check_c_compiler_flag("-std=c11" COMPILER_SUPPORTS_C11)
-    check_cxx_compiler_flag("-ansi" COMPILER_SUPPORTS_ANSI_CPP)
-    check_cxx_compiler_flag("-std=c++17" COMPILER_SUPPORTS_CPP17)
-    
     if(XCODE)
         # Config XCTest
         find_package(XCTest REQUIRED)
@@ -235,8 +226,8 @@ if(YYJSON_BUILD_TESTS)
             test/util/goo_double_conv.c
         )
         target_include_directories(yyjson_test_utils PUBLIC test/util)
-        if(COMPILER_SUPPORTS_GNU99)
-            target_compile_options(yyjson_test_utils PRIVATE $<$<COMPILE_LANGUAGE:C>:-std=gnu99>)
+        if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
+            target_compile_options(yyjson_test_utils PRIVATE $<$<COMPILE_LANGUAGE:C>:-std=c99>)
         endif()
         
         # Add all test cases: c/cpp files prefixed with 'test_'
@@ -254,8 +245,8 @@ if(YYJSON_BUILD_TESTS)
                 target_compile_options(${SRC_NAME} PRIVATE $<$<CXX_COMPILER_ID:MSVC>:/utf-8>)
             endif()
             
-            if(COMPILER_SUPPORTS_GNU99)
-                target_compile_options(${SRC_NAME} PRIVATE $<$<COMPILE_LANGUAGE:C>:-std=gnu99>)
+            if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
+                target_compile_options(${SRC_NAME} PRIVATE $<$<COMPILE_LANGUAGE:C>:-std=c99>)
             endif()
             
             if(MEMORYCHECK_COMMAND)
@@ -291,7 +282,7 @@ if(YYJSON_BUILD_TESTS)
                 target_link_libraries(yyjson INTERFACE ${COMPILE_FLAGS})
             endif()
         endif()
-
+    
     endif()
     
     
@@ -311,30 +302,84 @@ if(YYJSON_BUILD_TESTS)
         
     elseif(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
         
-        # Check ANSI C/C++ standard strictly, treat warnings as errors
-        set(YYJSON_STRICT_C_FLAGS
-            -pedantic
-            -pedantic-errors
-            -Werror
-            -Wall
-            -Wextra
-            -Wmissing-prototypes
-            -Wstrict-prototypes
-            -Wdouble-promotion
-            -Wconversion
-            -Wundef
-        )
-        set(YYJSON_STRICT_CXX_FLAGS
-            -pedantic
-            -pedantic-errors
-            -Werror
-            -Wall
-            -Wextra
-            -Wdouble-promotion
-            -Wconversion
-            -Wundef
-        )
+        # Compiler flag check
+        include(CheckCCompilerFlag)
+        include(CheckCXXCompilerFlag)
         
+        # Flags to check ANSI C/C++ standard strictly, treat warnings as errors
+        set(YYJSON_STRICT_C_FLAGS "")
+        set(YYJSON_STRICT_CXX_FLAGS "")
+        
+        # Base flags
+        set(YYJSON_BASE_FLAGS
+            -pedantic
+            -pedantic-errors
+            -Werror
+            -Wall
+            -Wextra
+            -Wconversion
+            -Wundef
+            -Wcast-qual
+            -Wfloat-equal
+            -Wredundant-decls
+            -Wpointer-arith
+        )
+        # Extra flags supported by different compilers
+        if(CMAKE_C_COMPILER_ID MATCHES "GNU")
+            set(YYJSON_EXTRA_FLAGS
+                -Wmissing-prototypes    # C only
+                -Wstrict-prototypes     # C only
+                -Wlogical-op            # GCC 4.3
+                -Wdouble-promotion      # GCC 4.6
+                -Wduplicated-cond       # GCC 6.0
+                -Wduplicated-branches   # GCC 7.0
+                -Wcast-align=strict     # GCC 8.0
+                -Wshadow=global         # GCC 7.0
+            )
+        else()
+            set(YYJSON_EXTRA_FLAGS
+                -Wmissing-prototypes    # C only
+                -Wstrict-prototypes     # C only
+                -Wdouble-promotion      # Clang
+                -Wcast-align            # Clang
+                -Wcomma                 # Clang
+                -Wdeprecated            # Clang
+                -Wdocumentation         # Clang
+                -Wnewline-eof           # Clang
+                -Wshadow-all            # Clang
+                -Wunaligned-access      # Clang
+                -Wunreachable-code      # Clang
+                -Wextra-semi            # Clang
+                -Wextra-semi-stmt       # Clang
+                # used for finding potential issues, but too noisy for regular testing:
+                # -Weverything                        # enable all warnings
+                # -Wno-reserved-macro-identifier      # disable for stdbool define
+                # -Wno-padded                         # disable for some structs
+                # -Wno-old-style-cast                 # disable for C++
+                # -Wno-zero-as-null-pointer-constant  # disable for C++
+            )
+        endif()
+        
+        # Combine all available flags
+        list(APPEND YYJSON_STRICT_C_FLAGS ${YYJSON_BASE_FLAGS})
+        list(APPEND YYJSON_STRICT_CXX_FLAGS ${YYJSON_BASE_FLAGS})
+        foreach(flag ${YYJSON_EXTRA_FLAGS})
+            string(REGEX REPLACE "[-.+/:=]" "_" flag_name "${flag}")
+            
+            check_c_compiler_flag(${flag} COMPILER_SUPPORT_C_FLAG${flag_name})
+            if(COMPILER_SUPPORT_C_FLAG${flag_name})
+                list(APPEND YYJSON_STRICT_C_FLAGS ${flag})
+            endif()
+            
+            check_cxx_compiler_flag(${flag} COMPILER_SUPPORT_CXX_FLAG${flag_name})
+            if(COMPILER_SUPPORT_CXX_FLAG${flag_name})
+                list(APPEND YYJSON_STRICT_CXX_FLAGS ${flag})
+            endif()
+            
+        endforeach()
+        
+        # Check ANSI C
+        check_c_compiler_flag("-ansi" COMPILER_SUPPORTS_ANSI_C)
         if(COMPILER_SUPPORTS_ANSI_C)
             add_executable(test_compile_ansi_c test/compile_ansi.c)
             target_include_directories(test_compile_ansi_c PRIVATE src)
@@ -342,6 +387,17 @@ if(YYJSON_BUILD_TESTS)
                 $<$<COMPILE_LANGUAGE:C>:-ansi ${YYJSON_STRICT_C_FLAGS}>)
         endif()
         
+        # Check ANSI C++
+        check_cxx_compiler_flag("-ansi" COMPILER_SUPPORTS_ANSI_CXX)
+        if(COMPILER_SUPPORTS_ANSI_CXX)
+            add_executable(test_compile_ansi_cxx test/compile_ansi.cpp)
+            target_include_directories(test_compile_ansi_cxx PRIVATE src)
+            target_compile_options(test_compile_ansi_cxx PRIVATE
+                $<$<COMPILE_LANGUAGE:CXX>:-ansi ${YYJSON_STRICT_CXX_FLAGS}>)
+        endif()
+        
+        # Check modern C
+        check_c_compiler_flag("-std=c11" COMPILER_SUPPORTS_C11)
         if(COMPILER_SUPPORTS_C11)
             add_executable(test_compile_c11 test/compile_ansi.c)
             target_include_directories(test_compile_c11 PRIVATE src)
@@ -349,17 +405,12 @@ if(YYJSON_BUILD_TESTS)
                 $<$<COMPILE_LANGUAGE:C>:-std=c11 ${YYJSON_STRICT_C_FLAGS}>)
         endif()
         
-        if(COMPILER_SUPPORTS_ANSI_CPP)
-            add_executable(test_compile_ansi_cpp test/compile_ansi.cpp)
-            target_include_directories(test_compile_ansi_cpp PRIVATE src)
-            target_compile_options(test_compile_ansi_cpp PRIVATE
-                $<$<COMPILE_LANGUAGE:CXX>:-ansi ${YYJSON_STRICT_CXX_FLAGS}>)
-        endif()
-        
-        if(COMPILER_SUPPORTS_CPP17)
-            add_executable(test_compile_cpp17 test/compile_ansi.cpp)
-            target_include_directories(test_compile_cpp17 PRIVATE src)
-            target_compile_options(test_compile_cpp17 PRIVATE
+        # Check modern C++
+        check_cxx_compiler_flag("-std=c++17" COMPILER_SUPPORTS_CXX17)
+        if(COMPILER_SUPPORTS_CXX17)
+            add_executable(test_compile_cxx17 test/compile_ansi.cpp)
+            target_include_directories(test_compile_cxx17 PRIVATE src)
+            target_compile_options(test_compile_cxx17 PRIVATE
                 $<$<COMPILE_LANGUAGE:CXX>:-std=c++17 ${YYJSON_STRICT_CXX_FLAGS}>)
         endif()
 

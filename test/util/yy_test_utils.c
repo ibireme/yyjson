@@ -268,7 +268,7 @@ char **yy_dir_read_opts(const char *path, int *count, bool full) {
         char *name = (char *)entry.name;
         if (!name || !strlen(name)) continue;
         if (strcmp(name, ".") == 0 || strcmp(name, "..") == 0) continue;
-        name = _strdup(name);
+        name = yy_str_copy(name);
         if (!name) goto fail;
         if (idx + 1 >= alc) {
             alc *= 2;
@@ -351,7 +351,7 @@ fail:
         while (one_name > one_path && *(one_name - 1) != '/') one_name--;
         if (!strcmp(one_name, ".") || !strcmp(one_name, "..")) continue;
         const char *one = full ? one_path : one_name;
-        one = strdup(one);
+        one = yy_str_copy(one);
         if (!one) {
             for (i = 0; i < icount; i++) free((void *)names[i]);
             globfree(&buf);
@@ -391,7 +391,7 @@ fail:
                 goto fail;
             names = names_tmp;
         }
-        name = strdup(name);
+        name = yy_str_copy(name);
         if (!name) goto fail;
         if (full) {
             char *fullpath = malloc(strlen(path) + strlen(name) + 4);
