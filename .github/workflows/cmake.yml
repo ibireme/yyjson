@@ -91,15 +91,19 @@ jobs:
             ctest -C Release --output-on-failure
           '
 
+
   linux_opts:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
+        compiler:
+          - gcc
+          - clang
         opt: 
-          - ENABLE_FASTMATH
-          - DISABLE_READER
-          - DISABLE_WRITER
+          - no_fp
+          - no_reader
+          - no_writer
 
     steps:
     - uses: actions/checkout@v3
@@ -107,9 +111,25 @@ jobs:
     - name: CMake
       shell: bash
       run: |
+        BUILD_OPTIONS="-DCMAKE_BUILD_TYPE=Release -DYYJSON_BUILD_TESTS=ON"
+        if [ "${{matrix.compiler}}" == "gcc" ]; then
+          BUILD_OPTIONS="${BUILD_OPTIONS} -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++"
+        fi
+        if [ "${{matrix.compiler}}" == "clang" ]; then
+          BUILD_OPTIONS="${BUILD_OPTIONS} -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++"
+        fi
+        if [ "${{matrix.opt}}" == "no_fp" ]; then
+          BUILD_OPTIONS="${BUILD_OPTIONS} -DYYJSON_DISABLE_FAST_FP_CONV=ON"
+        fi
+        if [ "${{matrix.opt}}" == "no_reader" ]; then
+          BUILD_OPTIONS="${BUILD_OPTIONS} -DYYJSON_DISABLE_READER=ON"
+        fi
+        if [ "${{matrix.opt}}" == "no_writer" ]; then
+          BUILD_OPTIONS="${BUILD_OPTIONS} -DYYJSON_DISABLE_WRITER=ON"
+        fi
         cmake -E make_directory ${{runner.workspace}}/build
         cd ${{runner.workspace}}/build
-        cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=Release -DYYJSON_BUILD_TESTS=ON -DYYJSON_${{matrix.opt}}=ON
+        cmake $GITHUB_WORKSPACE $BUILD_OPTIONS
 
     - name: Build
       shell: bash
@@ -188,16 +208,8 @@ jobs:
         ctest -C Release --output-on-failure
 
 
-  macos:
+  macos_clang:
     runs-on: macos-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        build_option:
-          - Default
-          - DisableFastFPConv
-          - DisableNonStandard
-
     steps:
     - uses: actions/checkout@v3
     - name: Build and Test
@@ -209,7 +221,7 @@ jobs:
         ctest -C Release --output-on-failure
 
 
-  windows:
+  windows_msvc:
     runs-on: windows-latest
     steps:
     - uses: actions/checkout@v3
