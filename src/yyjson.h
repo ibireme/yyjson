@@ -1786,6 +1786,8 @@ yyjson_api yyjson_mut_val *yyjson_val_mut_copy(yyjson_mut_doc *doc,
 yyjson_api yyjson_mut_val *yyjson_mut_val_mut_copy(yyjson_mut_doc *doc,
                                                    yyjson_mut_val *val);
 
+yyjson_api yyjson_mut_val *yyjson_mut_val_detach(yyjson_mut_doc *old_doc, yyjson_mut_doc *doc, yyjson_mut_val *target);
+
 /** Copies and returns a new immutable document from input,
     returns NULL on error. This makes a `deep-copy` on the mutable document.
     The returned document should be freed with `yyjson_doc_free()`.
@@ -4216,23 +4218,20 @@ yyjson_api_inline yyjson_val *yyjson_obj_iter_getn(yyjson_obj_iter *iter,
  *============================================================================*/
 
 /**
- Mutable JSON value, 24 bytes.
- The 'tag' and 'uni' field is same as immutable value.
- The 'next' field links all elements inside the container to be a cycle.
- */
-struct yyjson_mut_val {
-    uint64_t tag; /**< type, subtype and length */
-    yyjson_val_uni uni; /**< payload */
-    yyjson_mut_val *next; /**< the next value in circular linked list */
-};
-
-/**
  A memory chunk in string memory pool.
  */
 typedef struct yyjson_str_chunk {
     struct yyjson_str_chunk *next;
     /* flexible array member here */
 } yyjson_str_chunk;
+
+/**
+ A memory chunk in value memory pool.
+ */
+typedef struct yyjson_val_chunk {
+    struct yyjson_val_chunk *next;
+    /* flexible array member here */
+} yyjson_val_chunk;
 
 /**
  A memory pool to hold all strings in a mutable document.
@@ -4246,12 +4245,17 @@ typedef struct yyjson_str_pool {
 } yyjson_str_pool;
 
 /**
- A memory chunk in value memory pool.
+ Mutable JSON value, 24 bytes.
+ The 'tag' and 'uni' field is same as immutable value.
+ The 'next' field links all elements inside the container to be a cycle.
  */
-typedef struct yyjson_val_chunk {
-    struct yyjson_val_chunk *next;
-    /* flexible array member here */
-} yyjson_val_chunk;
+struct yyjson_mut_val {
+    uint64_t tag; /**< type, subtype and length */
+    yyjson_val_uni uni; /**< payload */
+    yyjson_mut_val *next; /**< the next value in circular linked list */
+    yyjson_val_chunk *val_chunk;
+    yyjson_str_chunk *str_chunk;
+};
 
 /**
  A memory pool to hold all values in a mutable document.
@@ -4281,6 +4285,14 @@ yyjson_api bool unsafe_yyjson_val_pool_grow(yyjson_val_pool *pool,
                                             const yyjson_alc *alc,
                                             size_t count);
 
+yyjson_api bool unsafe_yyjson_str_pool_grow_without_malloc(yyjson_str_pool *pool, yyjson_str_chunk *chunk);
+
+yyjson_api bool unsafe_yyjson_val_pool_grow_without_malloc(yyjson_val_pool *pool, yyjson_val_chunk *chunk);
+
+yyjson_api yyjson_str_chunk* unsafe_yyjson_str_pool_shrink(yyjson_str_pool *pool, yyjson_mut_val *val);
+
+yyjson_api yyjson_val_chunk* unsafe_yyjson_val_pool_shrink(yyjson_val_pool *pool, yyjson_mut_val *val);
+
 yyjson_api_inline char *unsafe_yyjson_mut_strncpy(yyjson_mut_doc *doc,
                                                   const char *str, size_t len) {
     char *mem;
@@ -4288,10 +4300,8 @@ yyjson_api_inline char *unsafe_yyjson_mut_strncpy(yyjson_mut_doc *doc,
     yyjson_str_pool *pool = &doc->str_pool;
     
     if (!str) return NULL;
-    if (yyjson_unlikely((size_t)(pool->end - pool->cur) <= len)) {
-        if (yyjson_unlikely(!unsafe_yyjson_str_pool_grow(pool, alc, len + 1))) {
-            return NULL;
-        }
+    if (yyjson_unlikely(!unsafe_yyjson_str_pool_grow(pool, alc, len + 1))) {
+        return NULL;
     }
     
     mem = pool->cur;
@@ -4306,10 +4316,8 @@ yyjson_api_inline yyjson_mut_val *unsafe_yyjson_mut_val(yyjson_mut_doc *doc,
     yyjson_mut_val *val;
     yyjson_alc *alc = &doc->alc;
     yyjson_val_pool *pool = &doc->val_pool;
-    if (yyjson_unlikely((size_t)(pool->end - pool->cur) < count)) {
-        if (yyjson_unlikely(!unsafe_yyjson_val_pool_grow(pool, alc, count))) {
-            return NULL;
-        }
+    if (yyjson_unlikely(!unsafe_yyjson_val_pool_grow(pool, alc, count))) {
+        return NULL;
     }
     
     val = pool->cur;
@@ -4578,6 +4586,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_rawncpy(yyjson_mut_doc *doc,
     if (yyjson_likely(doc && str)) {
         yyjson_mut_val *val = unsafe_yyjson_mut_val(doc, 1);
         char *new_str = unsafe_yyjson_mut_strncpy(doc, str, len);
+        val->str_chunk = doc->str_pool.chunks;
         if (yyjson_likely(val && new_str)) {
             val->tag = ((uint64_t)len << YYJSON_TAG_BIT) | YYJSON_TYPE_RAW;
             val->uni.str = new_str;
@@ -4708,6 +4717,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_strncpy(yyjson_mut_doc *doc,
     if (yyjson_likely(doc && str)) {
         yyjson_mut_val *val = unsafe_yyjson_mut_val(doc, 1);
         char *new_str = unsafe_yyjson_mut_strncpy(doc, str, len);
+        val->str_chunk = doc->str_pool.chunks;
         if (yyjson_likely(val && new_str)) {
             val->tag = ((uint64_t)len << YYJSON_TAG_BIT) | YYJSON_TYPE_STR;
             val->uni.str = new_str;
@@ -4841,6 +4851,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_arr(yyjson_mut_doc *doc) {
                 size_t i; \
                 for (i = 0; i < count; i++) { \
                     yyjson_mut_val *val = arr + i + 1; \
+                    val->val_chunk = doc->val_pool.chunks;\
                     func \
                     val->next = val + 1; \
                 } \
@@ -4984,6 +4995,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_with_strcpy(
         len = strlen(str);
         val->tag = ((uint64_t)len << YYJSON_TAG_BIT) | YYJSON_TYPE_STR;
         val->uni.str = unsafe_yyjson_mut_strncpy(doc, str, len);
+        val->str_chunk = doc->str_pool.chunks;
         if (yyjson_unlikely(!val->uni.str)) return NULL;
     });
 }
@@ -4998,6 +5010,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_with_strncpy(
         len = lens[i];
         val->tag = ((uint64_t)len << YYJSON_TAG_BIT) | YYJSON_TYPE_STR;
         val->uni.str = unsafe_yyjson_mut_strncpy(doc, str, len);
+        val->str_chunk = doc->str_pool.chunks;
         if (yyjson_unlikely(!val->uni.str)) return NULL;
     });
 }
@@ -5882,6 +5895,7 @@ yyjson_api_inline bool yyjson_mut_obj_add_strcpy(yyjson_mut_doc *doc,
         val->uni.str = unsafe_yyjson_mut_strncpy(doc, _val, _len);
         if (yyjson_unlikely(!val->uni.str)) return false;
         val->tag = ((uint64_t)_len << YYJSON_TAG_BIT) | YYJSON_TYPE_STR;
+        val->str_chunk = doc->str_pool.chunks;
     });
 }
 
@@ -5895,6 +5909,7 @@ yyjson_api_inline bool yyjson_mut_obj_add_strncpy(yyjson_mut_doc *doc,
         val->uni.str = unsafe_yyjson_mut_strncpy(doc, _val, _len);
         if (yyjson_unlikely(!val->uni.str)) return false;
         val->tag = ((uint64_t)_len << YYJSON_TAG_BIT) | YYJSON_TYPE_STR;
+        val->str_chunk = doc->str_pool.chunks;
     });
 }
 

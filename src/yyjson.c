@@ -1158,7 +1158,6 @@ bool unsafe_yyjson_str_pool_grow(yyjson_str_pool *pool,
                                  const yyjson_alc *alc, usize len) {
     yyjson_str_chunk *chunk;
     usize size = len + sizeof(yyjson_str_chunk);
-    size = yyjson_max(pool->chunk_size, size);
     chunk = (yyjson_str_chunk *)alc->malloc(alc->ctx, size);
     if (yyjson_unlikely(!chunk)) return false;
     
@@ -1167,8 +1166,6 @@ bool unsafe_yyjson_str_pool_grow(yyjson_str_pool *pool,
     pool->cur = (char *)chunk + sizeof(yyjson_str_chunk);
     pool->end = (char *)chunk + size;
     
-    size = yyjson_min(pool->chunk_size * 2, pool->chunk_size_max);
-    pool->chunk_size = size;
     return true;
 }
 
@@ -1179,7 +1176,6 @@ bool unsafe_yyjson_val_pool_grow(yyjson_val_pool *pool,
     
     if (count >= USIZE_MAX / sizeof(yyjson_mut_val) - 16) return false;
     size = (count + 1) * sizeof(yyjson_mut_val);
-    size = yyjson_max(pool->chunk_size, size);
     chunk = (yyjson_val_chunk *)alc->malloc(alc->ctx, size);
     if (yyjson_unlikely(!chunk)) return false;
     
@@ -1189,9 +1185,66 @@ bool unsafe_yyjson_val_pool_grow(yyjson_val_pool *pool,
                                            + sizeof(yyjson_mut_val));
     pool->end = (yyjson_mut_val *)(void *)((u8 *)chunk + size);
     
-    size = yyjson_min(pool->chunk_size * 2, pool->chunk_size_max);
-    pool->chunk_size = size;
     return true;
+}
+
+bool unsafe_yyjson_str_pool_grow_without_malloc(yyjson_str_pool *pool, yyjson_str_chunk *chunk) {
+    if (yyjson_unlikely(!chunk))
+      return false;
+    chunk->next = pool->chunks;
+    pool->chunks = chunk;
+    return true;
+}
+
+bool unsafe_yyjson_val_pool_grow_without_malloc(yyjson_val_pool *pool, yyjson_val_chunk *chunk) {
+    if (yyjson_unlikely(!chunk))
+      return false;
+    chunk->next = pool->chunks;
+    pool->chunks = chunk;
+    return true;
+}
+
+yyjson_str_chunk* unsafe_yyjson_str_pool_shrink(yyjson_str_pool *pool, yyjson_mut_val *val) {
+    yyjson_str_chunk *chunk = pool->chunks, *next;
+    if (chunk == NULL)
+        return NULL;
+    next = chunk->next;
+    if (chunk == val->str_chunk) {
+      pool->chunks = next;
+      return chunk;
+    }
+    while (next) {
+      if (val->str_chunk == next && next != NULL) {
+        chunk->next = next->next;
+        return next;
+      } else {
+        chunk = chunk->next;
+        next = next->next;
+      }
+    }
+    return NULL;
+}
+
+yyjson_val_chunk* unsafe_yyjson_val_pool_shrink(yyjson_val_pool *pool, yyjson_mut_val *val) {
+  yyjson_val_chunk *chunk = pool->chunks, *next;
+  if(chunk == NULL){
+      return NULL;
+  }
+  next = chunk->next;
+  if (chunk == val->val_chunk) {
+    pool->chunks = next;
+    return chunk;
+  }
+  while (next) {
+    if (val->val_chunk == next && next != NULL) {
+      chunk->next = next->next;
+      return next;
+    } else {
+      chunk = chunk->next;
+      next = next->next;
+    }
+  }
+  return NULL;
 }
 
 void yyjson_mut_doc_free(yyjson_mut_doc *doc) {
@@ -1276,10 +1329,12 @@ yyjson_api yyjson_mut_val *yyjson_val_mut_copy(yyjson_mut_doc *m_doc,
         yyjson_type type = unsafe_yyjson_get_type(i_val);
         m_val->tag = i_val->tag;
         m_val->uni.u64 = i_val->uni.u64;
+        m_val->val_chunk = m_doc->val_pool.chunks;
         if (type == YYJSON_TYPE_STR || type == YYJSON_TYPE_RAW) {
             const char *str = i_val->uni.str;
             usize str_len = unsafe_yyjson_get_len(i_val);
             m_val->uni.str = unsafe_yyjson_mut_strncpy(m_doc, str, str_len);
+            m_val->str_chunk = m_doc->str_pool.chunks;
             if (!m_val->uni.str) return NULL;
         } else if (type == YYJSON_TYPE_ARR) {
             usize len = unsafe_yyjson_get_len(i_val);
@@ -1358,6 +1413,7 @@ static yyjson_mut_val *unsafe_yyjson_mut_val_mut_copy(yyjson_mut_doc *m_doc,
             const char *str = m_vals->uni.str;
             usize str_len = unsafe_yyjson_get_len(m_vals);
             m_val->uni.str = unsafe_yyjson_mut_strncpy(m_doc, str, str_len);
+            m_val->str_chunk = m_doc->str_pool.chunks;
             if (!m_val->uni.str) return NULL;
             break;
         }
@@ -1375,6 +1431,57 @@ yyjson_api yyjson_mut_val *yyjson_mut_val_mut_copy(yyjson_mut_doc *doc,
     if (doc && val) return unsafe_yyjson_mut_val_mut_copy(doc, val);
     return NULL;
 }
+
+
+static yyjson_mut_val* unsafe_yyjson_mut_val_detach(yyjson_mut_doc *old_doc, yyjson_mut_doc *doc, yyjson_mut_val *item){
+    if(item != NULL) {
+        yyjson_val_chunk *sub_val_chunk;
+        yyjson_str_chunk *sub_str_chunk;
+        switch(unsafe_yyjson_get_type(item)) {
+            case YYJSON_TYPE_OBJ:
+            case YYJSON_TYPE_ARR:{
+                yyjson_mut_val *first_key = NULL;
+                if(unsafe_yyjson_get_len(item)>0){
+                    first_key = (yyjson_mut_val *)item->uni.ptr;
+                }
+                if(first_key){
+                    yyjson_mut_val *first_key_cp = first_key;
+                    first_key = first_key->next;
+                    while(first_key!=first_key_cp) {
+                        unsafe_yyjson_mut_val_detach(old_doc, doc, first_key);
+                        first_key = first_key->next;
+                    }
+                    unsafe_yyjson_mut_val_detach(old_doc, doc, first_key_cp);
+                }
+                
+                sub_val_chunk = unsafe_yyjson_val_pool_shrink(&old_doc->val_pool, item);
+                unsafe_yyjson_val_pool_grow_without_malloc(&doc->val_pool, sub_val_chunk);
+                break;
+            }
+            case YYJSON_TYPE_STR:{
+                sub_str_chunk = unsafe_yyjson_str_pool_shrink(&old_doc->str_pool, item);
+                unsafe_yyjson_str_pool_grow_without_malloc(&doc->str_pool, sub_str_chunk);
+                sub_val_chunk = unsafe_yyjson_val_pool_shrink(&old_doc->val_pool, item);
+                unsafe_yyjson_val_pool_grow_without_malloc(&doc->val_pool, sub_val_chunk);
+                break;
+            }
+            default: {
+                sub_val_chunk = unsafe_yyjson_val_pool_shrink(&old_doc->val_pool, item);
+                unsafe_yyjson_val_pool_grow_without_malloc(&doc->val_pool, sub_val_chunk);
+                break;
+            }
+        }
+    }
+    return item;
+}
+yyjson_api yyjson_mut_val *yyjson_mut_val_detach(yyjson_mut_doc *old_doc, yyjson_mut_doc *doc, yyjson_mut_val *item) {
+    if (item && old_doc && doc) {
+        return unsafe_yyjson_mut_val_detach(old_doc, doc, item);
+    }
+    return NULL;
+}
+
+
 
 /* Count the number of values and the total length of the strings. */
 static void yyjson_mut_stat(yyjson_mut_val *val,

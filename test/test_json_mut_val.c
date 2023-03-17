@@ -2082,10 +2082,26 @@ static void test_json_mut_equals_api(void) {
 }]", true);
 }
 
+static void test_json_mut_detach_api(void) {
+    #if !YYJSON_DISABLE_READER
+    const char* json_str = "{\"a\":{\"b\":\"c\"}}";
+    yyjson_doc *imut_doc = yyjson_read(json_str, strlen(json_str), 0);
+    yyjson_mut_doc *old_doc = yyjson_doc_mut_copy(imut_doc, NULL);
+    yyjson_mut_doc *new_doc = yyjson_mut_doc_new(NULL);
+    yyjson_mut_val *item = yyjson_mut_doc_get_pointer(old_doc,"/a");
+    item = yyjson_mut_val_detach(old_doc, new_doc, item);
+    yyjson_mut_doc_free(old_doc);
+    yyjson_mut_doc_set_root(new_doc, item);
+    char *new_json = yyjson_mut_write(new_doc, 0, NULL);
+    validate_equals(new_json,"{\"b\":\"c\"}",true);
+    #endif
+}
+
 yy_test_case(test_json_mut_val) {
     test_json_mut_val_api();
     test_json_mut_arr_api();
     test_json_mut_obj_api();
     test_json_mut_doc_api();
     test_json_mut_equals_api();
+    test_json_mut_detach_api();
 }
