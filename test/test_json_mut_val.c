@@ -2083,7 +2083,7 @@ static void test_json_mut_equals_api(void) {
 }
 
 static void test_json_mut_detach_api(void) {
-    #if !YYJSON_DISABLE_READER
+#if !YYJSON_DISABLE_READER && !YYJSON_DISABLE_WRITER
     const char* json_str = "{\"a\":{\"b\":\"c\"}}";
     yyjson_doc *imut_doc = yyjson_read(json_str, strlen(json_str), 0);
     yyjson_mut_doc *old_doc = yyjson_doc_mut_copy(imut_doc, NULL);
@@ -2092,9 +2092,13 @@ static void test_json_mut_detach_api(void) {
     item = yyjson_mut_val_detach(old_doc, new_doc, item);
     yyjson_mut_doc_free(old_doc);
     yyjson_mut_doc_set_root(new_doc, item);
+
     char *new_json = yyjson_mut_write(new_doc, 0, NULL);
     validate_equals(new_json,"{\"b\":\"c\"}",true);
-    #endif
+    free(new_json);
+    yyjson_mut_doc_free(new_doc);
+    yyjson_doc_free(imut_doc);
+#endif
 }
 
 yy_test_case(test_json_mut_val) {
