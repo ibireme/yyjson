@@ -247,7 +247,8 @@ yyjson_api uint32_t yyjson_version(void) {
     defined(__alpha) || defined(__alpha__) || defined(_M_ALPHA) || \
     defined(__riscv) || defined(__riscv__) || \
     defined(_MIPSEL) || defined(__MIPSEL) || defined(__MIPSEL__) || \
-    defined(__EMSCRIPTEN__) || defined(__wasm__)
+    defined(__EMSCRIPTEN__) || defined(__wasm__) || \
+    defined(__loongarch__)
 #   define YYJSON_ENDIAN YYJSON_LITTLE_ENDIAN
 
 #elif (defined(__BIG_ENDIAN__) && __BIG_ENDIAN__ == 1) || \
@@ -314,6 +315,9 @@ yyjson_api uint32_t yyjson_version(void) {
         defined(_ARCH_PPC) || defined(_M_PPC) || \
         defined(__PPCGECKO__) || defined(__PPCBROADWAY__) || defined(_XENON)
 #       define YYJSON_DISABLE_UNALIGNED_MEMORY_ACCESS 0 /* PowerPC */
+
+#   elif defined(__loongarch__)
+#       define YYJSON_DISABLE_UNALIGNED_MEMORY_ACCESS 0 /* loongarch */
 
 #   else
 #       define YYJSON_DISABLE_UNALIGNED_MEMORY_ACCESS 0 /* Unknown */
