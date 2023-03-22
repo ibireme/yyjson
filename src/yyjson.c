@@ -7901,7 +7901,7 @@ static_inline usize yyjson_mut_doc_estimated_val_num(
     while (chunk) {
         sum += chunk->chunk_size / sizeof(yyjson_mut_val) - 1;
         if (chunk == doc->val_pool.chunks) {
-            sum -= doc->val_pool.end - doc->val_pool.cur;
+            sum -= (usize)(doc->val_pool.end - doc->val_pool.cur);
         }
         chunk = chunk->next;
     }
