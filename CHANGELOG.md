@@ -5,11 +5,14 @@ All notable changes to this project will be documented in this file.
 ## Unreleased
 #### Added
 - Add `YYJSON_WRITE_PRETTY_TWO_SPACES` option to allow 2 spaces instead of 4 spaces when writing pretty JSON: #99
-- Add yyjson_get_num() function to convert and return any number value as `double`: #108.
+- Add `yyjson_get_num()` function to convert and return any number value as `double`: #108
+- Add support for Loongarch: #112
+- Add functions to support modifying memory pool size of `yyjson_mut_doc`.
 
 #### Changed
 - Change allocator's realloc function signature, add `old_size` parameter (just ignore the parameter if your allocator doesn't need it): #100
-- Change yyjson_read_number() function, add `alc` parameter.
+- Change `yyjson_read_number()` function, add `alc` parameter.
+- Improve `yyjson_mut_write()` performance.
 
 #### Fixed
 - Fix inaccurate error code for truncated JSON: #103
