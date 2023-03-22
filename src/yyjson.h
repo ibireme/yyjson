@@ -1747,6 +1747,38 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_doc_get_root(yyjson_mut_doc *doc);
 yyjson_api_inline void yyjson_mut_doc_set_root(yyjson_mut_doc *doc,
                                                yyjson_mut_val *root);
 
+/**
+ Set the string pool size for a mutable document.
+ This function does not allocate memory immediately, but uses the size when
+ the next memory allocation is needed.
+ 
+ If the caller knows the approximate bytes of strings that the document needs to
+ store (e.g. copy string with `yyjson_mut_strcpy` function), setting a larger
+ size can avoid multiple memory allocations and improve performance.
+ 
+ @param doc The mutable document.
+ @param len The desired string pool size in bytes (total string length).
+ @return true if successful, false if size is 0 or overflow.
+ */
+yyjson_api bool yyjson_mut_doc_set_str_pool_size(yyjson_mut_doc *doc,
+                                                 size_t len);
+
+/**
+ Set the value pool size for a mutable document.
+ This function does not allocate memory immediately, but uses the size when
+ the next memory allocation is needed.
+ 
+ If the caller knows the approximate number of values that the document needs to
+ store (e.g. create new value with `yyjson_mut_xxx` functions), setting a larger
+ size can avoid multiple memory allocations and improve performance.
+ 
+ @param doc The mutable document.
+ @param count The desired value pool size (number of `yyjson_mut_val`).
+ @return true if successful, false if size is 0 or overflow.
+ */
+yyjson_api bool yyjson_mut_doc_set_val_pool_size(yyjson_mut_doc *doc,
+                                                 size_t count);
+
 /** Release the JSON document and free the memory.
     After calling this function, the `doc` and all values from the `doc` are no
     longer available. This function will do nothing if the `doc` is NULL.  */
@@ -4230,8 +4262,9 @@ struct yyjson_mut_val {
  A memory chunk in string memory pool.
  */
 typedef struct yyjson_str_chunk {
-    struct yyjson_str_chunk *next;
-    /* flexible array member here */
+    struct yyjson_str_chunk *next; /* next chunk linked list */
+    size_t chunk_size; /* chunk size in bytes */
+    /* char str[]; flexible array member */
 } yyjson_str_chunk;
 
 /**
@@ -4247,10 +4280,13 @@ typedef struct yyjson_str_pool {
 
 /**
  A memory chunk in value memory pool.
+ `sizeof(yyjson_val_chunk)` should not larger than `sizeof(yyjson_mut_val)`.
  */
 typedef struct yyjson_val_chunk {
-    struct yyjson_val_chunk *next;
-    /* flexible array member here */
+    struct yyjson_val_chunk *next; /* next chunk linked list */
+    size_t chunk_size; /* chunk size in bytes */
+    /* char pad[sizeof(yyjson_mut_val) - sizeof(yyjson_val_chunk)]; padding */
+    /* yyjson_mut_val vals[]; flexible array member */
 } yyjson_val_chunk;
 
 /**

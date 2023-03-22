@@ -1279,6 +1279,30 @@ static void test_json_mut_obj_api(void) {
     key = yyjson_mut_strn(doc, keys[idx], key_lens[idx]); \
     val = yyjson_mut_int(doc, vals[idx]);
     
+    
+    //---------------------------------------------
+    // memory pool
+    doc = yyjson_mut_doc_new(NULL);
+    
+    yy_assert(!yyjson_mut_doc_set_str_pool_size(NULL, 0));
+    yy_assert(!yyjson_mut_doc_set_str_pool_size(doc, 0));
+    yy_assert(!yyjson_mut_doc_set_str_pool_size(doc, ~(size_t)0));
+    
+    yy_assert(yyjson_mut_doc_set_str_pool_size(doc, 100));
+    yy_assert(doc->str_pool.chunk_size == 100 * sizeof(char) + sizeof(yyjson_str_chunk));
+    
+    yy_assert(!yyjson_mut_doc_set_val_pool_size(NULL, 0));
+    yy_assert(!yyjson_mut_doc_set_val_pool_size(doc, 0));
+    yy_assert(!yyjson_mut_doc_set_val_pool_size(doc, ~(size_t)0));
+    
+    yy_assert(yyjson_mut_doc_set_val_pool_size(doc, 100));
+    yy_assert(doc->val_pool.chunk_size == 100 * sizeof(yyjson_mut_val) + sizeof(yyjson_mut_val));
+    
+    yyjson_mut_doc_free(doc);
+    
+    
+    //---------------------------------------------
+    // create
     doc = yyjson_mut_doc_new(NULL);
     obj = yyjson_mut_obj(doc);
     yy_assert(yyjson_mut_is_obj(obj));
