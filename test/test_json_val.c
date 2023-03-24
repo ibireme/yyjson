@@ -190,7 +190,7 @@ static void test_json_arr_api(void) {
     yy_assert(val == NULL);
     
     // iter
-    yyjson_arr_iter_init(arr, &iter);
+    iter = yyjson_arr_iter_with(arr);
     yy_assert(yyjson_arr_iter_has_next(&iter) == false);
     while ((val = yyjson_arr_iter_next(&iter))) {
         yy_assert(false);
@@ -401,7 +401,7 @@ static void test_json_obj_api(void) {
     yy_assert(val == NULL);
     
     // iter
-    yyjson_obj_iter_init(obj, &iter);
+    iter = yyjson_obj_iter_with(obj);
     yy_assert(yyjson_obj_iter_has_next(&iter) == false);
     while ((key = yyjson_obj_iter_next(&iter))) {
         yy_assert(false);

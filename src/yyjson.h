@@ -1517,8 +1517,7 @@ yyjson_api_inline yyjson_val *yyjson_arr_get_last(yyjson_val *arr);
  @par Example
  @code
     yyjson_val *val;
-    yyjson_arr_iter iter;
-    yyjson_arr_iter_init(arr, &iter);
+    yyjson_arr_iter iter = yyjson_arr_iter_with(arr);
     while ((val = yyjson_arr_iter_next(&iter))) {
         your_func(val);
     }
@@ -1539,6 +1538,17 @@ typedef struct yyjson_arr_iter yyjson_arr_iter;
  */
 yyjson_api_inline bool yyjson_arr_iter_init(yyjson_val *arr,
                                             yyjson_arr_iter *iter);
+
+/**
+ Create an iterator with an array , same as `yyjson_arr_iter_init()`.
+ 
+ @param arr The array to be iterated over.
+    If this parameter is NULL or not an array, an empty iterator will returned.
+ @return A new iterator for the array.
+ 
+ @note The iterator does not need to be destroyed.
+ */
+yyjson_api_inline yyjson_arr_iter yyjson_arr_iter_with(yyjson_val *arr);
 
 /**
  Returns whether the iteration has more elements.
@@ -1615,8 +1625,7 @@ yyjson_api_inline yyjson_val *yyjson_obj_getn(yyjson_val *obj, const char *key,
  @par Example
  @code
     yyjson_val *key, *val;
-    yyjson_obj_iter iter;
-    yyjson_obj_iter_init(obj, &iter);
+    yyjson_obj_iter iter = yyjson_obj_iter_with(obj);
     while ((key = yyjson_obj_iter_next(&iter))) {
         val = yyjson_obj_iter_get_val(key);
         your_func(key, val);
@@ -1628,8 +1637,7 @@ yyjson_api_inline yyjson_val *yyjson_obj_getn(yyjson_val *obj, const char *key,
  @code
     // {"k1":1, "k2": 3, "k3": 3}
     yyjson_val *key, *val;
-    yyjson_obj_iter iter;
-    yyjson_obj_iter_init(obj, &iter);
+    yyjson_obj_iter iter = yyjson_obj_iter_with(obj);
     yyjson_val *v1 = yyjson_obj_iter_get(&iter, "k1");
     yyjson_val *v3 = yyjson_obj_iter_get(&iter, "k3");
  @endcode
@@ -1650,6 +1658,17 @@ typedef struct yyjson_obj_iter yyjson_obj_iter;
  */
 yyjson_api_inline bool yyjson_obj_iter_init(yyjson_val *obj,
                                             yyjson_obj_iter *iter);
+
+/**
+ Create an iterator with an object, same as `yyjson_obj_iter_init()`.
+ 
+ @param obj The object to be iterated over.
+    If this parameter is NULL or not an object, an empty iterator will returned.
+ @return A new iterator for the object.
+ 
+ @note The iterator does not need to be destroyed.
+ */
+yyjson_api_inline yyjson_obj_iter yyjson_obj_iter_with(yyjson_val *obj);
 
 /**
  Returns whether the iteration has more elements.
@@ -2166,8 +2185,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_get_last(yyjson_mut_val *arr);
  @par Example
  @code
     yyjson_mut_val *val;
-    yyjson_mut_arr_iter iter;
-    yyjson_mut_arr_iter_init(arr, &iter);
+    yyjson_mut_arr_iter iter = yyjson_mut_arr_iter_with(arr);
     while ((val = yyjson_mut_arr_iter_next(&iter))) {
         your_func(val);
         if (your_val_is_unused(val)) {
@@ -2191,6 +2209,18 @@ typedef struct yyjson_mut_arr_iter yyjson_mut_arr_iter;
  */
 yyjson_api_inline bool yyjson_mut_arr_iter_init(yyjson_mut_val *arr,
     yyjson_mut_arr_iter *iter);
+
+/**
+ Create an iterator with an array , same as `yyjson_mut_arr_iter_init()`.
+ 
+ @param arr The array to be iterated over.
+    If this parameter is NULL or not an array, an empty iterator will returned.
+ @return A new iterator for the array.
+ 
+ @note The iterator does not need to be destroyed.
+ */
+yyjson_api_inline yyjson_mut_arr_iter yyjson_mut_arr_iter_with(
+    yyjson_mut_val *arr);
 
 /**
  Returns whether the iteration has more elements.
@@ -2939,8 +2969,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_obj_getn(yyjson_mut_val *obj,
  @par Example
  @code
     yyjson_mut_val *key, *val;
-    yyjson_mut_obj_iter iter;
-    yyjson_mut_obj_iter_init(obj, &iter);
+    yyjson_mut_obj_iter iter = yyjson_mut_obj_iter_with(obj);
     while ((key = yyjson_mut_obj_iter_next(&iter))) {
         val = yyjson_mut_obj_iter_get_val(key);
         your_func(key, val);
@@ -2955,8 +2984,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_obj_getn(yyjson_mut_val *obj,
  @code
     // {"k1":1, "k2": 3, "k3": 3}
     yyjson_mut_val *key, *val;
-    yyjson_mut_obj_iter iter;
-    yyjson_mut_obj_iter_init(obj, &iter);
+    yyjson_mut_obj_iter iter = yyjson_mut_obj_iter_with(obj);
     yyjson_mut_val *v1 = yyjson_mut_obj_iter_get(&iter, "k1");
     yyjson_mut_val *v3 = yyjson_mut_obj_iter_get(&iter, "k3");
  @endcode
@@ -2977,6 +3005,18 @@ typedef struct yyjson_mut_obj_iter yyjson_mut_obj_iter;
  */
 yyjson_api_inline bool yyjson_mut_obj_iter_init(yyjson_mut_val *obj,
     yyjson_mut_obj_iter *iter);
+
+/**
+ Create an iterator with an object, same as `yyjson_obj_iter_init()`.
+ 
+ @param obj The object to be iterated over.
+    If this parameter is NULL or not an object, an empty iterator will returned.
+ @return A new iterator for the object.
+ 
+ @note The iterator does not need to be destroyed.
+ */
+yyjson_api_inline yyjson_mut_obj_iter yyjson_mut_obj_iter_with(
+    yyjson_mut_val *obj);
 
 /**
  Returns whether the iteration has more elements.
@@ -4114,6 +4154,12 @@ yyjson_api_inline bool yyjson_arr_iter_init(yyjson_val *arr,
     return false;
 }
 
+yyjson_api_inline yyjson_arr_iter yyjson_arr_iter_with(yyjson_val *arr) {
+    yyjson_arr_iter iter;
+    yyjson_arr_iter_init(arr, &iter);
+    return iter;
+}
+
 yyjson_api_inline bool yyjson_arr_iter_has_next(yyjson_arr_iter *iter) {
     return iter ? iter->idx < iter->max : false;
 }
@@ -4186,6 +4232,12 @@ yyjson_api_inline bool yyjson_obj_iter_init(yyjson_val *obj,
     }
     if (iter) memset(iter, 0, sizeof(yyjson_obj_iter));
     return false;
+}
+
+yyjson_api_inline yyjson_obj_iter yyjson_obj_iter_with(yyjson_val *obj) {
+    yyjson_obj_iter iter;
+    yyjson_obj_iter_init(obj, &iter);
+    return iter;
 }
 
 yyjson_api_inline bool yyjson_obj_iter_has_next(yyjson_obj_iter *iter) {
@@ -4815,6 +4867,13 @@ yyjson_api_inline bool yyjson_mut_arr_iter_init(yyjson_mut_val *arr,
     }
     if (iter) memset(iter, 0, sizeof(yyjson_mut_arr_iter));
     return false;
+}
+
+yyjson_api_inline yyjson_mut_arr_iter yyjson_mut_arr_iter_with(
+    yyjson_mut_val *arr) {
+    yyjson_mut_arr_iter iter;
+    yyjson_mut_arr_iter_init(arr, &iter);
+    return iter;
 }
 
 yyjson_api_inline bool yyjson_mut_arr_iter_has_next(yyjson_mut_arr_iter *iter) {
@@ -5455,6 +5514,13 @@ yyjson_api_inline bool yyjson_mut_obj_iter_init(yyjson_mut_val *obj,
     }
     if (iter) memset(iter, 0, sizeof(yyjson_mut_obj_iter));
     return false;
+}
+
+yyjson_api_inline yyjson_mut_obj_iter yyjson_mut_obj_iter_with(
+    yyjson_mut_val *obj) {
+    yyjson_mut_obj_iter iter;
+    yyjson_mut_obj_iter_init(obj, &iter);
+    return iter;
 }
 
 yyjson_api_inline bool yyjson_mut_obj_iter_has_next(yyjson_mut_obj_iter *iter) {

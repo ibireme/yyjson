@@ -215,7 +215,7 @@ static void validate_mut_arr(yyjson_mut_val *arr, i64 *cmp,  usize len) {
         val = yyjson_mut_arr_get_last(arr);
         yy_assert(val == NULL);
         
-        yyjson_mut_arr_iter_init(arr, &iter);
+        iter = yyjson_mut_arr_iter_with(arr);
         yy_assert(yyjson_mut_arr_iter_has_next(&iter) == false);
         while ((val = yyjson_mut_arr_iter_next(&iter))) {
             yy_assert(false);
@@ -1171,7 +1171,7 @@ static void validate_mut_obj(yyjson_mut_val *obj,
         val = yyjson_mut_obj_getn(obj, "a", 1);
         yy_assert(val == NULL);
         
-        yyjson_mut_obj_iter_init(obj, &iter);
+        iter = yyjson_mut_obj_iter_with(obj);
         yy_assert(yyjson_mut_obj_iter_has_next(&iter) == false);
         while ((key = yyjson_mut_obj_iter_next(&iter))) {
             yy_assert(false);
