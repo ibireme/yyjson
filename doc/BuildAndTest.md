@@ -5,11 +5,11 @@ There are several ways to integrate yyjson into your project: source code, packa
 
 
 # Source code
-yyjson aims to provide a cross-platform JSON library, so it is written in ANSI C (actually C99, but compatible with strict C89). You can copy `yyjson.h` and `yyjson.c` to your project and start using it without any configuration.
+This library aims to provide a cross-platform JSON library, so it is written in ANSI C (actually C99, but compatible with strict C89). You can copy `yyjson.h` and `yyjson.c` to your project and start using it without any configuration.
 
-yyjson has been tested with the following compilers: `gcc`, `clang`, `msvc`, `icc`, `tcc`. If you get a compile error, please [report a bug](https://github.com/ibireme/yyjson/issues/new?template=bug_report.md).
+The library has been tested with `gcc`, `clang`, `msvc`, `tcc` compilers in [CI](https://github.com/ibireme/yyjson/actions). Please [report a bug](https://github.com/ibireme/yyjson/issues/new?template=bug_report.md) if you encounter any compilation issues.
 
-yyjson has all features enabled by default, but you can trim out some of them by adding compile-time options. For example, disable JSON writer to reduce the binary size when you don't need serialization, or disable comments support to improve parsing performance. See `Compile-time Options` for details.
+The library has all features enabled by default, but you can trim out some of them by adding compile-time options. For example, disable JSON writer to reduce the binary size when you don't need serialization, or disable comments support to improve parsing performance. See `Compile-time Options` for details.
 
 
 # Package manager
