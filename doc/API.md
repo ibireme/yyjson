@@ -533,6 +533,9 @@ int yyjson_get_int(yyjson_val *val);
 // Returns double value, or 0 if `val` is not real type.
 double yyjson_get_real(yyjson_val *val);
 
+// Returns double value (typecast), or 0 if `val` is not number.
+double yyjson_get_num(yyjson_val *val);
+
 // Returns the string value, or NULL if `val` is not string type.
 const char *yyjson_get_str(yyjson_val *val);
 
@@ -600,8 +603,7 @@ Sample code 1 (iterator API):
 yyjson_val *arr; // the array to be traversed
 
 yyjson_val *val;
-yyjson_arr_iter iter;
-yyjson_arr_iter_init(arr, &iter);
+yyjson_arr_iter iter = yyjson_arr_iter_with(arr);
 while ((val = yyjson_arr_iter_next(&iter))) {
     your_func(val);
 }
@@ -626,8 +628,7 @@ Sample code 1 (mutable iterator API):
 yyjson_mut_val *arr; // the array to be traversed
 
 yyjson_mut_val *val;
-yyjson_mut_arr_iter iter;
-yyjson_mut_arr_iter_init(arr, &iter);
+yyjson_mut_arr_iter iter = yyjson_mut_arr_iter_with(arr);
 while ((val = yyjson_mut_arr_iter_next(&iter))) {
     if (your_val_is_unused(val)) {
         // you can remove current value inside iteration
@@ -668,8 +669,7 @@ yyjson_val *yyjson_obj_getn(yyjson_val *obj, const char *key, size_t key_len);
 // you can use this method to avoid searching the entire object.
 // e.g. { "x":1, "y":2, "z":3 }
 yyjson_val *obj = ...;
-yyjson_obj_iter iter;
-yyjson_obj_iter_init(obj, &iter);
+yyjson_obj_iter iter = yyjson_obj_iter_with(obj);
 
 yyjson_val *x = yyjson_obj_iter_get(&iter, "x");
 yyjson_val *y = yyjson_obj_iter_get(&iter, "y");
@@ -684,8 +684,7 @@ Sample code 1 (iterator API):
 yyjson_val *obj; // the object to be traversed
 
 yyjson_val *key, *val;
-yyjson_obj_iter iter;
-yyjson_obj_iter_init(obj, &iter);
+yyjson_obj_iter iter = yyjson_obj_iter_with(obj);
 while ((key = yyjson_obj_iter_next(&iter))) {
     val = yyjson_obj_iter_get_val(key);
     your_func(key, val);
@@ -711,8 +710,7 @@ Sample code 1 (mutable iterator API):
 yyjson_mut_val *obj; // the object to be traversed
 
 yyjson_mut_val *key, *val;
-yyjson_mut_obj_iter iter;
-yyjson_mut_obj_iter_init(obj, &iter);
+yyjson_mut_obj_iter iter = yyjson_mut_obj_iter_with(obj);
 while ((key = yyjson_mut_obj_iter_next(&iter))) {
     val = yyjson_mut_obj_iter_get_val(key);
     if (your_key_is_unused(key)) {
@@ -838,6 +836,11 @@ yyjson_mut_doc *yyjson_mut_doc_new(yyjson_alc *alc);
 // Delete the JSON document, free the memory of this doc
 // and all values created from this doc
 void yyjson_mut_doc_free(yyjson_mut_doc *doc);
+
+// Set the internal memory pool size (string length and value count).
+// It can be used to reserve memory for the next string and value creation.
+bool yyjson_mut_doc_set_str_pool_size(yyjson_mut_doc *doc, size_t len);
+bool yyjson_mut_doc_set_val_pool_size(yyjson_mut_doc *doc, size_t count);
 
 // Get or set the root value of this JSON document.
 yyjson_mut_val *yyjson_mut_doc_get_root(yyjson_mut_doc *doc);
