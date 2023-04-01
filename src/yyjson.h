@@ -1523,7 +1523,11 @@ yyjson_api_inline yyjson_val *yyjson_arr_get_last(yyjson_val *arr);
     }
  @endcode
  */
-typedef struct yyjson_arr_iter yyjson_arr_iter;
+typedef struct yyjson_arr_iter {
+    size_t idx; /**< current index, from 0 */
+    size_t max; /**< maximum index, `idx < max` */
+    yyjson_val *cur; /**< current value */
+} yyjson_arr_iter;
 
 /**
  Initialize an iterator for this array.
@@ -1643,7 +1647,12 @@ yyjson_api_inline yyjson_val *yyjson_obj_getn(yyjson_val *obj, const char *key,
  @endcode
  @see yyjson_obj_iter_get() and yyjson_obj_iter_getn()
  */
-typedef struct yyjson_obj_iter yyjson_obj_iter;
+typedef struct yyjson_obj_iter {
+    size_t idx; /**< current key index, from 0 */
+    size_t max; /**< maximum key index, `idx < max` */
+    yyjson_val *cur; /**< current key */
+    yyjson_val *obj; /**< the object being iterated */
+} yyjson_obj_iter;
 
 /**
  Initialize an iterator for this object.
@@ -2194,7 +2203,13 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_get_last(yyjson_mut_val *arr);
     }
  @endcode
  */
-typedef struct yyjson_mut_arr_iter yyjson_mut_arr_iter;
+typedef struct yyjson_mut_arr_iter {
+    size_t idx; /**< current index, from 0 */
+    size_t max; /**< maximum index, `idx < max` */
+    yyjson_mut_val *cur; /**< current value */
+    yyjson_mut_val *pre; /**< previous value */
+    yyjson_mut_val *arr; /**< the array being iterated */
+} yyjson_mut_arr_iter;
 
 /**
  Initialize an iterator for this array.
@@ -2990,7 +3005,13 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_obj_getn(yyjson_mut_val *obj,
  @endcode
  @see `yyjson_mut_obj_iter_get()` and `yyjson_mut_obj_iter_getn()`
  */
-typedef struct yyjson_mut_obj_iter yyjson_mut_obj_iter;
+typedef struct yyjson_mut_obj_iter {
+    size_t idx; /**< current key index, from 0 */
+    size_t max; /**< maximum key index, `idx < max` */
+    yyjson_mut_val *cur; /**< current key */
+    yyjson_mut_val *pre; /**< previous key */
+    yyjson_mut_val *obj; /**< the object being iterated */
+} yyjson_mut_obj_iter;
 
 /**
  Initialize an iterator for this object.
@@ -4136,12 +4157,6 @@ yyjson_api_inline yyjson_val *yyjson_arr_get_last(yyjson_val *arr) {
  * JSON Array Iterator API (Implementation)
  *============================================================================*/
 
-struct yyjson_arr_iter {
-    size_t idx; /**< current index, from 0 */
-    size_t max; /**< maximum index, idx < max */
-    yyjson_val *cur; /**< current value */
-};
-
 yyjson_api_inline bool yyjson_arr_iter_init(yyjson_val *arr,
                                             yyjson_arr_iter *iter) {
     if (yyjson_likely(yyjson_is_arr(arr) && iter)) {
@@ -4213,13 +4228,6 @@ yyjson_api_inline yyjson_val *yyjson_obj_getn(yyjson_val *obj,
 /*==============================================================================
  * JSON Object Iterator API (Implementation)
  *============================================================================*/
-
-struct yyjson_obj_iter {
-    size_t idx; /**< current key index, from 0 */
-    size_t max; /**< maximum key index, idx < max */
-    yyjson_val *cur; /**< current key */
-    yyjson_val *obj; /**< the object being iterated */
-};
 
 yyjson_api_inline bool yyjson_obj_iter_init(yyjson_val *obj,
                                             yyjson_obj_iter *iter) {
@@ -4846,14 +4854,6 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_get_last(
 /*==============================================================================
  * Mutable JSON Array Iterator API (Implementation)
  *============================================================================*/
-
-struct yyjson_mut_arr_iter {
-    size_t idx; /**< current index, from 0 */
-    size_t max; /**< maximum index, idx < max */
-    yyjson_mut_val *cur; /**< current value */
-    yyjson_mut_val *pre; /**< previous value */
-    yyjson_mut_val *arr; /**< the array being iterated */
-};
 
 yyjson_api_inline bool yyjson_mut_arr_iter_init(yyjson_mut_val *arr,
                                                 yyjson_mut_arr_iter *iter) {
@@ -5493,14 +5493,6 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_obj_getn(yyjson_mut_val *obj,
 /*==============================================================================
  * Mutable JSON Object Iterator API (Implementation)
  *============================================================================*/
-
-struct yyjson_mut_obj_iter {
-    size_t idx; /**< current key index, from 0 */
-    size_t max; /**< maximum key index, idx < max */
-    yyjson_mut_val *cur; /**< current key */
-    yyjson_mut_val *pre; /**< previous key */
-    yyjson_mut_val *obj; /**< the object being iterated */
-};
 
 yyjson_api_inline bool yyjson_mut_obj_iter_init(yyjson_mut_val *obj,
                                                 yyjson_mut_obj_iter *iter) {
