@@ -283,7 +283,8 @@ each function accepts an input of JSON document or root value, and returns a UTF
 ## Write JSON to string
 The `doc/val` is JSON document or root value, if you pass NULL, you will get NULL result.<br/>
 The `flg` is writer flag, pass 0 if you don't need it, see `writer flag` for details.<br/>
-The `len` is a pointer to receive output length, pass NULL if you don't need it.<br/>
+The `len` is a pointer to receive output length (not including the
+    null-terminator), pass NULL if you don't need it.<br/>
 This function returns a new JSON string, or NULL if error occurs.<br/>
 The string is encoded as UTF-8 with a null-terminator. <br/>
 You should use free() or alc->free() to release it when it's no longer needed.
@@ -353,7 +354,8 @@ if (suc) printf("OK");
 The `doc/val` is JSON document or root value, if you pass NULL, you will get NULL result.<br/>
 The `flg` is writer flag, pass 0 if you don't need it, see `writer flag` for details.<br/>
 The `alc` is memory allocator, pass NULL if you don't need it, see `memory allocator` for details.<br/>
-The `len` is a pointer to receive output length, pass NULL if you don't need it.<br/>
+The `len` is a pointer to receive output length (not including the
+    null-terminator), pass NULL if you don't need it.<br/>
 The `err` is a pointer to receive error message, pass NULL if you don't need it.<br/>
 
 This function returns a new JSON string, or NULL if error occurs.<br/>

@@ -970,8 +970,8 @@ typedef struct yyjson_write_err {
     Multiple options can be combined with `|` operator. 0 means no options.
  @param alc The memory allocator used by JSON writer.
     Pass NULL to use the libc's default allocator.
- @param len A pointer to receive output length in bytes.
-    Pass NULL if you don't need length information.
+ @param len A pointer to receive output length in bytes (not including the
+    null-terminator). Pass NULL if you don't need length information.
  @param err A pointer to receive error information.
     Pass NULL if you don't need error information.
  @return A new JSON string, or NULL if an error occurs.
@@ -1021,8 +1021,8 @@ yyjson_api bool yyjson_write_file(const char *path,
     If this doc is NULL or has no root, the function will fail and return false.
  @param flg The JSON write options.
     Multiple options can be combined with `|` operator. 0 means no options.
- @param len A pointer to receive output length in bytes.
-    Pass NULL if you don't need length information.
+ @param len A pointer to receive output length in bytes (not including the
+    null-terminator). Pass NULL if you don't need length information.
  @return A new JSON string, or NULL if an error occurs.
     This string is encoded as UTF-8 with a null-terminator.
     When it's no longer needed, it should be freed with free().
@@ -1048,8 +1048,8 @@ yyjson_api_inline char *yyjson_write(const yyjson_doc *doc,
     Multiple options can be combined with `|` operator. 0 means no options.
  @param alc The memory allocator used by JSON writer.
     Pass NULL to use the libc's default allocator.
- @param len A pointer to receive output length in bytes.
-    Pass NULL if you don't need length information.
+ @param len A pointer to receive output length in bytes (not including the
+    null-terminator). Pass NULL if you don't need length information.
  @param err A pointer to receive error information.
     Pass NULL if you don't need error information.
  @return A new JSON string, or NULL if an error occurs.
@@ -1101,8 +1101,8 @@ yyjson_api bool yyjson_mut_write_file(const char *path,
     If this doc is NULL or has no root, the function will fail and return false.
  @param flg The JSON write options.
     Multiple options can be combined with `|` operator. 0 means no options.
- @param len A pointer to receive output length in bytes.
-    Pass NULL if you don't need length information.
+ @param len A pointer to receive output length in bytes (not including the
+    null-terminator). Pass NULL if you don't need length information.
  @return A new JSON string, or NULL if an error occurs.
     This string is encoded as UTF-8 with a null-terminator.
     When it's no longer needed, it should be freed with free().
@@ -1131,8 +1131,8 @@ yyjson_api_inline char *yyjson_mut_write(const yyjson_mut_doc *doc,
     Multiple options can be combined with `|` operator. 0 means no options.
  @param alc The memory allocator used by JSON writer.
     Pass NULL to use the libc's default allocator.
- @param len A pointer to receive output length in bytes.
-    Pass NULL if you don't need length information.
+ @param len A pointer to receive output length in bytes (not including the
+    null-terminator). Pass NULL if you don't need length information.
  @param err A pointer to receive error information.
     Pass NULL if you don't need error information.
  @return A new JSON string, or NULL if an error occurs.
@@ -1182,8 +1182,8 @@ yyjson_api bool yyjson_val_write_file(const char *path,
     If this parameter is NULL, the function will fail and return NULL.
  @param flg The JSON write options.
     Multiple options can be combined with `|` operator. 0 means no options.
- @param len A pointer to receive output length in bytes.
-    Pass NULL if you don't need length information.
+ @param len A pointer to receive output length in bytes (not including the
+    null-terminator). Pass NULL if you don't need length information.
  @return A new JSON string, or NULL if an error occurs.
     This string is encoded as UTF-8 with a null-terminator.
     When it's no longer needed, it should be freed with free().
@@ -1207,8 +1207,8 @@ yyjson_api_inline char *yyjson_val_write(const yyjson_val *val,
     Multiple options can be combined with `|` operator. 0 means no options.
  @param alc The memory allocator used by JSON writer.
     Pass NULL to use the libc's default allocator.
- @param len A pointer to receive output length in bytes.
-    Pass NULL if you don't need length information.
+ @param len A pointer to receive output length in bytes (not including the
+    null-terminator). Pass NULL if you don't need length information.
  @param err A pointer to receive error information.
     Pass NULL if you don't need error information.
  @return  A new JSON string, or NULL if an error occurs.
@@ -1260,8 +1260,8 @@ yyjson_api bool yyjson_mut_val_write_file(const char *path,
     If this parameter is NULL, the function will fail and return NULL.
  @param flg The JSON write options.
     Multiple options can be combined with `|` operator. 0 means no options.
- @param len A pointer to receive output length in bytes.
-    Pass NULL if you don't need length information.
+ @param len A pointer to receive output length in bytes (not including the
+    null-terminator). Pass NULL if you don't need length information.
  @return A new JSON string, or NULL if an error occurs.
     This string is encoded as UTF-8 with a null-terminator.
     When it's no longer needed, it should be freed with free().
