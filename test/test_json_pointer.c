@@ -190,12 +190,51 @@ static void validate_spec(void) {
     yyjson_mut_doc_free(mdoc);
 }
 
+static void validate_get_type(void) {
+    const char *json = "{ \
+        \"answer\": {\"to\": {\"life\": 42}}, \
+        \"true\": true, \
+        \"-1\": -1, \
+        \"zero\": 0, \
+        \"pi\": 3.14159, \
+        \"pistr\": \"3.14159\" \
+    }";
+
+    bool bool_value;
+    double real_value;
+    int64_t sint_value;
+    uint64_t uint_value;
+    const char *string_value;
+
+    yyjson_doc *doc = yyjson_read(json, strlen(json), 0);
+
+    // successful gets
+    yy_assert(yyjson_get_bool_pointer(doc, "/true", &bool_value) == true && bool_value == true);
+    yy_assert(yyjson_get_uint_pointer(doc, "/answer/to/life", &uint_value) == true && uint_value == 42);
+    yy_assert(yyjson_get_sint_pointer(doc, "/-1", &sint_value) == true && sint_value == -1);
+    yy_assert(yyjson_get_real_pointer(doc, "/pi", &real_value) == true && real_value == (double)3.14159);
+    yy_assert(yyjson_get_num_pointer(doc, "/-1", &real_value) == true && real_value == (double)-1.0);
+    yy_assert(yyjson_get_num_pointer(doc, "/zero", &real_value) == true && real_value == (double)0.0);
+    yy_assert(yyjson_get_num_pointer(doc, "/answer/to/life", &real_value) == true && real_value == (double)42.0);
+    yy_assert(yyjson_get_num_pointer(doc, "/pi", &real_value) == true && real_value == (double)3.14159);
+    yy_assert(yyjson_get_str_pointer(doc, "/pistr", &string_value) == true && strcmp(string_value, "3.14159") == 0);
+
+    // unsuccessful gets
+    yy_assert(yyjson_get_uint_pointer(doc, "/-1", &uint_value) == false);  // wrong type
+    yy_assert(yyjson_get_num_pointer(doc, "/pistr", &real_value) == false);  // wrong type
+    yy_assert(yyjson_get_str_pointer(doc, "/answer/to", &string_value) == false);  // wrong type
+    yy_assert(yyjson_get_real_pointer(doc, "/nosuch", &real_value) == false); // Does not exist
+
+    yyjson_doc_free(doc);
+}
+
 yy_test_case(test_json_pointer) {
     validate_num();
     validate_long_str();
     validate_long_idx();
     validate_err();
     validate_spec();
+    validate_get_type();
 }
 
 #else

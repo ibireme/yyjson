@@ -9,6 +9,7 @@ All notable changes to this project will be documented in this file.
 - Add support for Loongarch: #112
 - Add functions to support modifying memory pool size of `yyjson_mut_doc`.
 - Add convenience functions for creating iterator.
+- Add functions to get type-specific values specified by JSON Pointer.
 
 #### Changed
 - Change allocator's realloc function signature, add `old_size` parameter (just ignore the parameter if your allocator doesn't need it): #100

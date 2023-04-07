@@ -6125,6 +6125,93 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_doc_get_pointer(
     return yyjson_mut_get_pointer(doc ? doc->root : NULL, ptr);
 }
 
+/*==============================================================================
+ * JSON Value at Pointer API (Implementation)
+ *============================================================================*/
+
+/** Set provided `value` if the JSON Pointer (RFC 6901) exists and is type bool.
+    Returns true if value at `ptr` exists and is the correct type, otherwise false. */
+yyjson_api_inline bool yyjson_get_bool_pointer(
+    yyjson_doc *doc, const char *ptr, bool *value) {
+    yyjson_val *val = yyjson_doc_get_pointer(doc, ptr);
+    if (val && yyjson_is_bool(val)) {
+        *value = unsafe_yyjson_get_bool (val);
+        return true;
+    }
+    else {
+        return false;
+    }
+}
+
+/** Set provided `value` if the JSON Pointer (RFC 6901) exists and is type uint.
+    Returns true if value at `ptr` exists and is the correct type, otherwise false. */
+yyjson_api_inline bool yyjson_get_uint_pointer(
+    yyjson_doc *doc, const char *ptr, uint64_t *value) {
+    yyjson_val *val = yyjson_doc_get_pointer(doc, ptr);
+    if (val && yyjson_is_uint(val)) {
+        *value = unsafe_yyjson_get_uint(val);
+        return true;
+    }
+    else {
+        return false;
+    }
+}
+
+/** Set provided `value` if the JSON Pointer (RFC 6901) exists and is type sint.
+    Returns true if value at `ptr` exists and is the correct type, otherwise false. */
+yyjson_api_inline bool yyjson_get_sint_pointer(
+    yyjson_doc *doc, const char *ptr, int64_t *value) {
+    yyjson_val *val = yyjson_doc_get_pointer(doc, ptr);
+    if (val && yyjson_is_sint(val)) {
+        *value = unsafe_yyjson_get_sint(val);
+        return true;
+    }
+    else {
+        return false;
+    }
+}
+
+/** Set provided `value` if the JSON Pointer (RFC 6901) exists and is type real.
+    Returns true if value at `ptr` exists and is the correct type, otherwise false. */
+yyjson_api_inline bool yyjson_get_real_pointer(
+    yyjson_doc *doc, const char *ptr, double *value) {
+    yyjson_val *val = yyjson_doc_get_pointer(doc, ptr);
+    if (val && yyjson_is_real(val)) {
+        *value = unsafe_yyjson_get_real(val);
+        return true;
+    }
+    else {
+        return false;
+    }
+}
+
+/** Set provided `value` if the JSON Pointer (RFC 6901) exists and is type sint, uint or real.
+    Returns true if value at `ptr` exists and is the correct type, otherwise false. */
+yyjson_api_inline bool yyjson_get_num_pointer(
+    yyjson_doc *doc, const char *ptr, double *value) {
+    yyjson_val *val = yyjson_doc_get_pointer(doc, ptr);
+    if (val && yyjson_is_num(val)) {
+        *value = unsafe_yyjson_get_num(val);
+        return true;
+    }
+    else {
+        return false;
+    }
+}
+
+/** Set provided `value` if the JSON Pointer (RFC 6901) exists and is type string.
+    Returns true if value at `ptr` exists and is the correct type, otherwise false. */
+yyjson_api_inline bool yyjson_get_str_pointer(
+    yyjson_doc *doc, const char *ptr, const char **value) {
+    yyjson_val *val = yyjson_doc_get_pointer(doc, ptr);
+    if (val && yyjson_is_str(val)) {
+        *value = unsafe_yyjson_get_str(val);
+        return true;
+    }
+    else {
+        return false;
+    }
+}
 
 
 /*==============================================================================
