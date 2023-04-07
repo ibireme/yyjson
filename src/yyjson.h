@@ -6136,8 +6136,8 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_doc_get_pointer(
  Returns true if value at `ptr` exists and is the correct type, otherwise false.
  */
 yyjson_api_inline bool yyjson_get_bool_pointer(
-    yyjson_doc *doc, const char *ptr, bool *value) {
-    yyjson_val *val = yyjson_doc_get_pointer(doc, ptr);
+    yyjson_val *root, const char *ptr, bool *value) {
+    yyjson_val *val = yyjson_get_pointer(root, ptr);
     if (value && yyjson_is_bool(val)) {
         *value = unsafe_yyjson_get_bool (val);
         return true;
@@ -6151,8 +6151,8 @@ yyjson_api_inline bool yyjson_get_bool_pointer(
  Returns true if value at `ptr` exists and is the correct type, otherwise false.
  */
 yyjson_api_inline bool yyjson_get_uint_pointer(
-    yyjson_doc *doc, const char *ptr, uint64_t *value) {
-    yyjson_val *val = yyjson_doc_get_pointer(doc, ptr);
+    yyjson_val *root, const char *ptr, uint64_t *value) {
+    yyjson_val *val = yyjson_get_pointer(root, ptr);
     if (value && yyjson_is_uint(val)) {
         *value = unsafe_yyjson_get_uint(val);
         return true;
@@ -6166,8 +6166,8 @@ yyjson_api_inline bool yyjson_get_uint_pointer(
  Returns true if value at `ptr` exists and is the correct type, otherwise false.
  */
 yyjson_api_inline bool yyjson_get_sint_pointer(
-    yyjson_doc *doc, const char *ptr, int64_t *value) {
-    yyjson_val *val = yyjson_doc_get_pointer(doc, ptr);
+    yyjson_val *root, const char *ptr, int64_t *value) {
+    yyjson_val *val = yyjson_get_pointer(root, ptr);
     if (value && yyjson_is_sint(val)) {
         *value = unsafe_yyjson_get_sint(val);
         return true;
@@ -6181,8 +6181,8 @@ yyjson_api_inline bool yyjson_get_sint_pointer(
  Returns true if value at `ptr` exists and is the correct type, otherwise false.
  */
 yyjson_api_inline bool yyjson_get_real_pointer(
-    yyjson_doc *doc, const char *ptr, double *value) {
-    yyjson_val *val = yyjson_doc_get_pointer(doc, ptr);
+    yyjson_val *root, const char *ptr, double *value) {
+    yyjson_val *val = yyjson_get_pointer(root, ptr);
     if (value && yyjson_is_real(val)) {
         *value = unsafe_yyjson_get_real(val);
         return true;
@@ -6197,8 +6197,8 @@ yyjson_api_inline bool yyjson_get_real_pointer(
  Returns true if value at `ptr` exists and is the correct type, otherwise false.
  */
 yyjson_api_inline bool yyjson_get_num_pointer(
-    yyjson_doc *doc, const char *ptr, double *value) {
-    yyjson_val *val = yyjson_doc_get_pointer(doc, ptr);
+    yyjson_val *root, const char *ptr, double *value) {
+    yyjson_val *val = yyjson_get_pointer(root, ptr);
     if (value && yyjson_is_num(val)) {
         *value = unsafe_yyjson_get_num(val);
         return true;
@@ -6212,8 +6212,8 @@ yyjson_api_inline bool yyjson_get_num_pointer(
  Returns true if value at `ptr` exists and is the correct type, otherwise false.
  */
 yyjson_api_inline bool yyjson_get_str_pointer(
-    yyjson_doc *doc, const char *ptr, const char **value) {
-    yyjson_val *val = yyjson_doc_get_pointer(doc, ptr);
+    yyjson_val *root, const char *ptr, const char **value) {
+    yyjson_val *val = yyjson_get_pointer(root, ptr);
     if (value && yyjson_is_str(val)) {
         *value = unsafe_yyjson_get_str(val);
         return true;

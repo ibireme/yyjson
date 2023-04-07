@@ -207,23 +207,24 @@ static void validate_get_type(void) {
     const char *string_value;
 
     yyjson_doc *doc = yyjson_read(json, strlen(json), 0);
+    yyjson_val *root = yyjson_doc_get_root (doc);
 
     // successful gets
-    yy_assert(yyjson_get_bool_pointer(doc, "/true", &bool_value) == true && bool_value == true);
-    yy_assert(yyjson_get_uint_pointer(doc, "/answer/to/life", &uint_value) == true && uint_value == 42);
-    yy_assert(yyjson_get_sint_pointer(doc, "/-1", &sint_value) == true && sint_value == -1);
-    yy_assert(yyjson_get_real_pointer(doc, "/pi", &real_value) == true && real_value == (double)3.14159);
-    yy_assert(yyjson_get_num_pointer(doc, "/-1", &real_value) == true && real_value == (double)-1.0);
-    yy_assert(yyjson_get_num_pointer(doc, "/zero", &real_value) == true && real_value == (double)0.0);
-    yy_assert(yyjson_get_num_pointer(doc, "/answer/to/life", &real_value) == true && real_value == (double)42.0);
-    yy_assert(yyjson_get_num_pointer(doc, "/pi", &real_value) == true && real_value == (double)3.14159);
-    yy_assert(yyjson_get_str_pointer(doc, "/pistr", &string_value) == true && strcmp(string_value, "3.14159") == 0);
+    yy_assert(yyjson_get_bool_pointer(root, "/true", &bool_value) == true && bool_value == true);
+    yy_assert(yyjson_get_uint_pointer(root, "/answer/to/life", &uint_value) == true && uint_value == 42);
+    yy_assert(yyjson_get_sint_pointer(root, "/-1", &sint_value) == true && sint_value == -1);
+    yy_assert(yyjson_get_real_pointer(root, "/pi", &real_value) == true && real_value == (double)3.14159);
+    yy_assert(yyjson_get_num_pointer(root, "/-1", &real_value) == true && real_value == (double)-1.0);
+    yy_assert(yyjson_get_num_pointer(root, "/zero", &real_value) == true && real_value == (double)0.0);
+    yy_assert(yyjson_get_num_pointer(root, "/answer/to/life", &real_value) == true && real_value == (double)42.0);
+    yy_assert(yyjson_get_num_pointer(root, "/pi", &real_value) == true && real_value == (double)3.14159);
+    yy_assert(yyjson_get_str_pointer(root, "/pistr", &string_value) == true && strcmp(string_value, "3.14159") == 0);
 
     // unsuccessful gets
-    yy_assert(yyjson_get_uint_pointer(doc, "/-1", &uint_value) == false);  // wrong type
-    yy_assert(yyjson_get_num_pointer(doc, "/pistr", &real_value) == false);  // wrong type
-    yy_assert(yyjson_get_str_pointer(doc, "/answer/to", &string_value) == false);  // wrong type
-    yy_assert(yyjson_get_real_pointer(doc, "/nosuch", &real_value) == false); // Does not exist
+    yy_assert(yyjson_get_uint_pointer(root, "/-1", &uint_value) == false);  // wrong type
+    yy_assert(yyjson_get_num_pointer(root, "/pistr", &real_value) == false);  // wrong type
+    yy_assert(yyjson_get_str_pointer(root, "/answer/to", &string_value) == false);  // wrong type
+    yy_assert(yyjson_get_real_pointer(root, "/nosuch", &real_value) == false); // Does not exist
 
     yyjson_doc_free(doc);
 }
