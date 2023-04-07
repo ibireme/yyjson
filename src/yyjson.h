@@ -6134,7 +6134,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_doc_get_pointer(
 yyjson_api_inline bool yyjson_get_bool_pointer(
     yyjson_doc *doc, const char *ptr, bool *value) {
     yyjson_val *val = yyjson_doc_get_pointer(doc, ptr);
-    if (val && yyjson_is_bool(val)) {
+    if (value && yyjson_is_bool(val)) {
         *value = unsafe_yyjson_get_bool (val);
         return true;
     }
@@ -6148,7 +6148,7 @@ yyjson_api_inline bool yyjson_get_bool_pointer(
 yyjson_api_inline bool yyjson_get_uint_pointer(
     yyjson_doc *doc, const char *ptr, uint64_t *value) {
     yyjson_val *val = yyjson_doc_get_pointer(doc, ptr);
-    if (val && yyjson_is_uint(val)) {
+    if (value && yyjson_is_uint(val)) {
         *value = unsafe_yyjson_get_uint(val);
         return true;
     }
@@ -6162,7 +6162,7 @@ yyjson_api_inline bool yyjson_get_uint_pointer(
 yyjson_api_inline bool yyjson_get_sint_pointer(
     yyjson_doc *doc, const char *ptr, int64_t *value) {
     yyjson_val *val = yyjson_doc_get_pointer(doc, ptr);
-    if (val && yyjson_is_sint(val)) {
+    if (value && yyjson_is_sint(val)) {
         *value = unsafe_yyjson_get_sint(val);
         return true;
     }
@@ -6176,7 +6176,7 @@ yyjson_api_inline bool yyjson_get_sint_pointer(
 yyjson_api_inline bool yyjson_get_real_pointer(
     yyjson_doc *doc, const char *ptr, double *value) {
     yyjson_val *val = yyjson_doc_get_pointer(doc, ptr);
-    if (val && yyjson_is_real(val)) {
+    if (value && yyjson_is_real(val)) {
         *value = unsafe_yyjson_get_real(val);
         return true;
     }
@@ -6190,7 +6190,7 @@ yyjson_api_inline bool yyjson_get_real_pointer(
 yyjson_api_inline bool yyjson_get_num_pointer(
     yyjson_doc *doc, const char *ptr, double *value) {
     yyjson_val *val = yyjson_doc_get_pointer(doc, ptr);
-    if (val && yyjson_is_num(val)) {
+    if (value && yyjson_is_num(val)) {
         *value = unsafe_yyjson_get_num(val);
         return true;
     }
@@ -6204,7 +6204,7 @@ yyjson_api_inline bool yyjson_get_num_pointer(
 yyjson_api_inline bool yyjson_get_str_pointer(
     yyjson_doc *doc, const char *ptr, const char **value) {
     yyjson_val *val = yyjson_doc_get_pointer(doc, ptr);
-    if (val && yyjson_is_str(val)) {
+    if (value && yyjson_is_str(val)) {
         *value = unsafe_yyjson_get_str(val);
         return true;
     }
