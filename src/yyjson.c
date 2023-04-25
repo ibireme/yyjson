@@ -427,9 +427,13 @@ yyjson_api uint32_t yyjson_version(void) {
 #undef  USIZE_MAX
 #define USIZE_MAX       ((usize)(~(usize)0))
 
-/* Maximum number of digits for reading u64 safety. */
+/* Maximum number of digits for reading u32/u64/usize safety (not overflow). */
+#undef  U32_SAFE_DIG
+#define U32_SAFE_DIG    9   /* u32 max is 4294967295, 10 digits */
 #undef  U64_SAFE_DIG
-#define U64_SAFE_DIG    19
+#define U64_SAFE_DIG    19  /* u64 max is 18446744073709551615, 20 digits */
+#undef  USIZE_SAFE_DIG
+#define USIZE_SAFE_DIG  (sizeof(usize) == 64 ? U64_SAFE_DIG : U32_SAFE_DIG)
 
 
 
@@ -1668,171 +1672,450 @@ bool unsafe_yyjson_mut_equals(yyjson_mut_val *lhs, yyjson_mut_val *rhs) {
  *============================================================================*/
 
 /**
- Get value from JSON array with a path segment (array index).
- @param ptr Input the segment after `/`, output the end of segment.
- @param end The end of entire JSON pointer.
- @param arr JSON array (yyjson_val/yyjson_mut_val, based on `mut`).
- @param mut Whether `arr` is mutable.
- @return The matched value, or NULL if not matched.
+ Get a token from JSON pointer string.
+ @param ptr [in,out]
+                in:  string that points to current token prefix `/`
+                out: string that points to next token prefix `/`, or string end
+ @param end [in] end of the entire JSON Pointer string
+ @param len [out] unescaped token length
+ @param esc [out] number of escaped characters in this token
+ @return head of the token, or NULL if syntax error
  */
-static_inline void *pointer_read_arr(const char **ptr,
-                                     const char *end,
-                                     void *arr,
-                                     bool mut) {
-    const char *hdr = *ptr;
+static_inline const char *ptr_next_token(const char **ptr, const char *end,
+                                         usize *len, usize *esc) {
+    const char *hdr = *ptr + 1;
     const char *cur = hdr;
-    yyjson_val *i_arr = (yyjson_val *)arr;
-    yyjson_mut_val *m_arr = (yyjson_mut_val *)arr;
-    u64 idx = 0;
-    u8 add;
-    
-    /* start with 0 */
-    if (cur < end && *cur == '0') {
-        *ptr = cur + 1;
-        return mut
-            ? (void *)yyjson_mut_arr_get_first(m_arr)
-            : (void *)yyjson_arr_get_first(i_arr);
+    while (cur < end && *cur != '/' && *cur != '~') cur++;
+    if (likely(*cur != '~')) {
+        *ptr = cur;
+        *len = (usize)(cur - hdr);
+        *esc = 0;
+        return hdr;
+    } else {
+        usize esc_num = 0;
+        while (cur < end && *cur != '/') {
+            if (*cur++ == '~') {
+                if (cur == end || (*cur != '0' && *cur != '1')) return NULL;
+                esc_num++;
+            }
+        }
+        *ptr = cur;
+        *len = (usize)(cur - hdr) - esc_num;
+        *esc = esc_num;
+        return hdr;
     }
-    
-    /* read whole number */
-    if (cur + U64_SAFE_DIG < end) end = cur + U64_SAFE_DIG;
-    while (cur < end && (add = (u8)((u8)*cur - (u8)'0')) <= 9) {
-        cur++;
-        idx = idx * 10 + add;
-    }
-    if (cur == hdr || idx >= (u64)USIZE_MAX) return NULL;
-    *ptr = cur;
-    return mut
-        ? (void *)yyjson_mut_arr_get(m_arr, (usize)idx)
-        : (void *)yyjson_arr_get(i_arr, (usize)idx);
 }
 
 /**
- Get value from JSON object with a path segment (object key).
- @param ptr Input the segment after `/`, output the end of segment.
- @param end The end of entire JSON pointer.
- @param obj JSON object (yyjson_val/yyjson_mut_val, based on `mut`).
- @param mut `obj` is mutable.
- @return The matched value, or NULL if not matched.
+ Convert token string to index.
+ @param cur [in]  token head
+ @param len [in]  token length
+ @param idx [out] the index number, or USIZE_MAX if token is '-'
+ @return true if token is a valid array index
  */
-static_inline void *pointer_read_obj(const char **ptr,
-                                     const char *end,
-                                     void *obj,
-                                     bool mut) {
-#define BUF_SIZE 512
-#define is_escaped(cur) ((cur) < end && (*(cur) == '0' || *(cur) == '1'))
-#define is_unescaped(cur) ((cur) < end && *(cur) != '/' && *(cur) != '~')
-#define is_completed(cur) ((cur) == end || *(cur) == '/')
-    
-    const char *hdr = *ptr;
-    const char *cur = hdr;
-    yyjson_val *i_obj = (yyjson_val *)obj;
-    yyjson_mut_val *m_obj = (yyjson_mut_val *)obj;
-    yyjson_obj_iter i_iter;
-    yyjson_mut_obj_iter m_iter;
-    void *key;
-    
-    /* skip unescaped characters */
-    while (is_unescaped(cur)) cur++;
-    if (likely(is_completed(cur))) {
-        usize len = (usize)(cur - hdr);
-        *ptr = cur;
-        return mut
-            ? (void *)yyjson_mut_obj_getn(m_obj, hdr, len)
-            : (void *)yyjson_obj_getn(i_obj, hdr, len);
+static_inline bool ptr_token_to_idx(const char *cur, usize len, usize *idx) {
+    const char *end = cur + len;
+    usize num = 0, add;
+    if (unlikely(len == 0 || len > USIZE_SAFE_DIG)) return false;
+    if (*cur == '0') {
+        if (unlikely(len > 1)) return false;
+        *idx = 0;
+        return true;
     }
-    
-    /* copy escaped characters to buffer */
-    if (likely(end - hdr <= BUF_SIZE)) {
-        char buf[BUF_SIZE];
-        char *dst = buf + (usize)(cur - hdr);
-        memcpy(buf, hdr, (usize)(cur - hdr));
-        while (true) {
-            if (is_unescaped(cur)) {
-                *dst++ = *cur++;
-            } else if (is_completed(cur)) {
-                usize len = (usize)(dst - buf);
-                *ptr = cur;
-                return mut
-                    ? (void *)yyjson_mut_obj_getn(m_obj, buf, len)
-                    : (void *)yyjson_obj_getn(i_obj, buf, len);
+    if (*cur == '-') {
+        if (unlikely(len > 1)) return false;
+        *idx = USIZE_MAX;
+        return true;
+    }
+    for (; cur < end && (add = (usize)((u8)*cur - (u8)'0')) <= 9; cur++) {
+        num = num * 10 + add;
+    }
+    if (unlikely(num == 0 || cur < end)) return false;
+    *idx = num;
+    return true;
+}
+
+/**
+ Compare JSON key with token.
+ @param key a string key (yyjson_val or yyjson_mut_val)
+ @param tag the expected string key tag
+ @param token a JSON pointer token
+ @param len unescaped token length
+ @param esc number of escaped characters in this token
+ @return true if `str` is equals to `token`
+ */
+static_inline bool ptr_token_eq(void *key, u64 tag,
+                                const char *token, usize len, usize esc) {
+    yyjson_val *val = (yyjson_val *)key;
+    if (val->tag != tag) return false;
+    if (likely(!esc)) {
+        return memcmp(val->uni.str, token, len) == 0;
+    } else {
+        const char *str = val->uni.str;
+        for (; len-- > 0; token++, str++) {
+            if (*token == '~') {
+                if (*str != (*++token == '0' ? '~' : '/')) return false;
             } else {
-                cur++; /* skip '~' */
-                if (unlikely(!is_escaped(cur))) return NULL;
-                *dst++ = (char)(*cur++ == '0' ? '~' : '/');
+                if (*str != *token) return false;
             }
         }
+        return true;
     }
-    
-    /* compare byte by byte */
-    cur = hdr;
-    if (!mut) yyjson_obj_iter_init(i_obj, &i_iter);
-    else yyjson_mut_obj_iter_init(m_obj, &m_iter);
-    while ((key = mut ? (void *)yyjson_mut_obj_iter_next(&m_iter)
-                      : (void *)yyjson_obj_iter_next(&i_iter))) {
-        const char *k_str = unsafe_yyjson_get_str(key);
-        const char *k_end = k_str + unsafe_yyjson_get_len(key);
-        while (k_str < k_end) {
-            if (is_unescaped(cur) && *k_str == *cur) {
-                k_str += 1;
-                cur += 1;
-            } else if (cur < end && *cur == '~' && is_escaped(cur + 1) &&
-                       *k_str == (*(cur + 1) == '0' ? '~' : '/')) {
-                k_str += 1;
-                cur += 2;
-            } else {
-                break;
-            }
-        }
-        if (k_str == k_end && is_completed(cur)) {
-            *ptr = cur;
-            return mut
-                ? (void *)yyjson_mut_obj_iter_get_val((yyjson_mut_val *)key)
-                : (void *)yyjson_obj_iter_get_val((yyjson_val *)key);
+}
+
+/**
+ Get a value from array by token.
+ @param arr   an array, should not be NULL or non-array type
+ @param token a JSON pointer token
+ @param len   unescaped token length
+ @param esc   number of escaped characters in this token
+ @return value at index, or NULL if token is not index or index is out of range
+ */
+static_inline yyjson_val *ptr_arr_get(yyjson_val *arr, const char *token,
+                                      usize len, usize esc) {
+    yyjson_val *val = unsafe_yyjson_get_first(arr);
+    usize num = unsafe_yyjson_get_len(arr), idx;
+    if (unlikely(num == 0)) return NULL;
+    if (unlikely(!ptr_token_to_idx(token, len, &idx))) return NULL;
+    if (unlikely(idx >= num)) return NULL;
+    if (unsafe_yyjson_arr_is_flat(arr)) {
+        return val + idx;
+    } else {
+        while (idx-- > 0) val = unsafe_yyjson_get_next(val);
+        return val;
+    }
+}
+
+/**
+ Get a value from object by token.
+ @param obj   [in] an object, should not be NULL or non-object type
+ @param token [in] a JSON pointer token
+ @param len   [in] unescaped token length
+ @param esc   [in] number of escaped characters in this token
+ @return value associated with the token, or NULL if no value
+ */
+static_inline yyjson_val *ptr_obj_get(yyjson_val *obj, const char *token,
+                                      usize len, usize esc) {
+    u64 tag = (((u64)len) << YYJSON_TAG_BIT) | YYJSON_TYPE_STR;
+    yyjson_val *key = unsafe_yyjson_get_first(obj);
+    usize num = unsafe_yyjson_get_len(obj);
+    if (unlikely(num == 0)) return NULL;
+    for (; num > 0; num--, key = unsafe_yyjson_get_next(key + 1)) {
+        if (ptr_token_eq(key, tag, token, len, esc)) return key + 1;
+    }
+    return NULL;
+}
+
+/**
+ Get a value from array by token.
+ @param arr   [in] an array, should not be NULL or non-array type
+ @param token [in] a JSON pointer token
+ @param len   [in] unescaped token length
+ @param esc   [in] number of escaped characters in this token
+ @param pre   [out] previous (sibling) value of the returned value
+ @param last  [out] whether index is last
+ @return value at index, or NULL if token is not index or index is out of range
+ */
+static_inline yyjson_mut_val *ptr_mut_arr_get(yyjson_mut_val *arr,
+                                              const char *token,
+                                              usize len, usize esc,
+                                              yyjson_mut_val **pre,
+                                              bool *last) {
+    yyjson_mut_val *val = (yyjson_mut_val *)arr->uni.ptr; /* last (tail) value */
+    usize num = unsafe_yyjson_get_len(arr), idx;
+    if (last) *last = false;
+    if (unlikely(num == 0)) {
+        if (last && len == 1 && (*token == '0' || *token == '-')) *last = true;
+        return NULL;
+    }
+    if (unlikely(!ptr_token_to_idx(token, len, &idx))) return NULL;
+    if (last) *last = (idx == num || idx == USIZE_MAX);
+    if (unlikely(idx >= num)) return NULL;
+    while (idx-- > 0) val = val->next;
+    *pre = val;
+    return val->next;
+}
+
+/**
+ Get a value from object by token.
+ @param obj   [in] an object, should not be NULL or non-object type
+ @param token [in] a JSON pointer token
+ @param len   [in] unescaped token length
+ @param esc   [in] number of escaped characters in this token
+ @param pre   [out] previous (sibling) key of the returned value's key
+ @return value associated with the token, or NULL if no value
+ */
+static_inline yyjson_mut_val *ptr_mut_obj_get(yyjson_mut_val *obj,
+                                              const char *token,
+                                              usize len, usize esc,
+                                              yyjson_mut_val **pre) {
+    u64 tag = (((u64)len) << YYJSON_TAG_BIT) | YYJSON_TYPE_STR;
+    yyjson_mut_val *pre_key = (yyjson_mut_val *)obj->uni.ptr, *key;
+    usize num = unsafe_yyjson_get_len(obj);
+    if (unlikely(num == 0)) return NULL;
+    for (; num > 0; num--, pre_key = key) {
+        key = pre_key->next->next;
+        if (ptr_token_eq(key, tag, token, len, esc)) {
+            *pre = pre_key;
+            return key->next;
         }
     }
     return NULL;
+}
+
+/**
+ Create a string value with JSON pointer token.
+ @param token [in] a JSON pointer token
+ @param len   [in] unescaped token length
+ @param esc   [in] number of escaped characters in this token
+ @param doc   [in] used for memory allocation when creating value
+ @return new string value, or NULL if memory allocation failed
+ */
+static_inline yyjson_mut_val *ptr_new_key(const char *token,
+                                          usize len, usize esc,
+                                          yyjson_mut_doc *doc) {
+    const char *src = token;
+    yyjson_mut_val *val = yyjson_mut_strncpy(doc, src, len + esc);
+    if (unlikely(!val)) return NULL;
+    if (unlikely(esc)) {
+        char *dst = (char *)val->uni.ptr;
+        for (; len > 0; len--, src++, dst++) {
+            if (*src != '~') *dst = *src;
+            else *dst = (*++src == '0' ? '~' : '/');
+        }
+        *dst = '\0';
+        unsafe_yyjson_set_len(val, len);
+    }
+    return val;
+}
+
+yyjson_val *unsafe_yyjson_ptr_getx(yyjson_val *val,
+                                   const char *ptr, size_t ptr_len,
+                                   yyjson_ptr_err *err) {
+    const char *end = ptr + ptr_len, *token;
+    usize len, esc;
     
-#undef BUF_SIZE
-#undef is_escaped
-#undef is_unescaped
-#undef is_completed
+    while ((token = ptr_next_token(&ptr, end, &len, &esc))) {
+        yyjson_type type = unsafe_yyjson_get_type(val);
+        if (type == YYJSON_TYPE_OBJ) {
+            val = ptr_obj_get(val, token, len, esc);
+        } else if (type == YYJSON_TYPE_ARR) {
+            val = ptr_arr_get(val, token, len, esc);
+        } else break;
+        if (!val) break;
+        if (ptr == end) return val;
+    }
+    *err = YYJSON_PTR_ERR_RESOLVE;
+    return NULL;
 }
 
-yyjson_api yyjson_val *unsafe_yyjson_get_pointer(yyjson_val *val,
-                                                 const char *ptr,
-                                                 usize len) {
-    const char *end = ptr + len;
-    ptr++; /* skip '/' */
-    while (true) {
-        if (yyjson_is_obj(val)) {
-            val = (yyjson_val *)pointer_read_obj(&ptr, end, val, false);
-        } else if (yyjson_is_arr(val)) {
-            val = (yyjson_val *)pointer_read_arr(&ptr, end, val, false);
-        } else {
-            val = NULL;
+yyjson_mut_val *unsafe_yyjson_mut_ptr_getx(yyjson_mut_val *val,
+                                           const char *ptr,
+                                           size_t ptr_len,
+                                           yyjson_ptr_ctx *ctx,
+                                           yyjson_ptr_err *err) {
+    const char *end = ptr + ptr_len, *token;
+    usize len, esc;
+    yyjson_mut_val *ctn, *pre = NULL;
+    
+    while ((token = ptr_next_token(&ptr, end, &len, &esc))) {
+        yyjson_type type = unsafe_yyjson_get_type(val);
+        ctn = val;
+        if (type == YYJSON_TYPE_OBJ) {
+            val = ptr_mut_obj_get(val, token, len, esc, &pre);
+        } else if (type == YYJSON_TYPE_ARR) {
+            val = ptr_mut_arr_get(val, token, len, esc, &pre, NULL);
+        } else break;
+        if (ptr == end && ctx) {
+            ctx->ctn = ctn;
+            ctx->pre = pre;
         }
-        if (!val || ptr == end) return val;
-        if (*ptr++ != '/') return NULL;
+        if (!val) break;
+        if (ptr == end) return val;
     }
+    *err = YYJSON_PTR_ERR_RESOLVE;
+    return NULL;
 }
 
-yyjson_api yyjson_mut_val *unsafe_yyjson_mut_get_pointer(yyjson_mut_val *val,
-                                                         const char *ptr,
-                                                         usize len) {
-    const char *end = ptr + len;
-    ptr++; /* skip '/' */
+yyjson_api bool unsafe_yyjson_mut_ptr_putx(yyjson_mut_val *val,
+                                           const char *ptr, size_t ptr_len,
+                                           yyjson_mut_val *new_val,
+                                           yyjson_mut_doc *doc,
+                                           bool create_parent, bool insert_new,
+                                           yyjson_ptr_ctx *ctx,
+                                           yyjson_ptr_err *err) {
+#define return_err(name) do { \
+    *err = YYJSON_PTR_ERR_##name; \
+    return false; \
+} while(false)
+
+    const char *end = ptr + ptr_len, *token;
+    usize token_len, esc, ctn_len;
+    yyjson_mut_val *ctn, *key, *pre = NULL;
+    yyjson_mut_val *sep_ctn = NULL, *sep_key = NULL, *sep_val = NULL;
+    yyjson_type ctn_type;
+    bool idx_is_last = false;
+    
+    /* skip exist parent nodes */
     while (true) {
-        if (yyjson_mut_is_obj(val)) {
-            val = (yyjson_mut_val *)pointer_read_obj(&ptr, end, val, true);
-        } else if (yyjson_mut_is_arr(val)) {
-            val = (yyjson_mut_val *)pointer_read_arr(&ptr, end, val, true);
-        } else {
-            val = NULL;
-        }
-        if (!val || ptr == end) return val;
-        if (*ptr++ != '/') return NULL;
+        token = ptr_next_token(&ptr, end, &token_len, &esc);
+        if (unlikely(!token)) return_err(SYNTAX);
+        ctn = val;
+        ctn_type = unsafe_yyjson_get_type(ctn);
+        if (ctn_type == YYJSON_TYPE_OBJ) {
+            val = ptr_mut_obj_get(ctn, token, token_len, esc, &pre);
+        } else if (ctn_type == YYJSON_TYPE_ARR) {
+            val = ptr_mut_arr_get(ctn, token, token_len, esc, &pre,
+                                  &idx_is_last);
+        } else return_err(RESOLVE);
+        if (!val) break;
+        if (ptr == end) break; /* is last token */
     }
+    
+    /* create parent nodes if not exist */
+    if (unlikely(ptr != end)) { /* not last token */
+        if (!create_parent) return_err(RESOLVE);
+        
+        /* add value at last index if container is array */
+        if (ctn_type == YYJSON_TYPE_ARR) {
+            if (!idx_is_last || !insert_new) return_err(RESOLVE);
+            val = yyjson_mut_obj(doc);
+            if (!val) return_err(CREATE_VALUE);
+            
+            /* delay attaching until all operations are completed */
+            sep_ctn = ctn;
+            sep_key = NULL;
+            sep_val = val;
+            
+            /* move to next token */
+            ctn = val;
+            val = NULL;
+            ctn_type = YYJSON_TYPE_OBJ;
+            token = ptr_next_token(&ptr, end, &token_len, &esc);
+            if (unlikely(!token)) return_err(SYNTAX);
+        }
+        
+        /* container is object, create parent nodes */
+        while (ptr != end) { /* not last token */
+            key = ptr_new_key(token, token_len, esc, doc);
+            if (!key) return_err(CREATE_VALUE);
+            val = yyjson_mut_obj(doc);
+            if (!val) return_err(CREATE_VALUE);
+            
+            /* delay attaching until all operations are completed */
+            if (!sep_ctn) {
+                sep_ctn = ctn;
+                sep_key = key;
+                sep_val = val;
+            } else {
+                yyjson_mut_obj_add(ctn, key, val);
+            }
+            
+            /* move to next token */
+            ctn = val;
+            val = NULL;
+            token = ptr_next_token(&ptr, end, &token_len, &esc);
+            if (unlikely(!token)) return_err(SYNTAX);
+        };
+    }
+    
+    /* JSON pointer is resolved, insert or replace target value */
+    ctn_len = unsafe_yyjson_get_len(ctn);
+    if (ctx) ctx->ctn = ctn;
+    if (ctn_type == YYJSON_TYPE_OBJ) {
+        if (!val || insert_new) {
+            /* insert new key-value pair */
+            key = ptr_new_key(token, token_len, esc, doc);
+            if (!key) return_err(CREATE_VALUE);
+            if (ctx) ctx->pre = ctn_len ? (yyjson_mut_val *)ctn->uni.ptr : NULL;
+            unsafe_yyjson_mut_obj_add(ctn, key, new_val, ctn_len);
+        } else {
+            /* replace exist value */
+            key = pre->next->next;
+            if (ctx) ctx->pre = pre;
+            if (ctx) ctx->old = val;
+            yyjson_mut_obj_put(ctn, key, new_val);
+        }
+    } else {
+        /* array */
+        if (insert_new) {
+            /* append new value */
+            if (val) {
+                new_val->next = val->next;
+                val->next = new_val;
+                if (ctn->uni.ptr == val) ctn->uni.ptr = new_val;
+                if (ctx) ctx->pre = val;
+                unsafe_yyjson_set_len(ctn, ctn_len + 1);
+            } else if (idx_is_last) {
+                if (ctx) ctx->pre = ctn_len ? (yyjson_mut_val *)ctn->uni.ptr : NULL;
+                yyjson_mut_arr_append(ctn, new_val);
+            } else {
+                return_err(RESOLVE);
+            }
+        } else {
+            /* replace exist value */
+            if (!val) return_err(RESOLVE);
+            new_val->next = val->next;
+            pre->next = new_val;
+            if (ctn->uni.ptr == val) ctn->uni.ptr = new_val;
+            if (ctx) ctx->pre = pre;
+            if (ctx) ctx->old = val;
+        }
+    }
+    
+    /* all operations are completed, attach the new components to the target */
+    if (unlikely(sep_ctn)) {
+        if (sep_key) {
+            yyjson_mut_obj_add(sep_ctn, sep_key, sep_val);
+        } else {
+            yyjson_mut_arr_append(sep_ctn, sep_val);
+        }
+    }
+    return true;
+    
+#undef return_err
+}
+
+yyjson_api yyjson_mut_val *unsafe_yyjson_mut_ptr_replacex(
+    yyjson_mut_val *val, const char *ptr, size_t len, yyjson_mut_val *new_val,
+    yyjson_ptr_ctx *ctx, yyjson_ptr_err *err) {
+    yyjson_mut_val *cur_val;
+    yyjson_ptr_ctx cur_ctx;
+    memset(&cur_ctx, 0, sizeof(cur_ctx));
+    if (!ctx) ctx = &cur_ctx;
+    cur_val = unsafe_yyjson_mut_ptr_getx(val, ptr, len, ctx, err);
+    if (!cur_val) return NULL;
+    
+    if (yyjson_mut_is_obj(ctx->ctn)) {
+        yyjson_mut_val *key = ctx->pre->next->next;
+        yyjson_mut_obj_put(ctx->ctn, key, new_val);
+    } else {
+        yyjson_ptr_ctx_replace(ctx, new_val);
+    }
+    ctx->old = cur_val;
+    return cur_val;
+}
+
+yyjson_mut_val *unsafe_yyjson_mut_ptr_removex(yyjson_mut_val *val,
+                                              const char *ptr,
+                                              size_t len,
+                                              yyjson_ptr_ctx *ctx,
+                                              yyjson_ptr_err *err) {
+    yyjson_mut_val *cur_val;
+    yyjson_ptr_ctx cur_ctx;
+    memset(&cur_ctx, 0, sizeof(cur_ctx));
+    if (!ctx) ctx = &cur_ctx;
+    cur_val = unsafe_yyjson_mut_ptr_getx(val, ptr, len, ctx, err);
+    if (cur_val) {
+        if (yyjson_mut_is_obj(ctx->ctn)) {
+            yyjson_mut_val *key = ctx->pre->next->next;
+            yyjson_mut_obj_put(ctx->ctn, key, NULL);
+        } else {
+            yyjson_ptr_ctx_remove(ctx);
+        }
+        ctx->old = cur_val;
+    }
+    return cur_val;
 }
 
 
