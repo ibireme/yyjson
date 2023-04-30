@@ -1282,7 +1282,9 @@ yyjson_api yyjson_mut_doc *yyjson_mut_doc_mut_copy(yyjson_mut_doc *doc,
     yyjson_mut_doc *m_doc;
     yyjson_mut_val *m_val;
     
-    if (!doc || !doc->root) return NULL;
+    if (!doc) return NULL;
+    if (!doc->root) return yyjson_mut_doc_new(alc);
+    
     m_doc = yyjson_mut_doc_new(alc);
     if (!m_doc) return NULL;
     m_val = yyjson_mut_val_mut_copy(m_doc, doc->root);
@@ -1685,13 +1687,16 @@ static_inline const char *ptr_next_token(const char **ptr, const char *end,
                                          usize *len, usize *esc) {
     const char *hdr = *ptr + 1;
     const char *cur = hdr;
+    /* skip unescaped characters */
     while (cur < end && *cur != '/' && *cur != '~') cur++;
     if (likely(*cur != '~')) {
+        /* no escaped characters, return */
         *ptr = cur;
         *len = (usize)(cur - hdr);
         *esc = 0;
         return hdr;
     } else {
+        /* handle escaped characters */
         usize esc_num = 0;
         while (cur < end && *cur != '/') {
             if (*cur++ == '~') {
@@ -1821,9 +1826,10 @@ static_inline yyjson_mut_val *ptr_mut_arr_get(yyjson_mut_val *arr,
                                               usize len, usize esc,
                                               yyjson_mut_val **pre,
                                               bool *last) {
-    yyjson_mut_val *val = (yyjson_mut_val *)arr->uni.ptr; /* last (tail) value */
+    yyjson_mut_val *val = (yyjson_mut_val *)arr->uni.ptr; /* last (tail) */
     usize num = unsafe_yyjson_get_len(arr), idx;
     if (last) *last = false;
+    if (pre) *pre = NULL;
     if (unlikely(num == 0)) {
         if (last && len == 1 && (*token == '0' || *token == '-')) *last = true;
         return NULL;
@@ -1852,6 +1858,7 @@ static_inline yyjson_mut_val *ptr_mut_obj_get(yyjson_mut_val *obj,
     u64 tag = (((u64)len) << YYJSON_TAG_BIT) | YYJSON_TYPE_STR;
     yyjson_mut_val *pre_key = (yyjson_mut_val *)obj->uni.ptr, *key;
     usize num = unsafe_yyjson_get_len(obj);
+    if (pre) *pre = NULL;
     if (unlikely(num == 0)) return NULL;
     for (; num > 0; num--, pre_key = key) {
         key = pre_key->next->next;
@@ -1879,7 +1886,8 @@ static_inline yyjson_mut_val *ptr_new_key(const char *token,
     if (unlikely(!val)) return NULL;
     if (unlikely(esc)) {
         char *dst = (char *)val->uni.ptr;
-        for (; len > 0; len--, src++, dst++) {
+        const char *end = src + len + esc;
+        for (; src < end; src++, dst++) {
             if (*src != '~') *dst = *src;
             else *dst = (*++src == '0' ? '~' : '/');
         }
@@ -1894,19 +1902,28 @@ yyjson_val *unsafe_yyjson_ptr_getx(yyjson_val *val,
                                    yyjson_ptr_err *err) {
     const char *end = ptr + ptr_len, *token;
     usize len, esc;
+    yyjson_type type;
     
-    while ((token = ptr_next_token(&ptr, end, &len, &esc))) {
-        yyjson_type type = unsafe_yyjson_get_type(val);
+    while (true) {
+        token = ptr_next_token(&ptr, end, &len, &esc);
+        if (unlikely(!token)) {
+            *err = YYJSON_PTR_ERR_SYNTAX;
+            return NULL;
+        }
+        type = unsafe_yyjson_get_type(val);
         if (type == YYJSON_TYPE_OBJ) {
             val = ptr_obj_get(val, token, len, esc);
         } else if (type == YYJSON_TYPE_ARR) {
             val = ptr_arr_get(val, token, len, esc);
-        } else break;
-        if (!val) break;
+        } else {
+            val = NULL;
+        }
+        if (!val) {
+            *err = YYJSON_PTR_ERR_RESOLVE;
+            return NULL;
+        }
         if (ptr == end) return val;
     }
-    *err = YYJSON_PTR_ERR_RESOLVE;
-    return NULL;
 }
 
 yyjson_mut_val *unsafe_yyjson_mut_ptr_getx(yyjson_mut_val *val,
@@ -1917,24 +1934,37 @@ yyjson_mut_val *unsafe_yyjson_mut_ptr_getx(yyjson_mut_val *val,
     const char *end = ptr + ptr_len, *token;
     usize len, esc;
     yyjson_mut_val *ctn, *pre = NULL;
+    yyjson_type type;
+    bool idx_is_last = false;
     
-    while ((token = ptr_next_token(&ptr, end, &len, &esc))) {
-        yyjson_type type = unsafe_yyjson_get_type(val);
+    while (true) {
+        token = ptr_next_token(&ptr, end, &len, &esc);
+        if (unlikely(!token)) {
+            *err = YYJSON_PTR_ERR_SYNTAX;
+            return NULL;
+        }
         ctn = val;
+        type = unsafe_yyjson_get_type(val);
         if (type == YYJSON_TYPE_OBJ) {
             val = ptr_mut_obj_get(val, token, len, esc, &pre);
         } else if (type == YYJSON_TYPE_ARR) {
-            val = ptr_mut_arr_get(val, token, len, esc, &pre, NULL);
-        } else break;
-        if (ptr == end && ctx) {
-            ctx->ctn = ctn;
-            ctx->pre = pre;
+            val = ptr_mut_arr_get(val, token, len, esc, &pre, &idx_is_last);
+        } else {
+            val = NULL;
         }
-        if (!val) break;
+        if (ctx && (ptr == end)) {
+            if (type == YYJSON_TYPE_OBJ ||
+                (type == YYJSON_TYPE_ARR && (val || idx_is_last))) {
+                ctx->ctn = ctn;
+                ctx->pre = pre;
+            }
+        }
+        if (!val) {
+            *err = YYJSON_PTR_ERR_RESOLVE;
+            return NULL;
+        }
         if (ptr == end) return val;
     }
-    *err = YYJSON_PTR_ERR_RESOLVE;
-    return NULL;
 }
 
 yyjson_api bool unsafe_yyjson_mut_ptr_putx(yyjson_mut_val *val,
@@ -1948,7 +1978,7 @@ yyjson_api bool unsafe_yyjson_mut_ptr_putx(yyjson_mut_val *val,
     *err = YYJSON_PTR_ERR_##name; \
     return false; \
 } while(false)
-
+    
     const char *end = ptr + ptr_len, *token;
     usize token_len, esc, ctn_len;
     yyjson_mut_val *ctn, *key, *pre = NULL;
@@ -1980,7 +2010,7 @@ yyjson_api bool unsafe_yyjson_mut_ptr_putx(yyjson_mut_val *val,
         if (ctn_type == YYJSON_TYPE_ARR) {
             if (!idx_is_last || !insert_new) return_err(RESOLVE);
             val = yyjson_mut_obj(doc);
-            if (!val) return_err(CREATE_VALUE);
+            if (!val) return_err(MEMORY_ALLOCATION);
             
             /* delay attaching until all operations are completed */
             sep_ctn = ctn;
@@ -1998,9 +2028,9 @@ yyjson_api bool unsafe_yyjson_mut_ptr_putx(yyjson_mut_val *val,
         /* container is object, create parent nodes */
         while (ptr != end) { /* not last token */
             key = ptr_new_key(token, token_len, esc, doc);
-            if (!key) return_err(CREATE_VALUE);
+            if (!key) return_err(MEMORY_ALLOCATION);
             val = yyjson_mut_obj(doc);
-            if (!val) return_err(CREATE_VALUE);
+            if (!val) return_err(MEMORY_ALLOCATION);
             
             /* delay attaching until all operations are completed */
             if (!sep_ctn) {
@@ -2016,18 +2046,18 @@ yyjson_api bool unsafe_yyjson_mut_ptr_putx(yyjson_mut_val *val,
             val = NULL;
             token = ptr_next_token(&ptr, end, &token_len, &esc);
             if (unlikely(!token)) return_err(SYNTAX);
-        };
+        }
     }
     
     /* JSON pointer is resolved, insert or replace target value */
     ctn_len = unsafe_yyjson_get_len(ctn);
-    if (ctx) ctx->ctn = ctn;
     if (ctn_type == YYJSON_TYPE_OBJ) {
+        if (ctx) ctx->ctn = ctn;
         if (!val || insert_new) {
             /* insert new key-value pair */
             key = ptr_new_key(token, token_len, esc, doc);
-            if (!key) return_err(CREATE_VALUE);
-            if (ctx) ctx->pre = ctn_len ? (yyjson_mut_val *)ctn->uni.ptr : NULL;
+            if (!key) return_err(MEMORY_ALLOCATION);
+            if (ctx) ctx->pre = ctn_len ? (yyjson_mut_val *)ctn->uni.ptr : key;
             unsafe_yyjson_mut_obj_add(ctn, key, new_val, ctn_len);
         } else {
             /* replace exist value */
@@ -2038,16 +2068,17 @@ yyjson_api bool unsafe_yyjson_mut_ptr_putx(yyjson_mut_val *val,
         }
     } else {
         /* array */
+        if (ctx && (val || idx_is_last)) ctx->ctn = ctn;
         if (insert_new) {
             /* append new value */
             if (val) {
-                new_val->next = val->next;
-                val->next = new_val;
-                if (ctn->uni.ptr == val) ctn->uni.ptr = new_val;
-                if (ctx) ctx->pre = val;
+                pre->next = new_val;
+                new_val->next = val;
+                if (ctx) ctx->pre = pre;
                 unsafe_yyjson_set_len(ctn, ctn_len + 1);
             } else if (idx_is_last) {
-                if (ctx) ctx->pre = ctn_len ? (yyjson_mut_val *)ctn->uni.ptr : NULL;
+                if (ctx) ctx->pre = ctn_len ?
+                    (yyjson_mut_val *)ctn->uni.ptr : new_val;
                 yyjson_mut_arr_append(ctn, new_val);
             } else {
                 return_err(RESOLVE);
@@ -2055,9 +2086,15 @@ yyjson_api bool unsafe_yyjson_mut_ptr_putx(yyjson_mut_val *val,
         } else {
             /* replace exist value */
             if (!val) return_err(RESOLVE);
-            new_val->next = val->next;
-            pre->next = new_val;
-            if (ctn->uni.ptr == val) ctn->uni.ptr = new_val;
+            if (ctn_len > 1) {
+                new_val->next = val->next;
+                pre->next = new_val;
+                if (ctn->uni.ptr == val) ctn->uni.ptr = new_val;
+            } else {
+                new_val->next = new_val;
+                ctn->uni.ptr = new_val;
+                pre = new_val;
+            }
             if (ctx) ctx->pre = pre;
             if (ctx) ctx->old = val;
         }
@@ -2113,6 +2150,7 @@ yyjson_mut_val *unsafe_yyjson_mut_ptr_removex(yyjson_mut_val *val,
         } else {
             yyjson_ptr_ctx_remove(ctx);
         }
+        ctx->pre = NULL;
         ctx->old = cur_val;
     }
     return cur_val;

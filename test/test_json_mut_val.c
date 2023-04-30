@@ -1936,7 +1936,8 @@ static void test_json_mut_doc_api(void) {
     {
         yyjson_mut_doc *doc = yyjson_mut_doc_new(NULL);
         yy_assert(yyjson_mut_doc_get_root(doc) == NULL);
-        yy_assert(yyjson_mut_doc_mut_copy(doc, NULL) == NULL);
+        yyjson_mut_doc *doc2 = yyjson_mut_doc_mut_copy(doc, NULL);
+        yy_assert(doc2 != NULL && doc2->root == NULL);
         
         yyjson_mut_val *val = yyjson_mut_str(doc, "abc");
         yy_assert(yyjson_mut_is_str(val));
@@ -1950,6 +1951,7 @@ static void test_json_mut_doc_api(void) {
         yy_assert(yyjson_mut_equals(v1, v2) == false);
         
         yyjson_mut_doc_free(doc);
+        yyjson_mut_doc_free(doc2);
     }
     
 #if !YYJSON_DISABLE_READER
