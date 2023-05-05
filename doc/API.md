@@ -733,46 +733,6 @@ yyjson_obj_foreach(obj, idx, max, key, val) {
 }
 ```
 
-## JSON Pointer
-The library supports querying JSON values via `JSON Pointer` ([RFC 6901](https://tools.ietf.org/html/rfc6901)).
-
-```c
-// `JSON pointer` is a null-terminated string.
-yyjson_val *yyjson_get_pointer(yyjson_val *val, const char *ptr);
-yyjson_val *yyjson_doc_get_pointer(yyjson_doc *doc, const char *ptr);
-yyjson_mut_val *yyjson_mut_get_pointer(yyjson_mut_val *val, const char *ptr);
-yyjson_mut_val *yyjson_mut_doc_get_pointer(yyjson_mut_doc *doc, const char *ptr);
-
-// `JSON pointer` with string length, allow NUL (Unicode U+0000) characters inside.
-yyjson_val *yyjson_get_pointern(yyjson_val *val, const char *ptr, size_t len);
-yyjson_val *yyjson_doc_get_pointern(yyjson_doc *doc, const char *ptr, size_t len);
-yyjson_mut_val *yyjson_mut_get_pointern(yyjson_mut_val *val, const char *ptr, size_t len);
-yyjson_mut_val *yyjson_mut_doc_get_pointern(yyjson_mut_doc *doc, const char *ptr, size_t len);
-```
-
-For example, given the JSON document:
-```json
-{
-    "size" : 3,
-    "users" : [
-        {"id": 1, "name": "Harry"},
-        {"id": 2, "name": "Ron"},
-        {"id": 3, "name": "Hermione"}
-    ]
-}
-```
-The following JSON strings evaluate to the accompanying values:
-
-|Pointer|Matched Value|
-|:--|:--|
-| `""` | `the whole document` |
-| `"/size"`| `3` |
-| `"/users/0"` | `{"id": 1, "name": "Harry"}` |
-| `"/users/1/name"` | `"Ron"` |
-| `"/no_match"` | NULL |
-| `"no_slash"` | NULL |
-| `"/"` | NULL (match to empty key: root[""]) |
-
 
 ---------------
 # Create JSON Document
@@ -1072,6 +1032,116 @@ bool yyjson_mut_obj_remove_strn(yyjson_mut_val *obj, const char *key, size_t len
 yyjson_api_inline bool yyjson_mut_obj_rename_key(yyjson_mut_doc *doc, yyjson_mut_val *obj, const char *key, const char *new_key);
 yyjson_api_inline bool yyjson_mut_obj_rename_keyn(yyjson_mut_doc *doc, yyjson_mut_val *obj, const char *key, size_t len, const char *new_key, size_t new_len);
 ```
+
+
+---------------
+# JSON Pointer and Patch
+
+## JSON Pointer
+The library supports querying JSON values via `JSON Pointer` ([RFC 6901](https://tools.ietf.org/html/rfc6901)).
+
+```c
+// `JSON pointer` is a null-terminated string.
+yyjson_val *yyjson_ptr_get(yyjson_val *val, const char *ptr);
+yyjson_val *yyjson_doc_ptr_get(yyjson_doc *doc, const char *ptr);
+yyjson_mut_val *yyjson_mut_ptr_get(yyjson_mut_val *val, const char *ptr);
+yyjson_mut_val *yyjson_mut_doc_ptr_get(yyjson_mut_doc *doc, const char *ptr);
+
+// `JSON pointer` with string length, allow NUL (Unicode U+0000) characters inside.
+yyjson_val *yyjson_ptr_getn(yyjson_val *val, const char *ptr, size_t len);
+yyjson_val *yyjson_doc_ptr_getn(yyjson_doc *doc, const char *ptr, size_t len);
+yyjson_mut_val *yyjson_mut_ptr_getn(yyjson_mut_val *val, const char *ptr, size_t len);
+yyjson_mut_val *yyjson_mut_doc_ptr_getn(yyjson_mut_doc *doc, const char *ptr, size_t len);
+
+// `JSON pointer` with string length, context and error information.
+yyjson_val *yyjson_ptr_getx(yyjson_val *val, const char *ptr, size_t len, yyjson_ptr_err *err);
+yyjson_val *yyjson_doc_ptr_getn(yyjson_doc *doc, const char *ptr, size_t len, yyjson_ptr_err *err);
+yyjson_mut_val *yyjson_mut_ptr_getn(yyjson_mut_val *val, const char *ptr, size_t len, yyjson_ptr_ctx *ctx, yyjson_ptr_err *err);
+yyjson_mut_val *yyjson_mut_doc_ptr_getn(yyjson_mut_doc *doc, const char *ptr, size_t len, yyjson_ptr_ctx *ctx, yyjson_ptr_err *err);
+```
+
+For example, given the JSON document:
+```json
+{
+    "size" : 3,
+    "users" : [
+        {"id": 1, "name": "Harry"},
+        {"id": 2, "name": "Ron"},
+        {"id": 3, "name": "Hermione"}
+    ]
+}
+```
+The following JSON strings evaluate to the accompanying values:
+
+|Pointer|Matched Value|
+|:--|:--|
+| `""` | `the whole document` |
+| `"/size"`| `3` |
+| `"/users/0"` | `{"id": 1, "name": "Harry"}` |
+| `"/users/1/name"` | `"Ron"` |
+| `"/no_match"` | NULL |
+| `"no_slash"` | NULL |
+| `"/"` | NULL (match to empty key: root[""]) |
+
+The library also supports modifying JSON values via `JSON Pointer`.
+```c
+// Add or insert a new value.
+bool yyjson_mut_ptr_add(yyjson_mut_val *val, const char *ptr, yyjson_mut_val *new_val, yyjson_mut_doc *doc);
+bool yyjson_mut_ptr_addn(yyjson_mut_val *val, const char *ptr, size_t len, yyjson_mut_val *new_val, yyjson_mut_doc *doc);
+bool yyjson_mut_ptr_addx(yyjson_mut_val *val, const char *ptr, size_t len, yyjson_mut_val *new_val, yyjson_mut_doc *doc, bool create_parent, yyjson_ptr_ctx *ctx, yyjson_ptr_err *err);
+                                           
+bool yyjson_mut_doc_ptr_add(yyjson_mut_doc *doc, const char *ptr, yyjson_mut_val *new_val);
+bool yyjson_mut_doc_ptr_addn(yyjson_mut_doc *doc, const char *ptr, size_t len, yyjson_mut_val *new_val);
+bool yyjson_mut_doc_ptr_addx(yyjson_mut_doc *doc, const char *ptr, size_t len, yyjson_mut_val *new_val, bool create_parent, yyjson_ptr_ctx *ctx, yyjson_ptr_err *err);
+
+// Set a new value (add if it doesn't exist, replace if it does).
+bool yyjson_mut_ptr_set(yyjson_mut_val *val, const char *ptr, yyjson_mut_val *new_val, yyjson_mut_doc *doc);
+bool yyjson_mut_ptr_setn(yyjson_mut_val *val, const char *ptr, size_t len, yyjson_mut_val *new_val, yyjson_mut_doc *doc);
+bool yyjson_mut_ptr_setx(yyjson_mut_val *val, const char *ptr, size_t len, yyjson_mut_val *new_val, yyjson_mut_doc *doc, bool create_parent, yyjson_ptr_ctx *ctx, yyjson_ptr_err *err);
+                                             
+bool yyjson_mut_doc_ptr_set(yyjson_mut_doc *doc, const char *ptr, yyjson_mut_val *new_val);
+bool yyjson_mut_doc_ptr_setn(yyjson_mut_doc *doc, const char *ptr, size_t len, yyjson_mut_val *new_val);
+bool yyjson_mut_doc_ptr_setx(yyjson_mut_doc *doc, const char *ptr, size_t len, yyjson_mut_val *new_val, bool create_parent, yyjson_ptr_ctx *ctx, yyjson_ptr_err *err);
+
+// Replace an existing value.
+yyjson_mut_val *yyjson_mut_ptr_replace(yyjson_mut_val *val, const char *ptr, yyjson_mut_val *new_val);
+yyjson_mut_val *yyjson_mut_ptr_replacen(yyjson_mut_val *val, const char *ptr, size_t len, yyjson_mut_val *new_val);
+yyjson_mut_val *yyjson_mut_ptr_replacex(yyjson_mut_val *val, const char *ptr, size_t len, yyjson_mut_val *new_val, yyjson_ptr_ctx *ctx, yyjson_ptr_err *err);
+    
+yyjson_mut_val *yyjson_mut_doc_ptr_replace(yyjson_mut_doc *doc, const char *ptr, yyjson_mut_val *new_val);
+yyjson_mut_val *yyjson_mut_doc_ptr_replacen(yyjson_mut_doc *doc, const char *ptr, size_t len, yyjson_mut_val *new_val);
+yyjson_mut_val *yyjson_mut_doc_ptr_replacex(yyjson_mut_doc *doc, const char *ptr, size_t len, yyjson_mut_val *new_val, yyjson_ptr_ctx *ctx, yyjson_ptr_err *err);
+
+// Remove an existing value.
+yyjson_mut_val *yyjson_mut_ptr_remove(yyjson_mut_val *val, const char *ptr);
+yyjson_mut_val *yyjson_mut_ptr_removen(yyjson_mut_val *val, const char *ptr, size_t len);
+yyjson_mut_val *yyjson_mut_ptr_removex(yyjson_mut_val *val, const char *ptr, size_t len, yyjson_ptr_ctx *ctx, yyjson_ptr_err *err);
+
+yyjson_mut_val *yyjson_mut_doc_ptr_remove(yyjson_mut_doc *doc, const char *ptr);
+yyjson_mut_val *yyjson_mut_doc_ptr_removen(yyjson_mut_doc *doc, const char *ptr, size_t len);
+yyjson_mut_val *yyjson_mut_doc_ptr_removex(yyjson_mut_doc *doc, const char *ptr, size_t len, yyjson_ptr_ctx *ctx, yyjson_ptr_err *err);
+```
+
+All the above functions ending with `x` can be used to get the result context `ctx`, and the error message `err`.
+
+
+## JSON Patch
+The library supports JSON Patch (RFC 6902).
+Specification and example: <https://tools.ietf.org/html/rfc6902>
+```c
+// Creates and returns a patched JSON value.
+// Returns NULL if the patch could not be applied.
+yyjson_mut_val *yyjson_patch(yyjson_mut_doc *doc,
+                             yyjson_val *orig,
+                             yyjson_val *patch,
+                             yyjson_patch_err *err);
+
+yyjson_mut_val *yyjson_mut_patch(yyjson_mut_doc *doc,
+                                 yyjson_mut_val *orig,
+                                 yyjson_mut_val *patch,
+                                 yyjson_patch_err *err);
+```
+
 
 ## JSON Merge Patch
 The library supports JSON Merge Patch (RFC 7386).

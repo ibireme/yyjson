@@ -8,12 +8,15 @@ All notable changes to this project will be documented in this file.
 - Add `yyjson_get_num()` function to convert and return any number value as `double`: #108
 - Add support for Loongarch: #112
 - Add functions to support modifying memory pool size of `yyjson_mut_doc`.
-- Add convenience functions for creating iterator.
+- Add convenience functions `iter_with()` for creating iterator.
+- Add functions to modify JSON by JSON Pointer, such as `ptr_set()` and `ptr_remove()`.
 - Add functions to get type-specific values specified by JSON Pointer.
+- Add support for JSON Patch (RFC 6902).
 
 #### Changed
-- Change allocator's realloc function signature, add `old_size` parameter (just ignore the parameter if your allocator doesn't need it): #100
+- Change allocator's realloc function signature, add `old_size` parameter for allocator: #100
 - Change `yyjson_read_number()` function, add `alc` parameter.
+- Deprecate `get_pointer()` functions, rename to `ptr_get()`.
 - Improve `yyjson_mut_write()` performance.
 
 #### Fixed
