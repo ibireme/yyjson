@@ -67,6 +67,22 @@
 #endif
 
 /*
+ Define as 1 to disable JSON Pointer, JSON Patch and JSON Merge Patch supports.
+ 
+ This will disable these functions at compile-time:
+    - yyjson_ptr_xxx()
+    - yyjson_mut_ptr_xxx()
+    - yyjson_doc_ptr_xxx()
+    - yyjson_mut_doc_ptr_xxx()
+    - yyjson_patch()
+    - yyjson_mut_patch()
+    - yyjson_merge_patch()
+    - yyjson_mut_merge_patch()
+ */
+#ifndef YYJSON_DISABLE_UTILS
+#endif
+
+/*
  Define as 1 to disable the fast floating-point number conversion in yyjson,
  and use libc's `strtod/snprintf` instead.
  

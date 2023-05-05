@@ -359,6 +359,9 @@ uint32_t yyjson_version(void) {
 #ifndef YYJSON_DISABLE_WRITER
 #define YYJSON_DISABLE_WRITER 0
 #endif
+#ifndef YYJSON_DISABLE_UTILS
+#define YYJSON_DISABLE_UTILS 0
+#endif
 #ifndef YYJSON_DISABLE_FAST_FP_CONV
 #define YYJSON_DISABLE_FAST_FP_CONV 0
 #endif
@@ -1665,6 +1668,8 @@ bool unsafe_yyjson_mut_equals(yyjson_mut_val *lhs, yyjson_mut_val *rhs) {
 
 
 
+#if !YYJSON_DISABLE_UTILS
+
 /*==============================================================================
  * JSON Pointer API (RFC 6901)
  *============================================================================*/
@@ -2487,7 +2492,7 @@ yyjson_mut_val *yyjson_mut_patch(yyjson_mut_doc *doc,
 
 
 /*==============================================================================
- * JSON Merge-Patch
+ * JSON Merge-Patch API (RFC 7386)
  *============================================================================*/
 
 yyjson_mut_val *yyjson_merge_patch(yyjson_mut_doc *doc,
@@ -2593,6 +2598,8 @@ yyjson_mut_val *yyjson_mut_merge_patch(yyjson_mut_doc *doc,
     
     return builder;
 }
+
+#endif /* YYJSON_DISABLE_UTILS */
 
 
 

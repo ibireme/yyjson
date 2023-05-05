@@ -1,6 +1,8 @@
 #include "yyjson.h"
 #include "yy_test_utils.h"
 
+#if !YYJSON_DISABLE_UTILS
+
 static void test_one(const char *orig_json,
                      const char *patch_json,
                      const char *expt_json) {
@@ -72,3 +74,7 @@ yy_test_case(test_json_merge_patch) {
     test_one("[1,2]", "{\"a\":\"b\",\"c\":null}", "{\"a\":\"b\"}");
     test_one("{}", "{\"a\":{\"bb\":{\"ccc\":null}}}", "{\"a\":{\"bb\":{}}}");
 }
+
+#else
+yy_test_case(test_json_merge_patch) {}
+#endif

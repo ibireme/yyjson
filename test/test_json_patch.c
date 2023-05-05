@@ -1,7 +1,7 @@
 #include "yyjson.h"
 #include "yy_test_utils.h"
 
-#if !YYJSON_DISABLE_READER && !YYJSON_DISABLE_WRITER
+#if !YYJSON_DISABLE_READER && !YYJSON_DISABLE_WRITER && !YYJSON_DISABLE_UTILS
 
 typedef struct {
     const char *src;

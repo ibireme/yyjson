@@ -66,6 +66,7 @@ Supported CMake options:
 
 - `-DYYJSON_DISABLE_READER=ON` Disable JSON reader if you don't need it.
 - `-DYYJSON_DISABLE_WRITER=ON` Disable JSON writer if you don't need it.
+- `-DYYJSON_DISABLE_UTILS=ON` Disable JSON Pointer, JSON Patch and JSON Merge Patch.
 - `-DYYJSON_DISABLE_FAST_FP_CONV=ON` Disable builtin fast floating-pointer conversion.
 - `-DYYJSON_DISABLE_NON_STANDARD=ON` Disable non-standard JSON support at compile-time.
 
@@ -212,6 +213,22 @@ yyjson_mut_val_write_opts()
 ```
 This will reduce the binary size by about 30%.<br/>
 It is recommended when you don't need to serialize JSON.
+
+● **YYJSON_DISABLE_UTILS**<br/>
+ Define as 1 to disable JSON Pointer, JSON Patch and JSON Merge Patch supports.
+ 
+ This will disable these functions at compile-time:
+ ```c
+ yyjson_ptr_xxx()
+ yyjson_mut_ptr_xxx()
+ yyjson_doc_ptr_xxx()
+ yyjson_mut_doc_ptr_xxx()
+ yyjson_patch()
+ yyjson_mut_patch()
+ yyjson_merge_patch()
+ yyjson_mut_merge_patch()
+ ```
+It is recommended when you don't need these functions.
 
 ● **YYJSON_DISABLE_FAST_FP_CONV**<br/>
 Define as 1 to disable the fast floating-point number conversion in yyjson,
