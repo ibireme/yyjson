@@ -1690,7 +1690,7 @@ static_inline const char *ptr_next_token(const char **ptr, const char *end,
     const char *cur = hdr;
     /* skip unescaped characters */
     while (cur < end && *cur != '/' && *cur != '~') cur++;
-    if (likely(*cur != '~')) {
+    if (likely(cur == end || *cur != '~')) {
         /* no escaped characters, return */
         *ptr = cur;
         *len = (usize)(cur - hdr);

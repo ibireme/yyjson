@@ -264,12 +264,25 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
+
+    - name: Prepare
+      shell: bash
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y llvm
+
     - name: CodeCov
       shell: bash
       run: |
         mkdir build
         cd build
-        cmake .. -DCMAKE_BUILD_TYPE=Debug -DYYJSON_BUILD_TESTS=ON -DYYJSON_ENABLE_COVERAGE=ON
+        export LLVM_PROFILE_FILE=cov/profile-%p.profraw
+        cmake .. -DCMAKE_BUILD_TYPE=Debug -DYYJSON_BUILD_TESTS=ON -DYYJSON_ENABLE_COVERAGE=ON \
+                 -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
         cmake --build . --config Debug
         ctest
+        ctest_files=$(grep -o "test_\w\+ " CTestTestfile.cmake | uniq | tr '\n' ' ')
+        ctest_files=$(echo $ctest_files | sed 's/  $//' | sed "s/ / -object /g")
+        llvm-profdata merge -sparse cov/profile-*.profraw -o coverage.profdata
+        llvm-cov show $ctest_files -instr-profile=coverage.profdata > coverage.txt
         bash <(curl -s https://codecov.io/bash) || echo "Codecov did not collect coverage reports"

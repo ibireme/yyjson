@@ -1418,6 +1418,22 @@ static void test_ptr_get() {
         .err = YYJSON_PTR_ERR_RESOLVE,
         .pos = 7,
     });
+    
+    // ---------------------------------
+    // pointer without null-terminator
+    const char *ptr = "/a/b";
+    char *ptr_alc = malloc(strlen(ptr));
+    memcpy(ptr_alc, ptr, strlen(ptr));
+    test_ptr_op((ptr_data){
+        .op = PTR_OP_GET,
+        .src = "{\"a\":{\"b\":{\"c\":1}}}",
+        .ptr = ptr_alc,
+        .ptr_len = strlen(ptr),
+        .val = "{\"c\":1}",
+        .ctn = "{\"b\":{\"c\":1}}",
+        .pre = "\"b\"",
+    });
+    free(ptr_alc);
 }
 
 static void test_ptr_put() {

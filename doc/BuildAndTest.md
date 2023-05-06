@@ -162,14 +162,28 @@ cmake --build .
 ctest --output-on-failure
 ```
 
-Build and run code coverage (compiler should be `gcc`):
+Build and run code coverage with `gcc`:
 ```shell
 cmake .. -DCMAKE_BUILD_TYPE=Debug -DYYJSON_BUILD_TESTS=ON -DYYJSON_ENABLE_COVERAGE=ON
 cmake --build . --config Debug
 ctest --output-on-failure
 
-lcov -c -d ./CMakeFiles/yyjson.dir/src -o cov.info
+lcov -c -d ./CMakeFiles --include "*/yyjson.*" -o cov.info
 genhtml cov.info -o ./cov_report
+```
+
+Build and run code coverage with `clang`:
+```shell
+cmake .. -DCMAKE_BUILD_TYPE=Debug -DYYJSON_BUILD_TESTS=ON -DYYJSON_ENABLE_COVERAGE=ON -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
+cmake --build . --config Debug
+
+export LLVM_PROFILE_FILE=cov/profile-%p.profraw
+ctest --output-on-failure
+
+ctest_files=$(grep -o "test_\w\+ " CTestTestfile.cmake | uniq | tr '\n' ' ')
+ctest_files=$(echo $ctest_files | sed 's/  $//' | sed "s/ / -object /g")
+llvm-profdata merge -sparse cov/profile-*.profraw -o coverage.profdata
+llvm-cov show $ctest_files -instr-profile=coverage.profdata -format=html > coverage.html
 ```
 
 Build and run fuzz test with [LibFuzzer](https://llvm.org/docs/LibFuzzer.html) (compiler should be `LLVM Clang`, while `Apple Clang` or `gcc` are not supported):
