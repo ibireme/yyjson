@@ -4419,12 +4419,6 @@ yyjson_api_inline void unsafe_yyjson_set_type(void *val, yyjson_type type,
     ((yyjson_val *)val)->tag = new_tag;
 }
 
-yyjson_api_inline void unsafe_yyjson_set_tag(void *val, uint8_t tag) {
-    uint64_t new_tag = ((yyjson_val *)val)->tag;
-    new_tag = (new_tag & (~(uint64_t)YYJSON_TAG_MASK)) | (uint64_t)tag;
-    ((yyjson_val *)val)->tag = new_tag;
-}
-
 yyjson_api_inline void unsafe_yyjson_set_len(void *val, size_t len) {
     uint64_t tag = ((yyjson_val *)val)->tag & YYJSON_TAG_MASK;
     tag |= (uint64_t)len << YYJSON_TAG_BIT;
@@ -4434,12 +4428,6 @@ yyjson_api_inline void unsafe_yyjson_set_len(void *val, size_t len) {
 yyjson_api_inline void unsafe_yyjson_inc_len(void *val) {
     uint64_t tag = ((yyjson_val *)val)->tag;
     tag += (uint64_t)(1 << YYJSON_TAG_BIT);
-    ((yyjson_val *)val)->tag = tag;
-}
-
-yyjson_api_inline void unsafe_yyjson_dec_len(void *val) {
-    uint64_t tag = ((yyjson_val *)val)->tag;
-    tag -= (uint64_t)(1 << YYJSON_TAG_BIT);
     ((yyjson_val *)val)->tag = tag;
 }
 
@@ -7385,7 +7373,7 @@ yyjson_api_inline bool yyjson_ptr_get_bool(
     yyjson_val *root, const char *ptr, bool *value) {
     yyjson_val *val = yyjson_ptr_get(root, ptr);
     if (value && yyjson_is_bool(val)) {
-        *value = unsafe_yyjson_get_bool (val);
+        *value = unsafe_yyjson_get_bool(val);
         return true;
     } else {
         return false;

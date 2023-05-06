@@ -7,6 +7,8 @@ static bool validate_mut_val_type(yyjson_mut_val *val,
                                   yyjson_type type,
                                   yyjson_subtype subtype) {
     
+    if (yyjson_mut_is_raw(val) != (type == YYJSON_TYPE_RAW &&
+                                subtype == YYJSON_SUBTYPE_NONE)) return false;
     if (yyjson_mut_is_null(val) != (type == YYJSON_TYPE_NULL &&
                                 subtype == YYJSON_SUBTYPE_NONE)) return false;
     if (yyjson_mut_is_true(val) != (type == YYJSON_TYPE_BOOL &&
@@ -104,7 +106,22 @@ static void validate_mut_str(yyjson_mut_doc *doc,
 static void test_json_mut_val_api(void) {
     yyjson_mut_doc *doc = yyjson_mut_doc_new(NULL);
     yyjson_mut_val *val;
+
+    yy_assert(yyjson_mut_raw(NULL, NULL) == NULL);
+    yy_assert(yyjson_mut_raw(NULL, "abc") == NULL);
+    yy_assert(yyjson_mut_raw(doc, NULL) == NULL);
+    val = yyjson_mut_raw(doc, "abc");
+    yy_assert(validate_mut_val_type(val, YYJSON_TYPE_RAW, YYJSON_SUBTYPE_NONE));
+    yy_assert(strcmp(yyjson_mut_get_type_desc(val), "raw") == 0);
+    yy_assert(strcmp(yyjson_mut_get_raw(val), "abc") == 0);
     
+    yy_assert(yyjson_mut_rawcpy(NULL, NULL) == NULL);
+    yy_assert(yyjson_mut_rawcpy(NULL, "abc") == NULL);
+    yy_assert(yyjson_mut_rawcpy(doc, NULL) == NULL);
+    val = yyjson_mut_rawcpy(doc, "abc");
+    yy_assert(validate_mut_val_type(val, YYJSON_TYPE_RAW, YYJSON_SUBTYPE_NONE));
+    yy_assert(strcmp(yyjson_mut_get_type_desc(val), "raw") == 0);
+
     yy_assert(yyjson_mut_null(NULL) == NULL);
     val = yyjson_mut_null(doc);
     yy_assert(validate_mut_val_type(val, YYJSON_TYPE_NULL, YYJSON_SUBTYPE_NONE));
@@ -1347,8 +1364,8 @@ static void test_json_mut_obj_api(void) {
     yy_assert(!yyjson_mut_obj_remove(obj, NULL));
     // validate the return val 
     yy_assert(yyjson_mut_equals(yyjson_mut_obj_remove(obj, key), val));
-
-
+    yy_assert(yyjson_mut_obj_remove(yyjson_mut_obj(doc), key) == NULL);
+    
     validate_mut_obj(obj, keys, key_lens, vals, 4);
     yyjson_mut_obj_clear(obj);
     validate_mut_obj(obj, keys, key_lens, vals, 0);
@@ -1406,6 +1423,34 @@ static void test_json_mut_obj_api(void) {
     new_key_val(2);
     yy_assert(yyjson_mut_obj_put(obj, key, val));
     validate_mut_obj(obj, keys, key_lens, vals, 3);
+    
+    // replace -> {a:30,b:21,c:43}
+    set_validate(2, "c", 1, 43);
+    new_key_val(2);
+    yy_assert(!yyjson_mut_obj_replace(obj, key, NULL));
+    yy_assert(!yyjson_mut_obj_replace(yyjson_mut_obj(doc), key, val));
+    yy_assert(yyjson_mut_obj_replace(obj, key, val));
+    validate_mut_obj(obj, keys, key_lens, vals, 3);
+    
+    // remove {a:30,b:21,c:43,c44} -> {a:30,b:21}
+    set_validate(3, "c", 1, 44);
+    new_key_val(3);
+    yy_assert(yyjson_mut_obj_add(obj, key, val));
+    yy_assert(yyjson_mut_obj_remove_key(obj, "c"));
+    validate_mut_obj(obj, keys, key_lens, vals, 2);
+    yy_assert(!yyjson_mut_obj_remove_key(obj, "c"));
+    validate_mut_obj(obj, keys, key_lens, vals, 2);
+    yy_assert(!yyjson_mut_obj_remove_key(NULL, "c"));
+    
+    // remove with len {a:30,b:21,c:43,c44} -> {a:30,b:21}
+    set_validate(3, "c", 1, 44);
+    new_key_val(3);
+    yy_assert(yyjson_mut_obj_add(obj, key, val));
+    yy_assert(yyjson_mut_obj_remove_keyn(obj, "cc", 1));
+    validate_mut_obj(obj, keys, key_lens, vals, 2);
+    yy_assert(!yyjson_mut_obj_remove_keyn(obj, "cc", 1));
+    validate_mut_obj(obj, keys, key_lens, vals, 2);
+    yy_assert(!yyjson_mut_obj_remove_keyn(NULL, "cc", 1));
     
     // replace(NULL)
     new_key_val(2);

@@ -60,7 +60,13 @@ static void test_json_val_api(void) {
     yy_assert(yyjson_equals_strn(val, "", 0) == false);
     yy_assert(yyjson_arr_size(val) == 0);
     yy_assert(yyjson_obj_size(val) == 0);
-    
+    yy_assert(yyjson_get_uint(val) == (u64)0);
+    yy_assert(yyjson_get_sint(val) == (i64)0);
+    yy_assert(yyjson_get_int(val) == (i64)0);
+    yy_assert(yyjson_get_real(val) == (f64)0);
+    yy_assert(yyjson_get_num(val) == (f64)0);
+    yy_assert(yyjson_get_bool(val) == false);
+    yy_assert(yyjson_get_str(val) == NULL);
     
     json = "null";
     doc = yyjson_read(json, strlen(json), 0);
@@ -128,6 +134,11 @@ static void test_json_val_api(void) {
     yy_assert(validate_val_type(val, YYJSON_TYPE_STR, YYJSON_SUBTYPE_NONE));
     yy_assert(strcmp(yyjson_get_type_desc(val), "string") == 0);
     yy_assert(strcmp(yyjson_get_str(val), "abc") == 0);
+    yy_assert(yyjson_get_uint(val) == (u64)0);
+    yy_assert(yyjson_get_sint(val) == (i64)0);
+    yy_assert(yyjson_get_int(val) == (i64)0);
+    yy_assert(yyjson_get_real(val) == (f64)0.0);
+    yy_assert(yyjson_get_num(val) == (f64)0.0);
     yy_assert(yyjson_get_len(val) == 3);
     yy_assert(yyjson_equals_str(val, "abc"));
     yyjson_doc_free(doc);

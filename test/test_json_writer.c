@@ -734,16 +734,59 @@ yy_test_case(test_json_writer) {
     
     // test modify input
     {
+        char *ret;
         const char *str = "[123]";
         yyjson_doc *doc = yyjson_read(str, strlen(str), 0);
         yyjson_val *root = yyjson_doc_get_root(doc);
         yyjson_val *val = yyjson_arr_get(root, 0);
-        yyjson_set_bool(val, true);
         
-        char *ret = yyjson_write(doc, 0, NULL);
-        yy_assert(strcmp(ret, "[true]") == 0);
+        yy_assert(!yyjson_set_bool(root, true));
         
+        yyjson_set_raw(val, "aaa", 3);
+        ret = yyjson_write(doc, 0, NULL);
+        yy_assert(strcmp(ret, "[aaa]") == 0);
         free(ret);
+        
+        yyjson_set_null(val);
+        ret = yyjson_write(doc, 0, NULL);
+        yy_assert(strcmp(ret, "[null]") == 0);
+        free(ret);
+        
+        yyjson_set_bool(val, true);
+        ret = yyjson_write(doc, 0, NULL);
+        yy_assert(strcmp(ret, "[true]") == 0);
+        free(ret);
+        
+        yyjson_set_uint(val, 111);
+        ret = yyjson_write(doc, 0, NULL);
+        yy_assert(strcmp(ret, "[111]") == 0);
+        free(ret);
+        
+        yyjson_set_sint(val, -111);
+        ret = yyjson_write(doc, 0, NULL);
+        yy_assert(strcmp(ret, "[-111]") == 0);
+        free(ret);
+        
+        yyjson_set_int(val, 100);
+        ret = yyjson_write(doc, 0, NULL);
+        yy_assert(strcmp(ret, "[100]") == 0);
+        free(ret);
+        
+        yyjson_set_real(val, 1.5);
+        ret = yyjson_write(doc, 0, NULL);
+        yy_assert(strcmp(ret, "[1.5]") == 0);
+        free(ret);
+        
+        yyjson_set_str(val, "abc");
+        ret = yyjson_write(doc, 0, NULL);
+        yy_assert(strcmp(ret, "[\"abc\"]") == 0);
+        free(ret);
+        
+        yyjson_set_strn(val, "abcd", 3);
+        ret = yyjson_write(doc, 0, NULL);
+        yy_assert(strcmp(ret, "[\"abc\"]") == 0);
+        free(ret);
+        
         yyjson_doc_free(doc);
     }
     
@@ -772,9 +815,10 @@ yy_test_case(test_json_writer) {
     
     // test build JSON on stack
     {
-        const char *expect = "{\"code\":200,\"msg\":\"success\",\"arr\":[true,false]}";
+        const char *expect = "{\"code\":200,\"msg\":\"success\",\"arr\":[true,false,null,1,-1,0.5,inf]}";
         
-        yyjson_mut_val root, code_key, code, msg_key, msg, arr_key, arr, n1, n2;
+        yyjson_mut_val root, code_key, code, msg_key, msg, arr_key, arr;
+        yyjson_mut_val vals[7];
         yyjson_mut_set_obj(&root);
         yyjson_mut_set_str(&code_key, "code");
         yyjson_mut_set_int(&code, 200);
@@ -782,14 +826,20 @@ yy_test_case(test_json_writer) {
         yyjson_mut_set_str(&msg, "success");
         yyjson_mut_set_str(&arr_key, "arr");
         yyjson_mut_set_arr(&arr);
-        yyjson_mut_set_bool(&n1, true);
-        yyjson_mut_set_bool(&n2, false);
+        yyjson_mut_set_bool(&vals[0], true);
+        yyjson_mut_set_bool(&vals[1], false);
+        yyjson_mut_set_null(&vals[2]);
+        yyjson_mut_set_uint(&vals[3], 1);
+        yyjson_mut_set_sint(&vals[4], -1);
+        yyjson_mut_set_real(&vals[5], 0.5);
+        yyjson_mut_set_raw(&vals[6], "inf", 3);
         
         yyjson_mut_obj_add(&root, &code_key, &code);
         yyjson_mut_obj_add(&root, &msg_key, &msg);
         yyjson_mut_obj_add(&root, &arr_key, &arr);
-        yyjson_mut_arr_append(&arr, &n1);
-        yyjson_mut_arr_append(&arr, &n2);
+        for (size_t i = 0; i < yy_nelems(vals); i++) {
+            yyjson_mut_arr_append(&arr, &vals[i]);
+        }
         
         char buf[256];
         yyjson_alc alc;

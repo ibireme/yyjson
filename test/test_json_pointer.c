@@ -3,6 +3,14 @@
 
 #if !YYJSON_DISABLE_READER && !YYJSON_DISABLE_WRITER && !YYJSON_DISABLE_UTILS
 
+#if defined(__clang__)
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#elif defined(__GNUC__)
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#elif defined(_MSC_VER)
+#pragma warning(disable:4996)
+#endif
+
 // JSON pointer operation
 typedef enum {
     PTR_OP_GET,
@@ -155,11 +163,15 @@ static void test_ptr_op(ptr_data data) {
         if (data.ptr_len == 0) {
             iret = yyjson_doc_ptr_get(idoc, ptr);
             assert_val_eq(iret, data.val);
+            iret = yyjson_doc_get_pointer(idoc, ptr); // deprecated
+            assert_val_eq(iret, data.val);
         }
         
         iret = yyjson_doc_ptr_getn(NULL, NULL, ptr_len);
         yy_assert(iret == NULL);
         iret = yyjson_doc_ptr_getn(idoc, ptr, ptr_len);
+        assert_val_eq(iret, data.val);
+        iret = yyjson_doc_get_pointern(idoc, ptr, ptr_len); // deprecated
         assert_val_eq(iret, data.val);
         
         iret = yyjson_doc_ptr_getx(NULL, NULL, ptr_len, NULL);
@@ -184,12 +196,20 @@ static void test_ptr_op(ptr_data data) {
         if (data.ptr_len == 0) {
             iret = yyjson_ptr_get(iroot, ptr);
             assert_val_eq(iret, data.val);
+            iret = yyjson_get_pointer(iroot, ptr); // deprecated
+            assert_val_eq(iret, data.val);
         }
         
         iret = yyjson_ptr_getn(NULL, NULL, ptr_len);
         assert_val_eq(iret, NULL);
         iret = yyjson_ptr_getn(iroot, ptr, ptr_len);
         assert_val_eq(iret, data.val);
+        iret = yyjson_get_pointern(iroot, ptr, ptr_len); // deprecated
+        assert_val_eq(iret, data.val);
+        if (iroot && ptr && ptr_len && *ptr == '/') {
+            iret = unsafe_yyjson_get_pointer(iroot, ptr, ptr_len); // deprecated
+            assert_val_eq(iret, data.val);
+        }
         
         iret = yyjson_ptr_getx(NULL, NULL, ptr_len, NULL);
         assert_val_eq(iret, NULL);
@@ -217,11 +237,15 @@ static void test_ptr_op(ptr_data data) {
         if (data.ptr_len == 0) {
             ret = yyjson_mut_doc_ptr_get(mdoc, ptr);
             assert_mut_val_eq(ret, data.val);
+            ret = yyjson_mut_doc_get_pointer(mdoc, ptr); // deprecated
+            assert_mut_val_eq(ret, data.val);
         }
         
         ret = yyjson_mut_doc_ptr_getn(NULL, NULL, ptr_len);
         yy_assert(ret == NULL);
         ret = yyjson_mut_doc_ptr_getn(mdoc, ptr, ptr_len);
+        assert_mut_val_eq(ret, data.val);
+        ret = yyjson_mut_doc_get_pointern(mdoc, ptr, ptr_len); // deprecated
         assert_mut_val_eq(ret, data.val);
         
         ret = yyjson_mut_doc_ptr_getx(NULL, NULL, ptr_len, NULL, NULL);
@@ -252,12 +276,20 @@ static void test_ptr_op(ptr_data data) {
         if (data.ptr_len == 0) {
             ret = yyjson_mut_ptr_get(mroot, ptr);
             assert_mut_val_eq(ret, data.val);
+            ret = yyjson_mut_get_pointer(mroot, ptr); // deprecated
+            assert_mut_val_eq(ret, data.val);
         }
         
         ret = yyjson_mut_ptr_getn(NULL, NULL, ptr_len);
         yy_assert(ret == NULL);
         ret = yyjson_mut_ptr_getn(mroot, ptr, ptr_len);
         assert_mut_val_eq(ret, data.val);
+        ret = yyjson_mut_get_pointern(mroot, ptr, ptr_len); // deprecated
+        assert_mut_val_eq(ret, data.val);
+        if (mroot && ptr && ptr_len && *ptr == '/') {
+            ret = unsafe_yyjson_mut_get_pointer(mroot, ptr, ptr_len); // deprecated
+            assert_mut_val_eq(ret, data.val);
+        }
         
         ret = yyjson_mut_ptr_getx(NULL, NULL, ptr_len, NULL, NULL);
         yy_assert(ret == NULL);
@@ -3255,6 +3287,14 @@ static void test_ptr_get_type(void) {
     yy_assert(yyjson_ptr_get_num(root, "/pistr", &real_value) == false);  // wrong type
     yy_assert(yyjson_ptr_get_str(root, "/answer/to", &string_value) == false);  // wrong type
     yy_assert(yyjson_ptr_get_real(root, "/nosuch", &real_value) == false); // Does not exist
+    
+    // type mismatch
+    yy_assert(yyjson_ptr_get_bool(root, "/pi", &bool_value) == false);
+    yy_assert(yyjson_ptr_get_uint(root, "/pi", &uint_value) == false);
+    yy_assert(yyjson_ptr_get_sint(root, "/pi", &sint_value) == false);
+    yy_assert(yyjson_ptr_get_real(root, "/zero", &real_value) == false);
+    yy_assert(yyjson_ptr_get_num(root, "/true", &real_value) == false);
+    yy_assert(yyjson_ptr_get_str(root, "/pi", &string_value) == false);
     
     yyjson_doc_free(doc);
 }

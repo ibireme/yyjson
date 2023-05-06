@@ -772,15 +772,6 @@ static_inline void *mem_align_up(void *mem, usize align) {
     return mem;
 }
 
-/** Align address downwards. */
-static_inline void *mem_align_down(void *mem, usize align) {
-    usize size;
-    memcpy(&size, &mem, sizeof(usize));
-    size = size_align_down(size, align);
-    memcpy(&mem, &size, sizeof(usize));
-    return mem;
-}
-
 
 
 /*==============================================================================
