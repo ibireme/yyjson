@@ -7,11 +7,11 @@ All notable changes to this project will be documented in this file.
 - Add `YYJSON_WRITE_PRETTY_TWO_SPACES` option to allow 2 spaces instead of 4 spaces when writing pretty JSON: #99
 - Add `yyjson_get_num()` function to convert and return any number value as `double`: #108
 - Add support for Loongarch: #112
+- Add functions to get type-specific values specified by JSON Pointer: #116
+- Add functions to read/write JSON with file pointer `FILE *`: #122
 - Add functions to support modifying memory pool size of `yyjson_mut_doc`.
-- Add functions to read/write JSON with file pointer `FILE *`.
 - Add convenience functions `iter_with()` for creating iterator.
 - Add functions to modify JSON by JSON Pointer, such as `ptr_set()` and `ptr_remove()`.
-- Add functions to get type-specific values specified by JSON Pointer.
 - Add support for JSON Patch (RFC 6902).
 
 #### Changed
