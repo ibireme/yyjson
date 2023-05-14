@@ -65,17 +65,42 @@ static void validate_json_write_with_flag(yyjson_write_flag flg,
     yy_assertf(memcmp(ret, expect, len) == 0, "write with flag 0x%x\nexpect:\n%s\noutput:\n%s\n", flg, expect, ret);
     
     
-    // write mutable doc to file
+    // temp file path
     const char *tmp_file_path = "__yyjson_test_tmp__.json";
+    FILE *tmp_fp;
+    u8 *dat, num = '0';
+    usize dat_len;
+    
+    
+    // write mutable doc to file
     yy_file_delete(tmp_file_path);
     yy_assert(yyjson_mut_write_file(tmp_file_path, doc, flg, alc, NULL));
-    u8 *dat;
-    usize dat_len;
     yy_assert(yy_file_read(tmp_file_path, &dat, &dat_len));
     yy_assert(dat_len == len);
     yy_assert(memcmp(dat, ret, len) == 0);
     free(dat);
     yy_file_delete(tmp_file_path);
+    
+    
+    // write mutable doc to file pointer
+    tmp_fp = yy_file_open(tmp_file_path, "wb");
+    yy_assert(yyjson_mut_write_fp(tmp_fp, doc, flg, alc, NULL));
+    fclose(tmp_fp);
+    yy_assert(yy_file_read(tmp_file_path, &dat, &dat_len));
+    yy_assert(dat_len == len);
+    yy_assert(memcmp(dat, ret, len) == 0);
+    free(dat);
+    yy_file_delete(tmp_file_path);
+    
+    
+    // write to read-only fp
+    yy_file_write(tmp_file_path, (void *)&num, 1);
+    tmp_fp = yy_file_open(tmp_file_path, "rb");
+    yy_assert(!yyjson_mut_write_fp(tmp_fp, doc, flg, alc, NULL));
+    fclose(tmp_fp);
+    yy_file_delete(tmp_file_path);
+    
+    yy_assert(!yyjson_mut_write_fp(NULL, doc, flg, alc, NULL));
     
     
     // read
@@ -103,7 +128,6 @@ static void validate_json_write_with_flag(yyjson_write_flag flg,
     
     
     // write immutable doc to file
-    yy_file_delete(tmp_file_path);
     yy_assert(yyjson_write_file(tmp_file_path, idoc, flg, alc, NULL));
     u8 *dat2;
     usize dat2_len;
@@ -113,12 +137,48 @@ static void validate_json_write_with_flag(yyjson_write_flag flg,
     free(dat2);
     yy_file_delete(tmp_file_path);
     
+    tmp_fp = yy_file_open(tmp_file_path, "wb");
+    yy_assert(yyjson_write_fp(tmp_fp, idoc, flg, alc, NULL));
+    fclose(tmp_fp);
+    yy_assert(yy_file_read(tmp_file_path, &dat2, &dat2_len));
+    yy_assert(dat2_len == len);
+    yy_assert(memcmp(dat2, ret, len) == 0);
+    free(dat2);
+    yy_file_delete(tmp_file_path);
+    
+    yy_file_write(tmp_file_path, (void *)&num, 1);
+    tmp_fp = yy_file_open(tmp_file_path, "rb");
+    yy_assert(!yyjson_write_fp(tmp_fp, idoc, flg, alc, NULL));
+    fclose(tmp_fp);
+    yy_file_delete(tmp_file_path);
+    
+    yy_assert(!yyjson_write_fp(NULL, idoc, flg, alc, NULL));
+    
+    
+    // write immutable val to file
     yy_assert(yyjson_val_write_file(tmp_file_path, idoc->root, flg, alc, NULL));
     yy_assert(yy_file_read(tmp_file_path, &dat2, &dat2_len));
     yy_assert(dat2_len == len);
     yy_assert(memcmp(dat2, ret, len) == 0);
     free(dat2);
     yy_file_delete(tmp_file_path);
+    
+    tmp_fp = yy_file_open(tmp_file_path, "wb");
+    yy_assert(yyjson_val_write_fp(tmp_fp, idoc->root, flg, alc, NULL));
+    fclose(tmp_fp);
+    yy_assert(yy_file_read(tmp_file_path, &dat2, &dat2_len));
+    yy_assert(dat2_len == len);
+    yy_assert(memcmp(dat2, ret, len) == 0);
+    free(dat2);
+    yy_file_delete(tmp_file_path);
+    
+    yy_file_write(tmp_file_path, (void *)&num, 1);
+    tmp_fp = yy_file_open(tmp_file_path, "rb");
+    yy_assert(!yyjson_val_write_fp(tmp_fp, idoc->root, flg, alc, NULL));
+    fclose(tmp_fp);
+    yy_file_delete(tmp_file_path);
+    
+    yy_assert(!yyjson_val_write_fp(NULL, idoc->root, flg, alc, NULL));
     
     
     // copy mutable doc and write again

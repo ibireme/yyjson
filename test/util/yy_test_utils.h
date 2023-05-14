@@ -290,6 +290,8 @@ char **yy_dir_read_full(const char *path, int *count);
 void yy_dir_free(char **names);
 
 
+/** Open a file pointer. */
+FILE *yy_file_open(const char *path, const char *mode);
 
 /** Read a file to memory, dat should be release with free(). */
 bool yy_file_read(const char *path, u8 **dat, usize *len);

@@ -437,6 +437,17 @@ void yy_dir_free(char **names) {
 
 
 
+FILE *yy_file_open(const char *path, const char *mode) {
+    if (!path || !mode) return false;
+    FILE *file = NULL;
+#if _MSC_VER >= 1400
+    if (fopen_s(&file, path, mode) != 0) return NULL;
+#else
+    file = fopen(path, mode);
+#endif
+    return file;
+}
+
 bool yy_file_read(const char *path, u8 **dat, usize *len) {
     return yy_file_read_with_padding(path, dat, len, 1); // for string
 }
@@ -445,12 +456,7 @@ bool yy_file_read_with_padding(const char *path, u8 **dat, usize *len, usize pad
     if (!path || !strlen(path)) return false;
     if (!dat || !len) return false;
     
-    FILE *file = NULL;
-#if _MSC_VER >= 1400
-    if (fopen_s(&file, path, "rb") != 0) return false;
-#else
-    file = fopen(path, "rb");
-#endif
+    FILE *file = yy_file_open(path, "rb");
     if (file == NULL) return false;
     if (fseek(file, 0, SEEK_END) != 0) {
         fclose(file);

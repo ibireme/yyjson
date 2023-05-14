@@ -7,7 +7,6 @@
  *============================================================================*/
 
 #include "yyjson.h"
-#include <stdio.h>
 #include <math.h>
 
 
@@ -6500,12 +6499,38 @@ yyjson_doc *yyjson_read_file(const char *path,
                              yyjson_read_flag flg,
                              const yyjson_alc *alc_ptr,
                              yyjson_read_err *err) {
-    
 #define return_err(_code, _msg) do { \
     err->pos = 0; \
     err->msg = _msg; \
     err->code = YYJSON_READ_ERROR_##_code; \
-    if (file) fclose(file); \
+    return NULL; \
+} while (false)
+    
+    yyjson_read_err dummy_err;
+    yyjson_doc *doc;
+    FILE *file;
+    
+    if (!err) err = &dummy_err;
+    if (unlikely(!path)) return_err(INVALID_PARAMETER, "input path is NULL");
+    
+    file = fopen_readonly(path);
+    if (unlikely(!file)) return_err(FILE_OPEN, "file opening failed");
+    
+    doc = yyjson_read_fp(file, flg, alc_ptr, err);
+    fclose(file);
+    return doc;
+    
+#undef return_err
+}
+
+yyjson_doc *yyjson_read_fp(FILE *file,
+                           yyjson_read_flag flg,
+                           const yyjson_alc *alc_ptr,
+                           yyjson_read_err *err) {
+#define return_err(_code, _msg) do { \
+    err->pos = 0; \
+    err->msg = _msg; \
+    err->code = YYJSON_READ_ERROR_##_code; \
     if (buf) alc.free(alc.ctx, buf); \
     return NULL; \
 } while (false)
@@ -6514,22 +6539,24 @@ yyjson_doc *yyjson_read_file(const char *path,
     yyjson_alc alc = alc_ptr ? *alc_ptr : YYJSON_DEFAULT_ALC;
     yyjson_doc *doc;
     
-    FILE *file = NULL;
-    long file_size = 0;
+    long file_size = 0, file_pos;
     void *buf = NULL;
     usize buf_size = 0;
     
     /* validate input parameters */
     if (!err) err = &dummy_err;
-    if (unlikely(!path)) return_err(INVALID_PARAMETER, "input path is NULL");
+    if (unlikely(!file)) return_err(INVALID_PARAMETER, "input file is NULL");
     
-    /* open file */
-    file = fopen_readonly(path);
-    if (file == NULL) return_err(FILE_OPEN, "file opening failed");
-    
-    /* get file size */
-    if (fseek(file, 0, SEEK_END) == 0) file_size = ftell(file);
-    rewind(file);
+    /* get current position */
+    file_pos = ftell(file);
+    if (file_pos != -1) {
+        /* get total file size, may fail */
+        if (fseek(file, 0, SEEK_END) == 0) file_size = ftell(file);
+        /* reset to original position, may fail */
+        if (fseek(file, file_pos, SEEK_SET) != 0) file_size = 0;
+        /* get file size from current postion to end */
+        if (file_size > 0) file_size -= file_pos;
+    }
     
     /* read file */
     if (file_size > 0) {
@@ -6573,7 +6600,6 @@ yyjson_doc *yyjson_read_file(const char *path,
             if (chunk_now > chunk_max) chunk_now = chunk_max;
         }
     }
-    fclose(file);
     
     /* read JSON */
     memset((u8 *)buf + file_size, 0, YYJSON_PADDING_SIZE);
@@ -6589,6 +6615,8 @@ yyjson_doc *yyjson_read_file(const char *path,
     
 #undef return_err
 }
+
+
 
 const char *yyjson_read_number(const char *dat,
                                yyjson_val *val,
@@ -7911,6 +7939,17 @@ static_inline u8 *write_indent(u8 *cur, usize level, usize spaces) {
     return cur;
 }
 
+/** Write data to file pointer. */
+static bool write_dat_to_fp(FILE *fp, u8 *dat, usize len,
+                            yyjson_write_err *err) {
+    if (fwrite(dat, len, 1, fp) != 1) {
+        err->msg = "file writing failed";
+        err->code = YYJSON_WRITE_ERROR_FILE_WRITE;
+        return false;
+    }
+    return true;
+}
+
 /** Write data to file. */
 static bool write_dat_to_file(const char *path, u8 *dat, usize len,
                               yyjson_write_err *err) {
@@ -8500,6 +8539,32 @@ bool yyjson_val_write_file(const char *path,
     return suc;
 }
 
+bool yyjson_val_write_fp(FILE *fp,
+                         const yyjson_val *val,
+                         yyjson_write_flag flg,
+                         const yyjson_alc *alc_ptr,
+                         yyjson_write_err *err) {
+    yyjson_write_err dummy_err;
+    u8 *dat;
+    usize dat_len = 0;
+    yyjson_val *root = constcast(yyjson_val *)val;
+    bool suc;
+    
+    alc_ptr = alc_ptr ? alc_ptr : &YYJSON_DEFAULT_ALC;
+    err = err ? err : &dummy_err;
+    if (unlikely(!fp)) {
+        err->msg = "input fp is invalid";
+        err->code = YYJSON_READ_ERROR_INVALID_PARAMETER;
+        return false;
+    }
+    
+    dat = (u8 *)yyjson_val_write_opts(root, flg, alc_ptr, &dat_len, err);
+    if (unlikely(!dat)) return false;
+    suc = write_dat_to_fp(fp, dat, dat_len, err);
+    alc_ptr->free(alc_ptr->ctx, dat);
+    return suc;
+}
+
 bool yyjson_write_file(const char *path,
                        const yyjson_doc *doc,
                        yyjson_write_flag flg,
@@ -8507,6 +8572,15 @@ bool yyjson_write_file(const char *path,
                        yyjson_write_err *err) {
     yyjson_val *root = doc ? doc->root : NULL;
     return yyjson_val_write_file(path, root, flg, alc_ptr, err);
+}
+
+bool yyjson_write_fp(FILE *fp,
+                    const yyjson_doc *doc,
+                    yyjson_write_flag flg,
+                     const yyjson_alc *alc_ptr,
+                    yyjson_write_err *err) {
+    yyjson_val *root = doc ? doc->root : NULL;
+    return yyjson_val_write_fp(fp, root, flg, alc_ptr, err);
 }
 
 
@@ -9028,7 +9102,32 @@ bool yyjson_mut_val_write_file(const char *path,
     suc = write_dat_to_file(path, dat, dat_len, err);
     alc_ptr->free(alc_ptr->ctx, dat);
     return suc;
+}
+
+bool yyjson_mut_val_write_fp(FILE *fp,
+                             const yyjson_mut_val *val,
+                             yyjson_write_flag flg,
+                             const yyjson_alc *alc_ptr,
+                             yyjson_write_err *err) {
+    yyjson_write_err dummy_err;
+    u8 *dat;
+    usize dat_len = 0;
+    yyjson_mut_val *root = constcast(yyjson_mut_val *)val;
+    bool suc;
     
+    alc_ptr = alc_ptr ? alc_ptr : &YYJSON_DEFAULT_ALC;
+    err = err ? err : &dummy_err;
+    if (unlikely(!fp)) {
+        err->msg = "input fp is invalid";
+        err->code = YYJSON_WRITE_ERROR_INVALID_PARAMETER;
+        return false;
+    }
+    
+    dat = (u8 *)yyjson_mut_val_write_opts(root, flg, alc_ptr, &dat_len, err);
+    if (unlikely(!dat)) return false;
+    suc = write_dat_to_fp(fp, dat, dat_len, err);
+    alc_ptr->free(alc_ptr->ctx, dat);
+    return suc;
 }
 
 bool yyjson_mut_write_file(const char *path,
@@ -9038,6 +9137,15 @@ bool yyjson_mut_write_file(const char *path,
                            yyjson_write_err *err) {
     yyjson_mut_val *root = doc ? doc->root : NULL;
     return yyjson_mut_val_write_file(path, root, flg, alc_ptr, err);
+}
+
+bool yyjson_mut_write_fp(FILE *fp,
+                         const yyjson_mut_doc *doc,
+                         yyjson_write_flag flg,
+                         const yyjson_alc *alc_ptr,
+                         yyjson_write_err *err) {
+    yyjson_mut_val *root = doc ? doc->root : NULL;
+    return yyjson_mut_val_write_fp(fp, root, flg, alc_ptr, err);
 }
 
 #endif /* YYJSON_DISABLE_WRITER */

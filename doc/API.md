@@ -1,7 +1,7 @@
 API
 ===
 
-
+This document contains all the API usage and examples for the yyjson library.
 
 
 # API Design
@@ -74,7 +74,7 @@ yyjson_mut_val *yyjson_mut_strncpy(yyjson_mut_doc *doc, const char *str, size_t 
 
 ---------------
 # Read JSON
-The library provides 3 functions for reading JSON,<br/>
+The library provides 4 functions for reading JSON,<br/>
 each function accepts an input of UTF-8 data or a file,<br/>
 returns a document if it succeeds or returns NULL if it fails.
 
@@ -117,6 +117,31 @@ Sample code:
 
 ```c
 yyjson_doc *doc = yyjson_read_file("/tmp/test.json", 0, NULL, NULL);
+if (doc) {...}
+yyjson_doc_free(doc);
+```
+
+## Read JSON from file pointer
+
+The `fp` is file pointer. The data will be read from the current position of the FILE to the end.<br/>
+The `flg` is reader flag, pass 0 if you don't need it, see `reader flag` for details.<br/>
+The `alc` is memory allocator, pass NULL if you don't need it, see `memory allocator` for details.<br/>
+The `err` is a pointer to receive error message, pass NULL if you don't need it.<br/>
+If input is invalid, `NULL` is returned.
+
+```c
+yyjson_doc *yyjson_read_fp(FILE *fp,
+                           yyjson_read_flag flg,
+                           const yyjson_alc *alc,
+                           yyjson_read_err *err);
+```
+
+Sample code:
+
+```c
+FILE *fp = fdopen(fd, "rb"); // POSIX file descriptor (fd)
+yyjson_doc *doc = yyjson_read_fp(fp, 0, NULL, NULL);
+if (fp) fclose(fp);
 if (doc) {...}
 yyjson_doc_free(doc);
 ```
@@ -277,7 +302,7 @@ Invalid characters will be allowed to appear in the string values, but invalid e
 
 ---------------
 # Write JSON
-The library provides 3 sets of functions for writing JSON,<br/>
+The library provides 4 sets of functions for writing JSON,<br/>
 each function accepts an input of JSON document or root value, and returns a UTF-8 string or file.
 
 ## Write JSON to string
@@ -347,6 +372,34 @@ Sample code:
 ```c
 yyjson_doc *doc = yyjson_read_file("/tmp/test.json", 0, NULL, NULL);
 bool suc = yyjson_write_file("tmp/test.json", doc, YYJSON_WRITE_PRETTY, NULL, NULL);
+if (suc) printf("OK");
+```
+
+## Write JSON to file pointer
+The `fp` is output file pointer, The data will be written to the current position of the file.<br/>
+The `doc/val` is JSON document or root value, if you pass NULL, you will get an error.<br/>
+The `flg` is writer flag, pass 0 if you don't need it, see `writer flag` for details.<br/>
+The `alc` is memory allocator, pass NULL if you don't need it, see `memory allocator` for details.<br/>
+The `err` is a pointer to receive error message, pass NULL if you don't need it.<br/>
+This function returns true on success, or false if error occurs.<br/>
+
+```c
+// doc -> file
+bool yyjson_write_fp(FILE *fp, const yyjson_doc *doc, yyjson_write_flag flg, const yyjson_alc *alc, yyjson_write_err *err);
+// mut_doc -> file
+bool yyjson_mut_write_fp(FILE *fp, const yyjson_mut_doc *doc, yyjson_write_flag flg, const yyjson_alc *alc, yyjson_write_err *err);
+// val -> file
+bool yyjson_val_write_fp(FILE *fp, const yyjson_val *val, yyjson_write_flag flg, const yyjson_alc *alc, yyjson_write_err *err);
+// mut_val -> file
+bool yyjson_mut_val_write_fp(FILE *fp, const yyjson_mut_val *val, yyjson_write_flag flg, const yyjson_alc *alc, yyjson_write_err *err);
+```
+
+Sample code:
+
+```c
+FILE *fp = fdopen(fd, "wb"); // POSIX file descriptor (fd)
+bool suc = yyjson_write_fp(fp, doc, YYJSON_WRITE_PRETTY, NULL, NULL);
+if (fp) fclose(fp);
 if (suc) printf("OK");
 ```
 
@@ -674,7 +727,6 @@ yyjson_val *obj = ...;
 yyjson_obj_iter iter = yyjson_obj_iter_with(obj);
 
 yyjson_val *x = yyjson_obj_iter_get(&iter, "x");
-yyjson_val *y = yyjson_obj_iter_get(&iter, "y");
 yyjson_val *z = yyjson_obj_iter_get(&iter, "z");
 ```
 
@@ -1055,9 +1107,9 @@ yyjson_mut_val *yyjson_mut_doc_ptr_getn(yyjson_mut_doc *doc, const char *ptr, si
 
 // `JSON pointer` with string length, context and error information.
 yyjson_val *yyjson_ptr_getx(yyjson_val *val, const char *ptr, size_t len, yyjson_ptr_err *err);
-yyjson_val *yyjson_doc_ptr_getn(yyjson_doc *doc, const char *ptr, size_t len, yyjson_ptr_err *err);
-yyjson_mut_val *yyjson_mut_ptr_getn(yyjson_mut_val *val, const char *ptr, size_t len, yyjson_ptr_ctx *ctx, yyjson_ptr_err *err);
-yyjson_mut_val *yyjson_mut_doc_ptr_getn(yyjson_mut_doc *doc, const char *ptr, size_t len, yyjson_ptr_ctx *ctx, yyjson_ptr_err *err);
+yyjson_val *yyjson_doc_ptr_getx(yyjson_doc *doc, const char *ptr, size_t len, yyjson_ptr_err *err);
+yyjson_mut_val *yyjson_mut_ptr_getx(yyjson_mut_val *val, const char *ptr, size_t len, yyjson_ptr_ctx *ctx, yyjson_ptr_err *err);
+yyjson_mut_val *yyjson_mut_doc_ptr_getx(yyjson_mut_doc *doc, const char *ptr, size_t len, yyjson_ptr_ctx *ctx, yyjson_ptr_err *err);
 ```
 
 For example, given the JSON document:
@@ -1082,6 +1134,16 @@ The following JSON strings evaluate to the accompanying values:
 | `"/no_match"` | NULL |
 | `"no_slash"` | NULL |
 | `"/"` | NULL (match to empty key: root[""]) |
+
+```c
+yyjson_doc *doc = ...;
+yyjson_val *val = yyjson_doc_ptr_get(doc, "/users/1/name");
+printf("%s\n", yyjson_get_str(val)); // Ron
+
+yyjson_ptr_err err;
+yyjson_val *val2 = yyjson_doc_ptr_getx(doc, "/", 1, &err);
+if (!val2) printf("err %d: %s\n", err.code, err.msg); // err 3: cannot be resolved
+```
 
 The library also supports modifying JSON values via `JSON Pointer`.
 ```c
@@ -1122,7 +1184,38 @@ yyjson_mut_val *yyjson_mut_doc_ptr_removen(yyjson_mut_doc *doc, const char *ptr,
 yyjson_mut_val *yyjson_mut_doc_ptr_removex(yyjson_mut_doc *doc, const char *ptr, size_t len, yyjson_ptr_ctx *ctx, yyjson_ptr_err *err);
 ```
 
-All the above functions ending with `x` can be used to get the result context `ctx`, and the error message `err`.
+For example:
+```c
+yyjson_mut_doc *doc = ...;
+// doc: {"a":0,"b":[1,2,3]}
+
+yyjson_mut_doc_ptr_set(doc, "/a", yyjson_mut_int(doc, 9));
+// now: {"a":9,"b":[1,2,3]}
+
+yyjson_mut_doc_ptr_add(doc, "/b/-", yyjson_mut_int(doc, 4));
+// now: {"a":9,"b":[1,2,3,4]}
+
+yyjson_mut_doc_ptr_remove(doc, "/b");
+// now: {"a":9}
+```
+
+All the above functions ending with `x` can be used to get the result context `ctx`, and the error message `err`. For example:
+```c
+// doc: {"a":0,"b":[null,2,3]}
+yyjson_mut_doc *doc = ...;
+
+// get error code and message
+yyjson_ptr_err err;
+yyjson_mut_doc_ptr_setx(doc, "/b/99", 4, yyjson_mut_int(doc, 99), true, NULL, &err);
+if (err.code) printf("err: %s\n", err.msg); // err: cannot resolve
+
+// get target value's context
+// perform some operations without re-parsing the JSON Pointer
+yyjson_mut_val *val = yyjson_mut_doc_ptr_getx(doc, "/b/0", 4, &ctx, &err);
+if (yyjson_mut_is_null(val)) yyjson_ptr_ctx_remove(&ctx);
+// now: {"a":0,"b":[2,3]}
+```
+
 
 
 ## JSON Patch
@@ -1319,6 +1412,15 @@ alc->free(alc->ctx, json);
 
 ```
 
+
+
+# Stack Memory Usage
+Most functions in the library use a fixed-size stack memory, including functions for JSON reading and writing and JSON Pointer handling. 
+
+However, a few functions use recursion and may cause a stack overflow if the object level is too deep. These functions are marked with the following warning in the header file: 
+> @warning 
+> This function is recursive and may cause a stack overflow 
+> if the object level is too deep.
 
 
 
