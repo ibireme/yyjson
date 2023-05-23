@@ -279,14 +279,21 @@ Allow nan/inf number or literal (case-insensitive), such as 1e999, NaN, Inf, -In
 ```
 
 ● **YYJSON_READ_NUMBER_AS_RAW**<br/>
-Read numbers as raw strings without parsing, allowing you to keep arbitrarily large numbers. 
-
+Read all numbers as raw strings without parsing.
+Use this flag if you want to parse all the numbers yourself.
 You can use these functions to extract raw strings:
 ```c
 bool yyjson_is_raw(yyjson_val *val);
 const char *yyjson_get_raw(yyjson_val *val);
 size_t yyjson_get_len(yyjson_val *val)
 ```
+
+● **YYJSON_READ_BIGNUM_AS_RAW**<br/>
+Read big numbers as raw strings.
+Use this flag if you want to parse these big numbers yourself.
+These big numbers include integers that cannot be represented by `int64_t` and `uint64_t`, and floating-point numbers that cannot be represented by finite `double`.
+
+The flag will be overridden by `YYJSON_READ_NUMBER_AS_RAW` flag.
 
 ● **YYJSON_READ_ALLOW_INVALID_UNICODE**<br/>
 Allow reading invalid unicode when parsing string values (non-standard),

@@ -651,7 +651,7 @@ static const yyjson_read_flag YYJSON_READ_ALLOW_COMMENTS        = 1 << 3;
     such as 1e999, NaN, inf, -Infinity (non-standard). */
 static const yyjson_read_flag YYJSON_READ_ALLOW_INF_AND_NAN     = 1 << 4;
 
-/** Read number as raw string (value with `YYJSON_TYPE_RAW` type),
+/** Read all numbers as raw strings (value with `YYJSON_TYPE_RAW` type),
     inf/nan literal is also read as raw with `ALLOW_INF_AND_NAN` flag. */
 static const yyjson_read_flag YYJSON_READ_NUMBER_AS_RAW         = 1 << 5;
 
@@ -664,6 +664,12 @@ static const yyjson_read_flag YYJSON_READ_NUMBER_AS_RAW         = 1 << 5;
     option is used, you need to handle these strings carefully to avoid security
     risks. */
 static const yyjson_read_flag YYJSON_READ_ALLOW_INVALID_UNICODE = 1 << 6;
+
+/** Read big numbers as raw strings. These big numbers include integers that
+    cannot be represented by `int64_t` and `uint64_t`, and floating-point
+    numbers that cannot be represented by finite `double`.
+    The flag will be overridden by `YYJSON_READ_NUMBER_AS_RAW` flag. */
+static const yyjson_read_flag YYJSON_READ_BIGNUM_AS_RAW         = 1 << 7;
 
 
 

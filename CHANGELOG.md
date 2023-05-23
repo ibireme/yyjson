@@ -5,6 +5,7 @@ All notable changes to this project will be documented in this file.
 ## Unreleased
 #### Added
 - Add `YYJSON_WRITE_PRETTY_TWO_SPACES` option to allow 2 spaces instead of 4 spaces when writing pretty JSON: #99
+- Add `YYJSON_READ_BIGNUM_AS_RAW` option to read big number as raw string: #124
 - Add `yyjson_get_num()` function to convert and return any number value as `double`: #108
 - Add support for Loongarch: #112
 - Add functions to get type-specific values specified by JSON Pointer: #116

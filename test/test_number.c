@@ -177,12 +177,10 @@ static void test_uint_read(const char *line, usize len, u64 num) {
     yyjson_val *val = yyjson_doc_get_root(doc);
     yy_assertf(yyjson_is_uint(val),
                "num should be read as uint: %s\n", line);
-    
     u64 get = yyjson_get_uint(val);
     yy_assertf(num == get,
                "uint num read not match:\nstr: %s\nreturn: %llu\nexpect: %llu\n",
                line, get, num);
-    
     yyjson_doc_free(doc);
     
     // read number as raw
@@ -190,11 +188,20 @@ static void test_uint_read(const char *line, usize len, u64 num) {
     val = yyjson_doc_get_root(doc);
     yy_assertf(yyjson_is_raw(val),
                "num should be read as raw: %s\n", line);
-    
     yy_assertf(strcmp(line, yyjson_get_raw(val)) == 0,
                "uint num read as raw not match:\nstr: %s\nreturn: %s\n",
                line, yyjson_get_raw(val));
+    yyjson_doc_free(doc);
     
+    // read big number as raw
+    doc = yyjson_read(line, len, YYJSON_READ_BIGNUM_AS_RAW);
+    val = yyjson_doc_get_root(doc);
+    yy_assertf(yyjson_is_uint(val),
+               "num should be read as uint: %s\n", line);
+    get = yyjson_get_uint(val);
+    yy_assertf(num == get,
+               "uint num read not match:\nstr: %s\nreturn: %llu\nexpect: %llu\n",
+               line, get, num);
     yyjson_doc_free(doc);
 #endif
 }
@@ -226,10 +233,8 @@ static void test_uint(const char *line, usize len) {
     yyjson_val val;
     const char *ptr = yyjson_read_number(line, &val, 0, NULL, NULL);
     yy_assertf(ptr == &line[len], "uint num fail: %s\n", line);
-    
     yy_assertf(yyjson_is_uint(&val),
                "num should be read as uint: %s\n", line);
-    
     u64 get = yyjson_get_uint(&val);
     yy_assertf(num == get,
                "uint num read not match:\nstr: %s\nreturn: %llu\nexpect: %llu\n",
@@ -237,13 +242,20 @@ static void test_uint(const char *line, usize len) {
     
     ptr = yyjson_read_number(line, &val, YYJSON_READ_NUMBER_AS_RAW, NULL, NULL);
     yy_assertf(ptr == &line[len], "uint num fail: %s\n", line);
-    
     yy_assertf(yyjson_is_raw(&val),
                "num should be read as raw: %s\n", line);
-    
     yy_assertf(strcmp(line, yyjson_get_raw(&val)) == 0,
                "uint num read as raw not match:\nstr: %s\nreturn: %s\n",
                line, yyjson_get_raw(&val));
+    
+    ptr = yyjson_read_number(line, &val, YYJSON_READ_BIGNUM_AS_RAW, NULL, NULL);
+    yy_assertf(ptr == &line[len], "uint num fail: %s\n", line);
+    yy_assertf(yyjson_is_uint(&val),
+               "num should be read as uint: %s\n", line);
+    get = yyjson_get_uint(&val);
+    yy_assertf(num == get,
+               "uint num read not match:\nstr: %s\nreturn: %llu\nexpect: %llu\n",
+               line, get, num);
     
     char buf[32] = { 0 };
     snprintf(buf, 32, "%llu%c", num, '\0');
@@ -262,12 +274,10 @@ static void test_sint_read(const char *line, usize len, i64 num) {
     yyjson_val *val = yyjson_doc_get_root(doc);
     yy_assertf(yyjson_is_sint(val),
                "num should be read as sint: %s\n", line);
-    
     i64 get = yyjson_get_sint(val);
     yy_assertf(num == get,
                "uint num read not match:\nstr: %s\nreturn: %lld\nexpect: %lld\n",
                line, get, num);
-    
     yyjson_doc_free(doc);
     
     // read number as raw
@@ -275,11 +285,20 @@ static void test_sint_read(const char *line, usize len, i64 num) {
     val = yyjson_doc_get_root(doc);
     yy_assertf(yyjson_is_raw(val),
                "num should be read as raw: %s\n", line);
-    
     yy_assertf(strcmp(line, yyjson_get_raw(val)) == 0,
                "sint num read as raw not match:\nstr: %s\nreturn: %s\n",
                line, yyjson_get_raw(val));
+    yyjson_doc_free(doc);
     
+    // read big number as raw
+    doc = yyjson_read(line, len, YYJSON_READ_BIGNUM_AS_RAW);
+    val = yyjson_doc_get_root(doc);
+    yy_assertf(yyjson_is_sint(val),
+               "num should be read as sint: %s\n", line);
+    get = yyjson_get_sint(val);
+    yy_assertf(num == get,
+               "uint num read not match:\nstr: %s\nreturn: %lld\nexpect: %lld\n",
+               line, get, num);
     yyjson_doc_free(doc);
 #endif
 }
@@ -309,10 +328,8 @@ static void test_sint(const char *line, usize len) {
     yyjson_val val;
     const char *ptr = yyjson_read_number(line, &val, 0, NULL, NULL);
     yy_assertf(ptr == &line[len], "sint num fail: %s\n", line);
-    
     yy_assertf(yyjson_is_sint(&val),
                "num should be read as sint: %s\n", line);
-    
     i64 get = yyjson_get_sint(&val);
     yy_assertf(num == get,
                "sint num read not match:\nstr: %s\nreturn: %lld\nexpect: %lld\n",
@@ -320,13 +337,20 @@ static void test_sint(const char *line, usize len) {
     
     ptr = yyjson_read_number(line, &val, YYJSON_READ_NUMBER_AS_RAW, NULL, NULL);
     yy_assertf(ptr == &line[len], "uint num fail: %s\n", line);
-    
     yy_assertf(yyjson_is_raw(&val),
                "num should be read as raw: %s\n", line);
-    
     yy_assertf(strcmp(line, yyjson_get_raw(&val)) == 0,
                "sint num read as raw not match:\nstr: %s\nreturn: %s\n",
                line, yyjson_get_raw(&val));
+    
+    ptr = yyjson_read_number(line, &val, YYJSON_READ_BIGNUM_AS_RAW, NULL, NULL);
+    yy_assertf(ptr == &line[len], "sint num fail: %s\n", line);
+    yy_assertf(yyjson_is_sint(&val),
+               "num should be read as sint: %s\n", line);
+    get = yyjson_get_sint(&val);
+    yy_assertf(num == get,
+               "sint num read not match:\nstr: %s\nreturn: %lld\nexpect: %lld\n",
+               line, get, num);
     
     char buf[32] = { 0 };
     snprintf(buf, 32, "%lld%c", num, '\0');
@@ -364,6 +388,16 @@ static void test_real_read(const char *line, usize len, f64 num) {
                    line, yyjson_get_raw(val));
         yyjson_doc_free(doc);
         
+        // read big number as raw string
+        doc = yyjson_read(line, len, YYJSON_READ_BIGNUM_AS_RAW);
+        val = yyjson_doc_get_root(doc);
+        yy_assertf(yyjson_is_raw(val),
+                   "num should be read as raw: %s\n", line);
+        yy_assertf(strcmp(line, yyjson_get_raw(val)) == 0,
+                   "num read as raw not match:\nstr: %s\nreturn: %s\n",
+                   line, yyjson_get_raw(val));
+        yyjson_doc_free(doc);
+        
 #if !YYJSON_DISABLE_NON_STANDARD
         // read number as JSON value
         doc = yyjson_read(line, len, YYJSON_READ_ALLOW_INF_AND_NAN);
@@ -390,6 +424,16 @@ static void test_real_read(const char *line, usize len, f64 num) {
         yy_assertf(yyjson_is_real(val) && ulp == 0,
                    "string %s should be read as %.17g, but returns %.17g\n",
                    line, num, ret);
+        yyjson_doc_free(doc);
+        
+        // read big number as raw
+        doc = yyjson_read(line, len, YYJSON_READ_BIGNUM_AS_RAW);
+        val = yyjson_doc_get_root(doc);
+        if (check_json_num(line) == NUM_TYPE_REAL) {
+            yy_assert(yyjson_is_real(val));
+        } else {
+            yy_assert(yyjson_is_raw(val));
+        }
         yyjson_doc_free(doc);
     }
 #endif
@@ -730,6 +774,42 @@ static void test_random_real(void) {
     }
 }
 
+static void test_bignum(void) {
+    const char *json = "["
+    "123,\"uint\","
+    "9223372036854775807,\"uint\","
+    "9223372036854775807.0,\"real\","
+    "18446744073709551615,\"uint\","
+    "18446744073709551615.0,\"real\","
+    "18446744073709551616,\"raw\","
+    "123456789012345678901,\"raw\","
+    "1234567890123456789012,\"raw\","
+    "12345678901234567890123456789012345678901234567890"
+    "12345678901234567890123456789012345678901234567890"
+    "12345678901234567890123456789012345678901234567890"
+    "12345678901234567890123456789012345678901234567890"
+    "12345678901234567890123456789012345678901234567890"
+    "12345678901234567890123456789012345678901234567890"
+    "12345678901234567890123456789012345678901234567890"
+    ",\"raw\","
+    "-123,\"sint\","
+    "-9223372036854775808,\"sint\","
+    "-9223372036854775808.0,\"real\","
+    "-9223372036854775809,\"raw\","
+    "123e999,\"raw\""
+    "]";
+    yyjson_doc *doc = yyjson_read(json, strlen(json), YYJSON_READ_BIGNUM_AS_RAW);
+    yyjson_val *arr = yyjson_doc_get_root(doc);
+    yy_assert(yyjson_is_arr(arr));
+    for (size_t i = 0, max = yyjson_arr_size(arr); i < max; i+= 2) {
+        yyjson_val *num = yyjson_arr_get(arr, i);
+        yyjson_val *type = yyjson_arr_get(arr, i + 1);
+        const char *desc = yyjson_get_type_desc(num);
+        yy_assert(strcmp(desc, yyjson_get_str(type)) == 0);
+    }
+    yyjson_doc_free(doc);
+}
+
 
 /*==============================================================================
  * Test all
@@ -752,6 +832,7 @@ static void test_number_locale(void) {
     test_with_file("nan_inf_literal_fail.txt", NUM_TYPE_FAIL);
     test_random_int();
     test_random_real();
+    test_bignum();
 }
 
 yy_test_case(test_number) {
