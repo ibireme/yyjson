@@ -35,7 +35,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname"><a href="index.html">yyjson</a><span id="projectnumber">&#160;0.6.0</span>
+   <div id="projectname"><a href="index.html">yyjson</a><span id="projectnumber">&#160;0.7.0</span>
    </div>
    <div id="projectbrief">A high performance C JSON library.</div>
   </td>
@@ -96,15 +96,23 @@ $(document).ready(function(){initNavTree('md_doc__data_structure.html',''); init
   <div class="headertitle"><div class="title">Data Structures </div></div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock"><p >yyjson has two types of data structures: immutable and mutable.</p>
+<div class="textblock"><p >yyjson consists of two types of data structures: immutable and mutable.</p>
+<table class="markdownTable">
+<tr class="markdownTableHead">
+<th class="markdownTableHeadNone"></th><th class="markdownTableHeadNone">Immutable   </th><th class="markdownTableHeadNone">Mutable    </th></tr>
+<tr class="markdownTableRowOdd">
+<td class="markdownTableBodyNone">Document   </td><td class="markdownTableBodyNone"><a class="el" href="yyjson_8h.html#structyyjson__doc">yyjson_doc</a>   </td><td class="markdownTableBodyNone"><a class="el" href="yyjson_8h.html#structyyjson__mut__doc">yyjson_mut_doc</a>    </td></tr>
+<tr class="markdownTableRowEven">
+<td class="markdownTableBodyNone">Value   </td><td class="markdownTableBodyNone"><a class="el" href="yyjson_8h.html#structyyjson__val">yyjson_val</a>   </td><td class="markdownTableBodyNone"><a class="el" href="yyjson_8h.html#structyyjson__mut__val">yyjson_mut_val</a>   </td></tr>
+</table>
 <ul>
 <li>Immutable data structures are returned when reading a JSON document. They cannot be modified.</li>
 <li>Mutable data structures are created when building a JSON document. They can be modified.</li>
-<li>yyjson also provides some functions for converting between these two types of data structures.</li>
+<li>yyjson also provides some functions to convert between these two types of data structures.</li>
 </ul>
-<p >Note that the data structures described in this document are private, and you should use the public API to access them.</p>
+<p >Please note that the data structures described in this document are considered private, and it is recommended to use the public API to access them.</p>
 <hr  />
- <h1><a class="anchor" id="autotoc_md74"></a>
+ <h1><a class="anchor" id="autotoc_md80"></a>
 Immutable Value</h1>
 <p >Each JSON value is stored in an immutable <code><a class="el" href="yyjson_8h.html#structyyjson__val">yyjson_val</a></code> struct: </p><div class="fragment"><div class="line"><span class="keyword">struct </span><a class="code hl_struct" href="yyjson_8h.html#structyyjson__val">yyjson_val</a> {</div>
 <div class="line">    uint64_t <a class="code hl_variable" href="yyjson_8h.html#ab589c80e05e4e65fa28e23acc1ee8255">tag</a>;</div>
@@ -117,14 +125,14 @@ Immutable Value</h1>
 <div class="line">        <span class="keywordtype">size_t</span>      ofs;</div>
 <div class="line">    } <a class="code hl_variable" href="yyjson_8h.html#a3a07ac3ac97c66ae9b23efeab600d013">uni</a>;</div>
 <div class="line">}</div>
-<div class="ttc" id="ayyjson_8h_html_a3a07ac3ac97c66ae9b23efeab600d013"><div class="ttname"><a href="yyjson_8h.html#a3a07ac3ac97c66ae9b23efeab600d013">yyjson_val::uni</a></div><div class="ttdeci">yyjson_val_uni uni</div><div class="ttdef"><b>Definition:</b> yyjson.h:3475</div></div>
-<div class="ttc" id="ayyjson_8h_html_ab589c80e05e4e65fa28e23acc1ee8255"><div class="ttname"><a href="yyjson_8h.html#ab589c80e05e4e65fa28e23acc1ee8255">yyjson_val::tag</a></div><div class="ttdeci">uint64_t tag</div><div class="ttdef"><b>Definition:</b> yyjson.h:3474</div></div>
-<div class="ttc" id="ayyjson_8h_html_structyyjson__val"><div class="ttname"><a href="yyjson_8h.html#structyyjson__val">yyjson_val</a></div><div class="ttdef"><b>Definition:</b> yyjson.h:3473</div></div>
+<div class="ttc" id="ayyjson_8h_html_a3a07ac3ac97c66ae9b23efeab600d013"><div class="ttname"><a href="yyjson_8h.html#a3a07ac3ac97c66ae9b23efeab600d013">yyjson_val::uni</a></div><div class="ttdeci">yyjson_val_uni uni</div><div class="ttdef"><b>Definition:</b> yyjson.h:4359</div></div>
+<div class="ttc" id="ayyjson_8h_html_ab589c80e05e4e65fa28e23acc1ee8255"><div class="ttname"><a href="yyjson_8h.html#ab589c80e05e4e65fa28e23acc1ee8255">yyjson_val::tag</a></div><div class="ttdeci">uint64_t tag</div><div class="ttdef"><b>Definition:</b> yyjson.h:4358</div></div>
+<div class="ttc" id="ayyjson_8h_html_structyyjson__val"><div class="ttname"><a href="yyjson_8h.html#structyyjson__val">yyjson_val</a></div><div class="ttdef"><b>Definition:</b> yyjson.h:4357</div></div>
 </div><!-- fragment --><p> <img src="struct_ival.svg" alt="" style="pointer-events: none;" class="inline" title="yyjson_val"/>    </p>
-<p >The lower 8 bits of <code>tag</code> stores the type of value.<br  />
- The higher 56 bits of <code>tag</code> stores the size of value (string length, object size or array size).</p>
-<p >Modern 64-bit processors are typically limited to supporting fewer than 64 bits for RAM addresses (<a href="https://en.wikipedia.org/wiki/RAM_limit">Wikipedia</a>). For example, Intel64, AMD64, and ARMv8 have a 52-bit (4PB) physical address limit. Therefore, it is safe to store the type and size in a 64-bit <code>tag</code>.</p>
-<h1><a class="anchor" id="autotoc_md75"></a>
+<p >The type of the value is stored in the lower 8 bits of the <code>tag</code>.<br  />
+ The size of the value, such as string length, object size, or array size, is stored in the higher 56 bits of the <code>tag</code>.</p>
+<p >Modern 64-bit processors are typically limited to supporting fewer than 64 bits for RAM addresses (<a href="https://en.wikipedia.org/wiki/RAM_limit">Wikipedia</a>). For example, Intel64, AMD64, and ARMv8 have a 52-bit (4PB) physical address limit. Therefore, it is safe to store the type and size information within the 64-bit <code>tag</code>.</p>
+<h1><a class="anchor" id="autotoc_md81"></a>
 Immutable Document</h1>
 <p >A JSON document stores all strings in a <b>contiguous</b> memory area.<br  />
  Each string is unescaped in-place and ended with a null-terminator.<br  />
@@ -134,14 +142,14 @@ Immutable Document</h1>
 <div class="caption">
 yyjson_doc</div></div>
     <p >A JSON document stores all values in another <b>contiguous</b> memory area.<br  />
- The <code>object</code> and <code>array</code> stores their own memory usage, so we can easily walk through a container's child values.<br  />
+ The <code>object</code> and <code>array</code> containers store their own memory usage, allowing easy traversal of the child values.<br  />
  For example:</p>
 <div class="image">
 <object type="image/svg+xml" data="struct_idoc2.svg" style="pointer-events: none;"></object>
 <div class="caption">
 yyjson_doc</div></div>
     <hr  />
- <h1><a class="anchor" id="autotoc_md77"></a>
+ <h1><a class="anchor" id="autotoc_md83"></a>
 Mutable Value</h1>
 <p >Each mutable JSON value is stored in an <code><a class="el" href="yyjson_8h.html#structyyjson__mut__val">yyjson_mut_val</a></code> struct: </p><div class="fragment"><div class="line"><span class="keyword">struct </span><a class="code hl_struct" href="yyjson_8h.html#structyyjson__mut__val">yyjson_mut_val</a> {</div>
 <div class="line">    uint64_t <a class="code hl_variable" href="yyjson_8h.html#a5fd1ae5bada624c9687acce330eef7aa">tag</a>;</div>
@@ -155,23 +163,29 @@ Mutable Value</h1>
 <div class="line">    } <a class="code hl_variable" href="yyjson_8h.html#a2f30e3958bf136b4e8453a0e78b43d0f">uni</a>;</div>
 <div class="line">    <a class="code hl_struct" href="yyjson_8h.html#structyyjson__mut__val">yyjson_mut_val</a> *<a class="code hl_variable" href="yyjson_8h.html#a172090776a18e45190c933fb3294c07c">next</a>;</div>
 <div class="line">}</div>
-<div class="ttc" id="ayyjson_8h_html_a172090776a18e45190c933fb3294c07c"><div class="ttname"><a href="yyjson_8h.html#a172090776a18e45190c933fb3294c07c">yyjson_mut_val::next</a></div><div class="ttdeci">yyjson_mut_val * next</div><div class="ttdef"><b>Definition:</b> yyjson.h:4165</div></div>
-<div class="ttc" id="ayyjson_8h_html_a2f30e3958bf136b4e8453a0e78b43d0f"><div class="ttname"><a href="yyjson_8h.html#a2f30e3958bf136b4e8453a0e78b43d0f">yyjson_mut_val::uni</a></div><div class="ttdeci">yyjson_val_uni uni</div><div class="ttdef"><b>Definition:</b> yyjson.h:4164</div></div>
-<div class="ttc" id="ayyjson_8h_html_a5fd1ae5bada624c9687acce330eef7aa"><div class="ttname"><a href="yyjson_8h.html#a5fd1ae5bada624c9687acce330eef7aa">yyjson_mut_val::tag</a></div><div class="ttdeci">uint64_t tag</div><div class="ttdef"><b>Definition:</b> yyjson.h:4163</div></div>
-<div class="ttc" id="ayyjson_8h_html_structyyjson__mut__val"><div class="ttname"><a href="yyjson_8h.html#structyyjson__mut__val">yyjson_mut_val</a></div><div class="ttdef"><b>Definition:</b> yyjson.h:4162</div></div>
+<div class="ttc" id="ayyjson_8h_html_a172090776a18e45190c933fb3294c07c"><div class="ttname"><a href="yyjson_8h.html#a172090776a18e45190c933fb3294c07c">yyjson_mut_val::next</a></div><div class="ttdeci">yyjson_mut_val * next</div><div class="ttdef"><b>Definition:</b> yyjson.h:5074</div></div>
+<div class="ttc" id="ayyjson_8h_html_a2f30e3958bf136b4e8453a0e78b43d0f"><div class="ttname"><a href="yyjson_8h.html#a2f30e3958bf136b4e8453a0e78b43d0f">yyjson_mut_val::uni</a></div><div class="ttdeci">yyjson_val_uni uni</div><div class="ttdef"><b>Definition:</b> yyjson.h:5073</div></div>
+<div class="ttc" id="ayyjson_8h_html_a5fd1ae5bada624c9687acce330eef7aa"><div class="ttname"><a href="yyjson_8h.html#a5fd1ae5bada624c9687acce330eef7aa">yyjson_mut_val::tag</a></div><div class="ttdeci">uint64_t tag</div><div class="ttdef"><b>Definition:</b> yyjson.h:5072</div></div>
+<div class="ttc" id="ayyjson_8h_html_structyyjson__mut__val"><div class="ttname"><a href="yyjson_8h.html#structyyjson__mut__val">yyjson_mut_val</a></div><div class="ttdef"><b>Definition:</b> yyjson.h:5071</div></div>
 </div><!-- fragment --><p> <img src="struct_mval.svg" alt="" style="pointer-events: none;" class="inline" title="yyjson_mut_val"/>    </p>
-<p >The <code>tag</code> and <code>uni</code> field is same as immutable value, the <code>next</code> field is used to build linked list.</p>
-<h1><a class="anchor" id="autotoc_md78"></a>
+<p >The <code>tag</code> and <code>uni</code> fields are the same as the immutable value, and the <code>next</code> field is used to build a linked list.</p>
+<h1><a class="anchor" id="autotoc_md84"></a>
 Mutable Document</h1>
 <p >A mutable JSON document is composed of multiple <code><a class="el" href="yyjson_8h.html#structyyjson__mut__val">yyjson_mut_val</a></code>.</p>
 <p >The child values of an <code>object</code> or <code>array</code> are linked as a cycle,<br  />
- the parent holds the <b>tail</b> of the circular linked list, so that yyjson can do <code>append</code>, <code>prepend</code> and <code>remove_first</code> in O(1) time.</p>
+ the parent holds the <b>tail</b> of the circular linked list, enabling yyjson to perform operations <code>append</code>, <code>prepend</code> and <code>remove_first</code> in constant time.</p>
 <p >For example:</p>
 <div class="image">
 <object type="image/svg+xml" data="struct_mdoc.svg" style="pointer-events: none;"></object>
 <div class="caption">
 yyjson_mut_doc</div></div>
-     </div></div><!-- contents -->
+    <hr  />
+ <h1><a class="anchor" id="autotoc_md86"></a>
+Memory Management</h1>
+<p >A JSON document (<code><a class="el" href="yyjson_8h.html#structyyjson__doc">yyjson_doc</a></code>, <code><a class="el" href="yyjson_8h.html#structyyjson__mut__doc">yyjson_mut_doc</a></code>) is responsible for managing the memory of all its JSON values and strings. When a document it is no longer needed, it is important for the user to call <code><a class="el" href="yyjson_8h.html#adad98bd766cf52d99f2c54dcb120786d">yyjson_doc_free()</a></code> or <code><a class="el" href="yyjson_8h.html#a7a5f504993031f912d06777b8a7b5aff">yyjson_mut_doc_free()</a></code> to free the memory associated with it.</p>
+<p >A JSON value (<code><a class="el" href="yyjson_8h.html#structyyjson__val">yyjson_val</a></code>, <code><a class="el" href="yyjson_8h.html#structyyjson__mut__val">yyjson_mut_val</a></code>) has the same lifetime as its document. The memory is managed by its document and and cannot be freed independently.</p>
+<p >For more information, refer to the <a class="el" href="md_doc__a_p_i.html">API documentation</a>. </p>
+</div></div><!-- contents -->
 </div><!-- PageDoc -->
 </div><!-- doc-content -->
 <!-- HTML footer for doxygen 1.9.4-->

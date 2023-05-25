@@ -35,7 +35,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname"><a href="index.html">yyjson</a><span id="projectnumber">&#160;0.6.0</span>
+   <div id="projectname"><a href="index.html">yyjson</a><span id="projectnumber">&#160;0.7.0</span>
    </div>
    <div id="projectbrief">A high performance C JSON library.</div>
   </td>
@@ -105,8 +105,8 @@ $(document).ready(function(){initNavTree('structyyjson__alc.html',''); initResiz
 Data Fields</h2></td></tr>
 <tr class="memitem:a83133b6b92e0fec52ec3c62538f44311"><td class="memItemLeft" align="right" valign="top">void *(*&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structyyjson__alc.html#a83133b6b92e0fec52ec3c62538f44311">malloc</a> )(void *<a class="el" href="structyyjson__alc.html#ae9499246c39efd68c206280de1b31f45">ctx</a>, size_t size)</td></tr>
 <tr class="separator:a83133b6b92e0fec52ec3c62538f44311"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad8aa6e0f1af26b74e6540c8439aafa9e"><td class="memItemLeft" align="right" valign="top">void *(*&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structyyjson__alc.html#ad8aa6e0f1af26b74e6540c8439aafa9e">realloc</a> )(void *<a class="el" href="structyyjson__alc.html#ae9499246c39efd68c206280de1b31f45">ctx</a>, void *ptr, size_t size)</td></tr>
-<tr class="separator:ad8aa6e0f1af26b74e6540c8439aafa9e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:affacb85df656149df6c07880f0ecbe95"><td class="memItemLeft" align="right" valign="top">void *(*&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structyyjson__alc.html#affacb85df656149df6c07880f0ecbe95">realloc</a> )(void *<a class="el" href="structyyjson__alc.html#ae9499246c39efd68c206280de1b31f45">ctx</a>, void *ptr, size_t old_size, size_t size)</td></tr>
+<tr class="separator:affacb85df656149df6c07880f0ecbe95"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a2c770ff93f0f331bd60076eecd93661e"><td class="memItemLeft" align="right" valign="top">void(*&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structyyjson__alc.html#a2c770ff93f0f331bd60076eecd93661e">free</a> )(void *<a class="el" href="structyyjson__alc.html#ae9499246c39efd68c206280de1b31f45">ctx</a>, void *ptr)</td></tr>
 <tr class="separator:a2c770ff93f0f331bd60076eecd93661e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae9499246c39efd68c206280de1b31f45"><td class="memItemLeft" align="right" valign="top">void *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structyyjson__alc.html#ae9499246c39efd68c206280de1b31f45">ctx</a></td></tr>
@@ -142,7 +142,7 @@ Data Fields</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
-<p >Same as libc's <a class="el" href="structyyjson__alc.html#a2c770ff93f0f331bd60076eecd93661e">free()</a>, should not be NULL. </p>
+<p >Same as libc's free(ptr), should not be NULL. </p>
 
 </div>
 </div>
@@ -157,22 +157,22 @@ Data Fields</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
-<p >Same as libc's <a class="el" href="structyyjson__alc.html#a83133b6b92e0fec52ec3c62538f44311">malloc()</a>, should not be NULL. </p>
+<p >Same as libc's malloc(size), should not be NULL. </p>
 
 </div>
 </div>
-<a id="ad8aa6e0f1af26b74e6540c8439aafa9e" name="ad8aa6e0f1af26b74e6540c8439aafa9e"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ad8aa6e0f1af26b74e6540c8439aafa9e">&#9670;&nbsp;</a></span>realloc</h2>
+<a id="affacb85df656149df6c07880f0ecbe95" name="affacb85df656149df6c07880f0ecbe95"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#affacb85df656149df6c07880f0ecbe95">&#9670;&nbsp;</a></span>realloc</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">void *(* yyjson_alc::realloc) (void *<a class="el" href="structyyjson__alc.html#ae9499246c39efd68c206280de1b31f45">ctx</a>, void *ptr, size_t size)</td>
+          <td class="memname">void *(* yyjson_alc::realloc) (void *<a class="el" href="structyyjson__alc.html#ae9499246c39efd68c206280de1b31f45">ctx</a>, void *ptr, size_t old_size, size_t size)</td>
         </tr>
       </table>
 </div><div class="memdoc">
-<p >Same as libc's <a class="el" href="structyyjson__alc.html#ad8aa6e0f1af26b74e6540c8439aafa9e">realloc()</a>, should not be NULL. </p>
+<p >Same as libc's realloc(ptr, size), should not be NULL. </p>
 
 </div>
 </div>

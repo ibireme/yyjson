@@ -11,11 +11,11 @@ A high performance JSON library written in ANSI C.
 # Features
 - **Fast**: can read or write gigabytes per second JSON data on modern CPUs.
 - **Portable**: complies with ANSI C (C89) for cross-platform compatibility.
-- **Strict**: strictly complies with [RFC 8259](https://datatracker.ietf.org/doc/html/rfc8259) JSON standard, ensuring strict number format and UTF-8 validation.
+- **Strict**: complies with [RFC 8259](https://datatracker.ietf.org/doc/html/rfc8259) JSON standard, ensuring strict number format and UTF-8 validation.
 - **Extendable**: offers options to allow comments, trailing commas, NaN/Inf, and custom memory allocator.
 - **Accuracy**: can accurately read and write `int64`, `uint64`, and `double` numbers.
 - **Flexible**: supports unlimited JSON nesting levels, `\u0000` characters, and non null-terminated strings.
-- **Manipulation**: supports querying and modifying using [JSON Pointer](https://datatracker.ietf.org/doc/html/rfc6901), as well as [JSON Patch](https://datatracker.ietf.org/doc/html/rfc6902) and [JSON Merge Patch](https://datatracker.ietf.org/doc/html/rfc7386).
+- **Manipulation**: supports querying and modifying using [JSON Pointer](https://datatracker.ietf.org/doc/html/rfc6901), [JSON Patch](https://datatracker.ietf.org/doc/html/rfc6902) and [JSON Merge Patch](https://datatracker.ietf.org/doc/html/rfc7386).
 - **Developer-Friendly**: easy integration with only one `h` and one `c` file.
 
 # Limitations

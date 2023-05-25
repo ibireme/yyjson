@@ -54,68 +54,77 @@ var NAVTREE =
         [ "API for immutable/mutable data", "md_doc__a_p_i.html#autotoc_md27", null ],
         [ "API for string", "md_doc__a_p_i.html#autotoc_md28", null ]
       ] ],
-      [ "Read JSON", "md_doc__a_p_i.html#autotoc_md30", [
+      [ "Reading JSON", "md_doc__a_p_i.html#autotoc_md30", [
         [ "Read JSON from string", "md_doc__a_p_i.html#autotoc_md31", null ],
         [ "Read JSON from file", "md_doc__a_p_i.html#autotoc_md32", null ],
-        [ "Read JSON with options", "md_doc__a_p_i.html#autotoc_md33", null ],
-        [ "Reader flag", "md_doc__a_p_i.html#autotoc_md34", null ]
+        [ "Read JSON from file pointer", "md_doc__a_p_i.html#autotoc_md33", null ],
+        [ "Read JSON with options", "md_doc__a_p_i.html#autotoc_md34", null ],
+        [ "Reader flag", "md_doc__a_p_i.html#autotoc_md35", null ]
       ] ],
-      [ "Write JSON", "md_doc__a_p_i.html#autotoc_md36", [
-        [ "Write JSON to string", "md_doc__a_p_i.html#autotoc_md37", null ],
-        [ "Write JSON to file", "md_doc__a_p_i.html#autotoc_md38", null ],
-        [ "Write JSON with options", "md_doc__a_p_i.html#autotoc_md39", null ],
-        [ "Writer flag", "md_doc__a_p_i.html#autotoc_md40", null ]
+      [ "Writing JSON", "md_doc__a_p_i.html#autotoc_md37", [
+        [ "Write JSON to string", "md_doc__a_p_i.html#autotoc_md38", null ],
+        [ "Write JSON to file", "md_doc__a_p_i.html#autotoc_md39", null ],
+        [ "Write JSON to file pointer", "md_doc__a_p_i.html#autotoc_md40", null ],
+        [ "Write JSON with options", "md_doc__a_p_i.html#autotoc_md41", null ],
+        [ "Writer flag", "md_doc__a_p_i.html#autotoc_md42", null ]
       ] ],
-      [ "Access JSON Document", "md_doc__a_p_i.html#autotoc_md42", [
-        [ "JSON Document", "md_doc__a_p_i.html#autotoc_md43", null ],
-        [ "JSON Value", "md_doc__a_p_i.html#autotoc_md44", null ],
-        [ "JSON Array", "md_doc__a_p_i.html#autotoc_md45", null ],
-        [ "JSON Array Iterator", "md_doc__a_p_i.html#autotoc_md46", null ],
-        [ "JSON Object", "md_doc__a_p_i.html#autotoc_md47", null ],
-        [ "JSON Object Iterator", "md_doc__a_p_i.html#autotoc_md48", null ],
-        [ "JSON Pointer", "md_doc__a_p_i.html#autotoc_md49", null ]
+      [ "Accessing JSON Document", "md_doc__a_p_i.html#autotoc_md44", [
+        [ "JSON Document", "md_doc__a_p_i.html#autotoc_md45", null ],
+        [ "JSON Value", "md_doc__a_p_i.html#autotoc_md46", null ],
+        [ "JSON Array", "md_doc__a_p_i.html#autotoc_md47", null ],
+        [ "JSON Array Iterator", "md_doc__a_p_i.html#autotoc_md48", null ],
+        [ "JSON Object", "md_doc__a_p_i.html#autotoc_md49", null ],
+        [ "JSON Object Iterator", "md_doc__a_p_i.html#autotoc_md50", null ]
       ] ],
-      [ "Create JSON Document", "md_doc__a_p_i.html#autotoc_md51", [
-        [ "Mutable Document", "md_doc__a_p_i.html#autotoc_md52", null ],
-        [ "JSON Value Creation", "md_doc__a_p_i.html#autotoc_md53", null ],
-        [ "JSON Array Creation", "md_doc__a_p_i.html#autotoc_md54", null ],
-        [ "JSON Array Modification", "md_doc__a_p_i.html#autotoc_md55", null ],
-        [ "JSON Object Creation", "md_doc__a_p_i.html#autotoc_md56", null ],
-        [ "JSON Object Modification", "md_doc__a_p_i.html#autotoc_md57", null ],
-        [ "JSON Merge Patch", "md_doc__a_p_i.html#autotoc_md58", null ]
+      [ "Creating JSON Document", "md_doc__a_p_i.html#autotoc_md52", [
+        [ "Mutable Document", "md_doc__a_p_i.html#autotoc_md53", null ],
+        [ "JSON Value Creation", "md_doc__a_p_i.html#autotoc_md54", null ],
+        [ "JSON Array Creation", "md_doc__a_p_i.html#autotoc_md55", null ],
+        [ "JSON Array Modification", "md_doc__a_p_i.html#autotoc_md56", null ],
+        [ "JSON Object Creation", "md_doc__a_p_i.html#autotoc_md57", null ],
+        [ "JSON Object Modification", "md_doc__a_p_i.html#autotoc_md58", null ]
       ] ],
-      [ "Number Processing", "md_doc__a_p_i.html#autotoc_md60", [
-        [ "Number reader", "md_doc__a_p_i.html#autotoc_md61", null ],
-        [ "Number writer", "md_doc__a_p_i.html#autotoc_md62", null ]
+      [ "JSON Pointer and Patch", "md_doc__a_p_i.html#autotoc_md60", [
+        [ "JSON Pointer", "md_doc__a_p_i.html#autotoc_md61", null ],
+        [ "JSON Patch", "md_doc__a_p_i.html#autotoc_md62", null ],
+        [ "JSON Merge Patch", "md_doc__a_p_i.html#autotoc_md63", null ]
       ] ],
-      [ "Text Processing", "md_doc__a_p_i.html#autotoc_md63", [
-        [ "Character Encoding", "md_doc__a_p_i.html#autotoc_md64", null ],
-        [ "NUL Character", "md_doc__a_p_i.html#autotoc_md65", null ]
+      [ "Number Processing", "md_doc__a_p_i.html#autotoc_md65", [
+        [ "Number reader", "md_doc__a_p_i.html#autotoc_md66", null ],
+        [ "Number writer", "md_doc__a_p_i.html#autotoc_md67", null ]
       ] ],
-      [ "Memory Allocator", "md_doc__a_p_i.html#autotoc_md66", [
-        [ "Single allocator for multiple JSON", "md_doc__a_p_i.html#autotoc_md67", null ],
-        [ "Stack memory allocator", "md_doc__a_p_i.html#autotoc_md68", null ],
-        [ "Use third-party allocator library", "md_doc__a_p_i.html#autotoc_md69", null ]
+      [ "Text Processing", "md_doc__a_p_i.html#autotoc_md68", [
+        [ "Character Encoding", "md_doc__a_p_i.html#autotoc_md69", null ],
+        [ "NUL Character", "md_doc__a_p_i.html#autotoc_md70", null ]
       ] ],
-      [ "Null Check", "md_doc__a_p_i.html#autotoc_md70", null ],
-      [ "Thread Safe", "md_doc__a_p_i.html#autotoc_md71", null ],
-      [ "Locale Dependent", "md_doc__a_p_i.html#autotoc_md72", null ]
+      [ "Memory Allocator", "md_doc__a_p_i.html#autotoc_md71", [
+        [ "Single allocator for multiple JSON", "md_doc__a_p_i.html#autotoc_md72", null ],
+        [ "Stack memory allocator", "md_doc__a_p_i.html#autotoc_md73", null ],
+        [ "Use a third-party allocator library", "md_doc__a_p_i.html#autotoc_md74", null ]
+      ] ],
+      [ "Stack Memory Usage", "md_doc__a_p_i.html#autotoc_md75", null ],
+      [ "Null Check", "md_doc__a_p_i.html#autotoc_md76", null ],
+      [ "Thread Safety", "md_doc__a_p_i.html#autotoc_md77", null ],
+      [ "Locale Independence", "md_doc__a_p_i.html#autotoc_md78", null ]
     ] ],
     [ "Data Structures", "md_doc__data_structure.html", [
-      [ "Immutable Value", "md_doc__data_structure.html#autotoc_md74", null ],
-      [ "Immutable Document", "md_doc__data_structure.html#autotoc_md75", null ],
-      [ "Mutable Value", "md_doc__data_structure.html#autotoc_md77", null ],
-      [ "Mutable Document", "md_doc__data_structure.html#autotoc_md78", null ]
+      [ "Immutable Value", "md_doc__data_structure.html#autotoc_md80", null ],
+      [ "Immutable Document", "md_doc__data_structure.html#autotoc_md81", null ],
+      [ "Mutable Value", "md_doc__data_structure.html#autotoc_md83", null ],
+      [ "Mutable Document", "md_doc__data_structure.html#autotoc_md84", null ],
+      [ "Memory Management", "md_doc__data_structure.html#autotoc_md86", null ]
     ] ],
     [ "Changelog", "md__c_h_a_n_g_e_l_o_g.html", [
-      [ "0.6.0 (2022-12-12)", "md__c_h_a_n_g_e_l_o_g.html#autotoc_md80", null ],
-      [ "0.5.1 (2022-06-17)", "md__c_h_a_n_g_e_l_o_g.html#autotoc_md83", null ],
-      [ "0.5.0 (2022-05-25)", "md__c_h_a_n_g_e_l_o_g.html#autotoc_md85", null ],
-      [ "0.4.0 (2021-12-12)", "md__c_h_a_n_g_e_l_o_g.html#autotoc_md89", null ],
-      [ "0.3.0 (2021-05-25)", "md__c_h_a_n_g_e_l_o_g.html#autotoc_md93", null ],
-      [ "0.2.0 (2020-12-12)", "md__c_h_a_n_g_e_l_o_g.html#autotoc_md97", null ],
-      [ "0.1.0 (2020-10-26)", "md__c_h_a_n_g_e_l_o_g.html#autotoc_md102", null ]
+      [ "0.7.0 (2023-05-25)", "md__c_h_a_n_g_e_l_o_g.html#autotoc_md88", null ],
+      [ "0.6.0 (2022-12-12)", "md__c_h_a_n_g_e_l_o_g.html#autotoc_md92", null ],
+      [ "0.5.1 (2022-06-17)", "md__c_h_a_n_g_e_l_o_g.html#autotoc_md95", null ],
+      [ "0.5.0 (2022-05-25)", "md__c_h_a_n_g_e_l_o_g.html#autotoc_md97", null ],
+      [ "0.4.0 (2021-12-12)", "md__c_h_a_n_g_e_l_o_g.html#autotoc_md101", null ],
+      [ "0.3.0 (2021-05-25)", "md__c_h_a_n_g_e_l_o_g.html#autotoc_md105", null ],
+      [ "0.2.0 (2020-12-12)", "md__c_h_a_n_g_e_l_o_g.html#autotoc_md109", null ],
+      [ "0.1.0 (2020-10-26)", "md__c_h_a_n_g_e_l_o_g.html#autotoc_md114", null ]
     ] ],
+    [ "Deprecated List", "deprecated.html", null ],
     [ "Files", "files.html", [
       [ "File List", "files.html", "files_dup" ],
       [ "Globals", "globals.html", [
@@ -140,7 +149,8 @@ var NAVTREE =
 var NAVTREEINDEX =
 [
 "annotated.html",
-"yyjson_8h.html#a691136e772913e98860a791e65b70f04"
+"yyjson_8h.html#a4d30446a286f54e2f95847f3c6669493",
+"yyjson_8h.html#add7037998fb39b3e2d1b3caf59f9d66a"
 ];
 
 var SYNCONMSG = 'click to disable panel synchronisation';

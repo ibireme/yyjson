@@ -2,7 +2,7 @@
 All notable changes to this project will be documented in this file.
 
 
-## Unreleased
+## 0.7.0 (2023-05-25)
 #### Added
 - Add `YYJSON_WRITE_PRETTY_TWO_SPACES` option to allow 2 spaces instead of 4 spaces when writing pretty JSON: #99
 - Add `YYJSON_READ_BIGNUM_AS_RAW` option to read big numbers as raw strings: #124

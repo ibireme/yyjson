@@ -35,7 +35,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname"><a href="index.html">yyjson</a><span id="projectnumber">&#160;0.6.0</span>
+   <div id="projectname"><a href="index.html">yyjson</a><span id="projectnumber">&#160;0.7.0</span>
    </div>
    <div id="projectbrief">A high performance C JSON library.</div>
   </td>
@@ -96,15 +96,15 @@ $(document).ready(function(){initNavTree('md_doc__build_and_test.html',''); init
   <div class="headertitle"><div class="title">Building and testing </div></div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock"><p >There are several ways to integrate yyjson into your project: source code, package manager, and CMake.</p>
+<div class="textblock"><p >There are several ways to integrate this library into your project: source code, package manager, and CMake.</p>
 <h1><a class="anchor" id="autotoc_md15"></a>
 Source code</h1>
-<p >yyjson aims to provide a cross-platform JSON library, so it is written in ANSI C (actually C99, but compatible with strict C89). You can copy <code><a class="el" href="yyjson_8h.html">yyjson.h</a></code> and <code>yyjson.c</code> to your project and start using it without any configuration.</p>
-<p >yyjson has been tested with the following compilers: <code>gcc</code>, <code>clang</code>, <code>msvc</code>, <code>icc</code>, <code>tcc</code>. If you get a compile error, please <a href="https://github.com/ibireme/yyjson/issues/new?template=bug_report.md">report a bug</a>.</p>
-<p >yyjson has all features enabled by default, but you can trim out some of them by adding compile-time options. For example, disable JSON writer to reduce the binary size when you don't need serialization, or disable comments support to improve parsing performance. See <code>Compile-time Options</code> for details.</p>
+<p >This library aims to provide a cross-platform JSON library, so it is written in ANSI C (actually C99, but compatible with strict C89). You can copy <code><a class="el" href="yyjson_8h.html">yyjson.h</a></code> and <code>yyjson.c</code> to your project and start using it without any configuration.</p>
+<p >The library has been tested with <code>gcc</code>, <code>clang</code>, <code>msvc</code>, <code>tcc</code> compilers and <code>x86</code>, <code>arm</code>, <code>ppc</code>, <code>riscv</code>, <code>s390x</code> architectures in <a href="https://github.com/ibireme/yyjson/actions">Github CI</a>. Please <a href="https://github.com/ibireme/yyjson/issues/new?template=bug_report.md">report a bug</a> if you encounter any compilation issues.</p>
+<p >The library has all features enabled by default, but you can trim out some of them by adding compile-time options. For example, you can disable the JSON writer to reduce the binary size when you don't need serialization, or disable comments support to improve parsing performance. See <code>Compile-time Options</code> for details.</p>
 <h1><a class="anchor" id="autotoc_md16"></a>
 Package manager</h1>
-<p >You can use some popular package managers to download and install yyjson, such as <code>vcpkg</code>, <code>conan</code>, and <code>xmake</code>. The yyjson package in these package managers is kept up to date by community contributors. If the version is out of date, please create an issue or pull request on their repository.</p>
+<p >You can use some popular package managers like <code>vcpkg</code>, <code>conan</code>, and <code>xmake</code> to download and install yyjson. The yyjson package in these package managers is kept up to date by community contributors. If the version is out of date, please create an issue or pull request on their repository.</p>
 <h2><a class="anchor" id="autotoc_md17"></a>
 Use vcpkg</h2>
 <p >You can build and install yyjson using <a href="https://github.com/Microsoft/vcpkg/">vcpkg</a> dependency manager:</p>
@@ -138,12 +138,13 @@ Use CMake to build a library</h2>
 <li><code>-DYYJSON_FORCE_32_BIT=ON</code> Force 32-bit for tests (gcc/clang/icc).</li>
 <li><code>-DYYJSON_DISABLE_READER=ON</code> Disable JSON reader if you don't need it.</li>
 <li><code>-DYYJSON_DISABLE_WRITER=ON</code> Disable JSON writer if you don't need it.</li>
+<li><code>-DYYJSON_DISABLE_UTILS=ON</code> Disable JSON Pointer, JSON Patch and JSON Merge Patch.</li>
 <li><code>-DYYJSON_DISABLE_FAST_FP_CONV=ON</code> Disable builtin fast floating-pointer conversion.</li>
 <li><code>-DYYJSON_DISABLE_NON_STANDARD=ON</code> Disable non-standard JSON support at compile-time.</li>
 </ul>
 <h2><a class="anchor" id="autotoc_md20"></a>
 Use CMake as a dependency</h2>
-<p >You can download and unzip yyjson to your project folder and link it in your <code>CMakeLists.txt</code> file: </p><div class="fragment"><div class="line"># Add some options (optional)</div>
+<p >You can download and unzip yyjson to your project directory and link it in your <code>CMakeLists.txt</code> file: </p><div class="fragment"><div class="line"># Add some options (optional)</div>
 <div class="line">set(YYJSON_DISABLE_NON_STANDARD ON CACHE INTERNAL &quot;&quot;)</div>
 <div class="line"> </div>
 <div class="line"># Add the `yyjson` subdirectory</div>
@@ -151,7 +152,7 @@ Use CMake as a dependency</h2>
 <div class="line"> </div>
 <div class="line"># Link yyjson to your target</div>
 <div class="line">target_link_libraries(your_target PRIVATE yyjson)</div>
-</div><!-- fragment --><p >If your CMake version is higher than 3.14, you can use the following method to let CMake automatically download it: </p><div class="fragment"><div class="line">include(FetchContent)</div>
+</div><!-- fragment --><p >If your CMake version is higher than 3.14, you can use the following code to let CMake automatically download it: </p><div class="fragment"><div class="line">include(FetchContent)</div>
 <div class="line"> </div>
 <div class="line"># Let CMake download yyjson</div>
 <div class="line">FetchContent_Declare(</div>
@@ -165,7 +166,7 @@ Use CMake as a dependency</h2>
 <div class="line">target_link_libraries(your_target PRIVATE yyjson)</div>
 </div><!-- fragment --><h2><a class="anchor" id="autotoc_md21"></a>
 Use CMake to generate project</h2>
-<p >If you want to build or debug <code>yyjson</code> with another compiler or IDE, try these commands: </p><div class="fragment"><div class="line"># Clang for Linux/Unix:</div>
+<p >If you want to build or debug yyjson with another compiler or IDE, try these commands: </p><div class="fragment"><div class="line"># Clang for Linux/Unix:</div>
 <div class="line">cmake .. -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++</div>
 <div class="line"> </div>
 <div class="line"># Intel ICC for Linux/Unix:</div>
@@ -189,44 +190,54 @@ Use CMake to generate project</h2>
 <div class="line">cmake .. -G Xcode -DYYJSON_BUILD_TESTS=ON</div>
 </div><!-- fragment --><h2><a class="anchor" id="autotoc_md22"></a>
 Use CMake to generate documentation</h2>
-<p >yyjson uses <a href="https://www.doxygen.nl/">doxygen</a> to generate the documentation (you must have <code>doxygen</code> installed): </p><div class="fragment"><div class="line">cmake .. -DYYJSON_BUILD_DOC=ON</div>
+<p >This library uses <a href="https://www.doxygen.nl/">doxygen</a> to generate the documentation, (make sure you have <code>doxygen</code> installed before proceeding): </p><div class="fragment"><div class="line">cmake .. -DYYJSON_BUILD_DOC=ON</div>
 <div class="line">cmake --build .</div>
-</div><!-- fragment --><p> After executing this script, doxygen will output the generated html files to <code>build/doxygen/html</code>. You can also read the pre-generated document online: <a href="https://ibireme.github.io/yyjson/doc/doxygen/html/">https://ibireme.github.io/yyjson/doc/doxygen/html/</a></p>
+</div><!-- fragment --><p> After executing this script, doxygen will generate HTML files, which can be found in <code>build/doxygen/html</code>. You can also access the pre-generated document online at: <a href="https://ibireme.github.io/yyjson/doc/doxygen/html/">https://ibireme.github.io/yyjson/doc/doxygen/html/</a></p>
 <h2><a class="anchor" id="autotoc_md23"></a>
 Testing With CMake and CTest</h2>
 <p >Build and run all tests: </p><div class="fragment"><div class="line">cmake .. -DYYJSON_BUILD_TESTS=ON</div>
 <div class="line">cmake --build .</div>
 <div class="line">ctest --output-on-failure</div>
-</div><!-- fragment --><p >Build and run tests with <a href="https://valgrind.org/">valgrind</a> memory checker (you must have <code>valgrind</code> installed): </p><div class="fragment"><div class="line">cmake .. -DYYJSON_BUILD_TESTS=ON -DYYJSON_ENABLE_VALGRIND=ON</div>
+</div><!-- fragment --><p >Build and run tests with <a href="https://valgrind.org/">valgrind</a> memory checker, (make sure you have <code>valgrind</code> installed before proceeding): </p><div class="fragment"><div class="line">cmake .. -DYYJSON_BUILD_TESTS=ON -DYYJSON_ENABLE_VALGRIND=ON</div>
 <div class="line">cmake --build .</div>
 <div class="line">ctest --output-on-failure</div>
 </div><!-- fragment --><p >Build and run tests with sanitizer (compiler should be <code>gcc</code> or <code>clang</code>): </p><div class="fragment"><div class="line">cmake .. -DYYJSON_BUILD_TESTS=ON -DYYJSON_ENABLE_SANITIZE=ON</div>
 <div class="line">cmake --build .</div>
 <div class="line">ctest --output-on-failure</div>
-</div><!-- fragment --><p >Build and run code coverage (compiler should be <code>gcc</code>): </p><div class="fragment"><div class="line">cmake .. -DCMAKE_BUILD_TYPE=Debug -DYYJSON_BUILD_TESTS=ON -DYYJSON_ENABLE_COVERAGE=ON</div>
+</div><!-- fragment --><p >Build and run code coverage with <code>gcc</code>: </p><div class="fragment"><div class="line">cmake .. -DCMAKE_BUILD_TYPE=Debug -DYYJSON_BUILD_TESTS=ON -DYYJSON_ENABLE_COVERAGE=ON</div>
 <div class="line">cmake --build . --config Debug</div>
 <div class="line">ctest --output-on-failure</div>
 <div class="line"> </div>
-<div class="line">lcov -c -d ./CMakeFiles/yyjson.dir/src -o cov.info</div>
+<div class="line">lcov -c -d ./CMakeFiles --include &quot;*/yyjson.*&quot; -o cov.info</div>
 <div class="line">genhtml cov.info -o ./cov_report</div>
+</div><!-- fragment --><p >Build and run code coverage with <code>clang</code>: </p><div class="fragment"><div class="line">cmake .. -DCMAKE_BUILD_TYPE=Debug -DYYJSON_BUILD_TESTS=ON -DYYJSON_ENABLE_COVERAGE=ON -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++</div>
+<div class="line">cmake --build . --config Debug</div>
+<div class="line"> </div>
+<div class="line">export LLVM_PROFILE_FILE=cov/profile-%p.profraw</div>
+<div class="line">ctest --output-on-failure</div>
+<div class="line"> </div>
+<div class="line">ctest_files=$(grep -o &quot;test_\w\+ &quot; CTestTestfile.cmake | uniq | tr &#39;\n&#39; &#39; &#39;)</div>
+<div class="line">ctest_files=$(echo $ctest_files | sed &#39;s/  $//&#39; | sed &quot;s/ / -object /g&quot;)</div>
+<div class="line">llvm-profdata merge -sparse cov/profile-*.profraw -o coverage.profdata</div>
+<div class="line">llvm-cov show $ctest_files -instr-profile=coverage.profdata -format=html &gt; coverage.html</div>
 </div><!-- fragment --><p >Build and run fuzz test with <a href="https://llvm.org/docs/LibFuzzer.html">LibFuzzer</a> (compiler should be <code>LLVM Clang</code>, while <code>Apple Clang</code> or <code>gcc</code> are not supported): </p><div class="fragment"><div class="line">cmake .. -DYYJSON_BUILD_FUZZER=ON -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++</div>
 <div class="line">cmake --build .</div>
 <div class="line">./fuzzer -dict=fuzzer.dict ./corpus</div>
 </div><!-- fragment --><h1><a class="anchor" id="autotoc_md24"></a>
 Compile-time Options</h1>
-<p >yyjson supports some compile-time options, you can define these macros as <code>1</code> to disable some features at compile-time.</p>
+<p >This library provides various compile-time options that can be defined as 1 to disable specific features during compilation.</p>
 <p >● <b>YYJSON_DISABLE_READER</b><br  />
- Define it as 1 to disable the JSON reader.<br  />
+ Define this as 1 to disable the JSON reader.<br  />
  This will disable these functions at compile-time: </p><div class="fragment"><div class="line"><a class="code hl_function" href="yyjson_8h.html#acf234d21f0cb4b7fc89381ef25e9f0a8">yyjson_read_opts</a>()</div>
 <div class="line"><a class="code hl_function" href="yyjson_8h.html#a605ac08b083fb65331d7fa5eb5d32225">yyjson_read_file</a>()</div>
 <div class="line"><a class="code hl_function" href="yyjson_8h.html#aeab3c2a1d86225e5b181fb1bba7587d4">yyjson_read</a>()</div>
 <div class="ttc" id="ayyjson_8h_html_a605ac08b083fb65331d7fa5eb5d32225"><div class="ttname"><a href="yyjson_8h.html#a605ac08b083fb65331d7fa5eb5d32225">yyjson_read_file</a></div><div class="ttdeci">yyjson_api yyjson_doc * yyjson_read_file(const char *path, yyjson_read_flag flg, const yyjson_alc *alc, yyjson_read_err *err)</div></div>
 <div class="ttc" id="ayyjson_8h_html_acf234d21f0cb4b7fc89381ef25e9f0a8"><div class="ttname"><a href="yyjson_8h.html#acf234d21f0cb4b7fc89381ef25e9f0a8">yyjson_read_opts</a></div><div class="ttdeci">yyjson_api yyjson_doc * yyjson_read_opts(char *dat, size_t len, yyjson_read_flag flg, const yyjson_alc *alc, yyjson_read_err *err)</div></div>
-<div class="ttc" id="ayyjson_8h_html_aeab3c2a1d86225e5b181fb1bba7587d4"><div class="ttname"><a href="yyjson_8h.html#aeab3c2a1d86225e5b181fb1bba7587d4">yyjson_read</a></div><div class="ttdeci">yyjson_api_inline yyjson_doc * yyjson_read(const char *dat, size_t len, yyjson_read_flag flg)</div><div class="ttdef"><b>Definition:</b> yyjson.h:741</div></div>
+<div class="ttc" id="ayyjson_8h_html_aeab3c2a1d86225e5b181fb1bba7587d4"><div class="ttname"><a href="yyjson_8h.html#aeab3c2a1d86225e5b181fb1bba7587d4">yyjson_read</a></div><div class="ttdeci">yyjson_api_inline yyjson_doc * yyjson_read(const char *dat, size_t len, yyjson_read_flag flg)</div><div class="ttdef"><b>Definition:</b> yyjson.h:827</div></div>
 </div><!-- fragment --><p> This will reduce the binary size by about 60%.<br  />
- It is recommended when you don't need to parse JSON.</p>
+ It is recommended when JSON parsing is not required.</p>
 <p >● <b>YYJSON_DISABLE_WRITER</b><br  />
- Define as 1 to disable JSON writer.<br  />
+ Define this as 1 to disable JSON writer.<br  />
  This will disable these functions at compile-time: </p><div class="fragment"><div class="line"><a class="code hl_function" href="yyjson_8h.html#ad231975496ac3788fe5d69804e295443">yyjson_write</a>()</div>
 <div class="line"><a class="code hl_function" href="yyjson_8h.html#a2d82bd0dc78358326b03e28b9acc19e4">yyjson_write_file</a>()</div>
 <div class="line"><a class="code hl_function" href="yyjson_8h.html#a43ccc01254525cef16699e72079e3e49">yyjson_write_opts</a>()</div>
@@ -239,26 +250,41 @@ Compile-time Options</h1>
 <div class="line"><a class="code hl_function" href="yyjson_8h.html#a700da5ce5bf8bb9d3739cc73a0f51cdf">yyjson_mut_val_write</a>()</div>
 <div class="line"><a class="code hl_function" href="yyjson_8h.html#adf8b2d3c8b57e85d58108d58c68b0db5">yyjson_mut_val_write_file</a>()</div>
 <div class="line"><a class="code hl_function" href="yyjson_8h.html#abdaf14b79fe803289070c0e5d5a705b8">yyjson_mut_val_write_opts</a>()</div>
-<div class="ttc" id="ayyjson_8h_html_a00409eb59aee687f7778d00510b59d38"><div class="ttname"><a href="yyjson_8h.html#a00409eb59aee687f7778d00510b59d38">yyjson_val_write</a></div><div class="ttdeci">yyjson_api_inline char * yyjson_val_write(const yyjson_val *val, yyjson_write_flag flg, size_t *len)</div><div class="ttdef"><b>Definition:</b> yyjson.h:1164</div></div>
+<div class="ttc" id="ayyjson_8h_html_a00409eb59aee687f7778d00510b59d38"><div class="ttname"><a href="yyjson_8h.html#a00409eb59aee687f7778d00510b59d38">yyjson_val_write</a></div><div class="ttdeci">yyjson_api_inline char * yyjson_val_write(const yyjson_val *val, yyjson_write_flag flg, size_t *len)</div><div class="ttdef"><b>Definition:</b> yyjson.h:1335</div></div>
 <div class="ttc" id="ayyjson_8h_html_a2d82bd0dc78358326b03e28b9acc19e4"><div class="ttname"><a href="yyjson_8h.html#a2d82bd0dc78358326b03e28b9acc19e4">yyjson_write_file</a></div><div class="ttdeci">yyjson_api bool yyjson_write_file(const char *path, const yyjson_doc *doc, yyjson_write_flag flg, const yyjson_alc *alc, yyjson_write_err *err)</div></div>
 <div class="ttc" id="ayyjson_8h_html_a43ccc01254525cef16699e72079e3e49"><div class="ttname"><a href="yyjson_8h.html#a43ccc01254525cef16699e72079e3e49">yyjson_write_opts</a></div><div class="ttdeci">yyjson_api char * yyjson_write_opts(const yyjson_doc *doc, yyjson_write_flag flg, const yyjson_alc *alc, size_t *len, yyjson_write_err *err)</div></div>
-<div class="ttc" id="ayyjson_8h_html_a700da5ce5bf8bb9d3739cc73a0f51cdf"><div class="ttname"><a href="yyjson_8h.html#a700da5ce5bf8bb9d3739cc73a0f51cdf">yyjson_mut_val_write</a></div><div class="ttdeci">yyjson_api_inline char * yyjson_mut_val_write(const yyjson_mut_val *val, yyjson_write_flag flg, size_t *len)</div><div class="ttdef"><b>Definition:</b> yyjson.h:1242</div></div>
+<div class="ttc" id="ayyjson_8h_html_a700da5ce5bf8bb9d3739cc73a0f51cdf"><div class="ttname"><a href="yyjson_8h.html#a700da5ce5bf8bb9d3739cc73a0f51cdf">yyjson_mut_val_write</a></div><div class="ttdeci">yyjson_api_inline char * yyjson_mut_val_write(const yyjson_mut_val *val, yyjson_write_flag flg, size_t *len)</div><div class="ttdef"><b>Definition:</b> yyjson.h:1437</div></div>
 <div class="ttc" id="ayyjson_8h_html_a725cc27bd7bd37c1d18c41589abd34db"><div class="ttname"><a href="yyjson_8h.html#a725cc27bd7bd37c1d18c41589abd34db">yyjson_val_write_file</a></div><div class="ttdeci">yyjson_api bool yyjson_val_write_file(const char *path, const yyjson_val *val, yyjson_write_flag flg, const yyjson_alc *alc, yyjson_write_err *err)</div></div>
 <div class="ttc" id="ayyjson_8h_html_a79720744960c9b4fdabbfb28379bbeb4"><div class="ttname"><a href="yyjson_8h.html#a79720744960c9b4fdabbfb28379bbeb4">yyjson_val_write_opts</a></div><div class="ttdeci">yyjson_api char * yyjson_val_write_opts(const yyjson_val *val, yyjson_write_flag flg, const yyjson_alc *alc, size_t *len, yyjson_write_err *err)</div></div>
 <div class="ttc" id="ayyjson_8h_html_a7af42d62aa1583986c687c5cd10b010e"><div class="ttname"><a href="yyjson_8h.html#a7af42d62aa1583986c687c5cd10b010e">yyjson_mut_write_opts</a></div><div class="ttdeci">yyjson_api char * yyjson_mut_write_opts(const yyjson_mut_doc *doc, yyjson_write_flag flg, const yyjson_alc *alc, size_t *len, yyjson_write_err *err)</div></div>
-<div class="ttc" id="ayyjson_8h_html_a881e2ee3f487385810829df8bc675f1f"><div class="ttname"><a href="yyjson_8h.html#a881e2ee3f487385810829df8bc675f1f">yyjson_mut_write</a></div><div class="ttdeci">yyjson_api_inline char * yyjson_mut_write(const yyjson_mut_doc *doc, yyjson_write_flag flg, size_t *len)</div><div class="ttdef"><b>Definition:</b> yyjson.h:1083</div></div>
+<div class="ttc" id="ayyjson_8h_html_a881e2ee3f487385810829df8bc675f1f"><div class="ttname"><a href="yyjson_8h.html#a881e2ee3f487385810829df8bc675f1f">yyjson_mut_write</a></div><div class="ttdeci">yyjson_api_inline char * yyjson_mut_write(const yyjson_mut_doc *doc, yyjson_write_flag flg, size_t *len)</div><div class="ttdef"><b>Definition:</b> yyjson.h:1230</div></div>
 <div class="ttc" id="ayyjson_8h_html_abdaf14b79fe803289070c0e5d5a705b8"><div class="ttname"><a href="yyjson_8h.html#abdaf14b79fe803289070c0e5d5a705b8">yyjson_mut_val_write_opts</a></div><div class="ttdeci">yyjson_api char * yyjson_mut_val_write_opts(const yyjson_mut_val *val, yyjson_write_flag flg, const yyjson_alc *alc, size_t *len, yyjson_write_err *err)</div></div>
-<div class="ttc" id="ayyjson_8h_html_ad231975496ac3788fe5d69804e295443"><div class="ttname"><a href="yyjson_8h.html#ad231975496ac3788fe5d69804e295443">yyjson_write</a></div><div class="ttdeci">yyjson_api_inline char * yyjson_write(const yyjson_doc *doc, yyjson_write_flag flg, size_t *len)</div><div class="ttdef"><b>Definition:</b> yyjson.h:1003</div></div>
+<div class="ttc" id="ayyjson_8h_html_ad231975496ac3788fe5d69804e295443"><div class="ttname"><a href="yyjson_8h.html#ad231975496ac3788fe5d69804e295443">yyjson_write</a></div><div class="ttdeci">yyjson_api_inline char * yyjson_write(const yyjson_doc *doc, yyjson_write_flag flg, size_t *len)</div><div class="ttdef"><b>Definition:</b> yyjson.h:1126</div></div>
 <div class="ttc" id="ayyjson_8h_html_ad2a7aa77fa66a593536e3d7c3edb1d7a"><div class="ttname"><a href="yyjson_8h.html#ad2a7aa77fa66a593536e3d7c3edb1d7a">yyjson_mut_write_file</a></div><div class="ttdeci">yyjson_api bool yyjson_mut_write_file(const char *path, const yyjson_mut_doc *doc, yyjson_write_flag flg, const yyjson_alc *alc, yyjson_write_err *err)</div></div>
 <div class="ttc" id="ayyjson_8h_html_adf8b2d3c8b57e85d58108d58c68b0db5"><div class="ttname"><a href="yyjson_8h.html#adf8b2d3c8b57e85d58108d58c68b0db5">yyjson_mut_val_write_file</a></div><div class="ttdeci">yyjson_api bool yyjson_mut_val_write_file(const char *path, const yyjson_mut_val *val, yyjson_write_flag flg, const yyjson_alc *alc, yyjson_write_err *err)</div></div>
 </div><!-- fragment --><p> This will reduce the binary size by about 30%.<br  />
- It is recommended when you don't need to serialize JSON.</p>
+ It is recommended when JSON serialization is not required.</p>
+<p >● <b>YYJSON_DISABLE_UTILS</b><br  />
+ Define this as 1 to disable JSON Pointer, JSON Patch and JSON Merge Patch supports.</p>
+<p >This will disable these functions at compile-time: </p><div class="fragment"><div class="line">yyjson_ptr_xxx()</div>
+<div class="line">yyjson_mut_ptr_xxx()</div>
+<div class="line">yyjson_doc_ptr_xxx()</div>
+<div class="line">yyjson_mut_doc_ptr_xxx()</div>
+<div class="line"><a class="code hl_function" href="yyjson_8h.html#a2d0864410efdd15e4591fecc0b4c082c">yyjson_patch</a>()</div>
+<div class="line"><a class="code hl_function" href="yyjson_8h.html#ad4cca957150bd6f19fa12a4f907dffee">yyjson_mut_patch</a>()</div>
+<div class="line"><a class="code hl_function" href="yyjson_8h.html#a9026faa4e022392c28e8f9afa553362f">yyjson_merge_patch</a>()</div>
+<div class="line"><a class="code hl_function" href="yyjson_8h.html#aad64266ebfbdd2a9627050cf1f3f48d7">yyjson_mut_merge_patch</a>()</div>
+<div class="ttc" id="ayyjson_8h_html_a2d0864410efdd15e4591fecc0b4c082c"><div class="ttname"><a href="yyjson_8h.html#a2d0864410efdd15e4591fecc0b4c082c">yyjson_patch</a></div><div class="ttdeci">yyjson_api yyjson_mut_val * yyjson_patch(yyjson_mut_doc *doc, yyjson_val *orig, yyjson_val *patch, yyjson_patch_err *err)</div></div>
+<div class="ttc" id="ayyjson_8h_html_a9026faa4e022392c28e8f9afa553362f"><div class="ttname"><a href="yyjson_8h.html#a9026faa4e022392c28e8f9afa553362f">yyjson_merge_patch</a></div><div class="ttdeci">yyjson_api yyjson_mut_val * yyjson_merge_patch(yyjson_mut_doc *doc, yyjson_val *orig, yyjson_val *patch)</div></div>
+<div class="ttc" id="ayyjson_8h_html_aad64266ebfbdd2a9627050cf1f3f48d7"><div class="ttname"><a href="yyjson_8h.html#aad64266ebfbdd2a9627050cf1f3f48d7">yyjson_mut_merge_patch</a></div><div class="ttdeci">yyjson_api yyjson_mut_val * yyjson_mut_merge_patch(yyjson_mut_doc *doc, yyjson_mut_val *orig, yyjson_mut_val *patch)</div></div>
+<div class="ttc" id="ayyjson_8h_html_ad4cca957150bd6f19fa12a4f907dffee"><div class="ttname"><a href="yyjson_8h.html#ad4cca957150bd6f19fa12a4f907dffee">yyjson_mut_patch</a></div><div class="ttdeci">yyjson_api yyjson_mut_val * yyjson_mut_patch(yyjson_mut_doc *doc, yyjson_mut_val *orig, yyjson_mut_val *patch, yyjson_patch_err *err)</div></div>
+</div><!-- fragment --><p> It is recommended when these functions are not required.</p>
 <p >● <b>YYJSON_DISABLE_FAST_FP_CONV</b><br  />
- Define as 1 to disable the fast floating-point number conversion in yyjson, and use libc's <code>strtod/snprintf</code> instead.<br  />
- This will reduce binary size by about 30%, but significantly slow down the floating-point read/write speed.<br  />
- It is recommended when you don't need to deal with JSON that contains a lot of floating point numbers.</p>
+ Define this as 1 to disable the fast floating-point number conversion in yyjson, and use libc's <code>strtod/snprintf</code> instead.<br  />
+ This will reduce binary size by about 30%, but significantly slows down the floating-point read/write speed.<br  />
+ It is recommended when dealing with JSON that contains a minimal number of floating-point numbers.</p>
 <p >● <b>YYJSON_DISABLE_NON_STANDARD</b><br  />
- Define as 1 to disable non-standard JSON support at compile-time:</p>
+ Define this as 1 to disable non-standard JSON support at compile-time:</p>
 <ul>
 <li>Reading and writing inf/nan literal, such as <code>NaN</code>, <code>-Infinity</code>.</li>
 <li>Single line and multiple line comments.</li>
@@ -271,18 +297,18 @@ Compile-time Options</h1>
 <div class="line"><a class="code hl_variable" href="yyjson_8h.html#abdbf139ee03d263c8a833fbef8cbf63c">YYJSON_READ_ALLOW_INVALID_UNICODE</a></div>
 <div class="line"><a class="code hl_variable" href="yyjson_8h.html#a38fa90e4cf75b0a78148de2058c1b3bd">YYJSON_WRITE_ALLOW_INF_AND_NAN</a></div>
 <div class="line"><a class="code hl_variable" href="yyjson_8h.html#ae2709fd5ec704ef7a569d62195e4652d">YYJSON_WRITE_ALLOW_INVALID_UNICODE</a></div>
-<div class="ttc" id="ayyjson_8h_html_a046c7832484dab943bed61ffac274e9c"><div class="ttname"><a href="yyjson_8h.html#a046c7832484dab943bed61ffac274e9c">YYJSON_READ_ALLOW_TRAILING_COMMAS</a></div><div class="ttdeci">static const yyjson_read_flag YYJSON_READ_ALLOW_TRAILING_COMMAS</div><div class="ttdef"><b>Definition:</b> yyjson.h:591</div></div>
-<div class="ttc" id="ayyjson_8h_html_a38fa90e4cf75b0a78148de2058c1b3bd"><div class="ttname"><a href="yyjson_8h.html#a38fa90e4cf75b0a78148de2058c1b3bd">YYJSON_WRITE_ALLOW_INF_AND_NAN</a></div><div class="ttdeci">static const yyjson_write_flag YYJSON_WRITE_ALLOW_INF_AND_NAN</div><div class="ttdef"><b>Definition:</b> yyjson.h:878</div></div>
-<div class="ttc" id="ayyjson_8h_html_a4b5c0a7092625f0324bccec938f8862f"><div class="ttname"><a href="yyjson_8h.html#a4b5c0a7092625f0324bccec938f8862f">YYJSON_READ_ALLOW_INF_AND_NAN</a></div><div class="ttdeci">static const yyjson_read_flag YYJSON_READ_ALLOW_INF_AND_NAN</div><div class="ttdef"><b>Definition:</b> yyjson.h:598</div></div>
-<div class="ttc" id="ayyjson_8h_html_abdbf139ee03d263c8a833fbef8cbf63c"><div class="ttname"><a href="yyjson_8h.html#abdbf139ee03d263c8a833fbef8cbf63c">YYJSON_READ_ALLOW_INVALID_UNICODE</a></div><div class="ttdeci">static const yyjson_read_flag YYJSON_READ_ALLOW_INVALID_UNICODE</div><div class="ttdef"><b>Definition:</b> yyjson.h:612</div></div>
-<div class="ttc" id="ayyjson_8h_html_ae2709fd5ec704ef7a569d62195e4652d"><div class="ttname"><a href="yyjson_8h.html#ae2709fd5ec704ef7a569d62195e4652d">YYJSON_WRITE_ALLOW_INVALID_UNICODE</a></div><div class="ttdeci">static const yyjson_write_flag YYJSON_WRITE_ALLOW_INVALID_UNICODE</div><div class="ttdef"><b>Definition:</b> yyjson.h:889</div></div>
-<div class="ttc" id="ayyjson_8h_html_aff1d62b68993630e74355e4611b77520"><div class="ttname"><a href="yyjson_8h.html#aff1d62b68993630e74355e4611b77520">YYJSON_READ_ALLOW_COMMENTS</a></div><div class="ttdeci">static const yyjson_read_flag YYJSON_READ_ALLOW_COMMENTS</div><div class="ttdef"><b>Definition:</b> yyjson.h:594</div></div>
-</div><!-- fragment --><p >This will reduce binary size by about 10%, and increase performance slightly.<br  />
- It is recommended when you don't need to deal with non-standard JSON.</p>
+<div class="ttc" id="ayyjson_8h_html_a046c7832484dab943bed61ffac274e9c"><div class="ttname"><a href="yyjson_8h.html#a046c7832484dab943bed61ffac274e9c">YYJSON_READ_ALLOW_TRAILING_COMMAS</a></div><div class="ttdeci">static const yyjson_read_flag YYJSON_READ_ALLOW_TRAILING_COMMAS</div><div class="ttdef"><b>Definition:</b> yyjson.h:649</div></div>
+<div class="ttc" id="ayyjson_8h_html_a38fa90e4cf75b0a78148de2058c1b3bd"><div class="ttname"><a href="yyjson_8h.html#a38fa90e4cf75b0a78148de2058c1b3bd">YYJSON_WRITE_ALLOW_INF_AND_NAN</a></div><div class="ttdeci">static const yyjson_write_flag YYJSON_WRITE_ALLOW_INF_AND_NAN</div><div class="ttdef"><b>Definition:</b> yyjson.h:973</div></div>
+<div class="ttc" id="ayyjson_8h_html_a4b5c0a7092625f0324bccec938f8862f"><div class="ttname"><a href="yyjson_8h.html#a4b5c0a7092625f0324bccec938f8862f">YYJSON_READ_ALLOW_INF_AND_NAN</a></div><div class="ttdeci">static const yyjson_read_flag YYJSON_READ_ALLOW_INF_AND_NAN</div><div class="ttdef"><b>Definition:</b> yyjson.h:656</div></div>
+<div class="ttc" id="ayyjson_8h_html_abdbf139ee03d263c8a833fbef8cbf63c"><div class="ttname"><a href="yyjson_8h.html#abdbf139ee03d263c8a833fbef8cbf63c">YYJSON_READ_ALLOW_INVALID_UNICODE</a></div><div class="ttdeci">static const yyjson_read_flag YYJSON_READ_ALLOW_INVALID_UNICODE</div><div class="ttdef"><b>Definition:</b> yyjson.h:670</div></div>
+<div class="ttc" id="ayyjson_8h_html_ae2709fd5ec704ef7a569d62195e4652d"><div class="ttname"><a href="yyjson_8h.html#ae2709fd5ec704ef7a569d62195e4652d">YYJSON_WRITE_ALLOW_INVALID_UNICODE</a></div><div class="ttdeci">static const yyjson_write_flag YYJSON_WRITE_ALLOW_INVALID_UNICODE</div><div class="ttdef"><b>Definition:</b> yyjson.h:984</div></div>
+<div class="ttc" id="ayyjson_8h_html_aff1d62b68993630e74355e4611b77520"><div class="ttname"><a href="yyjson_8h.html#aff1d62b68993630e74355e4611b77520">YYJSON_READ_ALLOW_COMMENTS</a></div><div class="ttdeci">static const yyjson_read_flag YYJSON_READ_ALLOW_COMMENTS</div><div class="ttdef"><b>Definition:</b> yyjson.h:652</div></div>
+</div><!-- fragment --><p >This will reduce binary size by about 10%, and slightly improves performance.<br  />
+ It is recommended when not dealing with non-standard JSON.</p>
 <p >● <b>YYJSON_EXPORTS</b><br  />
- Define it as 1 to export symbols when building the library as Windows DLL.</p>
+ Define this as 1 to export symbols when building the library as a Windows DLL.</p>
 <p >● <b>YYJSON_IMPORTS</b><br  />
- Define it as 1 to import symbols when using the library as Windows DLL. </p>
+ Define this as 1 to import symbols when using the library as a Windows DLL. </p>
 </div></div><!-- contents -->
 </div><!-- PageDoc -->
 </div><!-- doc-content -->
