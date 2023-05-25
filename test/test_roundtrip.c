@@ -1,3 +1,5 @@
+// This file is used to test the round-trip JSON reading and writing.
+
 #include "yyjson.h"
 #include "yy_test_utils.h"
 #include <locale.h>
@@ -79,8 +81,11 @@ void test_roundtrip_locale(void) {
 
 
 yy_test_case(test_roundtrip) {
+    // decimal point is '.'
     setlocale(LC_ALL, "C");
     test_roundtrip_locale();
+    
+    // decimal point is ','
     setlocale(LC_ALL, "fr_FR");
     test_roundtrip_locale();
 }

@@ -1,3 +1,8 @@
+/* 
+ This file is used to test the compatibility of ANSI C. 
+ It should be able to compile successfully in strict ANSI C environments.
+*/
+
 #include "yyjson.c"
 
 int main(void) {

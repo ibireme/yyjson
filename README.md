@@ -9,19 +9,19 @@
 A high performance JSON library written in ANSI C.
 
 # Features
-- **Fast**: can read or write gigabytes per second JSON data on modern CPU.
-- **Portable**: compliance with ANSI C (C89).
-- **Standard**: strict compliance with [RFC 8259](https://tools.ietf.org/html/rfc8259) standard.
-- **Safe**: complete JSON form, number format and UTF-8 validation.
-- **Accuracy**: can read and write `int64`, `uint64` and `double` numbers accurately.
-- **Flexible**: support unlimited JSON level, `\u0000` and non null-terminated string.
-- **Extendable**: options to allow comments, trailing commas, nan/inf, custom memory allocator.
-- **Developer Friendly**: only one `h` and one `c` file, easy to integrate.
+- **Fast**: can read or write gigabytes per second JSON data on modern CPUs.
+- **Portable**: complies with ANSI C (C89) for cross-platform compatibility.
+- **Strict**: strictly complies with [RFC 8259](https://datatracker.ietf.org/doc/html/rfc8259) JSON standard, ensuring strict number format and UTF-8 validation.
+- **Extendable**: offers options to allow comments, trailing commas, NaN/Inf, and custom memory allocator.
+- **Accuracy**: can accurately read and write `int64`, `uint64`, and `double` numbers.
+- **Flexible**: supports unlimited JSON nesting levels, `\u0000` characters, and non null-terminated strings.
+- **Manipulation**: supports querying and modifying using [JSON Pointer](https://datatracker.ietf.org/doc/html/rfc6901), as well as [JSON Patch](https://datatracker.ietf.org/doc/html/rfc6902) and [JSON Merge Patch](https://datatracker.ietf.org/doc/html/rfc7386).
+- **Developer-Friendly**: easy integration with only one `h` and one `c` file.
 
 # Limitations
-- An array or object is stored as some [data structure](https://ibireme.github.io/yyjson/doc/doxygen/html/md_doc__data_structure.html) like linked list, access elements with index or key is slower than iterator.
+- An array or object is stored as a [data structure](https://ibireme.github.io/yyjson/doc/doxygen/html/md_doc__data_structure.html) such as linked list, which makes accessing elements by index or key slower than using an iterator.
 - Duplicate keys are allowed in an object, and the order of the keys is preserved.
-- JSON parsing result is immutable, a `mutable copy` is required for modification.
+- JSON parsing result is immutable, requiring a `mutable copy` for modification.
 
 # Performance
 Benchmark project and dataset: [yyjson_benchmark](https://github.com/ibireme/yyjson_benchmark)
@@ -194,6 +194,8 @@ yyjson_mut_doc_free(doc);
 ```
 
 # Documentation
+The latest (unreleased) documentation can be accessed in the [doc](https://github.com/ibireme/yyjson/tree/master/doc) directory.
+The pre-generated Doxygen HTML for the release version can be viewed here:
 * [Home Page](https://ibireme.github.io/yyjson/doc/doxygen/html/)
     * [Build and test](https://ibireme.github.io/yyjson/doc/doxygen/html/md_doc__build_and_test.html)
     * [API and sample code](https://ibireme.github.io/yyjson/doc/doxygen/html/md_doc__a_p_i.html)

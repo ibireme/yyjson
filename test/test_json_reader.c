@@ -1,3 +1,5 @@
+// This file is used to test the functionality of JSON reader.
+
 #include "yyjson.h"
 #include "yy_test_utils.h"
 

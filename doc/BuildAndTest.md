@@ -1,20 +1,20 @@
 Building and testing
 ==============
 
-There are several ways to integrate yyjson into your project: source code, package manager, and CMake.
+There are several ways to integrate this library into your project: source code, package manager, and CMake.
 
 
 # Source code
 This library aims to provide a cross-platform JSON library, so it is written in ANSI C (actually C99, but compatible with strict C89). You can copy `yyjson.h` and `yyjson.c` to your project and start using it without any configuration.
 
-The library has been tested with `gcc`, `clang`, `msvc`, `tcc` compilers in [CI](https://github.com/ibireme/yyjson/actions). Please [report a bug](https://github.com/ibireme/yyjson/issues/new?template=bug_report.md) if you encounter any compilation issues.
+The library has been tested with `gcc`, `clang`, `msvc`, `tcc` compilers and `x86`, `arm`, `ppc`, `riscv`, `s390x` architectures in [Github CI](https://github.com/ibireme/yyjson/actions). Please [report a bug](https://github.com/ibireme/yyjson/issues/new?template=bug_report.md) if you encounter any compilation issues.
 
-The library has all features enabled by default, but you can trim out some of them by adding compile-time options. For example, disable JSON writer to reduce the binary size when you don't need serialization, or disable comments support to improve parsing performance. See `Compile-time Options` for details.
+The library has all features enabled by default, but you can trim out some of them by adding compile-time options. For example, you can disable the JSON writer to reduce the binary size when you don't need serialization, or disable comments support to improve parsing performance. See `Compile-time Options` for details.
 
 
 # Package manager
 
-You can use some popular package managers to download and install yyjson, such as `vcpkg`, `conan`, and `xmake`. The yyjson package in these package managers is kept up to date by community contributors. If the version is out of date, please create an issue or pull request on their repository.
+You can use some popular package managers like `vcpkg`, `conan`, and `xmake` to download and install yyjson. The yyjson package in these package managers is kept up to date by community contributors. If the version is out of date, please create an issue or pull request on their repository.
 
 ## Use vcpkg
 
@@ -73,7 +73,7 @@ Supported CMake options:
 
 ## Use CMake as a dependency
 
-You can download and unzip yyjson to your project folder and link it in your `CMakeLists.txt` file:
+You can download and unzip yyjson to your project directory and link it in your `CMakeLists.txt` file:
 ```cmake
 # Add some options (optional)
 set(YYJSON_DISABLE_NON_STANDARD ON CACHE INTERNAL "")
@@ -85,7 +85,7 @@ add_subdirectory(vendor/yyjson)
 target_link_libraries(your_target PRIVATE yyjson)
 ```
 
-If your CMake version is higher than 3.14, you can use the following method to let CMake automatically download it:
+If your CMake version is higher than 3.14, you can use the following code to let CMake automatically download it:
 ```cmake
 include(FetchContent)
 
@@ -103,7 +103,7 @@ target_link_libraries(your_target PRIVATE yyjson)
 
 
 ## Use CMake to generate project
-If you want to build or debug `yyjson` with another compiler or IDE, try these commands:
+If you want to build or debug yyjson with another compiler or IDE, try these commands:
 ```shell
 # Clang for Linux/Unix:
 cmake .. -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
@@ -131,12 +131,12 @@ cmake .. -G Xcode -DYYJSON_BUILD_TESTS=ON
 
 ## Use CMake to generate documentation
 
-yyjson uses [doxygen](https://www.doxygen.nl/) to generate the documentation (you must have `doxygen` installed):
+This library uses [doxygen](https://www.doxygen.nl/) to generate the documentation, (make sure you have `doxygen` installed before proceeding):
 ```shell
 cmake .. -DYYJSON_BUILD_DOC=ON
 cmake --build .
 ```
-After executing this script, doxygen will output the generated html files to `build/doxygen/html`. You can also read the pre-generated document online: https://ibireme.github.io/yyjson/doc/doxygen/html/
+After executing this script, doxygen will generate HTML files, which can be found in `build/doxygen/html`. You can also access the pre-generated document online at: https://ibireme.github.io/yyjson/doc/doxygen/html/
 
 
 ## Testing With CMake and CTest
@@ -148,7 +148,7 @@ cmake --build .
 ctest --output-on-failure
 ```
 
-Build and run tests with [valgrind](https://valgrind.org/) memory checker (you must have `valgrind` installed):
+Build and run tests with [valgrind](https://valgrind.org/) memory checker, (make sure you have `valgrind` installed before proceeding):
 ```shell
 cmake .. -DYYJSON_BUILD_TESTS=ON -DYYJSON_ENABLE_VALGRIND=ON
 cmake --build .
@@ -195,10 +195,10 @@ cmake --build .
 
 
 # Compile-time Options
-yyjson supports some compile-time options, you can define these macros as `1` to disable some features at compile-time.
+This library provides various compile-time options that can be defined as 1 to disable specific features during compilation.
 
 ● **YYJSON_DISABLE_READER**<br/>
-Define it as 1 to disable the JSON reader.<br/>
+Define this as 1 to disable the JSON reader.<br/>
 This will disable these functions at compile-time:
 ```c
 yyjson_read_opts()
@@ -206,10 +206,10 @@ yyjson_read_file()
 yyjson_read()
  ```
 This will reduce the binary size by about 60%.<br/>
-It is recommended when you don't need to parse JSON.
+It is recommended when JSON parsing is not required.
 
 ● **YYJSON_DISABLE_WRITER**<br/>
-Define as 1 to disable JSON writer.<br/>
+Define this as 1 to disable JSON writer.<br/>
 This will disable these functions at compile-time:
 ```c
 yyjson_write()
@@ -226,10 +226,10 @@ yyjson_mut_val_write_file()
 yyjson_mut_val_write_opts()
 ```
 This will reduce the binary size by about 30%.<br/>
-It is recommended when you don't need to serialize JSON.
+It is recommended when JSON serialization is not required.
 
 ● **YYJSON_DISABLE_UTILS**<br/>
- Define as 1 to disable JSON Pointer, JSON Patch and JSON Merge Patch supports.
+ Define this as 1 to disable JSON Pointer, JSON Patch and JSON Merge Patch supports.
  
  This will disable these functions at compile-time:
  ```c
@@ -242,16 +242,16 @@ It is recommended when you don't need to serialize JSON.
  yyjson_merge_patch()
  yyjson_mut_merge_patch()
  ```
-It is recommended when you don't need these functions.
+It is recommended when these functions are not required.
 
 ● **YYJSON_DISABLE_FAST_FP_CONV**<br/>
-Define as 1 to disable the fast floating-point number conversion in yyjson,
+Define this as 1 to disable the fast floating-point number conversion in yyjson,
  and use libc's `strtod/snprintf` instead.<br/>
-This will reduce binary size by about 30%, but significantly slow down the floating-point read/write speed.<br/>
-It is recommended when you don't need to deal with JSON that contains a lot of floating point numbers.
+This will reduce binary size by about 30%, but significantly slows down the floating-point read/write speed.<br/>
+It is recommended when dealing with JSON that contains a minimal number of floating-point numbers.
 
 ● **YYJSON_DISABLE_NON_STANDARD**<br/>
-Define as 1 to disable non-standard JSON support at compile-time:
+Define this as 1 to disable non-standard JSON support at compile-time:
 
 - Reading and writing inf/nan literal, such as `NaN`, `-Infinity`.
 - Single line and multiple line comments.
@@ -268,11 +268,11 @@ YYJSON_WRITE_ALLOW_INF_AND_NAN
 YYJSON_WRITE_ALLOW_INVALID_UNICODE
 ```
 
-This will reduce binary size by about 10%, and increase performance slightly.<br/>
-It is recommended when you don't need to deal with non-standard JSON.
+This will reduce binary size by about 10%, and slightly improves performance.<br/>
+It is recommended when not dealing with non-standard JSON.
 
 ● **YYJSON_EXPORTS**<br/>
-Define it as 1 to export symbols when building the library as Windows DLL.
+Define this as 1 to export symbols when building the library as a Windows DLL.
 
 ● **YYJSON_IMPORTS**<br/>
-Define it as 1 to import symbols when using the library as Windows DLL.
+Define this as 1 to import symbols when using the library as a Windows DLL.

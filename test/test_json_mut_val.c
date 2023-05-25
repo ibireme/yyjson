@@ -1,3 +1,5 @@
+// This file is used to test the functions related to `yyjson_mut_val`.
+
 #include "yyjson.h"
 #include "yy_test_utils.h"
 

@@ -1,3 +1,5 @@
+// This file is used to test the `JSON Merge Patch` functions.
+
 #include "yyjson.h"
 #include "yy_test_utils.h"
 

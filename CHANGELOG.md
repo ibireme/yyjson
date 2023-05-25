@@ -5,21 +5,21 @@ All notable changes to this project will be documented in this file.
 ## Unreleased
 #### Added
 - Add `YYJSON_WRITE_PRETTY_TWO_SPACES` option to allow 2 spaces instead of 4 spaces when writing pretty JSON: #99
-- Add `YYJSON_READ_BIGNUM_AS_RAW` option to read big number as raw string: #124
+- Add `YYJSON_READ_BIGNUM_AS_RAW` option to read big numbers as raw strings: #124
 - Add `yyjson_get_num()` function to convert and return any number value as `double`: #108
 - Add support for Loongarch: #112
 - Add functions to get type-specific values specified by JSON Pointer: #116
 - Add functions to read/write JSON with file pointer `FILE *`: #122
 - Add functions to support modifying memory pool size of `yyjson_mut_doc`.
 - Add convenience functions `iter_with()` for creating iterator.
-- Add functions to modify JSON by JSON Pointer, such as `ptr_set()` and `ptr_remove()`.
+- Add functions to modify JSON using JSON Pointer, such as `ptr_set()` and `ptr_remove()`.
 - Add support for JSON Patch (RFC 6902).
 
 #### Changed
-- **BREAKING CHANGE:** Change allocator's realloc function signature, add `old_size` parameter for custom allocator: #100
+- **BREAKING CHANGE:** Change the allocator's realloc function signature, add `old_size` parameter for custom allocator: #100
 - **BREAKING CHANGE:** Change `yyjson_read_number()` function, add `alc` parameter.
 - **DEPRECATED:** Deprecate `get_pointer()` functions, rename to `ptr_get()`.
-- Improve `yyjson_mut_write()` performance.
+- Improve performance of `yyjson_mut_write()` function.
 
 #### Fixed
 - Fix inaccurate error code for truncated JSON: #103
@@ -27,7 +27,7 @@ All notable changes to this project will be documented in this file.
 
 ## 0.6.0 (2022-12-12)
 #### Added
-- Add functions to modify the content of a JSON value, for example `yyjson_set_int(yyjson_val *val, int num)`.
+- Add functions to modify the content of a JSON value, such as `yyjson_set_int(yyjson_val *val, int num)`.
 - Add functions to copy from mutable doc to immutable doc.
 - Add functions to support renaming an object's key.
 - Add the `yyjson_read_number()` function to parse numeric strings.
@@ -35,8 +35,8 @@ All notable changes to this project will be documented in this file.
 
 #### Fixed
 - Fix quite NaN on MIPS and HPPA arch.
-- Fixed compile error before `GCC 4.5` which doesn't support empty optional extended asm label.
-- When built-in floating point conversion is disabled, sprintf() output for floating point numbers is missing a decimal point, for example 123 should be 123.0.
+- Fixed compile error before `GCC 4.5`, which doesn't support empty optional extended asm label.
+- When the built-in floating point conversion is disabled, the `sprintf()` output for floating point numbers is missing a decimal point, for example 123 should be 123.0.
 
 
 ## 0.5.1 (2022-06-17)
@@ -50,9 +50,9 @@ All notable changes to this project will be documented in this file.
 - Add LibFuzzer support.
 - Add Doxygen support.
 - Add functions to support serializing a single JSON value.
-- Add `yyjson_mut_doc_mut_copy()`, `yyjson_mut_val_mut_copy()`, `yyjson_mut_merge_patch()` function for mutable input.
-- Add `yyjson_equals()` and `yyjson_mut_equals()` function to compare two values.
-- Add `yyjson_mut_obj_remove_key()` and `yyjson_mut_obj_remove_keyn()` to make it easier to remove a key.
+- Add `yyjson_mut_doc_mut_copy()`, `yyjson_mut_val_mut_copy()`, `yyjson_mut_merge_patch()` functions for mutable input.
+- Add `yyjson_equals()` and `yyjson_mut_equals()` functions to compare two values.
+- Add `yyjson_mut_obj_remove_key()` and `yyjson_mut_obj_remove_keyn()` functions to simplify key removal.
 - Add `YYJSON_READ_NUMBER_AS_RAW` option and `RAW` type support.
 - Add `YYJSON_READ_ALLOW_INVALID_UNICODE` and `YYJSON_WRITE_ALLOW_INVALID_UNICODE` options to allow invalid unicode.
 
@@ -62,7 +62,7 @@ All notable changes to this project will be documented in this file.
 - Rewrite the JSON Pointer implementation, remove internal malloc() calls.
 
 #### Fixed
-- Make the code work correctly with setlocale() function and fast-math flag: #54
+- Make the code work correctly with `setlocale()` function and `-ffast-math` flag: #54
 - Fix negative infinity literals read error: #64
 - Fix non null-terminated string write error.
 - Fix incorrect behavior of `YYJSON_DISABLE_NON_STANDARD` flag: #80
@@ -72,13 +72,13 @@ All notable changes to this project will be documented in this file.
 #### Added
 - Add `YYJSON_WRITE_INF_AND_NAN_AS_NULL` flag for JSON writer.
 - Add `yyjson_merge_patch()` function for JSON Merge-Path API (RFC 7386).
-- Add `yyjson_mut_obj_replace()` and `yyjson_mut_obj_insert()` function for object modification.
-- Add `yyjson_obj_iter_get()` and `yyjson_mut_obj_iter_get()` function for faster object search.
+- Add `yyjson_mut_obj_replace()` and `yyjson_mut_obj_insert()` functions for object modification.
+- Add `yyjson_obj_iter_get()` and `yyjson_mut_obj_iter_get()` functions for faster object search.
 - Add `yyjson_version()` function.
 
 #### Changed
-- Replace `YYJSON_DISABLE_COMMENT_READER` and `YYJSON_DISABLE_INF_AND_NAN_READER` with `YYJSON_DISABLE_NON_STANDARD` compiler flag.
-- Replace `YYJSON_DISABLE_FP_READER` and `YYJSON_DISABLE_FP_WRITER` with `YYJSON_DISABLE_FAST_FP_CONV` compiler flag.
+- Replace `YYJSON_DISABLE_COMMENT_READER` and `YYJSON_DISABLE_INF_AND_NAN_READER` with `YYJSON_DISABLE_NON_STANDARD` compile-time flag.
+- Replace `YYJSON_DISABLE_FP_READER` and `YYJSON_DISABLE_FP_WRITER` with `YYJSON_DISABLE_FAST_FP_CONV` compile-time flag.
 
 #### Fixed
 - Fix compiler warning with `-Wconversion`
@@ -91,12 +91,12 @@ All notable changes to this project will be documented in this file.
 - Add CMake install target.
 
 #### Changed
-- Improve performance for some arch which doesn't support unaligned memory access.
+- Improve performance for some architectures that don't support unaligned memory access.
 
 #### Fixed
-- Fix some compiler warning for GCC and Clang.
+- Fix some compiler warnings for GCC and Clang.
 - Fix MSVC build error on UWP (uninitialized local variable).
-- Fix stream file reading error on some platform.
+- Fix stream file reading error on some platforms.
 
 
 ## 0.2.0 (2020-12-12)
@@ -110,7 +110,7 @@ All notable changes to this project will be documented in this file.
 - Strict UTF-8 validation for JSON reader.
 
 #### Removed
-- Remove `YYJSON_READ_FASTFP` compiler flag.
+- Remove `YYJSON_READ_FASTFP` compile-time flag.
 
 #### Fixed
 - Fix a compile error for old version gcc on linux: #7.

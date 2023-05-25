@@ -1,3 +1,5 @@
+// This file is used to test string processing and Unicode encoding validation.
+
 #include "yyjson.h"
 #include "yy_test_utils.h"
 

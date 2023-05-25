@@ -1,3 +1,6 @@
+// This file is used to test the accuracy of the error codes of 
+// json_read and json_write.
+
 #include "yyjson.h"
 #include "yy_test_utils.h"
 

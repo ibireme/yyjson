@@ -1,3 +1,8 @@
+// This file is used to test the functionality of number reading and writing.
+// It contains various test data to detect how numbers are handled in different
+// boundary cases. The results are compared with google/double-conversion to
+// ensure accuracy.
+
 #include "yyjson.h"
 #include "yy_test_utils.h"
 #include "goo_double_conv.h"

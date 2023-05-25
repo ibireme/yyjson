@@ -14,14 +14,13 @@ All public functions and structs are prefixed with `yyjson_`, and all constants 
 
 The library have 2 types of data structures: immutable and mutable:
 
-|type|immutable|mutable|
-|---|---|---|
-|document|yyjson_doc|yyjson_mut_doc|
-|value|yyjson_val|yyjson_mut_val|
+|          | Immutable  | Mutable        |
+|----------|------------|----------------|
+| Document | yyjson_doc | yyjson_mut_doc |
+| Value    | yyjson_val | yyjson_mut_val |
 
-
-When reading a JSON, yyjson returns immutable documents and values;<br/>
-When building a JSON, yyjson creates mutable documents and values;<br/>
+When reading a JSON, yyjson returns immutable documents and values.<br/>
+When building a JSON, yyjson creates mutable documents and values.<br/>
 The document holds the memory for all its JSON values and strings.<br/>
 
 For most immutable APIs, you can just add a `mut` after `yyjson_` to get the mutable version, for example:
@@ -49,7 +48,7 @@ yyjson_doc *yyjson_mut_val_imut_copy(yyjson_mut_val *val, ...);
 
 ## API for string
 The library supports strings with or without null-terminator ('\0').<br/>
-When you need to use a string without null terminator, or you know the length of the string explicitly, you can use the function that ends with `n`, for example:
+When you need to use a string without a null-terminator or when you explicitly know the length of the string, you can use the function that ends with `n`, for example:
 ```c
 // null-terminator is required
 bool yyjson_equals_str(yyjson_val *val, const char *str);
@@ -57,7 +56,7 @@ bool yyjson_equals_str(yyjson_val *val, const char *str);
 bool yyjson_equals_strn(yyjson_val *val, const char *str, size_t len);
 ```
 
-When creating JSON, yyjson treats strings as constants for better performance. When your string will be modified, you should use a function with a `cpy` to copy the string to the document, for example:
+When creating JSON, yyjson treats strings as constants for better performance. However, if your string will be modified, you should use a function with a `cpy` to copy the string to the document, for example:
 ```c
 // reference only, null-terminated is required
 yyjson_mut_val *yyjson_mut_str(yyjson_mut_doc *doc, const char *str);
@@ -73,10 +72,10 @@ yyjson_mut_val *yyjson_mut_strncpy(yyjson_mut_doc *doc, const char *str, size_t 
 
 
 ---------------
-# Read JSON
-The library provides 4 functions for reading JSON,<br/>
-each function accepts an input of UTF-8 data or a file,<br/>
-returns a document if it succeeds or returns NULL if it fails.
+# Reading JSON
+The library provides 4 functions for reading JSON.<br/>
+Each function accepts an input of UTF-8 data or a file,<br/>
+returns a document if it successful or `NULL` if it fails.
 
 ## Read JSON from string
 The `dat` should be a UTF-8 string, null-terminator is not required.<br/>
@@ -189,13 +188,13 @@ This is the default flag for JSON reader (RFC-8259 or ECMA-404 compliant):
 - Read negative integer as `int64_t`.
 - Read floating-point number as `double` with correct rounding.
 - Read integer which cannot fit in `uint64_t` or `int64_t` as `double`.
-- Report error if real number is infinity.
+- Report error if double number is infinity.
 - Report error if string contains invalid UTF-8 character or BOM.
-- Report error on trailing commas, comments, `inf` and `nan` literals.
+- Report error on trailing commas, comments, `Inf` and `NaN` literals.
 
 ● **YYJSON_READ_INSITU**<br/>
 Read the input data in-situ.<br/>
-This option allows the reader to modify and use input data to store string values, which can increase reading speed slightly. The caller should hold the input data before free the document. The input data must be padded by at least `YYJSON_PADDING_SIZE` byte. For example: `[1,2]` should be `[1,2]\0\0\0\0`, input length should be 5.
+This option allows the reader to modify and use the input data to store string values, which can slightly improve reading speed. However, the caller must ensure that the input data is held until the document is freed. The input data must be padded with at least `YYJSON_PADDING_SIZE` bytes. For example: `[1,2]` should be `[1,2]\0\0\0\0`, input length should be 5.
 
 Sample code:
 
@@ -212,8 +211,8 @@ free(buf); // the input dat should free after document.
 ```
 
 ● **YYJSON_READ_STOP_WHEN_DONE**<br/>
-Stop when done instead of issues an error if there's additional content after a JSON document.<br/> 
-This option may used to parse small pieces of JSON in larger data, such as [NDJSON](https://en.wikipedia.org/wiki/JSON_streaming).<br/>
+Stop parsing when reaching the end of a JSON document instead of issues an error if there's additional content after it.<br/> 
+This option is useful for parsing small pieces of JSON within larger data, such as [NDJSON](https://en.wikipedia.org/wiki/JSON_streaming).<br/>
 
 Sample code:
 
@@ -241,7 +240,7 @@ free(dat);
 ```
 
 ● **YYJSON_READ_ALLOW_TRAILING_COMMAS**<br/>
-Allow single trailing comma at the end of an object or array, for example:
+Allow a single trailing comma at the end of an object or array (non-standard), for example:
 
 ```
 {
@@ -256,7 +255,7 @@ Allow single trailing comma at the end of an object or array, for example:
 ```
 
 ● **YYJSON_READ_ALLOW_COMMENTS**<br/>
-Allow C-style single line and multiple line comments, for example:
+Allow C-style single line and multiple line comments (non-standard), for example:
 
 ```
 {
@@ -266,7 +265,7 @@ Allow C-style single line and multiple line comments, for example:
 ```
 
 ● **YYJSON_READ_ALLOW_INF_AND_NAN**<br/>
-Allow nan/inf number or literal (case-insensitive), such as 1e999, NaN, Inf, -Infinity, for example:
+Allow nan/inf number or case-insensitive literal (non-standard), for example:
 
 ```
 {
@@ -280,8 +279,8 @@ Allow nan/inf number or literal (case-insensitive), such as 1e999, NaN, Inf, -In
 
 ● **YYJSON_READ_NUMBER_AS_RAW**<br/>
 Read all numbers as raw strings without parsing.
-Use this flag if you want to parse all the numbers yourself.
-You can use these functions to extract raw strings:
+This flag is useful if you want to handle number parsing yourself.
+You can use the following functions to extract raw strings:
 ```c
 bool yyjson_is_raw(yyjson_val *val);
 const char *yyjson_get_raw(yyjson_val *val);
@@ -290,10 +289,10 @@ size_t yyjson_get_len(yyjson_val *val)
 
 ● **YYJSON_READ_BIGNUM_AS_RAW**<br/>
 Read big numbers as raw strings.
-Use this flag if you want to parse these big numbers yourself.
+This flag is useful if you want to parse these big numbers yourself.
 These big numbers include integers that cannot be represented by `int64_t` and `uint64_t`, and floating-point numbers that cannot be represented by finite `double`.
 
-The flag will be overridden by `YYJSON_READ_NUMBER_AS_RAW` flag.
+Note that this flag will be overridden by `YYJSON_READ_NUMBER_AS_RAW` flag.
 
 ● **YYJSON_READ_ALLOW_INVALID_UNICODE**<br/>
 Allow reading invalid unicode when parsing string values (non-standard),
@@ -302,15 +301,15 @@ for example:
 "\x80xyz"
 "\xF0\x81\x81\x81"
 ```
-Invalid characters will be allowed to appear in the string values, but invalid escape sequences will still be reported as errors. This flag does not affect the performance of correctly encoded strings.
+This flag permits invalid characters to appear in the string values, but it still reports errors for invalid escape sequences. It does not impact the performance of correctly encoded strings.
 
-***Warning***: strings in JSON values may contain incorrect encoding when this option is used, you need to handle these strings carefully to avoid security risks.
+***Warning***: when using this option, be aware that strings within JSON values may contain incorrect encoding, so you need to handle these strings carefully to avoid security risks.
 
 
 ---------------
-# Write JSON
-The library provides 4 sets of functions for writing JSON,<br/>
-each function accepts an input of JSON document or root value, and returns a UTF-8 string or file.
+# Writing JSON
+The library provides 4 sets of functions for writing JSON.<br/>
+Each function accepts an input of JSON document or root value, and returns a UTF-8 string or file.
 
 ## Write JSON to string
 The `doc/val` is JSON document or root value, if you pass NULL, you will get NULL result.<br/>
@@ -464,20 +463,20 @@ You can use a single flag, or combine multiple flags with bitwise `|` operator.
 ● **YYJSON_WRITE_NOFLAG = 0**<br/>
 This is the default flag for JSON writer:
 
-- Write JSON minify.
-- Report error on inf or nan number.
-- Report error on invalid UTF-8 string.
-- Do not escape unicode or slash. 
+- Writes JSON in minified format.
+- Reports an error on encountering `inf` or `nan` number.
+- Reports an error on encountering invalid UTF-8 strings.
+- Does not escape unicode or slashes.
 
 ● **YYJSON_WRITE_PRETTY**<br/>
-Write JSON pretty with 4 space indent.
+Writes JSON with a pretty format uing a 4-space indent.
 
 ● **YYJSON_WRITE_PRETTY_TWO_SPACES**<br/>
-Write JSON pretty with 2 space indent.
+Writes JSON with a pretty format uing a 2-space indent.
 This flag will override `YYJSON_WRITE_PRETTY` flag.
 
 ● **YYJSON_WRITE_ESCAPE_UNICODE**<br/>
-Escape unicode as `\uXXXX`, make the output ASCII only, for example:
+Escape unicode as `\uXXXX`, making the output ASCII-only, for example:
 
 ```json
 ["Alizée, 😊"]
@@ -485,7 +484,7 @@ Escape unicode as `\uXXXX`, make the output ASCII only, for example:
 ```
 
 ● **YYJSON_WRITE_ESCAPE_SLASHES**<br/>
-Escape `/` as `\/`, for example:
+Escapes the forward slash character `/` as `\/`, for example:
 
 ```json
 ["https://github.com"]
@@ -493,7 +492,7 @@ Escape `/` as `\/`, for example:
 ```
 
 ● **YYJSON_WRITE_ALLOW_INF_AND_NAN**<br/>
-Write inf/nan number as `Infinity` and `NaN` literals instead of reporting errors.<br/>
+Writes inf/nan numbers as `Infinity` and `NaN` literals instead of reporting errors.<br/>
 
 Note that this output is **NOT** standard JSON and may be rejected by other JSON libraries, for example:
 
@@ -502,7 +501,7 @@ Note that this output is **NOT** standard JSON and may be rejected by other JSON
 ```
 
 ● **YYJSON_WRITE_INF_AND_NAN_AS_NULL**<br/>
-Write inf/nan number as `null` literal instead of reporting errors.<br/>
+Writes inf/nan numbers as `null` literals instead of reporting errors.<br/>
 This flag will override `YYJSON_WRITE_ALLOW_INF_AND_NAN` flag, for example:
 
 ```js
@@ -510,15 +509,15 @@ This flag will override `YYJSON_WRITE_ALLOW_INF_AND_NAN` flag, for example:
 ```
 
 ● **YYJSON_WRITE_ALLOW_INVALID_UNICODE**<br/>
-Allow invalid unicode when encoding string values.
+Allows invalid unicode when encoding string values.
 
-Invalid characters in string value will be copied byte by byte. If `YYJSON_WRITE_ESCAPE_UNICODE` flag is also set, invalid character will be escaped as `\uFFFD` (replacement character).
+Invalid characters within string values will be copied byte by byte. If `YYJSON_WRITE_ESCAPE_UNICODE` flag is also set, invalid characters will be escaped as `\uFFFD` (replacement character).
 
 This flag does not affect the performance of correctly encoded string.
 
 
 ---------------
-# Access JSON Document
+# Accessing JSON Document
 
 ## JSON Document
 
@@ -543,6 +542,24 @@ void yyjson_doc_free(yyjson_doc *doc);
 ```
 
 ## JSON Value
+
+Each JSON Value has a type and subtype, as specified in the table:
+
+| Type             | Subtype              |                   |
+| ---------------- | -------------------- | ----------------- |
+| YYJSON_TYPE_NONE |                      | Invalid value     |
+| YYJSON_TYPE_RAW  |                      | Raw string        |
+| YYJSON_TYPE_NULL |                      | `null` literal    |
+| YYJSON_TYPE_BOOL | YYJSON_SUBTYPE_FALSE | `false` literal   |
+| YYJSON_TYPE_BOOL | YYJSON_SUBTYPE_TRUE  | `true` literal    |
+| YYJSON_TYPE_NUM  | YYJSON_SUBTYPE_UINT  | `uint64_t` nummer |
+| YYJSON_TYPE_NUM  | YYJSON_SUBTYPE_SINT  | `int64_t` number  |
+| YYJSON_TYPE_NUM  | YYJSON_SUBTYPE_REAL  | `double` number   |
+| YYJSON_TYPE_STR  |                      | String value      |
+| YYJSON_TYPE_ARR  |                      | Array value       |
+| YYJSON_TYPE_OBJ  |                      | Object value      |
+
+Note that `YYJSON_TYPE_NONE` does not appear when the JSON is successfully parsed, and `YYJSON_TYPE_RAW` only appears when the corresponding flag is used. All other types are JSON-standard types.
 
 The following functions can be used to determine the type of a JSON value.
 
@@ -575,11 +592,15 @@ bool yyjson_is_str(yyjson_val *val);   // string
 bool yyjson_is_arr(yyjson_val *val);   // array
 bool yyjson_is_obj(yyjson_val *val);   // object
 bool yyjson_is_ctn(yyjson_val *val);   // array/object
+bool yyjson_is_raw(yyjson_val *val);   // raw string
 ```
 
 The following functions can be used to get the contents of the JSON value.
 
 ```c
+// Returns the raw string, or NULL if `val` is not raw type.
+const char *yyjson_get_raw(yyjson_val *val);
+
 // Returns bool value, or false if `val` is not bool type.
 bool yyjson_get_bool(yyjson_val *val);
 
@@ -595,7 +616,7 @@ int yyjson_get_int(yyjson_val *val);
 // Returns double value, or 0 if `val` is not real type.
 double yyjson_get_real(yyjson_val *val);
 
-// Returns double value (typecast), or 0 if `val` is not number.
+// Returns double value (typecast), or 0 if `val` is not uint/sint/real type.
 double yyjson_get_num(yyjson_val *val);
 
 // Returns the string value, or NULL if `val` is not string type.
@@ -637,7 +658,7 @@ bool yyjson_set_strn(yyjson_val *val, const char *str, size_t len);
 
 The following functions can be used to access a JSON array.<br/>
 
-Note that accessing elements by an index may take a linear search time. Therefore, if you need to iterate through an array, it is recommended to use the iterator API.
+Note that accessing elements by index may take a linear search time. Therefore, if you need to iterate through an array, it is recommended to use the iterator API.
 
 ```c
 // Returns the number of elements in this array.
@@ -714,7 +735,7 @@ yyjson_mut_arr_foreach(arr, idx, max, val) {
 ## JSON Object
 The following functions can be used to access a JSON object.<br/>
 
-Note that accessing elements by a key may take a linear search time. Therefore, if you need to iterate through an object, it is recommended to use the iterator API.
+Note that accessing elements by key may take a linear search time. Therefore, if you need to iterate through an object, it is recommended to use the iterator API.
 
 
 ```c
@@ -794,12 +815,12 @@ yyjson_obj_foreach(obj, idx, max, key, val) {
 
 
 ---------------
-# Create JSON Document
-`yyjson_mut_doc` and related APIs are used to build JSON documents. <br/>
+# Creating JSON Document
+The `yyjson_mut_doc` and related APIs are used to build JSON documents. <br/>
 
-Notice that `yyjson_mut_doc` uses a **memory pool** to hold all strings and values; the pool can only be created, grown, or freed in its entirety. Thus `yyjson_mut_doc` is more suitable for write-once than mutation of an existing document.<br/>
+Please note that `yyjson_mut_doc` uses a **memory pool** to hold all strings and values. The pool can only be created, grown, or freed in its entirety. Therefore, `yyjson_mut_doc` is more suitable for write-once than mutation of an existing document.<br/>
 
-JSON objects and arrays are made up of linked lists, so each `yyjson_mut_val` can only be added to one object or array.
+JSON objects and arrays are composed of linked lists, so each `yyjson_mut_val` can only be added to one object or array.
 
 Sample code:
 
@@ -1097,7 +1118,7 @@ yyjson_api_inline bool yyjson_mut_obj_rename_keyn(yyjson_mut_doc *doc, yyjson_mu
 # JSON Pointer and Patch
 
 ## JSON Pointer
-The library supports querying JSON values via `JSON Pointer` ([RFC 6901](https://tools.ietf.org/html/rfc6901)).
+The library supports querying JSON values using `JSON Pointer` ([RFC 6901](https://tools.ietf.org/html/rfc6901)).
 
 ```c
 // `JSON pointer` is a null-terminated string.
@@ -1152,7 +1173,7 @@ yyjson_val *val2 = yyjson_doc_ptr_getx(doc, "/", 1, &err);
 if (!val2) printf("err %d: %s\n", err.code, err.msg); // err 3: cannot be resolved
 ```
 
-The library also supports modifying JSON values via `JSON Pointer`.
+The library also supports modifying JSON values using `JSON Pointer`.
 ```c
 // Add or insert a new value.
 bool yyjson_mut_ptr_add(yyjson_mut_val *val, const char *ptr, yyjson_mut_val *new_val, yyjson_mut_doc *doc);
@@ -1264,51 +1285,61 @@ yyjson_mut_val *yyjson_mut_merge_patch(yyjson_mut_doc *doc,
 
 ## Number reader
 The library has a built-in high-performance number reader,<br/>
-it will parse numbers according to these rules by default:<br/>
+it will read numbers according to these rules by default:<br/>
 
-* Read positive integer as `uint64_t`, if overflow, convert to `double`.
-* Read negative integer as `int64_t`, if overflow, convert to `double`.
-* Read floating-point number as `double` with correct rounding (no ulp error).
-* If a `real` number overflow (infinity), it will report an error.
-* If a number does not match the [JSON](https://www.json.org) standard, it will report an error.
+* Positive integers are read as `uint64_t`. If an overflow occurs, it is converted to `double`.
+* Negative integers are read as `int64_t`. If an overflow occurs, it is converted to `double`.
+* Floating-point numbers are read as `double` with correct rounding.
+* If a `double` number overflow (reaches infinity), an error is reported.
+* If a number does not conform to the [JSON](https://www.json.org) standard, an error is reported.
 
-You can use `YYJSON_READ_ALLOW_INF_AND_NAN` flag to allow `nan` and `inf` number/literal. You can also use `YYJSON_READ_NUMBER_AS_RAW` to read numbers as raw strings without parsing them. See `Reader flag` for details.
+There are 3 flags that can be used to adjust the number parsing strategy:
+
+- `YYJSON_READ_ALLOW_INF_AND_NAN`: read nan/inf number or literal as `double` (non-standard).
+- `YYJSON_READ_NUMBER_AS_RAW`: read all numbers as raw strings without parsing.
+- `YYJSON_READ_BIGBER_AS_RAW`: read big numbers (overflow or infinity) as raw strings without parsing.
+
+See the `Reader flag` section for more details.
 
 ## Number writer
 The library has a built-in high-performance number writer,<br/>
 it will write numbers according to these rules by default:<br/>
 
-* Write positive integer without sign.
-* Write negative integer with a negative sign.
-* Write floating-point number with [ECMAScript format](https://www.ecma-international.org/ecma-262/11.0/index.html#sec-numeric-types-number-tostring), but with the following changes:
-    * If number is `Infinity` or `NaN`, report an error.
-    * Keep the negative sign of 0.0 to preserve input information.
-    * Remove positive sign of exponent part.
-* Floating-point number writer should generate shortest correctly rounded decimal representation.
+* Positive integers are written without a sign.
+* Negative integers are written with a negative sign.
+* Floating-point numbers are written using the [ECMAScript format](https://www.ecma-international.org/ecma-262/11.0/index.html#sec-numeric-types-number-tostring), with the following modifications:
+    * If the number is `Infinity` or `NaN`, an error is reported.
+    * The negative sign of `-0.0` is preserved to maintain input information.
+    * The positive sign in the exponent part is removed.
+* The floating-point number writer will generate the shortest correctly rounded decimal representation.
 
-You can use `YYJSON_WRITE_ALLOW_INF_AND_NAN` flag to write inf/nan number as `Infinity` and `NaN` literals without error,
-but this is not standard JSON. You can also use `YYJSON_WRITE_INF_AND_NAN_AS_NULL` to write inf/nan number as `null` literal. See `Writer flag` for details.
+There are 2 flags that can be used to adjust the number writing strategy:
+
+- `YYJSON_WRITE_ALLOW_INF_AND_NAN` write inf/nan numbers as `Infinity` and `NaN` literals without error (non-standard).
+- `YYJSON_WRITE_INF_AND_NAN_AS_NULL` write inf/nan numbers as `null` literal.
+
+See the "Writer flag" section for more details.
 
 
 
 # Text Processing
 
 ## Character Encoding
-The library only supports UTF-8 encoding without BOM, as specified in [RFC 8259](https://datatracker.ietf.org/doc/html/rfc8259#section-8.1):
+This library only supports UTF-8 encoding without BOM, as specified in [RFC 8259](https://datatracker.ietf.org/doc/html/rfc8259#section-8.1):
 
 > JSON text exchanged between systems that are not part of a closed ecosystem MUST be encoded using UTF-8.
 > Implementations MUST NOT add a byte order mark (U+FEFF) to the beginning of a networked-transmitted JSON text.
 
-By default, yyjson performs a strict UTF-8 encoding validation on input strings. An error will be reported when an invalid character is encountered.
+By default, yyjson performs strict UTF-8 encoding validation on input strings. If an invalid character is encountered, an error will be reported.
 
-You could use `YYJSON_READ_ALLOW_INVALID_UNICODE` and `YYJSON_WRITE_ALLOW_INVALID_UNICODE` flags to allow invalid unicode encoding. However, you should be aware that the result value from yyjson may contain invalid characters, which can be used by other code and may pose security risks.
+You can use `YYJSON_READ_ALLOW_INVALID_UNICODE` and `YYJSON_WRITE_ALLOW_INVALID_UNICODE` flags to allow invalid Unicode encoding. However, please note that if you enable these flags, the resulting value from yyjson may contain invalid characters, which can be used by other code and may introduce security risks.
 
 ## NUL Character
-The library supports the `NUL` character (also known as `null terminator`, or Unicode `U+0000`, ASCII `\0`) inside strings.
+This library supports the `NUL` character (also known as the `null terminator`, or Unicode `U+0000`, ASCII `\0`) inside strings.
 
-When reading JSON, `\u0000` will be unescaped to `NUL`. If a string contains `NUL`, the length obtained with strlen() will be inaccurate, and you should use yyjson_get_len() to get the actual length.
+When reading JSON, `\u0000` will be unescaped to `NUL` character. If a string contains the `NUL` character, the length obtained with `strlen()` will be inaccurate, and you should use `yyjson_get_len()` to get the actual length.
 
-When building JSON, the input string is treated as null-terminated. If you need to pass in a string with `NUL` inside, you should use the API with the `n` suffix and pass in the actual length.
+When building JSON, the input string is treated as null-terminated by default. If you need to pass in a string that contains the `NUL` character, you should use the API with the `n` suffix and provide the actual length of the string.
 
 For example:
 ```c
@@ -1328,9 +1359,9 @@ yyjson_obj_getn(obj, sstr.data(), sstr.length());
 
 
 # Memory Allocator
-The library does not call libc's memory allocation functions (malloc/realloc/free) **directly**. Instead, when memory allocation is required, yyjson's API takes a parameter named `alc` that allows the caller to pass in an allocator. If the `alc` is NULL, yyjson will use the default memory allocator, which is a simple wrapper of libc's functions.
+The library does not directly call libc's memory allocation functions (malloc/realloc/free). Instead, when memory allocation is required, yyjson's API takes a parameter named `alc` that allows the caller to pass in an allocator. If the `alc` is NULL, yyjson will use the default memory allocator, which is a simple wrapper of libc's functions.
 
-Custom memory allocator allows you to take more control over memory allocation, here are a few examples:
+Using a custom memory allocator allows you to have more control over memory allocation, here are a few examples:
 
 ## Single allocator for multiple JSON
 If you need to parse multiple small JSON, you can use a single allocator with pre-allocated buffer to avoid frequent memory allocation.
@@ -1373,7 +1404,7 @@ yyjson_doc *doc = yyjson_read_opts(dat, len, 0, &alc, NULL);
 yyjson_doc_free(doc); // this is optional, as the memory is on stack
 ```
 
-## Use third-party allocator library
+## Use a third-party allocator library
 You can use a third-party high-performance memory allocator for yyjson, such as [jemalloc](https://github.com/jemalloc/jemalloc), [tcmalloc](https://github.com/google/tcmalloc), [mimalloc](https://github.com/microsoft/mimalloc). You can also refer to the following code to implement your own allocator.
 
 Sample code:
@@ -1422,7 +1453,7 @@ alc->free(alc->ctx, json);
 
 
 # Stack Memory Usage
-Most functions in the library use a fixed-size stack memory, including functions for JSON reading and writing and JSON Pointer handling. 
+Most functions in the library use fixed-size stack memory. This includes functions for JSON reading and writing, as well as JSON Pointer handling.
 
 However, a few functions use recursion and may cause a stack overflow if the object level is too deep. These functions are marked with the following warning in the header file: 
 > @warning 
@@ -1432,9 +1463,9 @@ However, a few functions use recursion and may cause a stack overflow if the obj
 
 
 # Null Check
-The library's public API will do `null check` for every input parameter to avoid crashes.
+The library's public APIs perform a `null check` for every input parameter to prevent crashes.
 
-For example, when reading a JSON, you don't need to do null check or type check on each value:
+For example, when reading a JSON, you don't need to perform null checks or type checks on each value:
 ```c
 yyjson_doc *doc = yyjson_read(NULL, 0, 0); // doc is NULL
 yyjson_val *val = yyjson_doc_get_root(doc); // val is NULL
@@ -1443,7 +1474,7 @@ if (!str) printf("err!");
 yyjson_doc_free(doc); // do nothing
 ```
 
-But if you are sure that a value is non-null and the type is matched, you can use the `unsafe` prefix API to avoid the null check.
+However, if you are certain that a value is non-null and matches the expected type, you can use the `unsafe` prefix API to avoid the null check.
 
 For example, when iterating over an array or object, the value and key must be non-null:
 ```c
@@ -1461,19 +1492,19 @@ yyjson_obj_foreach(obj, idx, max, key, val) {
 
 
 
-# Thread Safe
-The library does not use global variables, so if you can ensure that the input parameters of a function are thread-safe, then the function calls are also thread-safe.<br/>
+# Thread Safety
+The library does not use global variables. Therefore, if you can ensure that the input parameters of a function are thread-safe, then the function calls are also thread-safe.<br/>
 
-Typically, `yyjson_doc` and `yyjson_val` are immutable and thread-safe, while `yyjson_mut_doc` and `yyjson_mut_val` are mutable and not thread-safe.
+In general, `yyjson_doc` and `yyjson_val` are immutable and thread-safe, while `yyjson_mut_doc` and `yyjson_mut_val` are mutable and not thread-safe.
 
 
 
-# Locale Dependent
-The library is locale-independent.
+# Locale Independence
+The library is designed to be locale-independent.
 
-However, there are some special conditions that you need to be aware of:
+However, there are certain conditions that you should be aware of:
 
-1. You use libc's `setlocale()` function to change locale.
-2. Your environment does not use IEEE 754 floating-point standard (e.g. some IBM mainframes), or you explicitly set `YYJSON_DISABLE_FAST_FP_CONV` during build, in which case yyjson will use `strtod()` to parse floating-point numbers.
+1. You use libc's `setlocale()` function to change the locale.
+2. Your environment does not adhere the IEEE 754 floating-point standard (e.g. some IBM mainframes), or you explicitly set `YYJSON_DISABLE_FAST_FP_CONV` during build, in such case yyjson will use `strtod()` to parse floating-point numbers.
 
-When you meet **both** of these conditions, you should avoid calling `setlocale()` while other thread is parsing JSON, otherwise an error may be returned for JSON floating point number parsing.
+If **both** of these conditions are met, it is recommended to avoid calling `setlocale()` while another thread is parsing JSON. Otherwise, an error may be returned during JSON floating-point number parsing.

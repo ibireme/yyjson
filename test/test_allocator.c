@@ -1,3 +1,5 @@
+// This file is used to test the built-in pool memory allocator. 
+
 #include "yyjson.h"
 #include "yy_test_utils.h"
 

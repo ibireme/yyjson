@@ -1,3 +1,5 @@
+// This file is used to test the `JSON Pointer` functions.
+
 #include "yyjson.h"
 #include "yy_test_utils.h"
 
@@ -1079,7 +1081,7 @@ static void test_spec(void) {
 
 // -----------------------------------------------------------------------------
 // expected: val = src.get(ptr)
-static void test_ptr_get() {
+static void test_ptr_get(void) {
     
     // ---------------------------------
     // invalid parameter
@@ -1468,7 +1470,7 @@ static void test_ptr_get() {
     free(ptr_alc);
 }
 
-static void test_ptr_put() {
+static void test_ptr_put(void) {
     // ---------------------------------
     // invalid parameter
     test_ptr_op((ptr_data){

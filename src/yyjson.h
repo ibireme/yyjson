@@ -31,7 +31,7 @@
  *============================================================================*/
 
 /*
- Define as 1 to disable JSON reader if you don't need to parse JSON.
+ Define as 1 to disable JSON reader if JSON parsing is not required.
  
  This will disable these functions at compile-time:
     - yyjson_read_opts()
@@ -46,7 +46,7 @@
 #endif
 
 /*
- Define as 1 to disable JSON writer if you don't need to serialize JSON.
+ Define as 1 to disable JSON writer if JSON serialization is not required.
  
  This will disable these functions at compile-time:
     - yyjson_write()
@@ -542,13 +542,17 @@ typedef struct yyjson_alc {
 /**
  A pool allocator uses fixed length pre-allocated memory.
  
- This allocator may used to avoid malloc/realloc calls. The pre-allocated memory
- should be held by the caller. The maximum amount of memory required to read a
- JSON can be calculated using the `yyjson_read_max_memory_usage()` function, but
- the amount of memory required to write a JSON cannot be directly calculated.
+ This allocator may be used to avoid malloc/realloc calls. The pre-allocated 
+ memory should be held by the caller. The maximum amount of memory required to
+ read a JSON can be calculated using the `yyjson_read_max_memory_usage()`
+ function, but the amount of memory required to write a JSON cannot be directly 
+ calculated.
  
- This is not a general-purpose allocator, and should only be used to read or
- write single JSON document.
+ This is not a general-purpose allocator. If used to read multiple JSON 
+ documents and only some of them are released, it may cause memory
+ fragmentation, leading to performance degradation and memory waste. Therefore, 
+ it is recommended to use this allocator only for reading or writing a single 
+ JSON document.
  
  @param alc The allocator to be initialized.
     If this parameter is NULL, the function will fail and return false.
@@ -622,7 +626,7 @@ typedef uint32_t yyjson_read_flag;
     - Read negative integer as int64_t.
     - Read floating-point number as double with round-to-nearest mode.
     - Read integer which cannot fit in uint64_t or int64_t as double.
-    - Report error if real number is infinity.
+    - Report error if double number is infinity.
     - Report error if string contains invalid UTF-8 character or BOM.
     - Report error on trailing commas, comments, inf and nan literals. */
 static const yyjson_read_flag YYJSON_READ_NOFLAG                = 0 << 0;
