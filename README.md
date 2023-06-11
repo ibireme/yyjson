@@ -1,10 +1,10 @@
 
 # Introduction
 
-[![Build](https://flat.badgen.net/github/status/ibireme/yyjson/master/)](https://github.com/ibireme/yyjson/actions)
-[![Codecov](https://flat.badgen.net/codecov/c/github/ibireme/yyjson)](https://codecov.io/gh/ibireme/yyjson)
-[![License](https://flat.badgen.net/github/license/ibireme/yyjson)](https://github.com/ibireme/yyjson/blob/master/LICENSE)
-[![Version](https://flat.badgen.net/github/release/ibireme/yyjson?color=orange)](https://github.com/ibireme/yyjson/releases)
+[![Build](https://img.shields.io/github/actions/workflow/status/ibireme/yyjson/cmake.yml?branch=master&style=flat-square)](https://github.com/ibireme/yyjson/actions/workflows/cmake.yml)
+[![Codecov](https://img.shields.io/codecov/c/github/ibireme/yyjson/master?style=flat-square)](https://codecov.io/gh/ibireme/yyjson)
+[![License](https://img.shields.io/github/license/ibireme/yyjson?color=blue&style=flat-square)](https://github.com/ibireme/yyjson/blob/master/LICENSE)
+[![Version](https://img.shields.io/github/v/release/ibireme/yyjson?color=orange&style=flat-square)](https://github.com/ibireme/yyjson/releases)
 
 A high performance JSON library written in ANSI C.
 
