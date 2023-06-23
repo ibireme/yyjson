@@ -3,7 +3,7 @@
 # https://github.com/ibireme/yyjson/blob/master/LICENSE
 
 cmake_minimum_required(VERSION 3.5)
-project(yyjson VERSION 0.7.0)
+project(yyjson VERSION 0.7.0 LANGUAGES C)
 
 
 
@@ -147,6 +147,13 @@ install(FILES src/yyjson.h DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}")
 # Testing
 if(YYJSON_BUILD_TESTS)
     enable_testing()
+
+    # Check C++ compiler
+    include(CheckLanguage)
+    check_language(CXX)
+    if(CMAKE_CXX_COMPILER)
+        enable_language(CXX)
+    endif()
     
     if(XCODE)
         # Config XCTest
@@ -156,10 +163,9 @@ if(YYJSON_BUILD_TESTS)
         set(CMAKE_XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY "")
         set(YYJSON_TEST_DATA ${CMAKE_CURRENT_SOURCE_DIR}/test/data)
         
-        # Add all test cases to XCTest: c/cpp files prefixed with 'test_'
+        # Add all test cases to XCTest: c files prefixed with 'test_'
         file(GLOB YYJSON_TEST_SOURCE
             "test/test_*.c"
-            "test/test_*.cpp"
         )
         set(YYJSON_TEST_LINES "")
         foreach(SRC_FILE ${YYJSON_TEST_SOURCE})
@@ -179,7 +185,6 @@ if(YYJSON_BUILD_TESTS)
         # Add source files and search path to XCTest
         file(GLOB YYJSON_TEST_SOURCE
             "test/test_*.c"
-            "test/test_*.cpp"
             "test/util/*.h"
             "test/util/*.c"
             "test/xctest/*"
@@ -233,10 +238,9 @@ if(YYJSON_BUILD_TESTS)
             target_compile_options(yyjson_test_utils PRIVATE $<$<COMPILE_LANGUAGE:C>:-std=c99>)
         endif()
         
-        # Add all test cases: c/cpp files prefixed with 'test_'
+        # Add all test cases: c files prefixed with 'test_'
         file(GLOB YYJSON_TEST_SOURCE
             "test/test_*.c"
-            "test/test_*.cpp"
         )
         foreach(SRC_FILE ${YYJSON_TEST_SOURCE})
             string(REGEX REPLACE "(^.*/|\\.[^.]*$)" "" SRC_NAME ${SRC_FILE})
@@ -293,7 +297,7 @@ if(YYJSON_BUILD_TESTS)
                 target_link_libraries(yyjson INTERFACE ${COMPILE_FLAGS})
             endif()
         endif()
-    
+
     endif()
     
     
@@ -382,9 +386,11 @@ if(YYJSON_BUILD_TESTS)
                 list(APPEND YYJSON_STRICT_C_FLAGS ${flag})
             endif()
             
-            check_cxx_compiler_flag(${flag} COMPILER_SUPPORT_CXX_FLAG${flag_name})
-            if(COMPILER_SUPPORT_CXX_FLAG${flag_name})
-                list(APPEND YYJSON_STRICT_CXX_FLAGS ${flag})
+            if(CMAKE_CXX_COMPILER)
+                check_cxx_compiler_flag(${flag} COMPILER_SUPPORT_CXX_FLAG${flag_name})
+                if(COMPILER_SUPPORT_CXX_FLAG${flag_name})
+                    list(APPEND YYJSON_STRICT_CXX_FLAGS ${flag})
+                endif()
             endif()
             
         endforeach()
@@ -398,15 +404,6 @@ if(YYJSON_BUILD_TESTS)
                 $<$<COMPILE_LANGUAGE:C>:-ansi ${YYJSON_STRICT_C_FLAGS}>)
         endif()
         
-        # Check ANSI C++
-        check_cxx_compiler_flag("-ansi" COMPILER_SUPPORTS_ANSI_CXX)
-        if(COMPILER_SUPPORTS_ANSI_CXX)
-            add_executable(test_compile_ansi_cxx test/compile_ansi.cpp)
-            target_include_directories(test_compile_ansi_cxx PRIVATE src)
-            target_compile_options(test_compile_ansi_cxx PRIVATE
-                $<$<COMPILE_LANGUAGE:CXX>:-ansi ${YYJSON_STRICT_CXX_FLAGS}>)
-        endif()
-        
         # Check modern C
         check_c_compiler_flag("-std=c11" COMPILER_SUPPORTS_C11)
         if(COMPILER_SUPPORTS_C11)
@@ -416,17 +413,30 @@ if(YYJSON_BUILD_TESTS)
                 $<$<COMPILE_LANGUAGE:C>:-std=c11 ${YYJSON_STRICT_C_FLAGS}>)
         endif()
         
-        # Check modern C++
-        check_cxx_compiler_flag("-std=c++17" COMPILER_SUPPORTS_CXX17)
-        if(COMPILER_SUPPORTS_CXX17)
-            add_executable(test_compile_cxx17 test/compile_ansi.cpp)
-            target_include_directories(test_compile_cxx17 PRIVATE src)
-            target_compile_options(test_compile_cxx17 PRIVATE
-                $<$<COMPILE_LANGUAGE:CXX>:-std=c++17 ${YYJSON_STRICT_CXX_FLAGS}>)
+        if(CMAKE_CXX_COMPILER)
+            
+            # Check ANSI C++
+            check_cxx_compiler_flag("-ansi" COMPILER_SUPPORTS_ANSI_CXX)
+            if(COMPILER_SUPPORTS_ANSI_CXX)
+                add_executable(test_compile_ansi_cxx test/compile_ansi.cpp)
+                target_include_directories(test_compile_ansi_cxx PRIVATE src)
+                target_compile_options(test_compile_ansi_cxx PRIVATE
+                    $<$<COMPILE_LANGUAGE:CXX>:-ansi ${YYJSON_STRICT_CXX_FLAGS}>)
+            endif()
+            
+            # Check modern C++
+            check_cxx_compiler_flag("-std=c++17" COMPILER_SUPPORTS_CXX17)
+            if(COMPILER_SUPPORTS_CXX17)
+                add_executable(test_compile_cxx17 test/compile_ansi.cpp)
+                target_include_directories(test_compile_cxx17 PRIVATE src)
+                target_compile_options(test_compile_cxx17 PRIVATE
+                    $<$<COMPILE_LANGUAGE:CXX>:-std=c++17 ${YYJSON_STRICT_CXX_FLAGS}>)
+            endif()
+            
         endif()
-
+        
     endif()
-
+    
 endif()
 
 
