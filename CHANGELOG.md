@@ -2,6 +2,14 @@
 All notable changes to this project will be documented in this file.
 
 
+## Unreleased
+#### Added
+- Add `YYJSON_SUBTYPE_NOESC` subtype to mark strings that do not need to be escaped.
+
+#### Changed
+- Improve the write performance of strings that do not need to be escaped during writing.
+
+
 ## 0.7.0 (2023-05-25)
 #### Added
 - Add `YYJSON_WRITE_PRETTY_TWO_SPACES` option to allow 2 spaces instead of 4 spaces when writing pretty JSON: #99

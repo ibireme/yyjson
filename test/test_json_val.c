@@ -32,8 +32,7 @@ static bool validate_val_type(yyjson_val *val,
                                (subtype == YYJSON_SUBTYPE_UINT ||
                                 subtype == YYJSON_SUBTYPE_SINT ||
                                 subtype == YYJSON_SUBTYPE_REAL))) return false;
-    if (yyjson_is_str(val) != (type == YYJSON_TYPE_STR &&
-                               subtype == YYJSON_SUBTYPE_NONE)) return false;
+    if (yyjson_is_str(val) != (type == YYJSON_TYPE_STR)) return false;
     if (yyjson_is_arr(val) != (type == YYJSON_TYPE_ARR &&
                                subtype == YYJSON_SUBTYPE_NONE)) return false;
     if (yyjson_is_obj(val) != (type == YYJSON_TYPE_OBJ &&
@@ -133,7 +132,7 @@ static void test_json_val_api(void) {
     json = "\"abc\"";
     doc = yyjson_read(json, strlen(json), 0);
     val = yyjson_doc_get_root(doc);
-    yy_assert(validate_val_type(val, YYJSON_TYPE_STR, YYJSON_SUBTYPE_NONE));
+    yy_assert(validate_val_type(val, YYJSON_TYPE_STR, YYJSON_SUBTYPE_NOESC));
     yy_assert(strcmp(yyjson_get_type_desc(val), "string") == 0);
     yy_assert(strcmp(yyjson_get_str(val), "abc") == 0);
     yy_assert(yyjson_get_uint(val) == (u64)0);
