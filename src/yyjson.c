@@ -1773,7 +1773,7 @@ static_inline bool ptr_token_eq(void *key,
 static_inline yyjson_val *ptr_arr_get(yyjson_val *arr, const char *token,
                                       usize len, usize esc) {
     yyjson_val *val = unsafe_yyjson_get_first(arr);
-    usize num = unsafe_yyjson_get_len(arr), idx;
+    usize num = unsafe_yyjson_get_len(arr), idx = 0;
     if (unlikely(num == 0)) return NULL;
     if (unlikely(!ptr_token_to_idx(token, len, &idx))) return NULL;
     if (unlikely(idx >= num)) return NULL;
