@@ -19,7 +19,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        build_type: [Debug, Release]
+        build_type: [Debug, Release, MinSizeRel]
         build_flag: [Default, ReduceBinary]
         checker: [Valgrind, Sanitizer]
 
