@@ -271,6 +271,21 @@ YYJSON_WRITE_ALLOW_INVALID_UNICODE
 This will reduce binary size by about 10%, and slightly improves performance.<br/>
 It is recommended when not dealing with non-standard JSON.
 
+● **YYJSON_DISABLE_UTF8_VALIDATION**<br/>
+Define as 1 to disable UTF-8 validation at compile time.
+
+If all input strings are guaranteed to be valid UTF-8 encoding 
+(for example, some language's String object has already validated the encoding), 
+using this flag can avoid redundant UTF-8 validation in yyjson.
+
+This flag can speed up the reading and writing speed of non-ASCII encoded strings by about 3% to 7%.
+
+Note: If this flag is used while passing in illegal UTF-8 strings, the following errors may occur:
+
+- Escaped characters are ignored when parsing JSON strings.
+- Ending quotes are ignored when parsing JSON strings, causing the string to be concatenated to the next value.
+- When accessing `yyjson_mut_val` for serialization, the string ending is accessed out of bounds, causing a segmentation fault.
+
 ● **YYJSON_EXPORTS**<br/>
 Define this as 1 to export symbols when building the library as a Windows DLL.
 

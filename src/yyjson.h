@@ -34,9 +34,9 @@
  Define as 1 to disable JSON reader if JSON parsing is not required.
  
  This will disable these functions at compile-time:
+    - yyjson_read()
     - yyjson_read_opts()
     - yyjson_read_file()
-    - yyjson_read()
     - yyjson_read_number()
     - yyjson_mut_read_number()
  
@@ -112,6 +112,27 @@
  read/write speed.
  */
 #ifndef YYJSON_DISABLE_NON_STANDARD
+#endif
+
+/*
+ Define as 1 to disable UTF-8 validation at compile time.
+ 
+ If all input strings are guaranteed to be valid UTF-8 encoding (for example,
+ some language's String object has already validated the encoding), using this
+ flag can avoid redundant UTF-8 validation in yyjson.
+ 
+ This flag can speed up the reading and writing speed of non-ASCII encoded
+ strings by about 3% to 7%.
+ 
+ Note: If this flag is used while passing in illegal UTF-8 strings, the
+ following errors may occur:
+ - Escaped characters are ignored when parsing JSON strings.
+ - Ending quotes are ignored when parsing JSON strings, causing the string to be
+   concatenated to the next value.
+ - When accessing `yyjson_mut_val` for serialization, the string ending is
+   accessed out of bounds, causing a segmentation fault.
+ */
+#ifndef YYJSON_DISABLE_UTF8_VALIDATION
 #endif
 
 /*

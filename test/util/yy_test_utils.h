@@ -323,6 +323,9 @@ bool yy_str_has_prefix(const char *str, const char *prefix);
 /** Returns whether the string ends with a suffix. */
 bool yy_str_has_suffix(const char *str, const char *suffix);
 
+/** Returns whether the string is valid UTF-8. */
+bool yyb_str_is_utf8(const char *str, size_t len);
+
 
 
 /*==============================================================================

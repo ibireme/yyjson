@@ -104,6 +104,7 @@ jobs:
           - no_fp
           - no_reader
           - no_writer
+          - no_utf8
 
     steps:
     - uses: actions/checkout@v3
@@ -126,6 +127,9 @@ jobs:
         fi
         if [ "${{matrix.opt}}" == "no_writer" ]; then
           BUILD_OPTIONS="${BUILD_OPTIONS} -DYYJSON_DISABLE_WRITER=ON"
+        fi
+        if [ "${{matrix.opt}}" == "no_utf8" ]; then
+          BUILD_OPTIONS="${BUILD_OPTIONS} -DYYJSON_DISABLE_UTF8_VALIDATION=ON"
         fi
         cmake -E make_directory ${{runner.workspace}}/build
         cd ${{runner.workspace}}/build

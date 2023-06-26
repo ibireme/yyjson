@@ -562,6 +562,61 @@ bool yy_str_has_suffix(const char *str, const char *suffix) {
     return memcmp(str + (len1 - len2), suffix, len2) == 0;
 }
 
+bool yyb_str_is_utf8(const char *str, size_t len) {
+    // https://en.wikipedia.org/wiki/UTF-8
+    const uint8_t *cur = (const uint8_t *)str;
+    const uint8_t *end = cur + len;
+    uint32_t u;
+    if (!str) return false;
+    while (cur < end) {
+        // Range: [U+0000, U+007F] Bytes: 0xxxxxxx
+        if ((cur[0] & 0x80) == 0) {
+            cur++;
+            continue;
+        }
+        // Range: [U+0080, U+07FF] Bytes: 110xxxxx 10xxxxxx
+        if ((cur[0] & 0xE0) == 0xC0) {
+            if (end - cur < 2) return false;
+            if ((cur[1] & 0xC0) != 0x80) return false;
+            u = ((uint32_t)(cur[1] & 0x3F) << 0) |
+                ((uint32_t)(cur[0] & 0x1F) << 6);
+            if (u < 0x80 || u > 0x7FF) return false;
+            cur += 2;
+            continue;
+        }
+        // Range: [U+0800, U+FFFF] Bytes: 1110xxxx 10xxxxxx 10xxxxxx
+        if ((cur[0] & 0xF0) == 0xE0) {
+            if (end - cur < 3) return false;
+            if ((cur[1] & 0xC0) != 0x80) return false;
+            if ((cur[2] & 0xC0) != 0x80) return false;
+            u = ((uint32_t)(cur[2] & 0x3F) << 0) |
+                ((uint32_t)(cur[1] & 0x3F) << 6) |
+                ((uint32_t)(cur[0] & 0x0F) << 12);
+            if (u < 0x800 || u > 0xFFFF) return false;
+            // Surrogate halves: U+D800 through U+DFFF
+            if (0xD800 <= u && u <= 0xDFFF) return false;
+            cur += 3;
+            continue;
+        }
+        // Range: [U+10000, U+10FFFF] Bytes: 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
+        if ((cur[0] & 0xF8) == 0xF0) {
+            if (end - cur < 4) return false;
+            if ((cur[1] & 0xC0) != 0x80) return false;
+            if ((cur[2] & 0xC0) != 0x80) return false;
+            if ((cur[3] & 0xC0) != 0x80) return false;
+            u = ((uint32_t)(cur[3] & 0x3F) << 0) |
+                ((uint32_t)(cur[2] & 0x3F) << 6) |
+                ((uint32_t)(cur[1] & 0x3F) << 12) |
+                ((uint32_t)(cur[0] & 0x07) << 18);
+            if (u < 0x10000 || u > 0x10FFFF) return false;
+            cur += 4;
+            continue;
+        }
+        return false;
+    }
+    return true;
+}
+
 
 
 /*==============================================================================

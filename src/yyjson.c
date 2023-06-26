@@ -12,27 +12,24 @@
 
 
 /*==============================================================================
- * Compile Hint Begin
+ * Warning Suppress
  *============================================================================*/
 
-/* warning suppress begin */
 #if defined(__clang__)
-#   pragma clang diagnostic push
 #   pragma clang diagnostic ignored "-Wunused-function"
 #   pragma clang diagnostic ignored "-Wunused-parameter"
 #   pragma clang diagnostic ignored "-Wunused-label"
 #   pragma clang diagnostic ignored "-Wunused-macros"
+#   pragma clang diagnostic ignored "-Wunused-variable"
 #elif defined(__GNUC__)
-#   if (__GNUC__ > 4) || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
-#   pragma GCC diagnostic push
-#   endif
 #   pragma GCC diagnostic ignored "-Wunused-function"
 #   pragma GCC diagnostic ignored "-Wunused-parameter"
 #   pragma GCC diagnostic ignored "-Wunused-label"
 #   pragma GCC diagnostic ignored "-Wunused-macros"
+#   pragma GCC diagnostic ignored "-Wunused-variable"
 #elif defined(_MSC_VER)
-#   pragma warning(push)
 #   pragma warning(disable:4100) /* unreferenced formal parameter */
+#   pragma warning(disable:4101) /* unreferenced variable */
 #   pragma warning(disable:4102) /* unreferenced label */
 #   pragma warning(disable:4127) /* conditional expression is constant */
 #   pragma warning(disable:4706) /* assignment within conditional expression */
@@ -366,6 +363,9 @@ uint32_t yyjson_version(void) {
 #endif
 #ifndef YYJSON_DISABLE_NON_STANDARD
 #define YYJSON_DISABLE_NON_STANDARD 0
+#endif
+#ifndef YYJSON_DISABLE_UTF8_VALIDATION
+#define YYJSON_DISABLE_UTF8_VALIDATION 0
 #endif
 
 
@@ -5217,6 +5217,21 @@ skip_utf8:
          loop, which is more friendly to branch prediction.
          */
         pos = src;
+#if YYJSON_DISABLE_UTF8_VALIDATION
+        while (true) repeat8({
+            if (likely((*src & 0xF0) == 0xE0)) src += 3;
+            else break;
+        })
+        if (*src < 0x80) goto skip_ascii;
+        while (true) repeat8({
+            if (likely((*src & 0xE0) == 0xC0)) src += 2;
+            else break;
+        })
+        while (true) repeat8({
+            if (likely((*src & 0xF8) == 0xF0)) src += 4;
+            else break;
+        })
+#else
         uni = byte_load_4(src);
         while (is_valid_seq_3(uni)) {
             src += 3;
@@ -5231,6 +5246,7 @@ skip_utf8:
             src += 4;
             uni = byte_load_4(src);
         }
+#endif
         if (unlikely(pos == src)) {
             if (!inv) return_err(src, "invalid UTF-8 encoding in string");
             ++src;
@@ -5423,6 +5439,33 @@ copy_utf8:
     if (*src & 0x80) { /* non-ASCII character */
         pos = src;
         uni = byte_load_4(src);
+#if YYJSON_DISABLE_UTF8_VALIDATION
+        while (true) repeat4({
+            if ((uni & b3_mask) == b3_patt) {
+                byte_copy_4(dst, &uni);
+                dst += 3;
+                src += 3;
+                uni = byte_load_4(src);
+            } else break;
+        })
+        if ((uni & b1_mask) == b1_patt) goto copy_ascii;
+        while (true) repeat4({
+            if ((uni & b2_mask) == b2_patt) {
+                byte_copy_2(dst, &uni);
+                dst += 2;
+                src += 2;
+                uni = byte_load_4(src);
+            } else break;
+        })
+        while (true) repeat4({
+            if ((uni & b4_mask) == b4_patt) {
+                byte_copy_4(dst, &uni);
+                dst += 4;
+                src += 4;
+                uni = byte_load_4(src);
+            } else break;
+        })
+#else
         while (is_valid_seq_3(uni)) {
             byte_copy_4(dst, &uni);
             dst += 3;
@@ -5442,6 +5485,7 @@ copy_utf8:
             src += 4;
             uni = byte_load_4(src);
         }
+#endif
         if (unlikely(pos == src)) {
             if (!inv) return_err(src, "invalid UTF-8 encoding in string");
             goto copy_ascii_stop_1;
@@ -7832,16 +7876,27 @@ copy_utf8:
         }
         case CHAR_ENC_CPY_2: {
             u16 v;
+#if YYJSON_DISABLE_UTF8_VALIDATION
+            byte_copy_2(cur, src);
+#else
             v = byte_load_2(src);
             if (unlikely(!is_valid_seq_2(v))) goto err_cpy;
-            
             byte_copy_2(cur, src);
+#endif
             cur += 2;
             src += 2;
             goto copy_utf8;
         }
         case CHAR_ENC_CPY_3: {
             u32 v, tmp;
+#if YYJSON_DISABLE_UTF8_VALIDATION
+            if (likely(src + 4 <= end)) {
+                byte_copy_4(cur, src);
+            } else {
+                byte_copy_2(cur, src);
+                cur[2] = src[2];
+            }
+#else
             if (likely(src + 4 <= end)) {
                 v = byte_load_4(src);
                 if (unlikely(!is_valid_seq_3(v))) goto err_cpy;
@@ -7851,16 +7906,20 @@ copy_utf8:
                 if (unlikely(!is_valid_seq_3(v))) goto err_cpy;
                 byte_copy_4(cur, &v);
             }
+#endif
             cur += 3;
             src += 3;
             goto copy_utf8;
         }
         case CHAR_ENC_CPY_4: {
             u32 v, tmp;
+#if YYJSON_DISABLE_UTF8_VALIDATION
+            byte_copy_4(cur, src);
+#else
             v = byte_load_4(src);
             if (unlikely(!is_valid_seq_4(v))) goto err_cpy;
-            
             byte_copy_4(cur, src);
+#endif
             cur += 4;
             src += 4;
             goto copy_utf8;
@@ -7880,9 +7939,10 @@ copy_utf8:
         }
         case CHAR_ENC_ESC_2: {
             u16 u, v;
+#if !YYJSON_DISABLE_UTF8_VALIDATION
             v = byte_load_2(src);
             if (unlikely(!is_valid_seq_2(v))) goto err_esc;
-            
+#endif
             u = (u16)(((u16)(src[0] & 0x1F) << 6) |
                       ((u16)(src[1] & 0x3F) << 0));
             byte_copy_2(cur + 0, &pre);
@@ -7895,9 +7955,10 @@ copy_utf8:
         case CHAR_ENC_ESC_3: {
             u16 u;
             u32 v, tmp;
+#if !YYJSON_DISABLE_UTF8_VALIDATION
             v = byte_load_3(src);
             if (unlikely(!is_valid_seq_3(v))) goto err_esc;
-            
+#endif
             u = (u16)(((u16)(src[0] & 0x0F) << 12) |
                       ((u16)(src[1] & 0x3F) << 6) |
                       ((u16)(src[2] & 0x3F) << 0));
@@ -7910,9 +7971,10 @@ copy_utf8:
         }
         case CHAR_ENC_ESC_4: {
             u32 hi, lo, u, v, tmp;
+#if !YYJSON_DISABLE_UTF8_VALIDATION
             v = byte_load_4(src);
             if (unlikely(!is_valid_seq_4(v))) goto err_esc;
-            
+#endif
             u = ((u32)(src[0] & 0x07) << 18) |
                 ((u32)(src[1] & 0x3F) << 12) |
                 ((u32)(src[2] & 0x3F) << 6) |
@@ -9232,19 +9294,3 @@ bool yyjson_mut_write_fp(FILE *fp,
 }
 
 #endif /* YYJSON_DISABLE_WRITER */
-
-
-
-/*==============================================================================
- * Compiler Hint End
- *============================================================================*/
-
-#if defined(__clang__)
-#   pragma clang diagnostic pop
-#elif defined(__GNUC__)
-#   if (__GNUC__ > 4) || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
-#   pragma GCC diagnostic pop
-#   endif
-#elif defined(_MSC_VER)
-#   pragma warning(pop)
-#endif /* warning suppress end */

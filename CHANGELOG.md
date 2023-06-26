@@ -5,9 +5,10 @@ All notable changes to this project will be documented in this file.
 ## Unreleased
 #### Added
 - Add `YYJSON_SUBTYPE_NOESC` subtype to mark strings that do not need to be escaped.
+- Add `YYJSON_DISABLE_UTF8_VALIDATION` flag to allow disable UTF-8 validation at compile-time.
 
 #### Changed
-- Improve the write performance of strings that do not need to be escaped during writing.
+- Improve the write performance of strings.
 
 
 ## 0.7.0 (2023-05-25)

@@ -363,6 +363,8 @@ static void test_read_err_code(void) {
     
     // -------------------------------------------------------------------------
     // Invalid string, such as invalid escaped character inside a string.
+#if !YYJSON_DISABLE_UTF8_VALIDATION
+    
     str = "\"\\uD800\"";
     //              ^ no low surrogate in string
     memset(&err, -1, sizeof(err));
@@ -503,6 +505,7 @@ static void test_read_err_code(void) {
         yy_assert(err.code == YYJSON_READ_ERROR_INVALID_STRING);
         yy_assert(err.pos == 1);
     }
+#endif
     
     
     

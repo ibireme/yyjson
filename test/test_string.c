@@ -25,6 +25,11 @@ static void validate_str_read(string_val *src,
                               string_val *dst,
                               yyjson_read_flag flg) {
 #if !YYJSON_DISABLE_READER
+    
+#if YYJSON_DISABLE_UTF8_VALIDATION
+    if (src->str && !yyb_str_is_utf8(src->str, src->len)) return;
+#endif
+    
     string_val empty = { NULL, 0 };
     if (!src || !src->str) return;
     if (!dst) dst = &empty;
@@ -61,6 +66,11 @@ static void validate_str_read(string_val *src,
 
 static void validate_roundtrip(char *str, usize len, yyjson_write_flag flg) {
 #if !YYJSON_DISABLE_READER && !YYJSON_DISABLE_WRITER
+    
+#if YYJSON_DISABLE_UTF8_VALIDATION
+    if (str && !yyb_str_is_utf8(str, len)) return;
+#endif
+    
     yyjson_doc *doc = yyjson_read(str, len, YYJSON_READ_ALLOW_INVALID_UNICODE);
     usize ret_len = 0;
     char *ret = yyjson_write(doc, flg, &ret_len);
@@ -93,6 +103,11 @@ static void validate_str_write(string_val *src,
                                string_val *dst,
                                yyjson_write_flag flg) {
 #if !YYJSON_DISABLE_WRITER
+    
+#if YYJSON_DISABLE_UTF8_VALIDATION
+    if (src->str && !yyb_str_is_utf8(src->str, src->len)) return;
+#endif
+    
     string_val empty = { NULL, 0 };
     if (!src || !src->str) return;
     if (!dst) dst = &empty;
