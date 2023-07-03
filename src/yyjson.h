@@ -108,8 +108,8 @@
     - YYJSON_WRITE_ALLOW_INF_AND_NAN
     - YYJSON_WRITE_ALLOW_INVALID_UNICODE
  
- This will reduce the binary size by about 10%, and slightly improve the JSON
- read/write speed.
+ This will reduce the binary size by about 10%, and speed up the reading and
+ writing speed by about 2% to 6%.
  */
 #ifndef YYJSON_DISABLE_NON_STANDARD
 #endif
@@ -126,10 +126,10 @@
  
  Note: If this flag is used while passing in illegal UTF-8 strings, the
  following errors may occur:
- - Escaped characters are ignored when parsing JSON strings.
- - Ending quotes are ignored when parsing JSON strings, causing the string to be
-   concatenated to the next value.
- - When accessing `yyjson_mut_val` for serialization, the string ending is
+ - Escaped characters may be ignored when parsing JSON strings.
+ - Ending quotes may be ignored when parsing JSON strings, causing the string
+   to be concatenated to the next value.
+ - When accessing `yyjson_mut_val` for serialization, the string ending may be
    accessed out of bounds, causing a segmentation fault.
  */
 #ifndef YYJSON_DISABLE_UTF8_VALIDATION
@@ -178,8 +178,26 @@
 /** compiler version (GCC) */
 #ifdef __GNUC__
 #   define YYJSON_GCC_VER __GNUC__
+#   if defined(__GNUC_PATCHLEVEL__)
+#       define yyjson_gcc_available(major, minor, patch) \
+            ((__GNUC__ * 10000 + __GNUC_MINOR__ * 100 + __GNUC_PATCHLEVEL__) \
+            >= (major * 10000 + minor * 100 + patch))
+#   else
+#       define yyjson_gcc_available(major, minor, patch) \
+            ((__GNUC__ * 10000 + __GNUC_MINOR__ * 100) \
+            >= (major * 10000 + minor * 100 + patch))
+#   endif
 #else
 #   define YYJSON_GCC_VER 0
+#   define yyjson_gcc_available(major, minor, patch) 0
+#endif
+
+/** real gcc check */
+#if !defined(__clang__) && !defined(__INTEL_COMPILER) && !defined(__ICC) && \
+    defined(__GNUC__)
+#   define YYJSON_IS_REAL_GCC 1
+#else
+#   define YYJSON_IS_REAL_GCC 0
 #endif
 
 /** C version (STDC) */
@@ -4449,7 +4467,8 @@ struct yyjson_doc {
  @param len The returnd value from strlen(str).
  */
 yyjson_api_inline bool unsafe_yyjson_is_str_noesc(const char *str, size_t len) {
-#if YYJSON_HAS_CONSTANT_P && (YYJSON_GCC_VER == 0 || YYJSON_GCC_VER >= 4)
+#if YYJSON_HAS_CONSTANT_P && \
+    (!YYJSON_IS_REAL_GCC || yyjson_gcc_available(4, 4, 0))
     if (yyjson_constant_p(len) && len <= 32) {
         /*
          Same as the following loop:
