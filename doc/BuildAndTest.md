@@ -69,6 +69,8 @@ Supported CMake options:
 - `-DYYJSON_DISABLE_UTILS=ON` Disable JSON Pointer, JSON Patch and JSON Merge Patch.
 - `-DYYJSON_DISABLE_FAST_FP_CONV=ON` Disable builtin fast floating-pointer conversion.
 - `-DYYJSON_DISABLE_NON_STANDARD=ON` Disable non-standard JSON support at compile-time.
+- `-DYYJSON_DISABLE_UTF8_VALIDATION=ON` Disable UTF-8 validation at compile-time.
+- `-DYYJSON_DISABLE_UNALIGNED_MEMORY_ACCESS=ON` Disable unaligned memory access support at compile-time.
 
 
 ## Use CMake as a dependency
@@ -85,7 +87,7 @@ add_subdirectory(vendor/yyjson)
 target_link_libraries(your_target PRIVATE yyjson)
 ```
 
-If your CMake version is higher than 3.14, you can use the following code to let CMake automatically download it:
+If your CMake version is higher than 3.11, you can use the following code to let CMake automatically download it:
 ```cmake
 include(FetchContent)
 
@@ -95,7 +97,11 @@ FetchContent_Declare(
     GIT_REPOSITORY https://github.com/ibireme/yyjson.git
     GIT_TAG master # master, or version number, e.g. 0.6.0
 )
-FetchContent_MakeAvailable(yyjson)
+FetchContent_GetProperties(yyjson)
+if(NOT yyjson_POPULATED)
+  FetchContent_Populate(yyjson)
+  add_subdirectory(${yyjson_SOURCE_DIR} ${yyjson_BINARY_DIR} EXCLUDE_FROM_ALL)
+endif()
 
 # Link yyjson to your target
 target_link_libraries(your_target PRIVATE yyjson)

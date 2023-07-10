@@ -74,7 +74,7 @@ More benchmark reports with interactive charts (update 2020-12-12)
     * high instruction level parallelism
     * excellent branch predictor
     * low penalty for misaligned memory access
-* A modern compiler with good optimizer.
+* A modern compiler with good optimizer (e.g. clang)
 
 
 # Sample Code
