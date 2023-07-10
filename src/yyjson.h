@@ -136,12 +136,8 @@
 #endif
 
 /*
- Define as 1 to disable unaligned memory access if target architecture does not
- support unaligned memory access (such as some embedded processors).
- 
- If this value is not defined, yyjson will perform some automatic detection.
- The wrong definition of this option may cause some performance degradation,
- but will not cause any run-time errors.
+ Define as 1 to indicate that the target architecture does not support unaligned
+ memory access. Please refer to the comments in the C file for details.
  */
 #ifndef YYJSON_DISABLE_UNALIGNED_MEMORY_ACCESS
 #endif

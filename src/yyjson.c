@@ -169,38 +169,39 @@ uint32_t yyjson_version(void) {
 
 /* endian */
 #if yyjson_has_include(<sys/types.h>)
-#    include <sys/types.h>
+#    include <sys/types.h> /* POSIX */
 #endif
-
 #if yyjson_has_include(<endian.h>)
-#    include <endian.h>
-#elif yyjson_has_include(<machine/endian.h>)
-#    include <machine/endian.h>
+#    include <endian.h> /* Linux */
 #elif yyjson_has_include(<sys/endian.h>)
-#    include <sys/endian.h>
+#    include <sys/endian.h> /* BSD, Android */
+#elif yyjson_has_include(<machine/endian.h>)
+#    include <machine/endian.h> /* BSD, Darwin */
 #endif
 
 #define YYJSON_BIG_ENDIAN       4321
 #define YYJSON_LITTLE_ENDIAN    1234
 
-#if defined(__BYTE_ORDER__) && __BYTE_ORDER__
-#   if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+#if defined(BYTE_ORDER) && BYTE_ORDER
+#   if defined(BIG_ENDIAN) && (BYTE_ORDER == BIG_ENDIAN)
 #       define YYJSON_ENDIAN YYJSON_BIG_ENDIAN
-#   elif __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+#   elif defined(LITTLE_ENDIAN) && (BYTE_ORDER == LITTLE_ENDIAN)
 #       define YYJSON_ENDIAN YYJSON_LITTLE_ENDIAN
 #   endif
 
 #elif defined(__BYTE_ORDER) && __BYTE_ORDER
-#   if __BYTE_ORDER == __BIG_ENDIAN
+#   if defined(__BIG_ENDIAN) && (__BYTE_ORDER == __BIG_ENDIAN)
 #       define YYJSON_ENDIAN YYJSON_BIG_ENDIAN
-#   elif __BYTE_ORDER == __LITTLE_ENDIAN
+#   elif defined(__LITTLE_ENDIAN) && (__BYTE_ORDER == __LITTLE_ENDIAN)
 #       define YYJSON_ENDIAN YYJSON_LITTLE_ENDIAN
 #   endif
 
-#elif defined(BYTE_ORDER) && BYTE_ORDER
-#   if BYTE_ORDER == BIG_ENDIAN
+#elif defined(__BYTE_ORDER__) && __BYTE_ORDER__
+#   if defined(__ORDER_BIG_ENDIAN__) && \
+        (__BYTE_ORDER__ == __ORDER_BIG_ENDIAN__)
 #       define YYJSON_ENDIAN YYJSON_BIG_ENDIAN
-#   elif BYTE_ORDER == LITTLE_ENDIAN
+#   elif defined(__ORDER_LITTLE_ENDIAN__) && \
+        (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
 #       define YYJSON_ENDIAN YYJSON_LITTLE_ENDIAN
 #   endif
 
@@ -211,11 +212,8 @@ uint32_t yyjson_version(void) {
     defined(__x86_64) || defined(__x86_64__) || \
     defined(__amd64) || defined(__amd64__) || \
     defined(_M_AMD64) || defined(_M_X64) || \
-    defined(__ia64) || defined(_IA64) || defined(__IA64__) ||  \
-    defined(__ia64__) || defined(_M_IA64) || defined(__itanium__) || \
+    defined(_M_ARM) || defined(_M_ARM64) || \
     defined(__ARMEL__) || defined(__THUMBEL__) || defined(__AARCH64EL__) || \
-    defined(__alpha) || defined(__alpha__) || defined(_M_ALPHA) || \
-    defined(__riscv) || defined(__riscv__) || \
     defined(_MIPSEL) || defined(__MIPSEL) || defined(__MIPSEL__) || \
     defined(__EMSCRIPTEN__) || defined(__wasm__) || \
     defined(__loongarch__)
@@ -224,9 +222,6 @@ uint32_t yyjson_version(void) {
 #elif (defined(__BIG_ENDIAN__) && __BIG_ENDIAN__ == 1) || \
     defined(__ARMEB__) || defined(__THUMBEB__) || defined(__AARCH64EB__) || \
     defined(_MIPSEB) || defined(__MIPSEB) || defined(__MIPSEB__) || \
-    defined(_ARCH_PPC) || defined(_ARCH_PPC64) || \
-    defined(__ppc) || defined(__ppc__) || \
-    defined(__sparc) || defined(__sparc__) || defined(__sparc64__) || \
     defined(__or1k__) || defined(__OR1K__)
 #   define YYJSON_ENDIAN YYJSON_BIG_ENDIAN
 
@@ -235,64 +230,40 @@ uint32_t yyjson_version(void) {
 #endif
 
 /*
- Unaligned memory access detection.
+ This macro controls how yyjson handles unaligned memory accesses.
  
- Some architectures cannot perform unaligned memory access, or unaligned memory
- accesses can have a large performance penalty. Modern compilers can make some
- optimizations for unaligned access. For example: https://godbolt.org/z/Ejo3Pa
+ By default, yyjson uses `memcpy()` for memory copying. This takes advantage of
+ the compiler's automatic optimizations to generate unaligned memory access
+ instructions when the target architecture supports it.
  
-    typedef struct { char c[2] } vec2;
-    void copy_vec2(vec2 *dst, vec2 *src) {
-        *dst = *src;
-    }
+ However, for some older compilers or architectures where `memcpy()` isn't
+ optimized well and may generate unnecessary function calls, consider defining
+ this macro as 1. In such cases, yyjson switches to manual byte-by-byte access,
+ potentially improving performance. An example of the generated assembly code on
+ the ARM platform can be found here: https://godbolt.org/z/334jjhxPT
  
- Compiler may generate `load/store` or `move` instruction if target architecture
- supports unaligned access, otherwise it may generate `call memcpy` instruction.
- 
- We want to avoid `memcpy` calls, so we should disable unaligned access by
- define `YYJSON_DISABLE_UNALIGNED_MEMORY_ACCESS` as 1 on these architectures.
+ As this flag has already been enabled for some common architectures in the
+ following code, users typically don't need to manually specify it. If users are
+ unsure about it, please review the generated assembly code or perform actual
+ benchmark to make an informed decision.
  */
 #ifndef YYJSON_DISABLE_UNALIGNED_MEMORY_ACCESS
-#   if defined(i386) || defined(__i386) || defined(__i386__) || \
-        defined(__i486__) || defined(__i586__) || defined(__i686__) || \
-        defined(_X86_) || defined(__X86__) || defined(_M_IX86) || \
-        defined(__I86__) || defined(__IA32__) || \
-        defined(__THW_INTEL) || defined(__THW_INTEL__) || \
-        defined(__x86_64) || defined(__x86_64__) || \
-        defined(__amd64) || defined(__amd64__) || \
-        defined(_M_AMD64) || defined(_M_X64)
-#       define YYJSON_DISABLE_UNALIGNED_MEMORY_ACCESS 0 /* x86 */
-
-#   elif defined(__ia64) || defined(_IA64) || defined(__IA64__) ||  \
+#   if defined(__ia64) || defined(_IA64) || defined(__IA64__) ||  \
         defined(__ia64__) || defined(_M_IA64) || defined(__itanium__)
 #       define YYJSON_DISABLE_UNALIGNED_MEMORY_ACCESS 1 /* Itanium */
-
-#   elif defined(__arm64) || defined(__arm64__) || \
-        defined(__AARCH64EL__) || defined(__AARCH64EB__) || \
-        defined(__aarch64__) || defined(_M_ARM64)
-#       define YYJSON_DISABLE_UNALIGNED_MEMORY_ACCESS 0 /* ARM64 */
-
-#   elif defined(__ARM_ARCH_4__) || defined(__ARM_ARCH_4T__) || \
-        defined(__ARM_ARCH_5TEJ__) || defined(__ARM_ARCH_5TE__) || \
-        defined(__ARM_ARCH_6T2__) || defined(__ARM_ARCH_6KZ__) || \
-        defined(__ARM_ARCH_6Z__) || defined(__ARM_ARCH_6K__)
+#   elif (defined(__arm__) || defined(__arm64__) || defined(__aarch64__)) && \
+        (defined(__GNUC__) || defined(__clang__)) && \
+        (!defined(__ARM_FEATURE_UNALIGNED) || !__ARM_FEATURE_UNALIGNED)
 #       define YYJSON_DISABLE_UNALIGNED_MEMORY_ACCESS 1 /* ARM */
-
-#   elif defined(__ppc64__) || defined(__PPC64__) || \
-        defined(__powerpc64__) || defined(_ARCH_PPC64) || \
-        defined(__ppc) || defined(__ppc__) || defined(__PPC__) || \
-        defined(__powerpc) || defined(__powerpc__) || defined(__POWERPC__) || \
-        defined(_ARCH_PPC) || defined(_M_PPC) || \
-        defined(__PPCGECKO__) || defined(__PPCBROADWAY__) || defined(_XENON)
-#       define YYJSON_DISABLE_UNALIGNED_MEMORY_ACCESS 0 /* PowerPC */
-
-#   elif defined(__loongarch__)
-#       define YYJSON_DISABLE_UNALIGNED_MEMORY_ACCESS 0 /* loongarch */
-
+#   elif defined(__sparc) || defined(__sparc__)
+#       define YYJSON_DISABLE_UNALIGNED_MEMORY_ACCESS 1 /* SPARC */
+#   elif defined(__mips) || defined(__mips__) || defined(__MIPS__)
+#       define YYJSON_DISABLE_UNALIGNED_MEMORY_ACCESS 1 /* MIPS */
+#   elif defined(__m68k__) || defined(M68000)
+#       define YYJSON_DISABLE_UNALIGNED_MEMORY_ACCESS 1 /* M68K */
 #   else
-#       define YYJSON_DISABLE_UNALIGNED_MEMORY_ACCESS 0 /* Unknown */
+#       define YYJSON_DISABLE_UNALIGNED_MEMORY_ACCESS 0
 #   endif
-
 #endif
 
 /*
@@ -517,11 +488,11 @@ __extension__ typedef unsigned __int128 u128;
 #endif
 
 /** 16/32/64-bit vector */
-typedef struct v16 { char c1, c2; } v16;
-typedef struct v32 { char c1, c2, c3, c4; } v32;
-typedef struct v64 { char c1, c2, c3, c4, c5, c6, c7, c8; } v64;
+typedef struct v16 { char c[2]; } v16;
+typedef struct v32 { char c[4]; } v32;
+typedef struct v64 { char c[8]; } v64;
 
-/** 16/32/64-bit vector union, used for unaligned memory access on modern CPU */
+/** 16/32/64-bit vector union */
 typedef union v16_uni { v16 v; u16 u; } v16_uni;
 typedef union v32_uni { v32 v; u32 u; } v32_uni;
 typedef union v64_uni { v64 v; u64 u; } v64_uni;
@@ -532,121 +503,164 @@ typedef union v64_uni { v64 v; u64 u; } v64_uni;
  * Load/Store Utils
  *============================================================================*/
 
-#define byte_move_idx(x) ((u8 *)dst)[x] = ((u8 *)src)[x];
-
-static_inline void byte_move_2(void *dst, const void *src) {
 #if YYJSON_DISABLE_UNALIGNED_MEMORY_ACCESS
-    repeat2_incr(byte_move_idx)
-#else
-    memmove(dst, src, 2);
-#endif
-}
 
-static_inline void byte_move_4(void *dst, const void *src) {
-#if YYJSON_DISABLE_UNALIGNED_MEMORY_ACCESS
-    repeat4_incr(byte_move_idx)
-#else
-    memmove(dst, src, 4);
-#endif
-}
-
-static_inline void byte_move_8(void *dst, const void *src) {
-#if YYJSON_DISABLE_UNALIGNED_MEMORY_ACCESS
-    repeat8_incr(byte_move_idx)
-#else
-    memmove(dst, src, 8);
-#endif
-}
-
-static_inline void byte_move_16(void *dst, const void *src) {
-#if YYJSON_DISABLE_UNALIGNED_MEMORY_ACCESS
-    repeat16_incr(byte_move_idx)
-#else
-    memmove(dst, src, 16);
-#endif
-}
+#define byte_move_idx(x) ((char *)dst)[x] = ((const char *)src)[x];
 
 static_inline void byte_copy_2(void *dst, const void *src) {
-#if YYJSON_DISABLE_UNALIGNED_MEMORY_ACCESS
     repeat2_incr(byte_move_idx)
-#else
-    memcpy(dst, src, 2);
-#endif
 }
 
 static_inline void byte_copy_4(void *dst, const void *src) {
-#if YYJSON_DISABLE_UNALIGNED_MEMORY_ACCESS
     repeat4_incr(byte_move_idx)
-#else
-    memcpy(dst, src, 4);
-#endif
 }
 
 static_inline void byte_copy_8(void *dst, const void *src) {
-#if YYJSON_DISABLE_UNALIGNED_MEMORY_ACCESS
     repeat8_incr(byte_move_idx)
-#else
-    memcpy(dst, src, 8);
-#endif
 }
 
 static_inline void byte_copy_16(void *dst, const void *src) {
-#if YYJSON_DISABLE_UNALIGNED_MEMORY_ACCESS
     repeat16_incr(byte_move_idx)
-#else
-    memcpy(dst, src, 16);
-#endif
+}
+
+static_inline void byte_move_2(void *dst, const void *src) {
+    repeat2_incr(byte_move_idx)
+}
+
+static_inline void byte_move_4(void *dst, const void *src) {
+    repeat4_incr(byte_move_idx)
+}
+
+static_inline void byte_move_8(void *dst, const void *src) {
+    repeat8_incr(byte_move_idx)
+}
+
+static_inline void byte_move_16(void *dst, const void *src) {
+    repeat16_incr(byte_move_idx)
 }
 
 static_inline bool byte_match_2(void *buf, const char *pat) {
-#if YYJSON_DISABLE_UNALIGNED_MEMORY_ACCESS
     return
-    ((u8 *)buf)[0] == ((const u8 *)pat)[0] &&
-    ((u8 *)buf)[1] == ((const u8 *)pat)[1];
-#else
-    v16_uni u1, u2;
-    u1.v = *(const v16 *)pat;
-    u2.v = *(const v16 *)buf;
-    return u1.u == u2.u;
-#endif
+    ((char *)buf)[0] == ((const char *)pat)[0] &&
+    ((char *)buf)[1] == ((const char *)pat)[1];
 }
 
 static_inline bool byte_match_4(void *buf, const char *pat) {
-#if YYJSON_DISABLE_UNALIGNED_MEMORY_ACCESS
     return
-    ((u8 *)buf)[0] == ((const u8 *)pat)[0] &&
-    ((u8 *)buf)[1] == ((const u8 *)pat)[1] &&
-    ((u8 *)buf)[2] == ((const u8 *)pat)[2] &&
-    ((u8 *)buf)[3] == ((const u8 *)pat)[3];
-#else
-    v32_uni u1, u2;
-    u1.v = *(const v32 *)pat;
-    u2.v = *(const v32 *)buf;
-    return u1.u == u2.u;
-#endif
+    ((char *)buf)[0] == ((const char *)pat)[0] &&
+    ((char *)buf)[1] == ((const char *)pat)[1] &&
+    ((char *)buf)[2] == ((const char *)pat)[2] &&
+    ((char *)buf)[3] == ((const char *)pat)[3];
 }
 
 static_inline u16 byte_load_2(const void *src) {
     v16_uni uni;
-    uni.v = *(const v16 *)src;
+    uni.v.c[0] = ((const char *)src)[0];
+    uni.v.c[1] = ((const char *)src)[1];
     return uni.u;
 }
 
 static_inline u32 byte_load_3(const void *src) {
     v32_uni uni;
-    ((v16_uni *)&uni)->v = *(const v16 *)src;
-    uni.v.c3 = ((const char *)src)[2];
-    uni.v.c4 = 0;
+    uni.v.c[0] = ((const char *)src)[0];
+    uni.v.c[1] = ((const char *)src)[1];
+    uni.v.c[2] = ((const char *)src)[2];
+    uni.v.c[3] = 0;
     return uni.u;
 }
 
 static_inline u32 byte_load_4(const void *src) {
     v32_uni uni;
-    uni.v = *(const v32 *)src;
+    uni.v.c[0] = ((const char *)src)[0];
+    uni.v.c[1] = ((const char *)src)[1];
+    uni.v.c[2] = ((const char *)src)[2];
+    uni.v.c[3] = ((const char *)src)[3];
     return uni.u;
 }
 
 #undef byte_move_expr
+
+#else
+
+static_inline void byte_copy_2(void *dst, const void *src) {
+    memcpy(dst, src, 2);
+}
+
+static_inline void byte_copy_4(void *dst, const void *src) {
+    memcpy(dst, src, 4);
+}
+
+static_inline void byte_copy_8(void *dst, const void *src) {
+    memcpy(dst, src, 8);
+}
+
+static_inline void byte_copy_16(void *dst, const void *src) {
+    memcpy(dst, src, 16);
+}
+
+static_inline void byte_move_2(void *dst, const void *src) {
+    u16 tmp;
+    memcpy(&tmp, src, 2);
+    memcpy(dst, &tmp, 2);
+}
+
+static_inline void byte_move_4(void *dst, const void *src) {
+    u32 tmp;
+    memcpy(&tmp, src, 4);
+    memcpy(dst, &tmp, 4);
+}
+
+static_inline void byte_move_8(void *dst, const void *src) {
+    u64 tmp;
+    memcpy(&tmp, src, 8);
+    memcpy(dst, &tmp, 8);
+}
+
+static_inline void byte_move_16(void *dst, const void *src) {
+    char *pdst = (char *)dst;
+    const char *psrc = (const char *)src;
+    u64 tmp1, tmp2;
+    memcpy(&tmp1, psrc, 8);
+    memcpy(&tmp2, psrc + 8, 8);
+    memcpy(pdst, &tmp1, 8);
+    memcpy(pdst + 8, &tmp2, 8);
+}
+
+static_inline bool byte_match_2(void *buf, const char *pat) {
+    v16_uni u1, u2;
+    memcpy(&u1, buf, 2);
+    memcpy(&u2, pat, 2);
+    return u1.u == u2.u;
+}
+
+static_inline bool byte_match_4(void *buf, const char *pat) {
+    v32_uni u1, u2;
+    memcpy(&u1, buf, 4);
+    memcpy(&u2, pat, 4);
+    return u1.u == u2.u;
+}
+
+static_inline u16 byte_load_2(const void *src) {
+    v16_uni uni;
+    memcpy(&uni, src, 2);
+    return uni.u;
+}
+
+static_inline u32 byte_load_3(const void *src) {
+    v32_uni uni;
+    memcpy(&uni, src, 2);
+    uni.v.c[2] = ((const char *)src)[2];
+    uni.v.c[3] = 0;
+    return uni.u;
+}
+
+static_inline u32 byte_load_4(const void *src) {
+    v32_uni uni;
+    memcpy(&uni, src, 4);
+    return uni.u;
+}
+
+#endif
 
 
 
@@ -655,37 +669,20 @@ static_inline u32 byte_load_4(const void *src) {
  * These functions are used to detect and convert NaN and Inf numbers.
  *============================================================================*/
 
-/**
- This union is used to avoid violating the strict aliasing rule in C.
- `memcpy` can be used in both C and C++, but it may reduce performance without
- compiler optimization.
- */
-typedef union { u64 u; f64 f; } f64_uni;
-
 /** Convert raw binary to double. */
 static_inline f64 f64_from_raw(u64 u) {
-#ifndef __cplusplus
-    f64_uni uni;
-    uni.u = u;
-    return uni.f;
-#else
+    /* use memcpy to avoid violating the strict aliasing rule */
     f64 f;
     memcpy(&f, &u, 8);
     return f;
-#endif
 }
 
 /** Convert double to raw binary. */
 static_inline u64 f64_to_raw(f64 f) {
-#ifndef __cplusplus
-    f64_uni uni;
-    uni.f = f;
-    return uni.u;
-#else
+    /* use memcpy to avoid violating the strict aliasing rule */
     u64 u;
     memcpy(&u, &f, 8);
     return u;
-#endif
 }
 
 /** Get raw 'infinity' with sign. */
@@ -5084,6 +5081,7 @@ static_inline bool read_string(u8 **ptr,
     const u32 b4_err0 = 0x00000004UL;
     const u32 b4_err1 = 0x00003003UL;
 #else
+    /* this should be evaluated at compile-time */
     v32_uni b1_mask_uni = {{ 0x80, 0x00, 0x00, 0x00 }};
     v32_uni b1_patt_uni = {{ 0x00, 0x00, 0x00, 0x00 }};
     v32_uni b2_mask_uni = {{ 0xE0, 0xC0, 0x00, 0x00 }};
@@ -5341,6 +5339,10 @@ copy_ascii:
     dst += 16;
     goto copy_ascii;
     
+    /*
+     The memory will be moved forward by at least 1 byte. So the `byte_move`
+     can be one byte more than needed to reduce the number of instructions.
+     */
 copy_ascii_stop_0:
     goto copy_utf8;
 copy_ascii_stop_1:
@@ -7745,6 +7747,7 @@ static_inline u8 *write_string(u8 *cur, bool esc, bool inv,
     const u32 b4_err0 = 0x00000004UL;
     const u32 b4_err1 = 0x00003003UL;
 #else
+    /* this should be evaluated at compile-time */
     v16_uni b2_mask_uni = {{ 0xE0, 0xC0 }};
     v16_uni b2_patt_uni = {{ 0xC0, 0x80 }};
     v16_uni b2_requ_uni = {{ 0x1E, 0x00 }};
@@ -7789,8 +7792,8 @@ static_inline u8 *write_string(u8 *cur, bool esc, bool inv,
 )
     
     /* The replacement character U+FFFD, used to indicate invalid character. */
-    const v32 rep = { 'F', 'F', 'F', 'D' };
-    const v32 pre = { '\\', 'u', '0', '0' };
+    const v32 rep = {{ 'F', 'F', 'F', 'D' }};
+    const v32 pre = {{ '\\', 'u', '0', '0' }};
     
     const u8 *src = str;
     const u8 *end = str + str_len;
@@ -8006,15 +8009,15 @@ err_esc:
 
 /** Write null (requires 8 bytes buffer). */
 static_inline u8 *write_null(u8 *cur) {
-    v64 v = { 'n', 'u', 'l', 'l', ',', '\n', 0, 0 };
+    v64 v = {{ 'n', 'u', 'l', 'l', ',', '\n', 0, 0 }};
     byte_copy_8(cur, &v);
     return cur + 4;
 }
 
 /** Write bool (requires 8 bytes buffer). */
 static_inline u8 *write_bool(u8 *cur, bool val) {
-    v64 v0 = { 'f', 'a', 'l', 's', 'e', ',', '\n', 0 };
-    v64 v1 = { 't', 'r', 'u', 'e', ',', '\n', 0, 0 };
+    v64 v0 = {{ 'f', 'a', 'l', 's', 'e', ',', '\n', 0 }};
+    v64 v1 = {{ 't', 'r', 'u', 'e', ',', '\n', 0, 0 }};
     if (val) {
         byte_copy_8(cur, &v1);
     } else {
