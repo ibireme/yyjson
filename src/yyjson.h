@@ -4510,6 +4510,9 @@ yyjson_api_inline bool unsafe_yyjson_is_str_noesc(const char *str, size_t len) {
 #       undef yyjson_check_char_noesc
         return true;
     }
+#else
+    (void)str;
+    (void)len;
 #endif
     return false;
 }
@@ -6676,7 +6679,7 @@ yyjson_api_inline bool yyjson_mut_obj_put(yyjson_mut_val *obj,
                         !yyjson_mut_is_str(key))) return false;
     key_len = unsafe_yyjson_get_len(key);
     yyjson_mut_obj_iter_init(obj, &iter);
-    while ((cur_key = yyjson_mut_obj_iter_next(&iter))) {
+    while ((cur_key = yyjson_mut_obj_iter_next(&iter)) != 0) {
         if (unsafe_yyjson_equals_strn(cur_key, key->uni.str, key_len)) {
             if (!replaced && val) {
                 replaced = true;
