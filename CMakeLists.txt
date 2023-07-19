@@ -324,6 +324,12 @@ if(YYJSON_BUILD_TESTS)
         target_compile_options(test_compile_ansi_cpp PRIVATE
             $<$<COMPILE_LANGUAGE:CXX>:${YYJSON_STRICT_FLAGS}>)
         
+        # add tests
+        add_test(test_compile_ansi_c test_compile_ansi_c)
+        message(STATUS "Add test: test_compile_ansi_c")
+        add_test(test_compile_ansi_cpp test_compile_ansi_cpp)
+        message(STATUS "Add test: test_compile_ansi_cpp")
+        
     elseif(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
         
         # Compiler flag check
