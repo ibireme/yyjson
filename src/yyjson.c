@@ -1146,9 +1146,11 @@ bool yyjson_alc_pool_init(yyjson_alc *alc, void *buf, usize size) {
 }
 
 yyjson_alc *yyjson_alc_pool_new(usize size) {
+    void *hdr, *buf;
     usize hdr_len = size_align_up(sizeof(yyjson_alc), sizeof(pool_ctx));
     usize buf_len = size_align_up(size, sizeof(pool_ctx));
-    void *hdr = default_malloc(NULL, hdr_len + buf_len), *buf;
+    if (buf_len < size || hdr_len + buf_len < buf_len) return NULL;
+    hdr = default_malloc(NULL, hdr_len + buf_len);
     if (!hdr) return NULL;
     buf = (void *)((u8 *)hdr + hdr_len);
     if (!yyjson_alc_pool_init((yyjson_alc *)hdr, buf, buf_len)) {
