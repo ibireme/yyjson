@@ -674,7 +674,7 @@ yyjson_api bool yyjson_alc_pool_init(yyjson_alc *alc, void *buf, size_t size);
      yyjson_alc_pool_init(alc, buf, size);
  @endcode
  @param size The size of buffer, in bytes.
- @return A new pool allocator, or NULL if an error occurs.
+ @return A new pool allocator, or NULL if memory allocation failed.
  @note The returned value should be freed with `yyjson_alc_pool_free()`.
  */
 yyjson_api yyjson_alc *yyjson_alc_pool_new(size_t size);
@@ -1537,7 +1537,7 @@ yyjson_api bool yyjson_mut_val_write_fp(FILE *fp,
     Multiple options can be combined with `|` operator. 0 means no options.
  @param len A pointer to receive output length in bytes (not including the
     null-terminator). Pass NULL if you don't need length information.
- @return A new JSON string, or ≈
+ @return A new JSON string, or NULL if an error occurs.
     This string is encoded as UTF-8 with a null-terminator.
     When it's no longer needed, it should be freed with free().
  */
