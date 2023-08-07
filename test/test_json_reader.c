@@ -90,7 +90,7 @@ static void test_read_file(const char *path, flag_type type, expect_type expect)
     yy_assert(read_suc);
     
     usize max_mem_len = yyjson_read_max_memory_usage(len, flag);
-    void *buf = malloc(max_mem_len );
+    void *buf = malloc(max_mem_len);
     yyjson_alc alc;
     yyjson_alc_pool_init(&alc, buf, max_mem_len);
     

@@ -1367,7 +1367,7 @@ The library does not directly call libc's memory allocation functions (malloc/re
 Using a custom memory allocator allows you to have more control over memory allocation, here are a few examples:
 
 ## Single allocator for multiple JSON
-If you need to parse multiple small JSON, you can use a single allocator with pre-allocated buffer to avoid frequent memory allocation.
+If you need to parse multiple small JSON one by one, you can use a single allocator to avoid multiple memory allocations.
 
 Sample code:
 ```c
@@ -1392,6 +1392,27 @@ for(int i = 0, i < your_json_file_count; i++) {
 // free the buffer
 free(buf);
 ```
+
+Here's another convenience function to do that:
+```c
+// max data size for single JSON
+size_t max_json_size = 64 * 1024;
+// create the allocator
+yyjson_alc *alc = yyjson_alc_pool_new(yyjson_read_max_memory_usage(max_json_size, 0));
+
+// read multiple JSON with single allocator
+for(int i = 0, i < your_json_file_count; i++) {
+    const char *your_json_file_path = ...;
+    yyjson_doc *doc = yyjson_read_file(your_json_file_path, 0, alc, NULL);
+    ...
+    yyjson_doc_free(doc);
+}
+
+// free the allocator
+yyjson_alc_pool_free(alc);
+```
+
+
 
 ## Stack memory allocator
 If the JSON is small enough, you can use stack memory to read or write it.

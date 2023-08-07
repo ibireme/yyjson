@@ -3,10 +3,11 @@
 #include "yyjson.h"
 #include "yy_test_utils.h"
 
-yy_test_case(test_allocator) {
+
+static void test_alc_init(void) {
     yyjson_alc alc;
     usize size;
-    void *buf, *mem[16];
+    void *buf;
     
     yy_assert(!yyjson_alc_pool_init(NULL, NULL, 0));
     
@@ -33,11 +34,33 @@ yy_test_case(test_allocator) {
     buf = malloc(size);
     yy_assert(!yyjson_alc_pool_init(&alc, buf, size));
     free(buf);
+}
+
+static void test_alc_new(void) {
+    yyjson_alc *alc;
+    void *ptr;
+    
+    alc = yyjson_alc_pool_new(0);
+    yy_assert(!alc);
+    
+    alc = yyjson_alc_pool_new(1024);
+    yy_assert(alc);
+    ptr = alc->malloc(alc->ctx, 512);
+    yy_assert(ptr);
+    alc->free(alc->ctx, ptr);
+    yyjson_alc_pool_free(alc);
+    
+    yyjson_alc_pool_free(NULL);
+}
+
+static void test_alc_use(void) {
+    yyjson_alc alc;
+    usize size;
+    void *buf, *mem[16];
     
     size = 1024;
     buf = malloc(size);
     yy_assert(yyjson_alc_pool_init(&alc, buf, size));
-    
     
     {   // suc and fail
         mem[0] = alc.malloc(alc.ctx, 0);
@@ -208,4 +231,51 @@ yy_test_case(test_allocator) {
     }
     
     free(buf);
+}
+
+// test allocator for different length json
+static void test_alc_read(void) {
+#if !YYJSON_DISABLE_READER
+    for (size_t n = 1; n <= 1000; n++) {
+        // e.g. n = 3: [1,1,1]
+        size_t len = 1 + n * 2;
+        char *str = malloc(len);
+        str[0] = '[';
+        for (size_t i = 0; i < n; i++) {
+            str[i * 2 + 1] = '1';
+            str[i * 2 + 2] = ',';
+        }
+        str[len - 1] = ']';
+        
+        {
+            yyjson_read_flag flg = 0;
+            yyjson_alc *alc = yyjson_alc_pool_new(yyjson_read_max_memory_usage(len, flg));
+            yyjson_doc *doc = yyjson_read_opts(str, len, flg, alc, NULL);
+            yy_assert(doc);
+            yy_assert(doc->val_read == n + 1);
+            yyjson_doc_free(doc);
+            yyjson_alc_pool_free(alc);
+        }
+        {
+            str = realloc(str, len + YYJSON_PADDING_SIZE);
+            memset(str + len, 0, YYJSON_PADDING_SIZE);
+            yyjson_read_flag flg = YYJSON_READ_INSITU;
+            yyjson_alc *alc = yyjson_alc_pool_new(yyjson_read_max_memory_usage(len, flg));
+            yyjson_doc *doc = yyjson_read_opts(str, len, flg, alc, NULL);
+            yy_assert(doc);
+            yy_assert(doc->val_read == n + 1);
+            yyjson_doc_free(doc);
+            yyjson_alc_pool_free(alc);
+        }
+        
+        free(str);
+    }
+#endif
+}
+
+yy_test_case(test_allocator) {
+    test_alc_init();
+    test_alc_new();
+    test_alc_use();
+    test_alc_read();
 }
