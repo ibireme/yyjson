@@ -1216,7 +1216,7 @@ static void *dyn_malloc(void *ctx_ptr, usize size) {
     
     /* freelist is empty, create new chunk */
     if (!ctx->free_list.next) {
-        chunk = def.malloc(def.ctx, size);
+        chunk = (dyn_chunk *)def.malloc(def.ctx, size);
         if (unlikely(!chunk)) return NULL;
         chunk->size = size;
         chunk->next = NULL;
@@ -1234,7 +1234,7 @@ static void *dyn_malloc(void *ctx_ptr, usize size) {
             return (void *)(chunk + 1);
         }
         if (!chunk->next) { /* resize the largest chunk */
-            chunk = def.realloc(def.ctx, chunk, chunk->size, size);
+            chunk = (dyn_chunk *)def.realloc(def.ctx, chunk, chunk->size, size);
             if (unlikely(!chunk)) return NULL;
             prev->next = NULL;
             chunk->size = size;
@@ -1256,7 +1256,7 @@ static void *dyn_realloc(void *ctx_ptr, void *ptr,
     if (chunk->size >= size) return ptr;
     
     dyn_chunk_list_remove(&ctx->used_list, chunk);
-    new_chunk = def.realloc(def.ctx, chunk, chunk->size, size);
+    new_chunk = (dyn_chunk *)def.realloc(def.ctx, chunk, chunk->size, size);
     if (likely(new_chunk)) {
         new_chunk->size = size;
         chunk = new_chunk;
@@ -1283,7 +1283,7 @@ static void dyn_free(void *ctx_ptr, void *ptr) {
 yyjson_alc *yyjson_alc_dyn_new(void) {
     const yyjson_alc def = YYJSON_DEFAULT_ALC;
     usize hdr_len = sizeof(yyjson_alc) + sizeof(dyn_ctx);
-    yyjson_alc *alc = def.malloc(def.ctx, hdr_len);
+    yyjson_alc *alc = (yyjson_alc *)def.malloc(def.ctx, hdr_len);
     dyn_ctx *ctx = (dyn_ctx *)(void *)(alc + 1);
     if (unlikely(!alc)) return NULL;
     alc->malloc = dyn_malloc;
