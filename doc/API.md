@@ -1366,6 +1366,7 @@ The library does not directly call libc's memory allocation functions (malloc/re
 
 Using a custom memory allocator allows you to have more control over memory allocation, here are a few examples:
 
+
 ## Single allocator for multiple JSON
 If you need to parse multiple small JSON one by one, you can use a single allocator to avoid multiple memory allocations.
 
@@ -1381,7 +1382,7 @@ void *buf = malloc(buf_size);
 yyjson_alc alc;
 yyjson_alc_pool_init(&alc, buf, buf_size);
 
-// read multiple JSON with single allocator
+// read multiple JSON using one allocator
 for(int i = 0, i < your_json_file_count; i++) {
     const char *your_json_file_path = ...;
     yyjson_doc *doc = yyjson_read_file(your_json_file_path, 0, &alc, NULL);
@@ -1393,14 +1394,12 @@ for(int i = 0, i < your_json_file_count; i++) {
 free(buf);
 ```
 
-Here's another convenience function to do that:
+If you are not sure about the amount of memory required to process JSON, you can use the dynamic allocator.
 ```c
-// max data size for single JSON
-size_t max_json_size = 64 * 1024;
-// create the allocator
-yyjson_alc *alc = yyjson_alc_pool_new(yyjson_read_max_memory_usage(max_json_size, 0));
+// create a dynamic allocator
+yyjson_alc *alc = yyjson_alc_dyn_new();
 
-// read multiple JSON with single allocator
+// read multiple JSON using one allocator
 for(int i = 0, i < your_json_file_count; i++) {
     const char *your_json_file_path = ...;
     yyjson_doc *doc = yyjson_read_file(your_json_file_path, 0, alc, NULL);
@@ -1409,7 +1408,7 @@ for(int i = 0, i < your_json_file_count; i++) {
 }
 
 // free the allocator
-yyjson_alc_pool_free(alc);
+yyjson_alc_dyn_free(alc);
 ```
 
 

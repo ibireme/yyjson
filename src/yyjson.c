@@ -307,6 +307,9 @@ uint32_t yyjson_version(void) {
 #define YYJSON_MUT_DOC_VAL_POOL_INIT_SIZE   (0x10 * sizeof(yyjson_mut_val))
 #define YYJSON_MUT_DOC_VAL_POOL_MAX_SIZE    (0x1000000 * sizeof(yyjson_mut_val))
 
+/* The minimum size of the dynamic allocator's chunk. */
+#define YYJSON_ALC_DYN_MIN_SIZE             0x1000
+
 /* Default value for compile-time options. */
 #ifndef YYJSON_DISABLE_READER
 #define YYJSON_DISABLE_READER 0
@@ -966,6 +969,15 @@ static const yyjson_alc YYJSON_DEFAULT_ALC = {
     NULL
 };
 
+
+
+/*==============================================================================
+ * Null Memory Allocator
+ *
+ * This allocator is just a placeholder to ensure that the internal
+ * malloc/realloc/free function pointers are not null.
+ *============================================================================*/
+
 static void *null_malloc(void *ctx, usize size) {
     return NULL;
 }
@@ -989,29 +1001,37 @@ static const yyjson_alc YYJSON_NULL_ALC = {
 
 /*==============================================================================
  * Pool Memory Allocator
- * This is a simple memory allocator that uses linked list memory chunk.
- * The following code will be executed only when the library user creates
- * this allocator manually.
+ *
+ * This allocator is initialized with a fixed-size buffer.
+ * The buffer is split into multiple memory chunks for memory allocation.
  *============================================================================*/
 
-/** chunk header */
+/** memory chunk header */
 typedef struct pool_chunk {
-    usize size; /* chunk memory size (include chunk header) */
-    struct pool_chunk *next;
+    usize size; /* chunk memory size, include chunk header */
+    struct pool_chunk *next; /* linked list, nullable */
+    /* char mem[]; flexible array member */
 } pool_chunk;
 
-/** ctx header */
+/** allocator ctx header */
 typedef struct pool_ctx {
-    usize size; /* total memory size (include ctx header) */
-    pool_chunk *free_list;
+    usize size; /* total memory size, include ctx header */
+    pool_chunk *free_list; /* linked list, nullable */
+    /* pool_chunk chunks[]; flexible array member */
 } pool_ctx;
 
+/** align up the input size to chunk size */
+static_inline void pool_size_align(usize *size) {
+    *size = size_align_up(*size, sizeof(pool_chunk)) + sizeof(pool_chunk);
+}
+
 static void *pool_malloc(void *ctx_ptr, usize size) {
+    /* assert(size != 0) */
     pool_ctx *ctx = (pool_ctx *)ctx_ptr;
     pool_chunk *next, *prev = NULL, *cur = ctx->free_list;
     
-    if (unlikely(size == 0 || size >= ctx->size)) return NULL;
-    size = size_align_up(size, sizeof(pool_chunk)) + sizeof(pool_chunk);
+    if (unlikely(size >= ctx->size)) return NULL;
+    pool_size_align(&size);
     
     while (cur) {
         if (cur->size < size) {
@@ -1038,6 +1058,7 @@ static void *pool_malloc(void *ctx_ptr, usize size) {
 }
 
 static void pool_free(void *ctx_ptr, void *ptr) {
+    /* assert(ptr != NULL) */
     pool_ctx *ctx = (pool_ctx *)ctx_ptr;
     pool_chunk *cur = ((pool_chunk *)ptr) - 1;
     pool_chunk *prev = NULL, *next = ctx->free_list;
@@ -1064,25 +1085,15 @@ static void pool_free(void *ctx_ptr, void *ptr) {
 
 static void *pool_realloc(void *ctx_ptr, void *ptr,
                           usize old_size, usize size) {
+    /* assert(ptr != NULL && size != 0 && old_size < size) */
     pool_ctx *ctx = (pool_ctx *)ctx_ptr;
     pool_chunk *cur = ((pool_chunk *)ptr) - 1, *prev, *next, *tmp;
-    usize free_size;
-    void *new_ptr;
     
-    if (unlikely(size == 0 || size >= ctx->size)) return NULL;
-    size = size_align_up(size, sizeof(pool_chunk)) + sizeof(pool_chunk);
-    
-    /* reduce size */
-    if (unlikely(size <= cur->size)) {
-        free_size = cur->size - size;
-        if (free_size >= sizeof(pool_chunk) * 2) {
-            tmp = (pool_chunk *)(void *)((u8 *)cur + cur->size - free_size);
-            tmp->size = free_size;
-            pool_free(ctx_ptr, (void *)(tmp + 1));
-            cur->size -= free_size;
-        }
-        return ptr;
-    }
+    /* check size */
+    if (unlikely(size >= ctx->size)) return NULL;
+    pool_size_align(&old_size);
+    pool_size_align(&size);
+    if (unlikely(old_size == size)) return ptr;
     
     /* find next and prev chunk */
     prev = NULL;
@@ -1092,10 +1103,9 @@ static void *pool_realloc(void *ctx_ptr, void *ptr,
         next = next->next;
     }
     
-    /* merge to higher chunk if they are contiguous */
-    if ((u8 *)cur + cur->size == (u8 *)next &&
-        cur->size + next->size >= size) {
-        free_size = cur->size + next->size - size;
+    if ((u8 *)cur + cur->size == (u8 *)next && cur->size + next->size >= size) {
+        /* merge to higher chunk if they are contiguous */
+        usize free_size = cur->size + next->size - size;
         if (free_size > sizeof(pool_chunk) * 2) {
             tmp = (pool_chunk *)(void *)((u8 *)cur + size);
             if (prev) prev->next = tmp;
@@ -1109,15 +1119,15 @@ static void *pool_realloc(void *ctx_ptr, void *ptr,
             cur->size += next->size;
         }
         return ptr;
+    } else {
+        /* fallback to malloc and memcpy */
+        void *new_ptr = pool_malloc(ctx_ptr, size - sizeof(pool_chunk));
+        if (new_ptr) {
+            memcpy(new_ptr, ptr, cur->size - sizeof(pool_chunk));
+            pool_free(ctx_ptr, ptr);
+        }
+        return new_ptr;
     }
-    
-    /* fallback to malloc and memcpy */
-    new_ptr = pool_malloc(ctx_ptr, size - sizeof(pool_chunk));
-    if (new_ptr) {
-        memcpy(new_ptr, ptr, cur->size - sizeof(pool_chunk));
-        pool_free(ctx_ptr, ptr);
-    }
-    return new_ptr;
 }
 
 bool yyjson_alc_pool_init(yyjson_alc *alc, void *buf, usize size) {
@@ -1145,23 +1155,159 @@ bool yyjson_alc_pool_init(yyjson_alc *alc, void *buf, usize size) {
     return true;
 }
 
-yyjson_alc *yyjson_alc_pool_new(usize size) {
-    void *hdr, *buf;
-    usize hdr_len = size_align_up(sizeof(yyjson_alc), sizeof(pool_ctx));
-    usize buf_len = size_align_up(size, sizeof(pool_ctx));
-    if (buf_len < size || hdr_len + buf_len < buf_len) return NULL;
-    hdr = default_malloc(NULL, hdr_len + buf_len);
-    if (!hdr) return NULL;
-    buf = (void *)((u8 *)hdr + hdr_len);
-    if (!yyjson_alc_pool_init((yyjson_alc *)hdr, buf, buf_len)) {
-        default_free(NULL, hdr);
-        return NULL;
-    }
-    return (yyjson_alc *)hdr;
+
+
+/*==============================================================================
+ * Dynamic Memory Allocator
+ *
+ * This allocator allocates memory on demand and does not immediately release
+ * unused memory. Instead, it places the unused memory into a freelist for
+ * potential reuse in the future. It is only when the entire allocator is
+ * destroyed that all previously allocated memory is released at once.
+ *============================================================================*/
+
+/** memory chunk header */
+typedef struct dyn_chunk {
+    usize size; /* chunk size, include header */
+    struct dyn_chunk *next;
+    /* char mem[]; flexible array member */
+} dyn_chunk;
+
+/** allocator ctx header */
+typedef struct {
+    dyn_chunk free_list; /* dummy header, sorted from small to large */
+    dyn_chunk used_list; /* dummy header */
+} dyn_ctx;
+
+/** align up the input size to chunk size */
+static_inline bool dyn_size_align(usize *size) {
+    usize alc_size = *size + sizeof(dyn_chunk);
+    alc_size = size_align_up(alc_size, YYJSON_ALC_DYN_MIN_SIZE);
+    if (unlikely(alc_size < *size)) return false; /* overflow */
+    *size = alc_size;
+    return true;
 }
 
-void yyjson_alc_pool_free(yyjson_alc *alc) {
-    if (alc) default_free(NULL, (void *)alc);
+/** remove a chunk from list (the chunk must already be in the list) */
+static_inline void dyn_chunk_list_remove(dyn_chunk *list, dyn_chunk *chunk) {
+    dyn_chunk *prev = list, *cur;
+    for (cur = prev->next; cur; cur = cur->next) {
+        if (cur == chunk) {
+            prev->next = cur->next;
+            cur->next = NULL;
+            return;
+        }
+        prev = cur;
+    }
+}
+
+/** add a chunk to list header (the chunk must not be in the list) */
+static_inline void dyn_chunk_list_add(dyn_chunk *list, dyn_chunk *chunk) {
+    chunk->next = list->next;
+    list->next = chunk;
+}
+
+static void *dyn_malloc(void *ctx_ptr, usize size) {
+    /* assert(size != 0) */
+    const yyjson_alc def = YYJSON_DEFAULT_ALC;
+    dyn_ctx *ctx = (dyn_ctx *)ctx_ptr;
+    dyn_chunk *chunk, *prev, *next;
+    if (unlikely(!dyn_size_align(&size))) return NULL;
+    
+    /* freelist is empty, create new chunk */
+    if (!ctx->free_list.next) {
+        chunk = def.malloc(def.ctx, size);
+        if (unlikely(!chunk)) return NULL;
+        chunk->size = size;
+        chunk->next = NULL;
+        dyn_chunk_list_add(&ctx->used_list, chunk);
+        return (void *)(chunk + 1);
+    }
+    
+    /* find a large enough chunk, or resize the largest chunk */
+    prev = &ctx->free_list;
+    while (true) {
+        chunk = prev->next;
+        if (chunk->size >= size) { /* enough size, reuse this chunk */
+            prev->next = chunk->next;
+            dyn_chunk_list_add(&ctx->used_list, chunk);
+            return (void *)(chunk + 1);
+        }
+        if (!chunk->next) { /* resize the largest chunk */
+            chunk = def.realloc(def.ctx, chunk, chunk->size, size);
+            if (unlikely(!chunk)) return NULL;
+            prev->next = NULL;
+            chunk->size = size;
+            dyn_chunk_list_add(&ctx->used_list, chunk);
+            return (void *)(chunk + 1);
+        }
+        prev = chunk;
+    }
+}
+
+static void *dyn_realloc(void *ctx_ptr, void *ptr,
+                          usize old_size, usize size) {
+    /* assert(ptr != NULL && size != 0 && old_size < size) */
+    const yyjson_alc def = YYJSON_DEFAULT_ALC;
+    dyn_ctx *ctx = (dyn_ctx *)ctx_ptr;
+    dyn_chunk *prev, *next, *new_chunk;
+    dyn_chunk *chunk = (dyn_chunk *)ptr - 1;
+    if (unlikely(!dyn_size_align(&size))) return NULL;
+    if (chunk->size >= size) return ptr;
+    
+    dyn_chunk_list_remove(&ctx->used_list, chunk);
+    new_chunk = def.realloc(def.ctx, chunk, chunk->size, size);
+    if (likely(new_chunk)) {
+        new_chunk->size = size;
+        chunk = new_chunk;
+    }
+    dyn_chunk_list_add(&ctx->used_list, chunk);
+    return new_chunk ? (void *)(new_chunk + 1) : NULL;
+}
+
+static void dyn_free(void *ctx_ptr, void *ptr) {
+    /* assert(ptr != NULL) */
+    dyn_ctx *ctx = (dyn_ctx *)ctx_ptr;
+    dyn_chunk *chunk = (dyn_chunk *)ptr - 1, *prev;
+    
+    dyn_chunk_list_remove(&ctx->used_list, chunk);
+    for (prev = &ctx->free_list; prev; prev = prev->next) {
+        if (!prev->next || prev->next->size >= chunk->size) {
+            chunk->next = prev->next;
+            prev->next = chunk;
+            break;
+        }
+    }
+}
+
+yyjson_alc *yyjson_alc_dyn_new(void) {
+    const yyjson_alc def = YYJSON_DEFAULT_ALC;
+    usize hdr_len = sizeof(yyjson_alc) + sizeof(dyn_ctx);
+    yyjson_alc *alc = def.malloc(def.ctx, hdr_len);
+    dyn_ctx *ctx = (dyn_ctx *)(void *)(alc + 1);
+    if (unlikely(!alc)) return NULL;
+    alc->malloc = dyn_malloc;
+    alc->realloc = dyn_realloc;
+    alc->free = dyn_free;
+    alc->ctx = alc + 1;
+    memset(ctx, 0, sizeof(*ctx));
+    return alc;
+}
+
+void yyjson_alc_dyn_free(yyjson_alc *alc) {
+    const yyjson_alc def = YYJSON_DEFAULT_ALC;
+    dyn_ctx *ctx = (dyn_ctx *)(void *)(alc + 1);
+    dyn_chunk *chunk, *next;
+    if (unlikely(!alc)) return;
+    for (chunk = ctx->free_list.next; chunk; chunk = next) {
+        next = chunk->next;
+        def.free(def.ctx, chunk);
+    }
+    for (chunk = ctx->used_list.next; chunk; chunk = next) {
+        next = chunk->next;
+        def.free(def.ctx, chunk);
+    }
+    def.free(def.ctx, alc);
 }
 
 

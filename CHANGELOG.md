@@ -6,7 +6,7 @@ All notable changes to this project will be documented in this file.
 #### Added
 - Add `YYJSON_SUBTYPE_NOESC` subtype to mark strings that do not need to be escaped.
 - Add `YYJSON_DISABLE_UTF8_VALIDATION` flag to allow disable UTF-8 validation at compile-time.
-- Add a convenience function to create pool allocator: `yyjson_alc_pool_new()`.
+- Add dynamic allocator API: `yyjson_alc_dyn_new()`, `yyjson_alc_dyn_free()`.
 
 #### Changed
 - Improve the write performance of strings.
