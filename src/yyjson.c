@@ -2670,6 +2670,7 @@ yyjson_mut_val *yyjson_merge_patch(yyjson_mut_doc *doc,
     builder = yyjson_mut_obj(doc);
     if (unlikely(!builder)) return NULL;
     
+    memset(&local_orig, 0, sizeof(local_orig));
     if (!yyjson_is_obj(orig)) {
         orig = &local_orig;
         orig->tag = builder->tag;
@@ -2721,6 +2722,7 @@ yyjson_mut_val *yyjson_mut_merge_patch(yyjson_mut_doc *doc,
     builder = yyjson_mut_obj(doc);
     if (unlikely(!builder)) return NULL;
     
+    memset(&local_orig, 0, sizeof(local_orig));
     if (!yyjson_mut_is_obj(orig)) {
         orig = &local_orig;
         orig->tag = builder->tag;
