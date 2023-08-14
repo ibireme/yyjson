@@ -1470,7 +1470,6 @@ yyjson_mut_val *yyjson_val_mut_copy(yyjson_mut_doc *m_doc,
      We copy them to another contiguous memory as mutable values,
      then reconnect the mutable values with the original relationship.
      */
-    
     usize i_vals_len;
     yyjson_mut_val *m_vals, *m_val;
     yyjson_val *i_val, *i_end;
@@ -1540,7 +1539,6 @@ static yyjson_mut_val *unsafe_yyjson_mut_val_mut_copy(yyjson_mut_doc *m_doc,
      second to last item, which needs to be linked to the last item to close the
      circle.
      */
-    
     yyjson_mut_val *m_val = unsafe_yyjson_mut_val(m_doc, 1);
     if (unlikely(!m_val)) return NULL;
     m_val->tag = m_vals->tag;
@@ -1705,12 +1703,13 @@ static_inline bool unsafe_yyjson_num_equals(void *lhs, void *rhs) {
     yyjson_val_uni *runi = &((yyjson_val *)rhs)->uni;
     yyjson_subtype lt = unsafe_yyjson_get_subtype(lhs);
     yyjson_subtype rt = unsafe_yyjson_get_subtype(rhs);
-    if (lt == rt)
-        return luni->u64 == runi->u64;
-    if (lt == YYJSON_SUBTYPE_SINT && rt == YYJSON_SUBTYPE_UINT)
+    if (lt == rt) return luni->u64 == runi->u64;
+    if (lt == YYJSON_SUBTYPE_SINT && rt == YYJSON_SUBTYPE_UINT) {
         return luni->i64 >= 0 && luni->u64 == runi->u64;
-    if (lt == YYJSON_SUBTYPE_UINT && rt == YYJSON_SUBTYPE_SINT)
+    }
+    if (lt == YYJSON_SUBTYPE_UINT && rt == YYJSON_SUBTYPE_SINT) {
         return runi->i64 >= 0 && luni->u64 == runi->u64;
+    }
     return false;
 }
 
@@ -1736,8 +1735,8 @@ bool unsafe_yyjson_equals(yyjson_val *lhs, yyjson_val *rhs) {
                 while (len-- > 0) {
                     rhs = yyjson_obj_iter_getn(&iter, lhs->uni.str,
                                                unsafe_yyjson_get_len(lhs));
-                    if (!rhs || !unsafe_yyjson_equals(lhs + 1, rhs))
-                        return false;
+                    if (!rhs) return false;
+                    if (!unsafe_yyjson_equals(lhs + 1, rhs)) return false;
                     lhs = unsafe_yyjson_get_next(lhs + 1);
                 }
             }
@@ -1791,8 +1790,8 @@ bool unsafe_yyjson_mut_equals(yyjson_mut_val *lhs, yyjson_mut_val *rhs) {
                 while (len-- > 0) {
                     rhs = yyjson_mut_obj_iter_getn(&iter, lhs->uni.str,
                                                    unsafe_yyjson_get_len(lhs));
-                    if (!rhs || !unsafe_yyjson_mut_equals(lhs->next, rhs))
-                        return false;
+                    if (!rhs) return false;
+                    if (!unsafe_yyjson_mut_equals(lhs->next, rhs)) return false;
                     lhs = lhs->next->next;
                 }
             }

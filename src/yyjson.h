@@ -662,6 +662,8 @@ typedef struct yyjson_alc {
     yyjson_doc *doc = yyjson_read_opts(json, strlen(json), 0, &alc, NULL);
     // the memory of `doc` is on the stack
  @endcode
+ 
+ @warning This Allocator is not thread-safe.
  */
 yyjson_api bool yyjson_alc_pool_init(yyjson_alc *alc, void *buf, size_t size);
 
@@ -674,6 +676,8 @@ yyjson_api bool yyjson_alc_pool_init(yyjson_alc *alc, void *buf, size_t size);
  
  @return A new dynamic allocator, or NULL if memory allocation failed.
  @note The returned value should be freed with `yyjson_alc_dyn_free()`.
+ 
+ @warning This Allocator is not thread-safe.
  */
 yyjson_api yyjson_alc *yyjson_alc_dyn_new(void);
 
