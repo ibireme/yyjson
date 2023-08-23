@@ -5,6 +5,7 @@
 [![Codecov](https://img.shields.io/codecov/c/github/ibireme/yyjson/master?style=flat-square)](https://codecov.io/gh/ibireme/yyjson)
 [![License](https://img.shields.io/github/license/ibireme/yyjson?color=blue&style=flat-square)](https://github.com/ibireme/yyjson/blob/master/LICENSE)
 [![Version](https://img.shields.io/github/v/release/ibireme/yyjson?color=orange&style=flat-square)](https://github.com/ibireme/yyjson/releases)
+[![Packaging status](https://repology.org/badge/tiny-repos/yyjson.svg)](https://repology.org/project/yyjson/versions)
 
 A high performance JSON library written in ANSI C.
 
@@ -201,6 +202,10 @@ The pre-generated Doxygen HTML for the release version can be viewed here:
     * [API and sample code](https://ibireme.github.io/yyjson/doc/doxygen/html/md_doc__a_p_i.html)
     * [Data structure](https://ibireme.github.io/yyjson/doc/doxygen/html/md_doc__data_structure.html)
     * [Changelog](https://ibireme.github.io/yyjson/doc/doxygen/html/md__c_h_a_n_g_e_l_o_g.html)
+
+# Packaging status
+
+[![Packaging status](https://repology.org/badge/vertical-allrepos/yyjson.svg)](https://repology.org/project/yyjson/versions)
 
 # TODO
 * [x] Add documentation page.
