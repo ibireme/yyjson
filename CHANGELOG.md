@@ -7,9 +7,13 @@ All notable changes to this project will be documented in this file.
 - Add `YYJSON_SUBTYPE_NOESC` subtype to mark strings that do not need to be escaped.
 - Add `YYJSON_DISABLE_UTF8_VALIDATION` flag to allow disable UTF-8 validation at compile-time.
 - Add dynamic allocator API: `yyjson_alc_dyn_new()`, `yyjson_alc_dyn_free()`.
+- Add the missing `yyjson_mut_obj_add_arr/obj()` API: #140
 
 #### Changed
 - Improve the write performance of strings.
+
+#### Fixed
+- Fix clang-16 valgrind fail: #134
 
 
 ## 0.7.0 (2023-05-25)

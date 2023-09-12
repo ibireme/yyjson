@@ -1662,6 +1662,16 @@ static void test_json_mut_obj_api(void) {
     yy_assert(yyjson_mut_get_len(val) == 7);
     yy_assert(yyjson_mut_equals_strn(val, str, 7));
     
+    val = yyjson_mut_obj_add_arr(doc, obj, "ee");
+    yy_assert(yyjson_mut_is_arr(val));
+    yy_assert(yyjson_mut_obj_get(obj, "ee") == val);
+    yy_assert(yyjson_mut_obj_add_arr(doc, obj, NULL) == NULL);
+    
+    val = yyjson_mut_obj_add_obj(doc, obj, "ff");
+    yy_assert(yyjson_mut_is_obj(val));
+    yy_assert(yyjson_mut_obj_get(obj, "ff") == val);
+    yy_assert(yyjson_mut_obj_add_obj(doc, obj, NULL) == NULL);
+    
     val = yyjson_mut_str(doc, "zzz");
     yy_assert(yyjson_mut_obj_add_val(doc, obj, "yyy", val));
     val = yyjson_mut_obj_get(obj, "yyy");
