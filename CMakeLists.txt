@@ -3,7 +3,7 @@
 # https://github.com/ibireme/yyjson/blob/master/LICENSE
 
 cmake_minimum_required(VERSION 3.5)
-project(yyjson VERSION 0.7.0 LANGUAGES C)
+project(yyjson VERSION 0.8.0 LANGUAGES C)
 
 
 

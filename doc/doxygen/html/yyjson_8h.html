@@ -35,7 +35,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname"><a href="index.html">yyjson</a><span id="projectnumber">&#160;0.7.0</span>
+   <div id="projectname"><a href="index.html">yyjson</a><span id="projectnumber">&#160;0.8.0</span>
    </div>
    <div id="projectbrief">A high performance C JSON library.</div>
   </td>
@@ -156,6 +156,8 @@ Macros</h2></td></tr>
 <tr class="separator:a77011c6b1268f9068abe1975b92e38e0"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0de4b27af40f104d2b1aac72edd6832e"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="yyjson_8h.html#a0de4b27af40f104d2b1aac72edd6832e">YYJSON_GCC_VER</a>&#160;&#160;&#160;0</td></tr>
 <tr class="separator:a0de4b27af40f104d2b1aac72edd6832e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4781760a87346473a82f26fdd897fa52"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="yyjson_8h.html#a4781760a87346473a82f26fdd897fa52">YYJSON_IS_REAL_GCC</a>&#160;&#160;&#160;0</td></tr>
+<tr class="separator:a4781760a87346473a82f26fdd897fa52"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0a914f47b39417dd25fe728eef7d8f00"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="yyjson_8h.html#a0a914f47b39417dd25fe728eef7d8f00">YYJSON_STDC_VER</a>&#160;&#160;&#160;0</td></tr>
 <tr class="separator:a0a914f47b39417dd25fe728eef7d8f00"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a2b6ed8ca435b89b44a9c66cad30fd9d5"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="yyjson_8h.html#a2b6ed8ca435b89b44a9c66cad30fd9d5">YYJSON_CPP_VER</a>&#160;&#160;&#160;0</td></tr>
@@ -178,6 +180,8 @@ Macros</h2></td></tr>
 <tr class="separator:a2fcd8be107f850c0d81ba7bff62edeb7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a13065ff687cfd3b49eb38739676594f3"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="yyjson_8h.html#a13065ff687cfd3b49eb38739676594f3">yyjson_unlikely</a>(expr)&#160;&#160;&#160;(expr)</td></tr>
 <tr class="separator:a13065ff687cfd3b49eb38739676594f3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:acf1b73925eff2306f4e23837cd874c8d"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="yyjson_8h.html#acf1b73925eff2306f4e23837cd874c8d">YYJSON_HAS_CONSTANT_P</a>&#160;&#160;&#160;0</td></tr>
+<tr class="separator:acf1b73925eff2306f4e23837cd874c8d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af0cb2540fb4d4fc9809933a3020efaf8"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="yyjson_8h.html#af0cb2540fb4d4fc9809933a3020efaf8">yyjson_deprecated</a>(msg)</td></tr>
 <tr class="separator:af0cb2540fb4d4fc9809933a3020efaf8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a691136e772913e98860a791e65b70f04"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="yyjson_8h.html#a691136e772913e98860a791e65b70f04">yyjson_api</a></td></tr>
@@ -190,16 +194,60 @@ Macros</h2></td></tr>
 <tr class="separator:a39520db5ba6361257b7b51783357b877"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a78cf6dd1700f2cd7d7f256b4c2339d8b"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="yyjson_8h.html#a78cf6dd1700f2cd7d7f256b4c2339d8b">YYJSON_VERSION_MAJOR</a>&#160;&#160;&#160;0</td></tr>
 <tr class="separator:a78cf6dd1700f2cd7d7f256b4c2339d8b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a4c03e94b391df0f2b019c8df6c6e70f1"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="yyjson_8h.html#a4c03e94b391df0f2b019c8df6c6e70f1">YYJSON_VERSION_MINOR</a>&#160;&#160;&#160;7</td></tr>
+<tr class="memitem:a4c03e94b391df0f2b019c8df6c6e70f1"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="yyjson_8h.html#a4c03e94b391df0f2b019c8df6c6e70f1">YYJSON_VERSION_MINOR</a>&#160;&#160;&#160;8</td></tr>
 <tr class="separator:a4c03e94b391df0f2b019c8df6c6e70f1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa6d66fc870aac34589593a0bf6561647"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="yyjson_8h.html#aa6d66fc870aac34589593a0bf6561647">YYJSON_VERSION_PATCH</a>&#160;&#160;&#160;0</td></tr>
 <tr class="separator:aa6d66fc870aac34589593a0bf6561647"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac02a007abcdf7a80894f839acafa5963"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="yyjson_8h.html#ac02a007abcdf7a80894f839acafa5963">YYJSON_VERSION_HEX</a>&#160;&#160;&#160;0x000700</td></tr>
+<tr class="memitem:ac02a007abcdf7a80894f839acafa5963"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="yyjson_8h.html#ac02a007abcdf7a80894f839acafa5963">YYJSON_VERSION_HEX</a>&#160;&#160;&#160;0x000800</td></tr>
 <tr class="separator:ac02a007abcdf7a80894f839acafa5963"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7b766ff66469615aab5bed9f760aab07"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="yyjson_8h.html#a7b766ff66469615aab5bed9f760aab07">YYJSON_VERSION_STRING</a>&#160;&#160;&#160;&quot;0.7.0&quot;</td></tr>
+<tr class="memitem:a7b766ff66469615aab5bed9f760aab07"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="yyjson_8h.html#a7b766ff66469615aab5bed9f760aab07">YYJSON_VERSION_STRING</a>&#160;&#160;&#160;&quot;0.8.0&quot;</td></tr>
 <tr class="separator:a7b766ff66469615aab5bed9f760aab07"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1db6e43b1df0a46cee92d837ad553cc2"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="yyjson_8h.html#a1db6e43b1df0a46cee92d837ad553cc2">YYJSON_TYPE_NONE</a>&#160;&#160;&#160;((uint8_t)0)        /* _____000 */</td></tr>
+<tr class="separator:a1db6e43b1df0a46cee92d837ad553cc2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae548138e539cfcebdfad39a58da44470"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="yyjson_8h.html#ae548138e539cfcebdfad39a58da44470">YYJSON_TYPE_RAW</a>&#160;&#160;&#160;((uint8_t)1)        /* _____001 */</td></tr>
+<tr class="separator:ae548138e539cfcebdfad39a58da44470"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3c003e6f71f42835957e6b9cf845a2e2"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="yyjson_8h.html#a3c003e6f71f42835957e6b9cf845a2e2">YYJSON_TYPE_NULL</a>&#160;&#160;&#160;((uint8_t)2)        /* _____010 */</td></tr>
+<tr class="separator:a3c003e6f71f42835957e6b9cf845a2e2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a085018fbc0363aad32708fdf8b247e36"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="yyjson_8h.html#a085018fbc0363aad32708fdf8b247e36">YYJSON_TYPE_BOOL</a>&#160;&#160;&#160;((uint8_t)3)        /* _____011 */</td></tr>
+<tr class="separator:a085018fbc0363aad32708fdf8b247e36"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a720689b031a276a194e43c276fea9154"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="yyjson_8h.html#a720689b031a276a194e43c276fea9154">YYJSON_TYPE_NUM</a>&#160;&#160;&#160;((uint8_t)4)        /* _____100 */</td></tr>
+<tr class="separator:a720689b031a276a194e43c276fea9154"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3a75e44d4e709fbfafa3137a15edbb68"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="yyjson_8h.html#a3a75e44d4e709fbfafa3137a15edbb68">YYJSON_TYPE_STR</a>&#160;&#160;&#160;((uint8_t)5)        /* _____101 */</td></tr>
+<tr class="separator:a3a75e44d4e709fbfafa3137a15edbb68"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a69ef1dad0f3735313d762050178ed320"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="yyjson_8h.html#a69ef1dad0f3735313d762050178ed320">YYJSON_TYPE_ARR</a>&#160;&#160;&#160;((uint8_t)6)        /* _____110 */</td></tr>
+<tr class="separator:a69ef1dad0f3735313d762050178ed320"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a79764d1a17bdd0a5b4f2b553a9d114b9"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="yyjson_8h.html#a79764d1a17bdd0a5b4f2b553a9d114b9">YYJSON_TYPE_OBJ</a>&#160;&#160;&#160;((uint8_t)7)        /* _____111 */</td></tr>
+<tr class="separator:a79764d1a17bdd0a5b4f2b553a9d114b9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2a9e116a307c8dbcebc82305eca91fd3"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="yyjson_8h.html#a2a9e116a307c8dbcebc82305eca91fd3">YYJSON_SUBTYPE_NONE</a>&#160;&#160;&#160;((uint8_t)(0 &lt;&lt; 3)) /* ___00___ */</td></tr>
+<tr class="separator:a2a9e116a307c8dbcebc82305eca91fd3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a17877edf97bce2f3d7cf993cc9662a30"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="yyjson_8h.html#a17877edf97bce2f3d7cf993cc9662a30">YYJSON_SUBTYPE_FALSE</a>&#160;&#160;&#160;((uint8_t)(0 &lt;&lt; 3)) /* ___00___ */</td></tr>
+<tr class="separator:a17877edf97bce2f3d7cf993cc9662a30"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae6a759cdc8865c891a89a67abd18a60e"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="yyjson_8h.html#ae6a759cdc8865c891a89a67abd18a60e">YYJSON_SUBTYPE_TRUE</a>&#160;&#160;&#160;((uint8_t)(1 &lt;&lt; 3)) /* ___01___ */</td></tr>
+<tr class="separator:ae6a759cdc8865c891a89a67abd18a60e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa6a600891d4a3551b83a30afe576fd57"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="yyjson_8h.html#aa6a600891d4a3551b83a30afe576fd57">YYJSON_SUBTYPE_UINT</a>&#160;&#160;&#160;((uint8_t)(0 &lt;&lt; 3)) /* ___00___ */</td></tr>
+<tr class="separator:aa6a600891d4a3551b83a30afe576fd57"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab5b72a76b60c408b8a7f2dfc31fbcbce"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="yyjson_8h.html#ab5b72a76b60c408b8a7f2dfc31fbcbce">YYJSON_SUBTYPE_SINT</a>&#160;&#160;&#160;((uint8_t)(1 &lt;&lt; 3)) /* ___01___ */</td></tr>
+<tr class="separator:ab5b72a76b60c408b8a7f2dfc31fbcbce"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1efeaba2c4446788c9b30d20e1b82f73"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="yyjson_8h.html#a1efeaba2c4446788c9b30d20e1b82f73">YYJSON_SUBTYPE_REAL</a>&#160;&#160;&#160;((uint8_t)(2 &lt;&lt; 3)) /* ___10___ */</td></tr>
+<tr class="separator:a1efeaba2c4446788c9b30d20e1b82f73"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af470523a4d0e9d89dfed5bcfae287bdb"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="yyjson_8h.html#af470523a4d0e9d89dfed5bcfae287bdb">YYJSON_SUBTYPE_NOESC</a>&#160;&#160;&#160;((uint8_t)(1 &lt;&lt; 3)) /* ___01___ */</td></tr>
+<tr class="separator:af470523a4d0e9d89dfed5bcfae287bdb"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a53b930a8e372ddd7c8d4d389caad391e"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="yyjson_8h.html#a53b930a8e372ddd7c8d4d389caad391e">YYJSON_TYPE_MASK</a>&#160;&#160;&#160;((uint8_t)0x07)     /* _____111 */</td></tr>
 <tr class="separator:a53b930a8e372ddd7c8d4d389caad391e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9bc0cb130d1498238e942b93b8d8effd"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="yyjson_8h.html#a9bc0cb130d1498238e942b93b8d8effd">YYJSON_TYPE_BIT</a>&#160;&#160;&#160;((uint8_t)3)</td></tr>
+<tr class="separator:a9bc0cb130d1498238e942b93b8d8effd"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7d15bc48e9734dab6620e35ec30cc348"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="yyjson_8h.html#a7d15bc48e9734dab6620e35ec30cc348">YYJSON_SUBTYPE_MASK</a>&#160;&#160;&#160;((uint8_t)0x18)     /* ___11___ */</td></tr>
+<tr class="separator:a7d15bc48e9734dab6620e35ec30cc348"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa451fb3ba37fd42f69253e7d727836b7"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="yyjson_8h.html#aa451fb3ba37fd42f69253e7d727836b7">YYJSON_SUBTYPE_BIT</a>&#160;&#160;&#160;((uint8_t)2)</td></tr>
+<tr class="separator:aa451fb3ba37fd42f69253e7d727836b7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af44f401747d1fa6dd1b600c54de919ad"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="yyjson_8h.html#af44f401747d1fa6dd1b600c54de919ad">YYJSON_RESERVED_MASK</a>&#160;&#160;&#160;((uint8_t)0xE0)     /* 111_____ */</td></tr>
+<tr class="separator:af44f401747d1fa6dd1b600c54de919ad"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3aad1e39dcb4aec3e7e477500c220a53"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="yyjson_8h.html#a3aad1e39dcb4aec3e7e477500c220a53">YYJSON_RESERVED_BIT</a>&#160;&#160;&#160;((uint8_t)3)</td></tr>
+<tr class="separator:a3aad1e39dcb4aec3e7e477500c220a53"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac91eb401b770474ab76706ec58ac803d"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="yyjson_8h.html#ac91eb401b770474ab76706ec58ac803d">YYJSON_TAG_MASK</a>&#160;&#160;&#160;((uint8_t)0xFF)     /* 11111111 */</td></tr>
+<tr class="separator:ac91eb401b770474ab76706ec58ac803d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa7acf05a1b4d7c04db1b09fffbedf35b"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="yyjson_8h.html#aa7acf05a1b4d7c04db1b09fffbedf35b">YYJSON_TAG_BIT</a>&#160;&#160;&#160;((uint8_t)8)</td></tr>
+<tr class="separator:aa7acf05a1b4d7c04db1b09fffbedf35b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:abbe8e69f634b1a5a78c1dae08b88e0ef"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="yyjson_8h.html#abbe8e69f634b1a5a78c1dae08b88e0ef">YYJSON_PADDING_SIZE</a>&#160;&#160;&#160;4</td></tr>
 <tr class="separator:abbe8e69f634b1a5a78c1dae08b88e0ef"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a60fd8094ee3eff6e7b629471f50aa139"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="yyjson_8h.html#a60fd8094ee3eff6e7b629471f50aa139">yyjson_arr_foreach</a>(arr,  idx,  max,  val)</td></tr>
@@ -236,6 +284,10 @@ Functions</h2></td></tr>
 <tr class="separator:a874f912f9c023bc353d1a770798017a1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6068c4293a2b35493b18421b9afbd3d5"><td class="memItemLeft" align="right" valign="top"><a class="el" href="yyjson_8h.html#a691136e772913e98860a791e65b70f04">yyjson_api</a> bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="yyjson_8h.html#a6068c4293a2b35493b18421b9afbd3d5">yyjson_alc_pool_init</a> (<a class="el" href="structyyjson__alc.html">yyjson_alc</a> *alc, void *buf, size_t size)</td></tr>
 <tr class="separator:a6068c4293a2b35493b18421b9afbd3d5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6a90ae91b82c2e8d6665a28a691eee18"><td class="memItemLeft" align="right" valign="top"><a class="el" href="yyjson_8h.html#a691136e772913e98860a791e65b70f04">yyjson_api</a> <a class="el" href="structyyjson__alc.html">yyjson_alc</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="yyjson_8h.html#a6a90ae91b82c2e8d6665a28a691eee18">yyjson_alc_dyn_new</a> (void)</td></tr>
+<tr class="separator:a6a90ae91b82c2e8d6665a28a691eee18"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aaa9b7978e7b40e6d5d8d1cb3da0568d6"><td class="memItemLeft" align="right" valign="top"><a class="el" href="yyjson_8h.html#a691136e772913e98860a791e65b70f04">yyjson_api</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="yyjson_8h.html#aaa9b7978e7b40e6d5d8d1cb3da0568d6">yyjson_alc_dyn_free</a> (<a class="el" href="structyyjson__alc.html">yyjson_alc</a> *alc)</td></tr>
+<tr class="separator:aaa9b7978e7b40e6d5d8d1cb3da0568d6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:acf234d21f0cb4b7fc89381ef25e9f0a8"><td class="memItemLeft" align="right" valign="top"><a class="el" href="yyjson_8h.html#a691136e772913e98860a791e65b70f04">yyjson_api</a> <a class="el" href="yyjson_8h.html#structyyjson__doc">yyjson_doc</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="yyjson_8h.html#acf234d21f0cb4b7fc89381ef25e9f0a8">yyjson_read_opts</a> (char *dat, size_t len, <a class="el" href="yyjson_8h.html#a36af676813028c1360e8b343768f0e81">yyjson_read_flag</a> flg, const <a class="el" href="structyyjson__alc.html">yyjson_alc</a> *alc, <a class="el" href="yyjson_8h.html#structyyjson__read__err">yyjson_read_err</a> *err)</td></tr>
 <tr class="separator:acf234d21f0cb4b7fc89381ef25e9f0a8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a605ac08b083fb65331d7fa5eb5d32225"><td class="memItemLeft" align="right" valign="top"><a class="el" href="yyjson_8h.html#a691136e772913e98860a791e65b70f04">yyjson_api</a> <a class="el" href="yyjson_8h.html#structyyjson__doc">yyjson_doc</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="yyjson_8h.html#a605ac08b083fb65331d7fa5eb5d32225">yyjson_read_file</a> (const char *path, <a class="el" href="yyjson_8h.html#a36af676813028c1360e8b343768f0e81">yyjson_read_flag</a> flg, const <a class="el" href="structyyjson__alc.html">yyjson_alc</a> *alc, <a class="el" href="yyjson_8h.html#structyyjson__read__err">yyjson_read_err</a> *err)</td></tr>
@@ -718,6 +770,10 @@ Functions</h2></td></tr>
 <tr class="separator:abeeca08e3b6994dddd55951a83cd648f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a1d544048860a8c53510d560b4d60411a"><td class="memItemLeft" align="right" valign="top"><a class="el" href="yyjson_8h.html#a682886dc8be2307076b125b496b15570">yyjson_api_inline</a> bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="yyjson_8h.html#a1d544048860a8c53510d560b4d60411a">yyjson_mut_obj_add_strncpy</a> (<a class="el" href="yyjson_8h.html#structyyjson__mut__doc">yyjson_mut_doc</a> *doc, <a class="el" href="yyjson_8h.html#structyyjson__mut__val">yyjson_mut_val</a> *obj, const char *key, const char *val, size_t len)</td></tr>
 <tr class="separator:a1d544048860a8c53510d560b4d60411a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1d27c9ad366209b83f236d74ec7e1991"><td class="memItemLeft" align="right" valign="top"><a class="el" href="yyjson_8h.html#a682886dc8be2307076b125b496b15570">yyjson_api_inline</a> <a class="el" href="yyjson_8h.html#structyyjson__mut__val">yyjson_mut_val</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="yyjson_8h.html#a1d27c9ad366209b83f236d74ec7e1991">yyjson_mut_obj_add_arr</a> (<a class="el" href="yyjson_8h.html#structyyjson__mut__doc">yyjson_mut_doc</a> *doc, <a class="el" href="yyjson_8h.html#structyyjson__mut__val">yyjson_mut_val</a> *obj, const char *key)</td></tr>
+<tr class="separator:a1d27c9ad366209b83f236d74ec7e1991"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7241260b7fefbbdfdf7566d207b486c5"><td class="memItemLeft" align="right" valign="top"><a class="el" href="yyjson_8h.html#a682886dc8be2307076b125b496b15570">yyjson_api_inline</a> <a class="el" href="yyjson_8h.html#structyyjson__mut__val">yyjson_mut_val</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="yyjson_8h.html#a7241260b7fefbbdfdf7566d207b486c5">yyjson_mut_obj_add_obj</a> (<a class="el" href="yyjson_8h.html#structyyjson__mut__doc">yyjson_mut_doc</a> *doc, <a class="el" href="yyjson_8h.html#structyyjson__mut__val">yyjson_mut_val</a> *obj, const char *key)</td></tr>
+<tr class="separator:a7241260b7fefbbdfdf7566d207b486c5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a210aa96478b0b005b1611fe2f0ecbaa2"><td class="memItemLeft" align="right" valign="top"><a class="el" href="yyjson_8h.html#a682886dc8be2307076b125b496b15570">yyjson_api_inline</a> bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="yyjson_8h.html#a210aa96478b0b005b1611fe2f0ecbaa2">yyjson_mut_obj_add_val</a> (<a class="el" href="yyjson_8h.html#structyyjson__mut__doc">yyjson_mut_doc</a> *doc, <a class="el" href="yyjson_8h.html#structyyjson__mut__val">yyjson_mut_val</a> *obj, const char *key, <a class="el" href="yyjson_8h.html#structyyjson__mut__val">yyjson_mut_val</a> *val)</td></tr>
 <tr class="separator:a210aa96478b0b005b1611fe2f0ecbaa2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a630b55e2937f7ffe8c0dcef20497ce93"><td class="memItemLeft" align="right" valign="top"><a class="el" href="yyjson_8h.html#a682886dc8be2307076b125b496b15570">yyjson_api_inline</a> <a class="el" href="yyjson_8h.html#structyyjson__mut__val">yyjson_mut_val</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="yyjson_8h.html#a630b55e2937f7ffe8c0dcef20497ce93">yyjson_mut_obj_remove_str</a> (<a class="el" href="yyjson_8h.html#structyyjson__mut__val">yyjson_mut_val</a> *obj, const char *key)</td></tr>
@@ -958,7 +1014,10 @@ Variables</h2></td></tr>
 <tr class="memitem:a6e43e19e2920e8d3725372efb98c3aad"><td class="memItemLeft" align="right" valign="top">static const <a class="el" href="yyjson_8h.html#ad55a4435333880ce99fedf2aa82b7e46">yyjson_patch_code</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="yyjson_8h.html#a6e43e19e2920e8d3725372efb98c3aad">YYJSON_PATCH_ERROR_POINTER</a> = 7</td></tr>
 <tr class="separator:a6e43e19e2920e8d3725372efb98c3aad"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
-<hr/><h2 class="groupheader">Data Structure Documentation</h2>
+<a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
+<div class="textblock"><dl class="section date"><dt>Date</dt><dd>2019-03-09 </dd></dl>
+<dl class="section author"><dt>Author</dt><dd>YaoYuan </dd></dl>
+</div><hr/><h2 class="groupheader">Data Structure Documentation</h2>
 <a name="structyyjson__read__err" id="structyyjson__read__err"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#structyyjson__read__err">&#9670;&nbsp;</a></span>yyjson_read_err</h2>
 
@@ -1047,10 +1106,10 @@ msg</td>
 <div class="line"><span class="keywordflow">while</span> ((val = <a class="code hl_function" href="yyjson_8h.html#ab608a351427921421a2e23877399acd5">yyjson_arr_iter_next</a>(&amp;iter))) {</div>
 <div class="line">    your_func(val);</div>
 <div class="line">}</div>
-<div class="ttc" id="ayyjson_8h_html_a38b10c3293b817b25d9dd985da121cb5"><div class="ttname"><a href="yyjson_8h.html#a38b10c3293b817b25d9dd985da121cb5">yyjson_arr_iter_with</a></div><div class="ttdeci">yyjson_api_inline yyjson_arr_iter yyjson_arr_iter_with(yyjson_val *arr)</div><div class="ttdef"><b>Definition:</b> yyjson.h:4928</div></div>
-<div class="ttc" id="ayyjson_8h_html_ab608a351427921421a2e23877399acd5"><div class="ttname"><a href="yyjson_8h.html#ab608a351427921421a2e23877399acd5">yyjson_arr_iter_next</a></div><div class="ttdeci">yyjson_api_inline yyjson_val * yyjson_arr_iter_next(yyjson_arr_iter *iter)</div><div class="ttdef"><b>Definition:</b> yyjson.h:4938</div></div>
-<div class="ttc" id="ayyjson_8h_html_structyyjson__arr__iter"><div class="ttname"><a href="yyjson_8h.html#structyyjson__arr__iter">yyjson_arr_iter</a></div><div class="ttdef"><b>Definition:</b> yyjson.h:1697</div></div>
-<div class="ttc" id="ayyjson_8h_html_structyyjson__val"><div class="ttname"><a href="yyjson_8h.html#structyyjson__val">yyjson_val</a></div><div class="ttdef"><b>Definition:</b> yyjson.h:4357</div></div>
+<div class="ttc" id="ayyjson_8h_html_a38b10c3293b817b25d9dd985da121cb5"><div class="ttname"><a href="yyjson_8h.html#a38b10c3293b817b25d9dd985da121cb5">yyjson_arr_iter_with</a></div><div class="ttdeci">yyjson_api_inline yyjson_arr_iter yyjson_arr_iter_with(yyjson_val *arr)</div><div class="ttdef"><b>Definition:</b> yyjson.h:5120</div></div>
+<div class="ttc" id="ayyjson_8h_html_ab608a351427921421a2e23877399acd5"><div class="ttname"><a href="yyjson_8h.html#ab608a351427921421a2e23877399acd5">yyjson_arr_iter_next</a></div><div class="ttdeci">yyjson_api_inline yyjson_val * yyjson_arr_iter_next(yyjson_arr_iter *iter)</div><div class="ttdef"><b>Definition:</b> yyjson.h:5130</div></div>
+<div class="ttc" id="ayyjson_8h_html_structyyjson__arr__iter"><div class="ttname"><a href="yyjson_8h.html#structyyjson__arr__iter">yyjson_arr_iter</a></div><div class="ttdef"><b>Definition:</b> yyjson.h:1806</div></div>
+<div class="ttc" id="ayyjson_8h_html_structyyjson__val"><div class="ttname"><a href="yyjson_8h.html#structyyjson__val">yyjson_val</a></div><div class="ttdef"><b>Definition:</b> yyjson.h:4492</div></div>
 </div><!-- fragment --> </dd></dl>
 </div><table class="fieldtable">
 <tr><th colspan="3">Data Fields</th></tr>
@@ -1097,18 +1156,18 @@ max</td>
 <div class="line">    val = <a class="code hl_function" href="yyjson_8h.html#a3403b9c25c8b8f2b3027f4e6d97d0ca8">yyjson_obj_iter_get_val</a>(key);</div>
 <div class="line">    your_func(key, val);</div>
 <div class="line">}</div>
-<div class="ttc" id="ayyjson_8h_html_a3403b9c25c8b8f2b3027f4e6d97d0ca8"><div class="ttname"><a href="yyjson_8h.html#a3403b9c25c8b8f2b3027f4e6d97d0ca8">yyjson_obj_iter_get_val</a></div><div class="ttdeci">yyjson_api_inline yyjson_val * yyjson_obj_iter_get_val(yyjson_val *key)</div><div class="ttdef"><b>Definition:</b> yyjson.h:5021</div></div>
-<div class="ttc" id="ayyjson_8h_html_a543806a566821ccc6c7069edabc59a85"><div class="ttname"><a href="yyjson_8h.html#a543806a566821ccc6c7069edabc59a85">yyjson_obj_iter_with</a></div><div class="ttdeci">yyjson_api_inline yyjson_obj_iter yyjson_obj_iter_with(yyjson_val *obj)</div><div class="ttdef"><b>Definition:</b> yyjson.h:5001</div></div>
-<div class="ttc" id="ayyjson_8h_html_a6033befb82b9331d2c19c09799ec5bcf"><div class="ttname"><a href="yyjson_8h.html#a6033befb82b9331d2c19c09799ec5bcf">yyjson_obj_iter_next</a></div><div class="ttdeci">yyjson_api_inline yyjson_val * yyjson_obj_iter_next(yyjson_obj_iter *iter)</div><div class="ttdef"><b>Definition:</b> yyjson.h:5011</div></div>
-<div class="ttc" id="ayyjson_8h_html_addf8b34eb1d89a54df0482acbd29872c"><div class="ttname"><a href="yyjson_8h.html#addf8b34eb1d89a54df0482acbd29872c">yyjson_obj_iter::obj</a></div><div class="ttdeci">yyjson_val * obj</div><div class="ttdef"><b>Definition:</b> yyjson.h:1825</div></div>
-<div class="ttc" id="ayyjson_8h_html_structyyjson__obj__iter"><div class="ttname"><a href="yyjson_8h.html#structyyjson__obj__iter">yyjson_obj_iter</a></div><div class="ttdef"><b>Definition:</b> yyjson.h:1821</div></div>
+<div class="ttc" id="ayyjson_8h_html_a3403b9c25c8b8f2b3027f4e6d97d0ca8"><div class="ttname"><a href="yyjson_8h.html#a3403b9c25c8b8f2b3027f4e6d97d0ca8">yyjson_obj_iter_get_val</a></div><div class="ttdeci">yyjson_api_inline yyjson_val * yyjson_obj_iter_get_val(yyjson_val *key)</div><div class="ttdef"><b>Definition:</b> yyjson.h:5209</div></div>
+<div class="ttc" id="ayyjson_8h_html_a543806a566821ccc6c7069edabc59a85"><div class="ttname"><a href="yyjson_8h.html#a543806a566821ccc6c7069edabc59a85">yyjson_obj_iter_with</a></div><div class="ttdeci">yyjson_api_inline yyjson_obj_iter yyjson_obj_iter_with(yyjson_val *obj)</div><div class="ttdef"><b>Definition:</b> yyjson.h:5189</div></div>
+<div class="ttc" id="ayyjson_8h_html_a6033befb82b9331d2c19c09799ec5bcf"><div class="ttname"><a href="yyjson_8h.html#a6033befb82b9331d2c19c09799ec5bcf">yyjson_obj_iter_next</a></div><div class="ttdeci">yyjson_api_inline yyjson_val * yyjson_obj_iter_next(yyjson_obj_iter *iter)</div><div class="ttdef"><b>Definition:</b> yyjson.h:5199</div></div>
+<div class="ttc" id="ayyjson_8h_html_addf8b34eb1d89a54df0482acbd29872c"><div class="ttname"><a href="yyjson_8h.html#addf8b34eb1d89a54df0482acbd29872c">yyjson_obj_iter::obj</a></div><div class="ttdeci">yyjson_val * obj</div><div class="ttdef"><b>Definition:</b> yyjson.h:1934</div></div>
+<div class="ttc" id="ayyjson_8h_html_structyyjson__obj__iter"><div class="ttname"><a href="yyjson_8h.html#structyyjson__obj__iter">yyjson_obj_iter</a></div><div class="ttdef"><b>Definition:</b> yyjson.h:1930</div></div>
 </div><!-- fragment --></dd></dl>
 <p>If the ordering of the keys is known at compile-time, you can use this method to speed up value lookups: </p><div class="fragment"><div class="line"><span class="comment">// {&quot;k1&quot;:1, &quot;k2&quot;: 3, &quot;k3&quot;: 3}</span></div>
 <div class="line"><a class="code hl_struct" href="yyjson_8h.html#structyyjson__val">yyjson_val</a> *key, *val;</div>
 <div class="line"><a class="code hl_struct" href="yyjson_8h.html#structyyjson__obj__iter">yyjson_obj_iter</a> iter = <a class="code hl_function" href="yyjson_8h.html#a543806a566821ccc6c7069edabc59a85">yyjson_obj_iter_with</a>(<a class="code hl_variable" href="yyjson_8h.html#addf8b34eb1d89a54df0482acbd29872c">obj</a>);</div>
 <div class="line"><a class="code hl_struct" href="yyjson_8h.html#structyyjson__val">yyjson_val</a> *v1 = <a class="code hl_function" href="yyjson_8h.html#a1f3b09c4f279287f8af93b3754a41e85">yyjson_obj_iter_get</a>(&amp;iter, <span class="stringliteral">&quot;k1&quot;</span>);</div>
 <div class="line"><a class="code hl_struct" href="yyjson_8h.html#structyyjson__val">yyjson_val</a> *v3 = <a class="code hl_function" href="yyjson_8h.html#a1f3b09c4f279287f8af93b3754a41e85">yyjson_obj_iter_get</a>(&amp;iter, <span class="stringliteral">&quot;k3&quot;</span>);</div>
-<div class="ttc" id="ayyjson_8h_html_a1f3b09c4f279287f8af93b3754a41e85"><div class="ttname"><a href="yyjson_8h.html#a1f3b09c4f279287f8af93b3754a41e85">yyjson_obj_iter_get</a></div><div class="ttdeci">yyjson_api_inline yyjson_val * yyjson_obj_iter_get(yyjson_obj_iter *iter, const char *key)</div><div class="ttdef"><b>Definition:</b> yyjson.h:5025</div></div>
+<div class="ttc" id="ayyjson_8h_html_a1f3b09c4f279287f8af93b3754a41e85"><div class="ttname"><a href="yyjson_8h.html#a1f3b09c4f279287f8af93b3754a41e85">yyjson_obj_iter_get</a></div><div class="ttdeci">yyjson_api_inline yyjson_val * yyjson_obj_iter_get(yyjson_obj_iter *iter, const char *key)</div><div class="ttdef"><b>Definition:</b> yyjson.h:5213</div></div>
 </div><!-- fragment --> <dl class="section see"><dt>See also</dt><dd><a class="el" href="yyjson_8h.html#a1f3b09c4f279287f8af93b3754a41e85">yyjson_obj_iter_get()</a> and <a class="el" href="yyjson_8h.html#a7a45a4b5a1340bb3c2907b7faf3981be">yyjson_obj_iter_getn()</a> </dd></dl>
 </div><table class="fieldtable">
 <tr><th colspan="3">Data Fields</th></tr>
@@ -1165,12 +1224,12 @@ obj</td>
 <div class="line">        <a class="code hl_function" href="yyjson_8h.html#a20fa69856e99295473e1b3e111adc3b1">yyjson_mut_arr_iter_remove</a>(&amp;iter);</div>
 <div class="line">    }</div>
 <div class="line">}</div>
-<div class="ttc" id="ayyjson_8h_html_a20fa69856e99295473e1b3e111adc3b1"><div class="ttname"><a href="yyjson_8h.html#a20fa69856e99295473e1b3e111adc3b1">yyjson_mut_arr_iter_remove</a></div><div class="ttdeci">yyjson_api_inline yyjson_mut_val * yyjson_mut_arr_iter_remove(yyjson_mut_arr_iter *iter)</div><div class="ttdef"><b>Definition:</b> yyjson.h:5655</div></div>
-<div class="ttc" id="ayyjson_8h_html_a793250c5394193a73b5e9506c8381994"><div class="ttname"><a href="yyjson_8h.html#a793250c5394193a73b5e9506c8381994">yyjson_mut_arr_iter_next</a></div><div class="ttdeci">yyjson_api_inline yyjson_mut_val * yyjson_mut_arr_iter_next(yyjson_mut_arr_iter *iter)</div><div class="ttdef"><b>Definition:</b> yyjson.h:5643</div></div>
-<div class="ttc" id="ayyjson_8h_html_a9d8bf48b287cc0099eb6619d8b4b712e"><div class="ttname"><a href="yyjson_8h.html#a9d8bf48b287cc0099eb6619d8b4b712e">yyjson_mut_arr_iter_with</a></div><div class="ttdeci">yyjson_api_inline yyjson_mut_arr_iter yyjson_mut_arr_iter_with(yyjson_mut_val *arr)</div><div class="ttdef"><b>Definition:</b> yyjson.h:5632</div></div>
-<div class="ttc" id="ayyjson_8h_html_ad58dcd5f514d5f3c71412ec86af9e2d0"><div class="ttname"><a href="yyjson_8h.html#ad58dcd5f514d5f3c71412ec86af9e2d0">yyjson_mut_arr_iter::arr</a></div><div class="ttdeci">yyjson_mut_val * arr</div><div class="ttdef"><b>Definition:</b> yyjson.h:2382</div></div>
-<div class="ttc" id="ayyjson_8h_html_structyyjson__mut__arr__iter"><div class="ttname"><a href="yyjson_8h.html#structyyjson__mut__arr__iter">yyjson_mut_arr_iter</a></div><div class="ttdef"><b>Definition:</b> yyjson.h:2377</div></div>
-<div class="ttc" id="ayyjson_8h_html_structyyjson__mut__val"><div class="ttname"><a href="yyjson_8h.html#structyyjson__mut__val">yyjson_mut_val</a></div><div class="ttdef"><b>Definition:</b> yyjson.h:5071</div></div>
+<div class="ttc" id="ayyjson_8h_html_a20fa69856e99295473e1b3e111adc3b1"><div class="ttname"><a href="yyjson_8h.html#a20fa69856e99295473e1b3e111adc3b1">yyjson_mut_arr_iter_remove</a></div><div class="ttdeci">yyjson_api_inline yyjson_mut_val * yyjson_mut_arr_iter_remove(yyjson_mut_arr_iter *iter)</div><div class="ttdef"><b>Definition:</b> yyjson.h:5865</div></div>
+<div class="ttc" id="ayyjson_8h_html_a793250c5394193a73b5e9506c8381994"><div class="ttname"><a href="yyjson_8h.html#a793250c5394193a73b5e9506c8381994">yyjson_mut_arr_iter_next</a></div><div class="ttdeci">yyjson_api_inline yyjson_mut_val * yyjson_mut_arr_iter_next(yyjson_mut_arr_iter *iter)</div><div class="ttdef"><b>Definition:</b> yyjson.h:5853</div></div>
+<div class="ttc" id="ayyjson_8h_html_a9d8bf48b287cc0099eb6619d8b4b712e"><div class="ttname"><a href="yyjson_8h.html#a9d8bf48b287cc0099eb6619d8b4b712e">yyjson_mut_arr_iter_with</a></div><div class="ttdeci">yyjson_api_inline yyjson_mut_arr_iter yyjson_mut_arr_iter_with(yyjson_mut_val *arr)</div><div class="ttdef"><b>Definition:</b> yyjson.h:5842</div></div>
+<div class="ttc" id="ayyjson_8h_html_ad58dcd5f514d5f3c71412ec86af9e2d0"><div class="ttname"><a href="yyjson_8h.html#ad58dcd5f514d5f3c71412ec86af9e2d0">yyjson_mut_arr_iter::arr</a></div><div class="ttdeci">yyjson_mut_val * arr</div><div class="ttdef"><b>Definition:</b> yyjson.h:2491</div></div>
+<div class="ttc" id="ayyjson_8h_html_structyyjson__mut__arr__iter"><div class="ttname"><a href="yyjson_8h.html#structyyjson__mut__arr__iter">yyjson_mut_arr_iter</a></div><div class="ttdef"><b>Definition:</b> yyjson.h:2486</div></div>
+<div class="ttc" id="ayyjson_8h_html_structyyjson__mut__val"><div class="ttname"><a href="yyjson_8h.html#structyyjson__mut__val">yyjson_mut_val</a></div><div class="ttdef"><b>Definition:</b> yyjson.h:5258</div></div>
 </div><!-- fragment --> </dd></dl>
 </div><table class="fieldtable">
 <tr><th colspan="3">Data Fields</th></tr>
@@ -1235,19 +1294,19 @@ pre</td>
 <div class="line">        <a class="code hl_function" href="yyjson_8h.html#a6e891b4020dd6325d6eacb5e108da3c4">yyjson_mut_obj_iter_remove</a>(&amp;iter);</div>
 <div class="line">    }</div>
 <div class="line">}</div>
-<div class="ttc" id="ayyjson_8h_html_a55f4228c2d65d497ad3cee8abe95c0be"><div class="ttname"><a href="yyjson_8h.html#a55f4228c2d65d497ad3cee8abe95c0be">yyjson_mut_obj_iter_next</a></div><div class="ttdeci">yyjson_api_inline yyjson_mut_val * yyjson_mut_obj_iter_next(yyjson_mut_obj_iter *iter)</div><div class="ttdef"><b>Definition:</b> yyjson.h:6282</div></div>
-<div class="ttc" id="ayyjson_8h_html_a6e891b4020dd6325d6eacb5e108da3c4"><div class="ttname"><a href="yyjson_8h.html#a6e891b4020dd6325d6eacb5e108da3c4">yyjson_mut_obj_iter_remove</a></div><div class="ttdeci">yyjson_api_inline yyjson_mut_val * yyjson_mut_obj_iter_remove(yyjson_mut_obj_iter *iter)</div><div class="ttdef"><b>Definition:</b> yyjson.h:6299</div></div>
-<div class="ttc" id="ayyjson_8h_html_aaa4bef14b71ff145fe8cdc2fa98c7f45"><div class="ttname"><a href="yyjson_8h.html#aaa4bef14b71ff145fe8cdc2fa98c7f45">yyjson_mut_obj_iter_get_val</a></div><div class="ttdeci">yyjson_api_inline yyjson_mut_val * yyjson_mut_obj_iter_get_val(yyjson_mut_val *key)</div><div class="ttdef"><b>Definition:</b> yyjson.h:6294</div></div>
-<div class="ttc" id="ayyjson_8h_html_ab5169c5637fdfc27fe10b919b78b6468"><div class="ttname"><a href="yyjson_8h.html#ab5169c5637fdfc27fe10b919b78b6468">yyjson_mut_obj_iter::obj</a></div><div class="ttdeci">yyjson_mut_val * obj</div><div class="ttdef"><b>Definition:</b> yyjson.h:3184</div></div>
-<div class="ttc" id="ayyjson_8h_html_aedac207e6c2d5e031997e2b0df73db6a"><div class="ttname"><a href="yyjson_8h.html#aedac207e6c2d5e031997e2b0df73db6a">yyjson_mut_obj_iter_with</a></div><div class="ttdeci">yyjson_api_inline yyjson_mut_obj_iter yyjson_mut_obj_iter_with(yyjson_mut_val *obj)</div><div class="ttdef"><b>Definition:</b> yyjson.h:6271</div></div>
-<div class="ttc" id="ayyjson_8h_html_structyyjson__mut__obj__iter"><div class="ttname"><a href="yyjson_8h.html#structyyjson__mut__obj__iter">yyjson_mut_obj_iter</a></div><div class="ttdef"><b>Definition:</b> yyjson.h:3179</div></div>
+<div class="ttc" id="ayyjson_8h_html_a55f4228c2d65d497ad3cee8abe95c0be"><div class="ttname"><a href="yyjson_8h.html#a55f4228c2d65d497ad3cee8abe95c0be">yyjson_mut_obj_iter_next</a></div><div class="ttdeci">yyjson_api_inline yyjson_mut_val * yyjson_mut_obj_iter_next(yyjson_mut_obj_iter *iter)</div><div class="ttdef"><b>Definition:</b> yyjson.h:6488</div></div>
+<div class="ttc" id="ayyjson_8h_html_a6e891b4020dd6325d6eacb5e108da3c4"><div class="ttname"><a href="yyjson_8h.html#a6e891b4020dd6325d6eacb5e108da3c4">yyjson_mut_obj_iter_remove</a></div><div class="ttdeci">yyjson_api_inline yyjson_mut_val * yyjson_mut_obj_iter_remove(yyjson_mut_obj_iter *iter)</div><div class="ttdef"><b>Definition:</b> yyjson.h:6505</div></div>
+<div class="ttc" id="ayyjson_8h_html_aaa4bef14b71ff145fe8cdc2fa98c7f45"><div class="ttname"><a href="yyjson_8h.html#aaa4bef14b71ff145fe8cdc2fa98c7f45">yyjson_mut_obj_iter_get_val</a></div><div class="ttdeci">yyjson_api_inline yyjson_mut_val * yyjson_mut_obj_iter_get_val(yyjson_mut_val *key)</div><div class="ttdef"><b>Definition:</b> yyjson.h:6500</div></div>
+<div class="ttc" id="ayyjson_8h_html_ab5169c5637fdfc27fe10b919b78b6468"><div class="ttname"><a href="yyjson_8h.html#ab5169c5637fdfc27fe10b919b78b6468">yyjson_mut_obj_iter::obj</a></div><div class="ttdeci">yyjson_mut_val * obj</div><div class="ttdef"><b>Definition:</b> yyjson.h:3293</div></div>
+<div class="ttc" id="ayyjson_8h_html_aedac207e6c2d5e031997e2b0df73db6a"><div class="ttname"><a href="yyjson_8h.html#aedac207e6c2d5e031997e2b0df73db6a">yyjson_mut_obj_iter_with</a></div><div class="ttdeci">yyjson_api_inline yyjson_mut_obj_iter yyjson_mut_obj_iter_with(yyjson_mut_val *obj)</div><div class="ttdef"><b>Definition:</b> yyjson.h:6477</div></div>
+<div class="ttc" id="ayyjson_8h_html_structyyjson__mut__obj__iter"><div class="ttname"><a href="yyjson_8h.html#structyyjson__mut__obj__iter">yyjson_mut_obj_iter</a></div><div class="ttdef"><b>Definition:</b> yyjson.h:3288</div></div>
 </div><!-- fragment --></dd></dl>
 <p>If the ordering of the keys is known at compile-time, you can use this method to speed up value lookups: </p><div class="fragment"><div class="line"><span class="comment">// {&quot;k1&quot;:1, &quot;k2&quot;: 3, &quot;k3&quot;: 3}</span></div>
 <div class="line"><a class="code hl_struct" href="yyjson_8h.html#structyyjson__mut__val">yyjson_mut_val</a> *key, *val;</div>
 <div class="line"><a class="code hl_struct" href="yyjson_8h.html#structyyjson__mut__obj__iter">yyjson_mut_obj_iter</a> iter = <a class="code hl_function" href="yyjson_8h.html#aedac207e6c2d5e031997e2b0df73db6a">yyjson_mut_obj_iter_with</a>(<a class="code hl_variable" href="yyjson_8h.html#ab5169c5637fdfc27fe10b919b78b6468">obj</a>);</div>
 <div class="line"><a class="code hl_struct" href="yyjson_8h.html#structyyjson__mut__val">yyjson_mut_val</a> *v1 = <a class="code hl_function" href="yyjson_8h.html#a9e79f1480256c6e2e8dfbf61da9cd853">yyjson_mut_obj_iter_get</a>(&amp;iter, <span class="stringliteral">&quot;k1&quot;</span>);</div>
 <div class="line"><a class="code hl_struct" href="yyjson_8h.html#structyyjson__mut__val">yyjson_mut_val</a> *v3 = <a class="code hl_function" href="yyjson_8h.html#a9e79f1480256c6e2e8dfbf61da9cd853">yyjson_mut_obj_iter_get</a>(&amp;iter, <span class="stringliteral">&quot;k3&quot;</span>);</div>
-<div class="ttc" id="ayyjson_8h_html_a9e79f1480256c6e2e8dfbf61da9cd853"><div class="ttname"><a href="yyjson_8h.html#a9e79f1480256c6e2e8dfbf61da9cd853">yyjson_mut_obj_iter_get</a></div><div class="ttdeci">yyjson_api_inline yyjson_mut_val * yyjson_mut_obj_iter_get(yyjson_mut_obj_iter *iter, const char *key)</div><div class="ttdef"><b>Definition:</b> yyjson.h:6316</div></div>
+<div class="ttc" id="ayyjson_8h_html_a9e79f1480256c6e2e8dfbf61da9cd853"><div class="ttname"><a href="yyjson_8h.html#a9e79f1480256c6e2e8dfbf61da9cd853">yyjson_mut_obj_iter_get</a></div><div class="ttdeci">yyjson_api_inline yyjson_mut_val * yyjson_mut_obj_iter_get(yyjson_mut_obj_iter *iter, const char *key)</div><div class="ttdef"><b>Definition:</b> yyjson.h:6522</div></div>
 </div><!-- fragment --> <dl class="section see"><dt>See also</dt><dd><code><a class="el" href="yyjson_8h.html#a9e79f1480256c6e2e8dfbf61da9cd853">yyjson_mut_obj_iter_get()</a></code> and <code><a class="el" href="yyjson_8h.html#a3d3ab359890ab167041732a871ab943d">yyjson_mut_obj_iter_getn()</a></code> </dd></dl>
 </div><table class="fieldtable">
 <tr><th colspan="3">Data Fields</th></tr>
@@ -1349,9 +1408,9 @@ pos</td>
 <div class="line">    <a class="code hl_function" href="yyjson_8h.html#a92d8ec53e4cf8426288d86868dc89e09">yyjson_ptr_ctx_remove</a>(&amp;ctx);</div>
 <div class="line">}</div>
 <div class="line"><span class="comment">// doc after: {&quot;a&quot;:[0,1]}</span></div>
-<div class="ttc" id="ayyjson_8h_html_a6031b6b35b06127f3fa2278be67c29ea"><div class="ttname"><a href="yyjson_8h.html#a6031b6b35b06127f3fa2278be67c29ea">yyjson_mut_doc_ptr_getx</a></div><div class="ttdeci">yyjson_api_inline yyjson_mut_val * yyjson_mut_doc_ptr_getx(yyjson_mut_doc *doc, const char *ptr, size_t len, yyjson_ptr_ctx *ctx, yyjson_ptr_err *err)</div><div class="ttdef"><b>Definition:</b> yyjson.h:6953</div></div>
-<div class="ttc" id="ayyjson_8h_html_a81cc3185457d7fd86f3818319d7efe18"><div class="ttname"><a href="yyjson_8h.html#a81cc3185457d7fd86f3818319d7efe18">yyjson_is_null</a></div><div class="ttdeci">yyjson_api_inline bool yyjson_is_null(yyjson_val *val)</div><div class="ttdef"><b>Definition:</b> yyjson.h:4658</div></div>
-<div class="ttc" id="ayyjson_8h_html_a92d8ec53e4cf8426288d86868dc89e09"><div class="ttname"><a href="yyjson_8h.html#a92d8ec53e4cf8426288d86868dc89e09">yyjson_ptr_ctx_remove</a></div><div class="ttdeci">yyjson_api_inline bool yyjson_ptr_ctx_remove(yyjson_ptr_ctx *ctx)</div><div class="ttdef"><b>Definition:</b> yyjson.h:7459</div></div>
+<div class="ttc" id="ayyjson_8h_html_a6031b6b35b06127f3fa2278be67c29ea"><div class="ttname"><a href="yyjson_8h.html#a6031b6b35b06127f3fa2278be67c29ea">yyjson_mut_doc_ptr_getx</a></div><div class="ttdeci">yyjson_api_inline yyjson_mut_val * yyjson_mut_doc_ptr_getx(yyjson_mut_doc *doc, const char *ptr, size_t len, yyjson_ptr_ctx *ctx, yyjson_ptr_err *err)</div><div class="ttdef"><b>Definition:</b> yyjson.h:7173</div></div>
+<div class="ttc" id="ayyjson_8h_html_a81cc3185457d7fd86f3818319d7efe18"><div class="ttname"><a href="yyjson_8h.html#a81cc3185457d7fd86f3818319d7efe18">yyjson_is_null</a></div><div class="ttdeci">yyjson_api_inline bool yyjson_is_null(yyjson_val *val)</div><div class="ttdef"><b>Definition:</b> yyjson.h:4847</div></div>
+<div class="ttc" id="ayyjson_8h_html_a92d8ec53e4cf8426288d86868dc89e09"><div class="ttname"><a href="yyjson_8h.html#a92d8ec53e4cf8426288d86868dc89e09">yyjson_ptr_ctx_remove</a></div><div class="ttdeci">yyjson_api_inline bool yyjson_ptr_ctx_remove(yyjson_ptr_ctx *ctx)</div><div class="ttdef"><b>Definition:</b> yyjson.h:7679</div></div>
 </div><!-- fragment --> </div><table class="fieldtable">
 <tr><th colspan="3">Data Fields</th></tr>
 <tr><td class="fieldtype">
@@ -1780,15 +1839,15 @@ val_pool</td>
 <div class="line">        (idx) &lt; (max); \</div>
 <div class="line">        (idx)++, \</div>
 <div class="line">        (val) = unsafe_yyjson_get_next(val))</div>
-<div class="ttc" id="ayyjson_8h_html_a0ea8514c92f39fd93ddcbe93a7f466e5"><div class="ttname"><a href="yyjson_8h.html#a0ea8514c92f39fd93ddcbe93a7f466e5">yyjson_arr_size</a></div><div class="ttdeci">yyjson_api_inline size_t yyjson_arr_size(yyjson_val *arr)</div><div class="ttdef"><b>Definition:</b> yyjson.h:4866</div></div>
-<div class="ttc" id="ayyjson_8h_html_ad54c34d490dd8e479e21e4cb29bc814b"><div class="ttname"><a href="yyjson_8h.html#ad54c34d490dd8e479e21e4cb29bc814b">yyjson_arr_get_first</a></div><div class="ttdeci">yyjson_api_inline yyjson_val * yyjson_arr_get_first(yyjson_val *arr)</div><div class="ttdef"><b>Definition:</b> yyjson.h:4885</div></div>
+<div class="ttc" id="ayyjson_8h_html_a0ea8514c92f39fd93ddcbe93a7f466e5"><div class="ttname"><a href="yyjson_8h.html#a0ea8514c92f39fd93ddcbe93a7f466e5">yyjson_arr_size</a></div><div class="ttdeci">yyjson_api_inline size_t yyjson_arr_size(yyjson_val *arr)</div><div class="ttdef"><b>Definition:</b> yyjson.h:5058</div></div>
+<div class="ttc" id="ayyjson_8h_html_ad54c34d490dd8e479e21e4cb29bc814b"><div class="ttname"><a href="yyjson_8h.html#ad54c34d490dd8e479e21e4cb29bc814b">yyjson_arr_get_first</a></div><div class="ttdeci">yyjson_api_inline yyjson_val * yyjson_arr_get_first(yyjson_val *arr)</div><div class="ttdef"><b>Definition:</b> yyjson.h:5077</div></div>
 </div><!-- fragment --><p >Macro for iterating over an array. It works like iterator, but with a more intuitive API.</p>
 <dl class="section user"><dt>Example</dt><dd><div class="fragment"><div class="line"><span class="keywordtype">size_t</span> idx, max;</div>
 <div class="line"><a class="code hl_struct" href="yyjson_8h.html#structyyjson__val">yyjson_val</a> *val;</div>
 <div class="line"><a class="code hl_define" href="yyjson_8h.html#a60fd8094ee3eff6e7b629471f50aa139">yyjson_arr_foreach</a>(arr, idx, max, val) {</div>
 <div class="line">    your_func(idx, val);</div>
 <div class="line">}</div>
-<div class="ttc" id="ayyjson_8h_html_a60fd8094ee3eff6e7b629471f50aa139"><div class="ttname"><a href="yyjson_8h.html#a60fd8094ee3eff6e7b629471f50aa139">yyjson_arr_foreach</a></div><div class="ttdeci">#define yyjson_arr_foreach(arr, idx, max, val)</div><div class="ttdef"><b>Definition:</b> yyjson.h:1753</div></div>
+<div class="ttc" id="ayyjson_8h_html_a60fd8094ee3eff6e7b629471f50aa139"><div class="ttname"><a href="yyjson_8h.html#a60fd8094ee3eff6e7b629471f50aa139">yyjson_arr_foreach</a></div><div class="ttdeci">#define yyjson_arr_foreach(arr, idx, max, val)</div><div class="ttdef"><b>Definition:</b> yyjson.h:1862</div></div>
 </div><!-- fragment --> </dd></dl>
 
 </div>
@@ -1880,6 +1939,21 @@ val_pool</td>
 
 </div>
 </div>
+<a id="acf1b73925eff2306f4e23837cd874c8d" name="acf1b73925eff2306f4e23837cd874c8d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#acf1b73925eff2306f4e23837cd874c8d">&#9670;&nbsp;</a></span>YYJSON_HAS_CONSTANT_P</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define YYJSON_HAS_CONSTANT_P&#160;&#160;&#160;0</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p >compile-time constant check for compiler </p>
+
+</div>
+</div>
 <a id="ae8f6fbea7b0eee0545bcf8d272ce7f33" name="ae8f6fbea7b0eee0545bcf8d272ce7f33"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ae8f6fbea7b0eee0545bcf8d272ce7f33">&#9670;&nbsp;</a></span>yyjson_has_feature</h2>
 
@@ -1930,6 +2004,21 @@ val_pool</td>
       </table>
 </div><div class="memdoc">
 <p >inline for compiler </p>
+
+</div>
+</div>
+<a id="a4781760a87346473a82f26fdd897fa52" name="a4781760a87346473a82f26fdd897fa52"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a4781760a87346473a82f26fdd897fa52">&#9670;&nbsp;</a></span>YYJSON_IS_REAL_GCC</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define YYJSON_IS_REAL_GCC&#160;&#160;&#160;0</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p >real gcc check </p>
 
 </div>
 </div>
@@ -2010,8 +2099,8 @@ val_pool</td>
 <div class="line">        (idx) &lt; (max); \</div>
 <div class="line">        (idx)++, \</div>
 <div class="line">        (val) = (val)-&gt;next)</div>
-<div class="ttc" id="ayyjson_8h_html_a847bb374b9c7fa6fff34088d23d87dad"><div class="ttname"><a href="yyjson_8h.html#a847bb374b9c7fa6fff34088d23d87dad">yyjson_mut_arr_size</a></div><div class="ttdeci">yyjson_api_inline size_t yyjson_mut_arr_size(yyjson_mut_val *arr)</div><div class="ttdef"><b>Definition:</b> yyjson.h:5582</div></div>
-<div class="ttc" id="ayyjson_8h_html_a9ff667f95ec6e6e264509e1681c74357"><div class="ttname"><a href="yyjson_8h.html#a9ff667f95ec6e6e264509e1681c74357">yyjson_mut_arr_get_first</a></div><div class="ttdeci">yyjson_api_inline yyjson_mut_val * yyjson_mut_arr_get_first(yyjson_mut_val *arr)</div><div class="ttdef"><b>Definition:</b> yyjson.h:5596</div></div>
+<div class="ttc" id="ayyjson_8h_html_a847bb374b9c7fa6fff34088d23d87dad"><div class="ttname"><a href="yyjson_8h.html#a847bb374b9c7fa6fff34088d23d87dad">yyjson_mut_arr_size</a></div><div class="ttdeci">yyjson_api_inline size_t yyjson_mut_arr_size(yyjson_mut_val *arr)</div><div class="ttdef"><b>Definition:</b> yyjson.h:5792</div></div>
+<div class="ttc" id="ayyjson_8h_html_a9ff667f95ec6e6e264509e1681c74357"><div class="ttname"><a href="yyjson_8h.html#a9ff667f95ec6e6e264509e1681c74357">yyjson_mut_arr_get_first</a></div><div class="ttdeci">yyjson_api_inline yyjson_mut_val * yyjson_mut_arr_get_first(yyjson_mut_val *arr)</div><div class="ttdef"><b>Definition:</b> yyjson.h:5806</div></div>
 </div><!-- fragment --><p >Macro for iterating over an array. It works like iterator, but with a more intuitive API.</p>
 <dl class="section warning"><dt>Warning</dt><dd>You should not modify the array while iterating over it.</dd></dl>
 <dl class="section user"><dt>Example</dt><dd><div class="fragment"><div class="line"><span class="keywordtype">size_t</span> idx, max;</div>
@@ -2019,7 +2108,7 @@ val_pool</td>
 <div class="line"><a class="code hl_define" href="yyjson_8h.html#a23a525f4192a237730aedfad55798fdb">yyjson_mut_arr_foreach</a>(arr, idx, max, val) {</div>
 <div class="line">    your_func(idx, val);</div>
 <div class="line">}</div>
-<div class="ttc" id="ayyjson_8h_html_a23a525f4192a237730aedfad55798fdb"><div class="ttname"><a href="yyjson_8h.html#a23a525f4192a237730aedfad55798fdb">yyjson_mut_arr_foreach</a></div><div class="ttdeci">#define yyjson_mut_arr_foreach(arr, idx, max, val)</div><div class="ttdef"><b>Definition:</b> yyjson.h:2447</div></div>
+<div class="ttc" id="ayyjson_8h_html_a23a525f4192a237730aedfad55798fdb"><div class="ttname"><a href="yyjson_8h.html#a23a525f4192a237730aedfad55798fdb">yyjson_mut_arr_foreach</a></div><div class="ttdeci">#define yyjson_mut_arr_foreach(arr, idx, max, val)</div><div class="ttdef"><b>Definition:</b> yyjson.h:2556</div></div>
 </div><!-- fragment --> </dd></dl>
 
 </div>
@@ -2075,7 +2164,7 @@ val_pool</td>
 <div class="line">        (idx)++, \</div>
 <div class="line">        (key) = (val)-&gt;next, \</div>
 <div class="line">        (val) = (key)-&gt;next)</div>
-<div class="ttc" id="ayyjson_8h_html_a601ac20666dd26bfbec016ee4cbb1b92"><div class="ttname"><a href="yyjson_8h.html#a601ac20666dd26bfbec016ee4cbb1b92">yyjson_mut_obj_size</a></div><div class="ttdeci">yyjson_api_inline size_t yyjson_mut_obj_size(yyjson_mut_val *obj)</div><div class="ttdef"><b>Definition:</b> yyjson.h:6224</div></div>
+<div class="ttc" id="ayyjson_8h_html_a601ac20666dd26bfbec016ee4cbb1b92"><div class="ttname"><a href="yyjson_8h.html#a601ac20666dd26bfbec016ee4cbb1b92">yyjson_mut_obj_size</a></div><div class="ttdeci">yyjson_api_inline size_t yyjson_mut_obj_size(yyjson_mut_val *obj)</div><div class="ttdef"><b>Definition:</b> yyjson.h:6434</div></div>
 </div><!-- fragment --><p >Macro for iterating over an object. It works like iterator, but with a more intuitive API.</p>
 <dl class="section warning"><dt>Warning</dt><dd>You should not modify the object while iterating over it.</dd></dl>
 <dl class="section user"><dt>Example</dt><dd><div class="fragment"><div class="line"><span class="keywordtype">size_t</span> idx, max;</div>
@@ -2083,7 +2172,7 @@ val_pool</td>
 <div class="line"><a class="code hl_define" href="yyjson_8h.html#a32884e21b899ea5869b12aec02083002">yyjson_obj_foreach</a>(obj, idx, max, key, val) {</div>
 <div class="line">    your_func(key, val);</div>
 <div class="line">}</div>
-<div class="ttc" id="ayyjson_8h_html_a32884e21b899ea5869b12aec02083002"><div class="ttname"><a href="yyjson_8h.html#a32884e21b899ea5869b12aec02083002">yyjson_obj_foreach</a></div><div class="ttdeci">#define yyjson_obj_foreach(obj, idx, max, key, val)</div><div class="ttdef"><b>Definition:</b> yyjson.h:1924</div></div>
+<div class="ttc" id="ayyjson_8h_html_a32884e21b899ea5869b12aec02083002"><div class="ttname"><a href="yyjson_8h.html#a32884e21b899ea5869b12aec02083002">yyjson_obj_foreach</a></div><div class="ttdeci">#define yyjson_obj_foreach(obj, idx, max, key, val)</div><div class="ttdef"><b>Definition:</b> yyjson.h:2033</div></div>
 </div><!-- fragment --> </dd></dl>
 
 </div>
@@ -2154,7 +2243,7 @@ val_pool</td>
 <div class="line">        (idx)++, \</div>
 <div class="line">        (key) = unsafe_yyjson_get_next(val), \</div>
 <div class="line">        (val) = (key) + 1)</div>
-<div class="ttc" id="ayyjson_8h_html_aa9789f197f972dc433ea2eb622defd50"><div class="ttname"><a href="yyjson_8h.html#aa9789f197f972dc433ea2eb622defd50">yyjson_obj_size</a></div><div class="ttdeci">yyjson_api_inline size_t yyjson_obj_size(yyjson_val *obj)</div><div class="ttdef"><b>Definition:</b> yyjson.h:4955</div></div>
+<div class="ttc" id="ayyjson_8h_html_aa9789f197f972dc433ea2eb622defd50"><div class="ttname"><a href="yyjson_8h.html#aa9789f197f972dc433ea2eb622defd50">yyjson_obj_size</a></div><div class="ttdeci">yyjson_api_inline size_t yyjson_obj_size(yyjson_val *obj)</div><div class="ttdef"><b>Definition:</b> yyjson.h:5147</div></div>
 </div><!-- fragment --><p >Macro for iterating over an object. It works like iterator, but with a more intuitive API.</p>
 <dl class="section user"><dt>Example</dt><dd><div class="fragment"><div class="line"><span class="keywordtype">size_t</span> idx, max;</div>
 <div class="line"><a class="code hl_struct" href="yyjson_8h.html#structyyjson__val">yyjson_val</a> *key, *val;</div>
@@ -2180,6 +2269,36 @@ val_pool</td>
 
 </div>
 </div>
+<a id="a3aad1e39dcb4aec3e7e477500c220a53" name="a3aad1e39dcb4aec3e7e477500c220a53"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3aad1e39dcb4aec3e7e477500c220a53">&#9670;&nbsp;</a></span>YYJSON_RESERVED_BIT</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define YYJSON_RESERVED_BIT&#160;&#160;&#160;((uint8_t)3)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p >The number of reserved bits. </p>
+
+</div>
+</div>
+<a id="af44f401747d1fa6dd1b600c54de919ad" name="af44f401747d1fa6dd1b600c54de919ad"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af44f401747d1fa6dd1b600c54de919ad">&#9670;&nbsp;</a></span>YYJSON_RESERVED_MASK</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define YYJSON_RESERVED_MASK&#160;&#160;&#160;((uint8_t)0xE0)     /* 111_____ */</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p >The mask used to extract the reserved bits of a JSON value. </p>
+
+</div>
+</div>
 <a id="a0a914f47b39417dd25fe728eef7d8f00" name="a0a914f47b39417dd25fe728eef7d8f00"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a0a914f47b39417dd25fe728eef7d8f00">&#9670;&nbsp;</a></span>YYJSON_STDC_VER</h2>
 
@@ -2195,6 +2314,216 @@ val_pool</td>
 
 </div>
 </div>
+<a id="aa451fb3ba37fd42f69253e7d727836b7" name="aa451fb3ba37fd42f69253e7d727836b7"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa451fb3ba37fd42f69253e7d727836b7">&#9670;&nbsp;</a></span>YYJSON_SUBTYPE_BIT</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define YYJSON_SUBTYPE_BIT&#160;&#160;&#160;((uint8_t)2)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p >The number of bits used by the subtype. </p>
+
+</div>
+</div>
+<a id="a17877edf97bce2f3d7cf993cc9662a30" name="a17877edf97bce2f3d7cf993cc9662a30"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a17877edf97bce2f3d7cf993cc9662a30">&#9670;&nbsp;</a></span>YYJSON_SUBTYPE_FALSE</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define YYJSON_SUBTYPE_FALSE&#160;&#160;&#160;((uint8_t)(0 &lt;&lt; 3)) /* ___00___ */</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p >False subtype: <code>false</code> literal. </p>
+
+</div>
+</div>
+<a id="a7d15bc48e9734dab6620e35ec30cc348" name="a7d15bc48e9734dab6620e35ec30cc348"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a7d15bc48e9734dab6620e35ec30cc348">&#9670;&nbsp;</a></span>YYJSON_SUBTYPE_MASK</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define YYJSON_SUBTYPE_MASK&#160;&#160;&#160;((uint8_t)0x18)     /* ___11___ */</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p >The mask used to extract the subtype of a JSON value. </p>
+
+</div>
+</div>
+<a id="af470523a4d0e9d89dfed5bcfae287bdb" name="af470523a4d0e9d89dfed5bcfae287bdb"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af470523a4d0e9d89dfed5bcfae287bdb">&#9670;&nbsp;</a></span>YYJSON_SUBTYPE_NOESC</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define YYJSON_SUBTYPE_NOESC&#160;&#160;&#160;((uint8_t)(1 &lt;&lt; 3)) /* ___01___ */</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p >String that do not need to be escaped for writing (internal use). </p>
+
+</div>
+</div>
+<a id="a2a9e116a307c8dbcebc82305eca91fd3" name="a2a9e116a307c8dbcebc82305eca91fd3"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a2a9e116a307c8dbcebc82305eca91fd3">&#9670;&nbsp;</a></span>YYJSON_SUBTYPE_NONE</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define YYJSON_SUBTYPE_NONE&#160;&#160;&#160;((uint8_t)(0 &lt;&lt; 3)) /* ___00___ */</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p >No subtype. </p>
+
+</div>
+</div>
+<a id="a1efeaba2c4446788c9b30d20e1b82f73" name="a1efeaba2c4446788c9b30d20e1b82f73"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a1efeaba2c4446788c9b30d20e1b82f73">&#9670;&nbsp;</a></span>YYJSON_SUBTYPE_REAL</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define YYJSON_SUBTYPE_REAL&#160;&#160;&#160;((uint8_t)(2 &lt;&lt; 3)) /* ___10___ */</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p >Real number subtype: <code>double</code>. </p>
+
+</div>
+</div>
+<a id="ab5b72a76b60c408b8a7f2dfc31fbcbce" name="ab5b72a76b60c408b8a7f2dfc31fbcbce"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab5b72a76b60c408b8a7f2dfc31fbcbce">&#9670;&nbsp;</a></span>YYJSON_SUBTYPE_SINT</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define YYJSON_SUBTYPE_SINT&#160;&#160;&#160;((uint8_t)(1 &lt;&lt; 3)) /* ___01___ */</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p >Signed integer subtype: <code>int64_t</code>. </p>
+
+</div>
+</div>
+<a id="ae6a759cdc8865c891a89a67abd18a60e" name="ae6a759cdc8865c891a89a67abd18a60e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae6a759cdc8865c891a89a67abd18a60e">&#9670;&nbsp;</a></span>YYJSON_SUBTYPE_TRUE</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define YYJSON_SUBTYPE_TRUE&#160;&#160;&#160;((uint8_t)(1 &lt;&lt; 3)) /* ___01___ */</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p >True subtype: <code>true</code> literal. </p>
+
+</div>
+</div>
+<a id="aa6a600891d4a3551b83a30afe576fd57" name="aa6a600891d4a3551b83a30afe576fd57"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa6a600891d4a3551b83a30afe576fd57">&#9670;&nbsp;</a></span>YYJSON_SUBTYPE_UINT</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define YYJSON_SUBTYPE_UINT&#160;&#160;&#160;((uint8_t)(0 &lt;&lt; 3)) /* ___00___ */</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p >Unsigned integer subtype: <code>uint64_t</code>. </p>
+
+</div>
+</div>
+<a id="aa7acf05a1b4d7c04db1b09fffbedf35b" name="aa7acf05a1b4d7c04db1b09fffbedf35b"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa7acf05a1b4d7c04db1b09fffbedf35b">&#9670;&nbsp;</a></span>YYJSON_TAG_BIT</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define YYJSON_TAG_BIT&#160;&#160;&#160;((uint8_t)8)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p >The number of bits used by the tag. </p>
+
+</div>
+</div>
+<a id="ac91eb401b770474ab76706ec58ac803d" name="ac91eb401b770474ab76706ec58ac803d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac91eb401b770474ab76706ec58ac803d">&#9670;&nbsp;</a></span>YYJSON_TAG_MASK</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define YYJSON_TAG_MASK&#160;&#160;&#160;((uint8_t)0xFF)     /* 11111111 */</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p >The mask used to extract the tag of a JSON value. </p>
+
+</div>
+</div>
+<a id="a69ef1dad0f3735313d762050178ed320" name="a69ef1dad0f3735313d762050178ed320"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a69ef1dad0f3735313d762050178ed320">&#9670;&nbsp;</a></span>YYJSON_TYPE_ARR</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define YYJSON_TYPE_ARR&#160;&#160;&#160;((uint8_t)6)        /* _____110 */</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p >Array type, no subtype. </p>
+
+</div>
+</div>
+<a id="a9bc0cb130d1498238e942b93b8d8effd" name="a9bc0cb130d1498238e942b93b8d8effd"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9bc0cb130d1498238e942b93b8d8effd">&#9670;&nbsp;</a></span>YYJSON_TYPE_BIT</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define YYJSON_TYPE_BIT&#160;&#160;&#160;((uint8_t)3)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p >The number of bits used by the type. </p>
+
+</div>
+</div>
+<a id="a085018fbc0363aad32708fdf8b247e36" name="a085018fbc0363aad32708fdf8b247e36"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a085018fbc0363aad32708fdf8b247e36">&#9670;&nbsp;</a></span>YYJSON_TYPE_BOOL</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define YYJSON_TYPE_BOOL&#160;&#160;&#160;((uint8_t)3)        /* _____011 */</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p >Boolean type, subtype: TRUE, FALSE. </p>
+
+</div>
+</div>
 <a id="a53b930a8e372ddd7c8d4d389caad391e" name="a53b930a8e372ddd7c8d4d389caad391e"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a53b930a8e372ddd7c8d4d389caad391e">&#9670;&nbsp;</a></span>YYJSON_TYPE_MASK</h2>
 
@@ -2206,7 +2535,97 @@ val_pool</td>
         </tr>
       </table>
 </div><div class="memdoc">
-<p >Mask and bits of JSON value tag. </p>
+<p >The mask used to extract the type of a JSON value. </p>
+
+</div>
+</div>
+<a id="a1db6e43b1df0a46cee92d837ad553cc2" name="a1db6e43b1df0a46cee92d837ad553cc2"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a1db6e43b1df0a46cee92d837ad553cc2">&#9670;&nbsp;</a></span>YYJSON_TYPE_NONE</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define YYJSON_TYPE_NONE&#160;&#160;&#160;((uint8_t)0)        /* _____000 */</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p >No type, invalid. </p>
+
+</div>
+</div>
+<a id="a3c003e6f71f42835957e6b9cf845a2e2" name="a3c003e6f71f42835957e6b9cf845a2e2"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3c003e6f71f42835957e6b9cf845a2e2">&#9670;&nbsp;</a></span>YYJSON_TYPE_NULL</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define YYJSON_TYPE_NULL&#160;&#160;&#160;((uint8_t)2)        /* _____010 */</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p >Null type: <code>null</code> literal, no subtype. </p>
+
+</div>
+</div>
+<a id="a720689b031a276a194e43c276fea9154" name="a720689b031a276a194e43c276fea9154"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a720689b031a276a194e43c276fea9154">&#9670;&nbsp;</a></span>YYJSON_TYPE_NUM</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define YYJSON_TYPE_NUM&#160;&#160;&#160;((uint8_t)4)        /* _____100 */</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p >Number type, subtype: UINT, SINT, REAL. </p>
+
+</div>
+</div>
+<a id="a79764d1a17bdd0a5b4f2b553a9d114b9" name="a79764d1a17bdd0a5b4f2b553a9d114b9"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a79764d1a17bdd0a5b4f2b553a9d114b9">&#9670;&nbsp;</a></span>YYJSON_TYPE_OBJ</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define YYJSON_TYPE_OBJ&#160;&#160;&#160;((uint8_t)7)        /* _____111 */</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p >Object type, no subtype. </p>
+
+</div>
+</div>
+<a id="ae548138e539cfcebdfad39a58da44470" name="ae548138e539cfcebdfad39a58da44470"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae548138e539cfcebdfad39a58da44470">&#9670;&nbsp;</a></span>YYJSON_TYPE_RAW</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define YYJSON_TYPE_RAW&#160;&#160;&#160;((uint8_t)1)        /* _____001 */</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p >Raw string type, no subtype. </p>
+
+</div>
+</div>
+<a id="a3a75e44d4e709fbfafa3137a15edbb68" name="a3a75e44d4e709fbfafa3137a15edbb68"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3a75e44d4e709fbfafa3137a15edbb68">&#9670;&nbsp;</a></span>YYJSON_TYPE_STR</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define YYJSON_TYPE_STR&#160;&#160;&#160;((uint8_t)5)        /* _____101 */</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p >String type, subtype: NONE, NOESC. </p>
 
 </div>
 </div>
@@ -2251,7 +2670,7 @@ val_pool</td>
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">#define YYJSON_VERSION_HEX&#160;&#160;&#160;0x000700</td>
+          <td class="memname">#define YYJSON_VERSION_HEX&#160;&#160;&#160;0x000800</td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -2281,7 +2700,7 @@ val_pool</td>
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">#define YYJSON_VERSION_MINOR&#160;&#160;&#160;7</td>
+          <td class="memname">#define YYJSON_VERSION_MINOR&#160;&#160;&#160;8</td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -2311,7 +2730,7 @@ val_pool</td>
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">#define YYJSON_VERSION_STRING&#160;&#160;&#160;&quot;0.7.0&quot;</td>
+          <td class="memname">#define YYJSON_VERSION_STRING&#160;&#160;&#160;&quot;0.8.0&quot;</td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -2391,7 +2810,7 @@ val_pool</td>
         </tr>
       </table>
 </div><div class="memdoc">
-<p >Subtype of JSON value (2 bit). </p>
+<p >Subtype of a JSON value (2 bit). </p>
 
 </div>
 </div>
@@ -2406,7 +2825,7 @@ val_pool</td>
         </tr>
       </table>
 </div><div class="memdoc">
-<p >Type of JSON value (3 bit). </p>
+<p >Type of a JSON value (3 bit). </p>
 
 </div>
 </div>
@@ -2441,6 +2860,53 @@ val_pool</td>
 </div>
 </div>
 <h2 class="groupheader">Function Documentation</h2>
+<a id="aaa9b7978e7b40e6d5d8d1cb3da0568d6" name="aaa9b7978e7b40e6d5d8d1cb3da0568d6"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aaa9b7978e7b40e6d5d8d1cb3da0568d6">&#9670;&nbsp;</a></span>yyjson_alc_dyn_free()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="yyjson_8h.html#a691136e772913e98860a791e65b70f04">yyjson_api</a> void yyjson_alc_dyn_free </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="structyyjson__alc.html">yyjson_alc</a> *&#160;</td>
+          <td class="paramname"><em>alc</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p >Free a dynamic allocator which is created by <code><a class="el" href="yyjson_8h.html#a6a90ae91b82c2e8d6665a28a691eee18">yyjson_alc_dyn_new()</a></code>. </p><dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">alc</td><td>The dynamic allocator to be destroyed. </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a id="a6a90ae91b82c2e8d6665a28a691eee18" name="a6a90ae91b82c2e8d6665a28a691eee18"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a6a90ae91b82c2e8d6665a28a691eee18">&#9670;&nbsp;</a></span>yyjson_alc_dyn_new()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="yyjson_8h.html#a691136e772913e98860a791e65b70f04">yyjson_api</a> <a class="el" href="structyyjson__alc.html">yyjson_alc</a> * yyjson_alc_dyn_new </td>
+          <td>(</td>
+          <td class="paramtype">void&#160;</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p >A dynamic allocator.</p>
+<p >This allocator has a similar usage to the pool allocator above. However, when there is not enough memory, this allocator will dynamically request more memory using libc's <code>malloc</code> function, and frees it all at once when it is destroyed.</p>
+<dl class="section return"><dt>Returns</dt><dd>A new dynamic allocator, or NULL if memory allocation failed. </dd></dl>
+<dl class="section note"><dt>Note</dt><dd>The returned value should be freed with <code><a class="el" href="yyjson_8h.html#aaa9b7978e7b40e6d5d8d1cb3da0568d6">yyjson_alc_dyn_free()</a></code>.</dd></dl>
+<dl class="section warning"><dt>Warning</dt><dd>This Allocator is not thread-safe. </dd></dl>
+
+</div>
+</div>
 <a id="a6068c4293a2b35493b18421b9afbd3d5" name="a6068c4293a2b35493b18421b9afbd3d5"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a6068c4293a2b35493b18421b9afbd3d5">&#9670;&nbsp;</a></span>yyjson_alc_pool_init()</h2>
 
@@ -2474,7 +2940,7 @@ val_pool</td>
 </div><div class="memdoc">
 <p >A pool allocator uses fixed length pre-allocated memory.</p>
 <p >This allocator may be used to avoid malloc/realloc calls. The pre-allocated memory should be held by the caller. The maximum amount of memory required to read a JSON can be calculated using the <code><a class="el" href="yyjson_8h.html#ae511cac592355c2f60f170402b9d8dbf">yyjson_read_max_memory_usage()</a></code> function, but the amount of memory required to write a JSON cannot be directly calculated.</p>
-<p >This is not a general-purpose allocator. If used to read multiple JSON documents and only some of them are released, it may cause memory fragmentation, leading to performance degradation and memory waste. Therefore, it is recommended to use this allocator only for reading or writing a single JSON document.</p>
+<p >This is not a general-purpose allocator. It is designed to handle a single JSON data at a time. If it is used for overly complex memory tasks, such as parsing multiple JSON documents using the same allocator but releasing only a few of them, it may cause memory fragmentation, resulting in performance degradation and memory waste.</p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">alc</td><td>The allocator to be initialized. If this parameter is NULL, the function will fail and return false. If <code>buf</code> or <code>size</code> is invalid, this will be set to an empty allocator. </td></tr>
@@ -2492,11 +2958,12 @@ val_pool</td>
 <div class="line"><span class="keyword">const</span> <span class="keywordtype">char</span> *json = <span class="stringliteral">&quot;{\&quot;name\&quot;:\&quot;Helvetica\&quot;,\&quot;size\&quot;:16}&quot;</span></div>
 <div class="line"><a class="code hl_struct" href="yyjson_8h.html#structyyjson__doc">yyjson_doc</a> *doc = <a class="code hl_function" href="yyjson_8h.html#acf234d21f0cb4b7fc89381ef25e9f0a8">yyjson_read_opts</a>(json, strlen(json), 0, &amp;alc, NULL);</div>
 <div class="line"><span class="comment">// the memory of `doc` is on the stack</span></div>
-<div class="ttc" id="astructyyjson__alc_html"><div class="ttname"><a href="structyyjson__alc.html">yyjson_alc</a></div><div class="ttdef"><b>Definition:</b> yyjson.h:531</div></div>
+<div class="ttc" id="astructyyjson__alc_html"><div class="ttname"><a href="structyyjson__alc.html">yyjson_alc</a></div><div class="ttdef"><b>Definition:</b> yyjson.h:618</div></div>
 <div class="ttc" id="ayyjson_8h_html_a6068c4293a2b35493b18421b9afbd3d5"><div class="ttname"><a href="yyjson_8h.html#a6068c4293a2b35493b18421b9afbd3d5">yyjson_alc_pool_init</a></div><div class="ttdeci">yyjson_api bool yyjson_alc_pool_init(yyjson_alc *alc, void *buf, size_t size)</div></div>
 <div class="ttc" id="ayyjson_8h_html_acf234d21f0cb4b7fc89381ef25e9f0a8"><div class="ttname"><a href="yyjson_8h.html#acf234d21f0cb4b7fc89381ef25e9f0a8">yyjson_read_opts</a></div><div class="ttdeci">yyjson_api yyjson_doc * yyjson_read_opts(char *dat, size_t len, yyjson_read_flag flg, const yyjson_alc *alc, yyjson_read_err *err)</div></div>
-<div class="ttc" id="ayyjson_8h_html_structyyjson__doc"><div class="ttname"><a href="yyjson_8h.html#structyyjson__doc">yyjson_doc</a></div><div class="ttdef"><b>Definition:</b> yyjson.h:4362</div></div>
-</div><!-- fragment --> </dd></dl>
+<div class="ttc" id="ayyjson_8h_html_structyyjson__doc"><div class="ttname"><a href="yyjson_8h.html#structyyjson__doc">yyjson_doc</a></div><div class="ttdef"><b>Definition:</b> yyjson.h:4497</div></div>
+</div><!-- fragment --></dd></dl>
+<dl class="section warning"><dt>Warning</dt><dd>This Allocator is not thread-safe. </dd></dl>
 
 </div>
 </div>
@@ -5004,7 +5471,7 @@ val_pool</td>
 <dl class="section return"><dt>Returns</dt><dd>The new array. NULL if input is invalid or memory allocation failed.</dd></dl>
 <dl class="section user"><dt>Example</dt><dd><div class="fragment"><div class="line"><span class="keyword">const</span> <span class="keywordtype">bool</span> vals[3] = { <span class="keyword">true</span>, <span class="keyword">false</span>, <span class="keyword">true</span> };</div>
 <div class="line"><a class="code hl_struct" href="yyjson_8h.html#structyyjson__mut__val">yyjson_mut_val</a> *arr = <a class="code hl_function" href="yyjson_8h.html#afd2b114767b989006259409c6955bb37">yyjson_mut_arr_with_bool</a>(doc, vals, 3);</div>
-<div class="ttc" id="ayyjson_8h_html_afd2b114767b989006259409c6955bb37"><div class="ttname"><a href="yyjson_8h.html#afd2b114767b989006259409c6955bb37">yyjson_mut_arr_with_bool</a></div><div class="ttdeci">yyjson_api_inline yyjson_mut_val * yyjson_mut_arr_with_bool(yyjson_mut_doc *doc, const bool *vals, size_t count)</div><div class="ttdef"><b>Definition:</b> yyjson.h:5710</div></div>
+<div class="ttc" id="ayyjson_8h_html_afd2b114767b989006259409c6955bb37"><div class="ttname"><a href="yyjson_8h.html#afd2b114767b989006259409c6955bb37">yyjson_mut_arr_with_bool</a></div><div class="ttdeci">yyjson_api_inline yyjson_mut_val * yyjson_mut_arr_with_bool(yyjson_mut_doc *doc, const bool *vals, size_t count)</div><div class="ttdef"><b>Definition:</b> yyjson.h:5920</div></div>
 </div><!-- fragment --> </dd></dl>
 
 </div>
@@ -5052,7 +5519,7 @@ val_pool</td>
 <dl class="section return"><dt>Returns</dt><dd>The new array. NULL if input is invalid or memory allocation failed.</dd></dl>
 <dl class="section user"><dt>Example</dt><dd><div class="fragment"><div class="line"><span class="keyword">const</span> <span class="keywordtype">double</span> vals[3] = { -1.0, 0.0, 1.0 };</div>
 <div class="line"><a class="code hl_struct" href="yyjson_8h.html#structyyjson__mut__val">yyjson_mut_val</a> *arr = <a class="code hl_function" href="yyjson_8h.html#ac81702a782ecfeb9874ce43706ecf02e">yyjson_mut_arr_with_double</a>(doc, vals, 3);</div>
-<div class="ttc" id="ayyjson_8h_html_ac81702a782ecfeb9874ce43706ecf02e"><div class="ttname"><a href="yyjson_8h.html#ac81702a782ecfeb9874ce43706ecf02e">yyjson_mut_arr_with_double</a></div><div class="ttdeci">yyjson_api_inline yyjson_mut_val * yyjson_mut_arr_with_double(yyjson_mut_doc *doc, const double *vals, size_t count)</div><div class="ttdef"><b>Definition:</b> yyjson.h:5804</div></div>
+<div class="ttc" id="ayyjson_8h_html_ac81702a782ecfeb9874ce43706ecf02e"><div class="ttname"><a href="yyjson_8h.html#ac81702a782ecfeb9874ce43706ecf02e">yyjson_mut_arr_with_double</a></div><div class="ttdeci">yyjson_api_inline yyjson_mut_val * yyjson_mut_arr_with_double(yyjson_mut_doc *doc, const double *vals, size_t count)</div><div class="ttdef"><b>Definition:</b> yyjson.h:6014</div></div>
 </div><!-- fragment --> </dd></dl>
 
 </div>
@@ -5100,7 +5567,7 @@ val_pool</td>
 <dl class="section return"><dt>Returns</dt><dd>The new array. NULL if input is invalid or memory allocation failed.</dd></dl>
 <dl class="section user"><dt>Example</dt><dd><div class="fragment"><div class="line"><span class="keyword">const</span> <span class="keywordtype">float</span> vals[3] = { -1.0f, 0.0f, 1.0f };</div>
 <div class="line"><a class="code hl_struct" href="yyjson_8h.html#structyyjson__mut__val">yyjson_mut_val</a> *arr = <a class="code hl_function" href="yyjson_8h.html#a50039175677ae5fdd51f1c6942fa3d3d">yyjson_mut_arr_with_float</a>(doc, vals, 3);</div>
-<div class="ttc" id="ayyjson_8h_html_a50039175677ae5fdd51f1c6942fa3d3d"><div class="ttname"><a href="yyjson_8h.html#a50039175677ae5fdd51f1c6942fa3d3d">yyjson_mut_arr_with_float</a></div><div class="ttdeci">yyjson_api_inline yyjson_mut_val * yyjson_mut_arr_with_float(yyjson_mut_doc *doc, const float *vals, size_t count)</div><div class="ttdef"><b>Definition:</b> yyjson.h:5796</div></div>
+<div class="ttc" id="ayyjson_8h_html_a50039175677ae5fdd51f1c6942fa3d3d"><div class="ttname"><a href="yyjson_8h.html#a50039175677ae5fdd51f1c6942fa3d3d">yyjson_mut_arr_with_float</a></div><div class="ttdeci">yyjson_api_inline yyjson_mut_val * yyjson_mut_arr_with_float(yyjson_mut_doc *doc, const float *vals, size_t count)</div><div class="ttdef"><b>Definition:</b> yyjson.h:6006</div></div>
 </div><!-- fragment --> </dd></dl>
 
 </div>
@@ -5148,7 +5615,7 @@ val_pool</td>
 <dl class="section return"><dt>Returns</dt><dd>The new array. NULL if input is invalid or memory allocation failed.</dd></dl>
 <dl class="section user"><dt>Example</dt><dd><div class="fragment"><div class="line"><span class="keyword">const</span> <span class="keywordtype">double</span> vals[3] = { 0.1, 0.2, 0.3 };</div>
 <div class="line"><a class="code hl_struct" href="yyjson_8h.html#structyyjson__mut__val">yyjson_mut_val</a> *arr = <a class="code hl_function" href="yyjson_8h.html#a7173b66e47ee6fad38b11651d20e7ddf">yyjson_mut_arr_with_real</a>(doc, vals, 3);</div>
-<div class="ttc" id="ayyjson_8h_html_a7173b66e47ee6fad38b11651d20e7ddf"><div class="ttname"><a href="yyjson_8h.html#a7173b66e47ee6fad38b11651d20e7ddf">yyjson_mut_arr_with_real</a></div><div class="ttdeci">yyjson_api_inline yyjson_mut_val * yyjson_mut_arr_with_real(yyjson_mut_doc *doc, const double *vals, size_t count)</div><div class="ttdef"><b>Definition:</b> yyjson.h:5727</div></div>
+<div class="ttc" id="ayyjson_8h_html_a7173b66e47ee6fad38b11651d20e7ddf"><div class="ttname"><a href="yyjson_8h.html#a7173b66e47ee6fad38b11651d20e7ddf">yyjson_mut_arr_with_real</a></div><div class="ttdeci">yyjson_api_inline yyjson_mut_val * yyjson_mut_arr_with_real(yyjson_mut_doc *doc, const double *vals, size_t count)</div><div class="ttdef"><b>Definition:</b> yyjson.h:5937</div></div>
 </div><!-- fragment --> </dd></dl>
 
 </div>
@@ -5196,7 +5663,7 @@ val_pool</td>
 <dl class="section return"><dt>Returns</dt><dd>The new array. NULL if input is invalid or memory allocation failed.</dd></dl>
 <dl class="section user"><dt>Example</dt><dd><div class="fragment"><div class="line"><span class="keyword">const</span> int64_t vals[3] = { -1, 0, 1 };</div>
 <div class="line"><a class="code hl_struct" href="yyjson_8h.html#structyyjson__mut__val">yyjson_mut_val</a> *arr = <a class="code hl_function" href="yyjson_8h.html#a37d0c7987b2958550076586ca36082fd">yyjson_mut_arr_with_sint64</a>(doc, vals, 3);</div>
-<div class="ttc" id="ayyjson_8h_html_a37d0c7987b2958550076586ca36082fd"><div class="ttname"><a href="yyjson_8h.html#a37d0c7987b2958550076586ca36082fd">yyjson_mut_arr_with_sint64</a></div><div class="ttdeci">yyjson_api_inline yyjson_mut_val * yyjson_mut_arr_with_sint64(yyjson_mut_doc *doc, const int64_t *vals, size_t count)</div><div class="ttdef"><b>Definition:</b> yyjson.h:5756</div></div>
+<div class="ttc" id="ayyjson_8h_html_a37d0c7987b2958550076586ca36082fd"><div class="ttname"><a href="yyjson_8h.html#a37d0c7987b2958550076586ca36082fd">yyjson_mut_arr_with_sint64</a></div><div class="ttdeci">yyjson_api_inline yyjson_mut_val * yyjson_mut_arr_with_sint64(yyjson_mut_doc *doc, const int64_t *vals, size_t count)</div><div class="ttdef"><b>Definition:</b> yyjson.h:5966</div></div>
 </div><!-- fragment --> </dd></dl>
 
 </div>
@@ -5244,7 +5711,7 @@ val_pool</td>
 <dl class="section return"><dt>Returns</dt><dd>The new array. NULL if input is invalid or memory allocation failed.</dd></dl>
 <dl class="section user"><dt>Example</dt><dd><div class="fragment"><div class="line"><span class="keyword">const</span> int16_t vals[3] = { -1, 0, 1 };</div>
 <div class="line"><a class="code hl_struct" href="yyjson_8h.html#structyyjson__mut__val">yyjson_mut_val</a> *arr = <a class="code hl_function" href="yyjson_8h.html#a72bd3b0467273c40dbe376bc7c0a8f06">yyjson_mut_arr_with_sint16</a>(doc, vals, 3);</div>
-<div class="ttc" id="ayyjson_8h_html_a72bd3b0467273c40dbe376bc7c0a8f06"><div class="ttname"><a href="yyjson_8h.html#a72bd3b0467273c40dbe376bc7c0a8f06">yyjson_mut_arr_with_sint16</a></div><div class="ttdeci">yyjson_api_inline yyjson_mut_val * yyjson_mut_arr_with_sint16(yyjson_mut_doc *doc, const int16_t *vals, size_t count)</div><div class="ttdef"><b>Definition:</b> yyjson.h:5740</div></div>
+<div class="ttc" id="ayyjson_8h_html_a72bd3b0467273c40dbe376bc7c0a8f06"><div class="ttname"><a href="yyjson_8h.html#a72bd3b0467273c40dbe376bc7c0a8f06">yyjson_mut_arr_with_sint16</a></div><div class="ttdeci">yyjson_api_inline yyjson_mut_val * yyjson_mut_arr_with_sint16(yyjson_mut_doc *doc, const int16_t *vals, size_t count)</div><div class="ttdef"><b>Definition:</b> yyjson.h:5950</div></div>
 </div><!-- fragment --> </dd></dl>
 
 </div>
@@ -5292,7 +5759,7 @@ val_pool</td>
 <dl class="section return"><dt>Returns</dt><dd>The new array. NULL if input is invalid or memory allocation failed.</dd></dl>
 <dl class="section user"><dt>Example</dt><dd><div class="fragment"><div class="line"><span class="keyword">const</span> int32_t vals[3] = { -1, 0, 1 };</div>
 <div class="line"><a class="code hl_struct" href="yyjson_8h.html#structyyjson__mut__val">yyjson_mut_val</a> *arr = <a class="code hl_function" href="yyjson_8h.html#a54bfa0c027fb21e9e5c33a9f4ecbe0f5">yyjson_mut_arr_with_sint32</a>(doc, vals, 3);</div>
-<div class="ttc" id="ayyjson_8h_html_a54bfa0c027fb21e9e5c33a9f4ecbe0f5"><div class="ttname"><a href="yyjson_8h.html#a54bfa0c027fb21e9e5c33a9f4ecbe0f5">yyjson_mut_arr_with_sint32</a></div><div class="ttdeci">yyjson_api_inline yyjson_mut_val * yyjson_mut_arr_with_sint32(yyjson_mut_doc *doc, const int32_t *vals, size_t count)</div><div class="ttdef"><b>Definition:</b> yyjson.h:5748</div></div>
+<div class="ttc" id="ayyjson_8h_html_a54bfa0c027fb21e9e5c33a9f4ecbe0f5"><div class="ttname"><a href="yyjson_8h.html#a54bfa0c027fb21e9e5c33a9f4ecbe0f5">yyjson_mut_arr_with_sint32</a></div><div class="ttdeci">yyjson_api_inline yyjson_mut_val * yyjson_mut_arr_with_sint32(yyjson_mut_doc *doc, const int32_t *vals, size_t count)</div><div class="ttdef"><b>Definition:</b> yyjson.h:5958</div></div>
 </div><!-- fragment --> </dd></dl>
 
 </div>
@@ -5387,7 +5854,7 @@ val_pool</td>
 <dl class="section return"><dt>Returns</dt><dd>The new array. NULL if input is invalid or memory allocation failed.</dd></dl>
 <dl class="section user"><dt>Example</dt><dd><div class="fragment"><div class="line"><span class="keyword">const</span> int8_t vals[3] = { -1, 0, 1 };</div>
 <div class="line"><a class="code hl_struct" href="yyjson_8h.html#structyyjson__mut__val">yyjson_mut_val</a> *arr = <a class="code hl_function" href="yyjson_8h.html#ab9c7f452ed21a9800501c25e715f35f7">yyjson_mut_arr_with_sint8</a>(doc, vals, 3);</div>
-<div class="ttc" id="ayyjson_8h_html_ab9c7f452ed21a9800501c25e715f35f7"><div class="ttname"><a href="yyjson_8h.html#ab9c7f452ed21a9800501c25e715f35f7">yyjson_mut_arr_with_sint8</a></div><div class="ttdeci">yyjson_api_inline yyjson_mut_val * yyjson_mut_arr_with_sint8(yyjson_mut_doc *doc, const int8_t *vals, size_t count)</div><div class="ttdef"><b>Definition:</b> yyjson.h:5732</div></div>
+<div class="ttc" id="ayyjson_8h_html_ab9c7f452ed21a9800501c25e715f35f7"><div class="ttname"><a href="yyjson_8h.html#ab9c7f452ed21a9800501c25e715f35f7">yyjson_mut_arr_with_sint8</a></div><div class="ttdeci">yyjson_api_inline yyjson_mut_val * yyjson_mut_arr_with_sint8(yyjson_mut_doc *doc, const int8_t *vals, size_t count)</div><div class="ttdef"><b>Definition:</b> yyjson.h:5942</div></div>
 </div><!-- fragment --> </dd></dl>
 
 </div>
@@ -5436,7 +5903,7 @@ val_pool</td>
 <dl class="section warning"><dt>Warning</dt><dd>The input strings are not copied, you should keep these strings unmodified for the lifetime of this JSON document. If these strings will be modified, you should use <code><a class="el" href="yyjson_8h.html#a90c3e1c55dcf04a7879abed9a57cb278">yyjson_mut_arr_with_strcpy()</a></code> instead.</dd></dl>
 <dl class="section user"><dt>Example</dt><dd><div class="fragment"><div class="line"><span class="keyword">const</span> <span class="keywordtype">char</span> *vals[3] = { <span class="stringliteral">&quot;a&quot;</span>, <span class="stringliteral">&quot;b&quot;</span>, <span class="stringliteral">&quot;c&quot;</span> };</div>
 <div class="line"><a class="code hl_struct" href="yyjson_8h.html#structyyjson__mut__val">yyjson_mut_val</a> *arr = <a class="code hl_function" href="yyjson_8h.html#af7da1562cde867338bc69395c2aeb0ad">yyjson_mut_arr_with_str</a>(doc, vals, 3);</div>
-<div class="ttc" id="ayyjson_8h_html_af7da1562cde867338bc69395c2aeb0ad"><div class="ttname"><a href="yyjson_8h.html#af7da1562cde867338bc69395c2aeb0ad">yyjson_mut_arr_with_str</a></div><div class="ttdeci">yyjson_api_inline yyjson_mut_val * yyjson_mut_arr_with_str(yyjson_mut_doc *doc, const char **vals, size_t count)</div><div class="ttdef"><b>Definition:</b> yyjson.h:5812</div></div>
+<div class="ttc" id="ayyjson_8h_html_af7da1562cde867338bc69395c2aeb0ad"><div class="ttname"><a href="yyjson_8h.html#af7da1562cde867338bc69395c2aeb0ad">yyjson_mut_arr_with_str</a></div><div class="ttdeci">yyjson_api_inline yyjson_mut_val * yyjson_mut_arr_with_str(yyjson_mut_doc *doc, const char **vals, size_t count)</div><div class="ttdef"><b>Definition:</b> yyjson.h:6022</div></div>
 </div><!-- fragment --> </dd></dl>
 
 </div>
@@ -5484,7 +5951,7 @@ val_pool</td>
 <dl class="section return"><dt>Returns</dt><dd>The new array. NULL if input is invalid or memory allocation failed.</dd></dl>
 <dl class="section user"><dt>Example</dt><dd><div class="fragment"><div class="line"><span class="keyword">const</span> <span class="keywordtype">char</span> *vals[3] = { <span class="stringliteral">&quot;a&quot;</span>, <span class="stringliteral">&quot;b&quot;</span>, <span class="stringliteral">&quot;c&quot;</span> };</div>
 <div class="line"><a class="code hl_struct" href="yyjson_8h.html#structyyjson__mut__val">yyjson_mut_val</a> *arr = <a class="code hl_function" href="yyjson_8h.html#a90c3e1c55dcf04a7879abed9a57cb278">yyjson_mut_arr_with_strcpy</a>(doc, vals, 3);</div>
-<div class="ttc" id="ayyjson_8h_html_a90c3e1c55dcf04a7879abed9a57cb278"><div class="ttname"><a href="yyjson_8h.html#a90c3e1c55dcf04a7879abed9a57cb278">yyjson_mut_arr_with_strcpy</a></div><div class="ttdeci">yyjson_api_inline yyjson_mut_val * yyjson_mut_arr_with_strcpy(yyjson_mut_doc *doc, const char **vals, size_t count)</div><div class="ttdef"><b>Definition:</b> yyjson.h:5832</div></div>
+<div class="ttc" id="ayyjson_8h_html_a90c3e1c55dcf04a7879abed9a57cb278"><div class="ttname"><a href="yyjson_8h.html#a90c3e1c55dcf04a7879abed9a57cb278">yyjson_mut_arr_with_strcpy</a></div><div class="ttdeci">yyjson_api_inline yyjson_mut_val * yyjson_mut_arr_with_strcpy(yyjson_mut_doc *doc, const char **vals, size_t count)</div><div class="ttdef"><b>Definition:</b> yyjson.h:6042</div></div>
 </div><!-- fragment --> </dd></dl>
 
 </div>
@@ -5541,7 +6008,7 @@ val_pool</td>
 <dl class="section user"><dt>Example</dt><dd><div class="fragment"><div class="line"><span class="keyword">const</span> <span class="keywordtype">char</span> *vals[3] = { <span class="stringliteral">&quot;a&quot;</span>, <span class="stringliteral">&quot;bb&quot;</span>, <span class="stringliteral">&quot;c&quot;</span> };</div>
 <div class="line"><span class="keyword">const</span> <span class="keywordtype">size_t</span> lens[3] = { 1, 2, 1 };</div>
 <div class="line"><a class="code hl_struct" href="yyjson_8h.html#structyyjson__mut__val">yyjson_mut_val</a> *arr = <a class="code hl_function" href="yyjson_8h.html#a419008c4a6f2dc4221211b0d7770109a">yyjson_mut_arr_with_strn</a>(doc, vals, lens, 3);</div>
-<div class="ttc" id="ayyjson_8h_html_a419008c4a6f2dc4221211b0d7770109a"><div class="ttname"><a href="yyjson_8h.html#a419008c4a6f2dc4221211b0d7770109a">yyjson_mut_arr_with_strn</a></div><div class="ttdeci">yyjson_api_inline yyjson_mut_val * yyjson_mut_arr_with_strn(yyjson_mut_doc *doc, const char **vals, const size_t *lens, size_t count)</div><div class="ttdef"><b>Definition:</b> yyjson.h:5822</div></div>
+<div class="ttc" id="ayyjson_8h_html_a419008c4a6f2dc4221211b0d7770109a"><div class="ttname"><a href="yyjson_8h.html#a419008c4a6f2dc4221211b0d7770109a">yyjson_mut_arr_with_strn</a></div><div class="ttdeci">yyjson_api_inline yyjson_mut_val * yyjson_mut_arr_with_strn(yyjson_mut_doc *doc, const char **vals, const size_t *lens, size_t count)</div><div class="ttdef"><b>Definition:</b> yyjson.h:6032</div></div>
 </div><!-- fragment --> </dd></dl>
 
 </div>
@@ -5644,7 +6111,7 @@ val_pool</td>
 <dl class="section return"><dt>Returns</dt><dd>The new array. NULL if input is invalid or memory allocation failed.</dd></dl>
 <dl class="section user"><dt>Example</dt><dd><div class="fragment"><div class="line"><span class="keyword">const</span> uint64_t vals[3] = { 0, 1, 0 };</div>
 <div class="line"><a class="code hl_struct" href="yyjson_8h.html#structyyjson__mut__val">yyjson_mut_val</a> *arr = <a class="code hl_function" href="yyjson_8h.html#ab2237deb1190a0333a88d571a8adcb0c">yyjson_mut_arr_with_uint</a>(doc, vals, 3);</div>
-<div class="ttc" id="ayyjson_8h_html_ab2237deb1190a0333a88d571a8adcb0c"><div class="ttname"><a href="yyjson_8h.html#ab2237deb1190a0333a88d571a8adcb0c">yyjson_mut_arr_with_uint</a></div><div class="ttdeci">yyjson_api_inline yyjson_mut_val * yyjson_mut_arr_with_uint(yyjson_mut_doc *doc, const uint64_t *vals, size_t count)</div><div class="ttdef"><b>Definition:</b> yyjson.h:5722</div></div>
+<div class="ttc" id="ayyjson_8h_html_ab2237deb1190a0333a88d571a8adcb0c"><div class="ttname"><a href="yyjson_8h.html#ab2237deb1190a0333a88d571a8adcb0c">yyjson_mut_arr_with_uint</a></div><div class="ttdeci">yyjson_api_inline yyjson_mut_val * yyjson_mut_arr_with_uint(yyjson_mut_doc *doc, const uint64_t *vals, size_t count)</div><div class="ttdef"><b>Definition:</b> yyjson.h:5932</div></div>
 </div><!-- fragment --> </dd></dl>
 
 </div>
@@ -5692,7 +6159,7 @@ val_pool</td>
 <dl class="section return"><dt>Returns</dt><dd>The new array. NULL if input is invalid or memory allocation failed.</dd></dl>
 <dl class="section user"><dt>Example</dt><dd><div class="fragment"><div class="line"><span class="keyword">const</span> uint16_t vals[3] = { 0, 1, 0 };</div>
 <div class="line"><a class="code hl_struct" href="yyjson_8h.html#structyyjson__mut__val">yyjson_mut_val</a> *arr = <a class="code hl_function" href="yyjson_8h.html#a85f4bcdc777cde51a40359ac9e38c98b">yyjson_mut_arr_with_uint16</a>(doc, vals, 3);</div>
-<div class="ttc" id="ayyjson_8h_html_a85f4bcdc777cde51a40359ac9e38c98b"><div class="ttname"><a href="yyjson_8h.html#a85f4bcdc777cde51a40359ac9e38c98b">yyjson_mut_arr_with_uint16</a></div><div class="ttdeci">yyjson_api_inline yyjson_mut_val * yyjson_mut_arr_with_uint16(yyjson_mut_doc *doc, const uint16_t *vals, size_t count)</div><div class="ttdef"><b>Definition:</b> yyjson.h:5772</div></div>
+<div class="ttc" id="ayyjson_8h_html_a85f4bcdc777cde51a40359ac9e38c98b"><div class="ttname"><a href="yyjson_8h.html#a85f4bcdc777cde51a40359ac9e38c98b">yyjson_mut_arr_with_uint16</a></div><div class="ttdeci">yyjson_api_inline yyjson_mut_val * yyjson_mut_arr_with_uint16(yyjson_mut_doc *doc, const uint16_t *vals, size_t count)</div><div class="ttdef"><b>Definition:</b> yyjson.h:5982</div></div>
 </div><!-- fragment --> </dd></dl>
 
 </div>
@@ -5740,7 +6207,7 @@ val_pool</td>
 <dl class="section return"><dt>Returns</dt><dd>The new array. NULL if input is invalid or memory allocation failed.</dd></dl>
 <dl class="section user"><dt>Example</dt><dd><div class="fragment"><div class="line"><span class="keyword">const</span> uint32_t vals[3] = { 0, 1, 0 };</div>
 <div class="line"><a class="code hl_struct" href="yyjson_8h.html#structyyjson__mut__val">yyjson_mut_val</a> *arr = <a class="code hl_function" href="yyjson_8h.html#ac24336d6f29b5b6c09f513373b6fc83e">yyjson_mut_arr_with_uint32</a>(doc, vals, 3);</div>
-<div class="ttc" id="ayyjson_8h_html_ac24336d6f29b5b6c09f513373b6fc83e"><div class="ttname"><a href="yyjson_8h.html#ac24336d6f29b5b6c09f513373b6fc83e">yyjson_mut_arr_with_uint32</a></div><div class="ttdeci">yyjson_api_inline yyjson_mut_val * yyjson_mut_arr_with_uint32(yyjson_mut_doc *doc, const uint32_t *vals, size_t count)</div><div class="ttdef"><b>Definition:</b> yyjson.h:5780</div></div>
+<div class="ttc" id="ayyjson_8h_html_ac24336d6f29b5b6c09f513373b6fc83e"><div class="ttname"><a href="yyjson_8h.html#ac24336d6f29b5b6c09f513373b6fc83e">yyjson_mut_arr_with_uint32</a></div><div class="ttdeci">yyjson_api_inline yyjson_mut_val * yyjson_mut_arr_with_uint32(yyjson_mut_doc *doc, const uint32_t *vals, size_t count)</div><div class="ttdef"><b>Definition:</b> yyjson.h:5990</div></div>
 </div><!-- fragment --> </dd></dl>
 
 </div>
@@ -5788,7 +6255,7 @@ val_pool</td>
 <dl class="section return"><dt>Returns</dt><dd>The new array. NULL if input is invalid or memory allocation failed.</dd></dl>
 <dl class="section user"><dt>Example</dt><dd><div class="fragment"><div class="line"><span class="keyword">const</span> uint64_t vals[3] = { 0, 1, 0 };</div>
 <div class="line"><a class="code hl_struct" href="yyjson_8h.html#structyyjson__mut__val">yyjson_mut_val</a> *arr = <a class="code hl_function" href="yyjson_8h.html#aae70fe76dfae0e8aa93d0226ec8510d9">yyjson_mut_arr_with_uint64</a>(doc, vals, 3);</div>
-<div class="ttc" id="ayyjson_8h_html_aae70fe76dfae0e8aa93d0226ec8510d9"><div class="ttname"><a href="yyjson_8h.html#aae70fe76dfae0e8aa93d0226ec8510d9">yyjson_mut_arr_with_uint64</a></div><div class="ttdeci">yyjson_api_inline yyjson_mut_val * yyjson_mut_arr_with_uint64(yyjson_mut_doc *doc, const uint64_t *vals, size_t count)</div><div class="ttdef"><b>Definition:</b> yyjson.h:5788</div></div>
+<div class="ttc" id="ayyjson_8h_html_aae70fe76dfae0e8aa93d0226ec8510d9"><div class="ttname"><a href="yyjson_8h.html#aae70fe76dfae0e8aa93d0226ec8510d9">yyjson_mut_arr_with_uint64</a></div><div class="ttdeci">yyjson_api_inline yyjson_mut_val * yyjson_mut_arr_with_uint64(yyjson_mut_doc *doc, const uint64_t *vals, size_t count)</div><div class="ttdef"><b>Definition:</b> yyjson.h:5998</div></div>
 </div><!-- fragment --> </dd></dl>
 
 </div>
@@ -5836,7 +6303,7 @@ val_pool</td>
 <dl class="section return"><dt>Returns</dt><dd>The new array. NULL if input is invalid or memory allocation failed.</dd></dl>
 <dl class="section user"><dt>Example</dt><dd><div class="fragment"><div class="line"><span class="keyword">const</span> uint8_t vals[3] = { 0, 1, 0 };</div>
 <div class="line"><a class="code hl_struct" href="yyjson_8h.html#structyyjson__mut__val">yyjson_mut_val</a> *arr = <a class="code hl_function" href="yyjson_8h.html#a2ae7e73e8a1431554d621059b06222e6">yyjson_mut_arr_with_uint8</a>(doc, vals, 3);</div>
-<div class="ttc" id="ayyjson_8h_html_a2ae7e73e8a1431554d621059b06222e6"><div class="ttname"><a href="yyjson_8h.html#a2ae7e73e8a1431554d621059b06222e6">yyjson_mut_arr_with_uint8</a></div><div class="ttdeci">yyjson_api_inline yyjson_mut_val * yyjson_mut_arr_with_uint8(yyjson_mut_doc *doc, const uint8_t *vals, size_t count)</div><div class="ttdef"><b>Definition:</b> yyjson.h:5764</div></div>
+<div class="ttc" id="ayyjson_8h_html_a2ae7e73e8a1431554d621059b06222e6"><div class="ttname"><a href="yyjson_8h.html#a2ae7e73e8a1431554d621059b06222e6">yyjson_mut_arr_with_uint8</a></div><div class="ttdeci">yyjson_api_inline yyjson_mut_val * yyjson_mut_arr_with_uint8(yyjson_mut_doc *doc, const uint8_t *vals, size_t count)</div><div class="ttdef"><b>Definition:</b> yyjson.h:5974</div></div>
 </div><!-- fragment --> </dd></dl>
 
 </div>
@@ -7626,6 +8093,43 @@ val_pool</td>
 
 </div>
 </div>
+<a id="a1d27c9ad366209b83f236d74ec7e1991" name="a1d27c9ad366209b83f236d74ec7e1991"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a1d27c9ad366209b83f236d74ec7e1991">&#9670;&nbsp;</a></span>yyjson_mut_obj_add_arr()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="yyjson_8h.html#a682886dc8be2307076b125b496b15570">yyjson_api_inline</a> <a class="el" href="yyjson_8h.html#structyyjson__mut__val">yyjson_mut_val</a> * yyjson_mut_obj_add_arr </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="yyjson_8h.html#structyyjson__mut__doc">yyjson_mut_doc</a> *&#160;</td>
+          <td class="paramname"><em>doc</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="yyjson_8h.html#structyyjson__mut__val">yyjson_mut_val</a> *&#160;</td>
+          <td class="paramname"><em>obj</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const char *&#160;</td>
+          <td class="paramname"><em>key</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p >Creates and adds a new array to the target object. The <code>key</code> should be a null-terminated UTF-8 string. This function allows duplicated key in one object.</p>
+<dl class="section warning"><dt>Warning</dt><dd>The key string is not copied, you should keep these strings unmodified for the lifetime of this JSON document. </dd></dl>
+<dl class="section return"><dt>Returns</dt><dd>The new array, or NULL on error. </dd></dl>
+
+</div>
+</div>
 <a id="abe2f1b0c0b8cb9ceab3cdc35d4574c86" name="abe2f1b0c0b8cb9ceab3cdc35d4574c86"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#abe2f1b0c0b8cb9ceab3cdc35d4574c86">&#9670;&nbsp;</a></span>yyjson_mut_obj_add_bool()</h2>
 
@@ -7664,7 +8168,7 @@ val_pool</td>
       </table>
 </div><div class="memdoc">
 <p >Adds a bool value at the end of the object. The <code>key</code> should be a null-terminated UTF-8 string. This function allows duplicated key in one object.</p>
-<dl class="section warning"><dt>Warning</dt><dd>The key string are not copied, you should keep the string unmodified for the lifetime of this JSON document. </dd></dl>
+<dl class="section warning"><dt>Warning</dt><dd>The key string is not copied, you should keep the string unmodified for the lifetime of this JSON document. </dd></dl>
 
 </div>
 </div>
@@ -7700,7 +8204,7 @@ val_pool</td>
       </table>
 </div><div class="memdoc">
 <p >Adds a <code>false</code> value at the end of the object. The <code>key</code> should be a null-terminated UTF-8 string. This function allows duplicated key in one object.</p>
-<dl class="section warning"><dt>Warning</dt><dd>The key string are not copied, you should keep the string unmodified for the lifetime of this JSON document. </dd></dl>
+<dl class="section warning"><dt>Warning</dt><dd>The key string is not copied, you should keep the string unmodified for the lifetime of this JSON document. </dd></dl>
 
 </div>
 </div>
@@ -7742,7 +8246,7 @@ val_pool</td>
       </table>
 </div><div class="memdoc">
 <p >Adds an int value at the end of the object. The <code>key</code> should be a null-terminated UTF-8 string. This function allows duplicated key in one object.</p>
-<dl class="section warning"><dt>Warning</dt><dd>The key string are not copied, you should keep the string unmodified for the lifetime of this JSON document. </dd></dl>
+<dl class="section warning"><dt>Warning</dt><dd>The key string is not copied, you should keep the string unmodified for the lifetime of this JSON document. </dd></dl>
 
 </div>
 </div>
@@ -7778,7 +8282,44 @@ val_pool</td>
       </table>
 </div><div class="memdoc">
 <p >Adds a <code>null</code> value at the end of the object. The <code>key</code> should be a null-terminated UTF-8 string. This function allows duplicated key in one object.</p>
-<dl class="section warning"><dt>Warning</dt><dd>The key string are not copied, you should keep the string unmodified for the lifetime of this JSON document. </dd></dl>
+<dl class="section warning"><dt>Warning</dt><dd>The key string is not copied, you should keep the string unmodified for the lifetime of this JSON document. </dd></dl>
+
+</div>
+</div>
+<a id="a7241260b7fefbbdfdf7566d207b486c5" name="a7241260b7fefbbdfdf7566d207b486c5"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a7241260b7fefbbdfdf7566d207b486c5">&#9670;&nbsp;</a></span>yyjson_mut_obj_add_obj()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="yyjson_8h.html#a682886dc8be2307076b125b496b15570">yyjson_api_inline</a> <a class="el" href="yyjson_8h.html#structyyjson__mut__val">yyjson_mut_val</a> * yyjson_mut_obj_add_obj </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="yyjson_8h.html#structyyjson__mut__doc">yyjson_mut_doc</a> *&#160;</td>
+          <td class="paramname"><em>doc</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="yyjson_8h.html#structyyjson__mut__val">yyjson_mut_val</a> *&#160;</td>
+          <td class="paramname"><em>obj</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const char *&#160;</td>
+          <td class="paramname"><em>key</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p >Creates and adds a new object to the target object. The <code>key</code> should be a null-terminated UTF-8 string. This function allows duplicated key in one object.</p>
+<dl class="section warning"><dt>Warning</dt><dd>The key string is not copied, you should keep these strings unmodified for the lifetime of this JSON document. </dd></dl>
+<dl class="section return"><dt>Returns</dt><dd>The new object, or NULL on error. </dd></dl>
 
 </div>
 </div>
@@ -7820,7 +8361,7 @@ val_pool</td>
       </table>
 </div><div class="memdoc">
 <p >Adds a double value at the end of the object. The <code>key</code> should be a null-terminated UTF-8 string. This function allows duplicated key in one object.</p>
-<dl class="section warning"><dt>Warning</dt><dd>The key string are not copied, you should keep the string unmodified for the lifetime of this JSON document. </dd></dl>
+<dl class="section warning"><dt>Warning</dt><dd>The key string is not copied, you should keep the string unmodified for the lifetime of this JSON document. </dd></dl>
 
 </div>
 </div>
@@ -7862,7 +8403,7 @@ val_pool</td>
       </table>
 </div><div class="memdoc">
 <p >Adds a signed integer value at the end of the object. The <code>key</code> should be a null-terminated UTF-8 string. This function allows duplicated key in one object.</p>
-<dl class="section warning"><dt>Warning</dt><dd>The key string are not copied, you should keep the string unmodified for the lifetime of this JSON document. </dd></dl>
+<dl class="section warning"><dt>Warning</dt><dd>The key string is not copied, you should keep the string unmodified for the lifetime of this JSON document. </dd></dl>
 
 </div>
 </div>
@@ -7904,7 +8445,7 @@ val_pool</td>
       </table>
 </div><div class="memdoc">
 <p >Adds a string value at the end of the object. The <code>key</code> and <code>val</code> should be null-terminated UTF-8 strings. This function allows duplicated key in one object.</p>
-<dl class="section warning"><dt>Warning</dt><dd>The key/value string are not copied, you should keep these strings unmodified for the lifetime of this JSON document. </dd></dl>
+<dl class="section warning"><dt>Warning</dt><dd>The key/value strings are not copied, you should keep these strings unmodified for the lifetime of this JSON document. </dd></dl>
 
 </div>
 </div>
@@ -7946,7 +8487,7 @@ val_pool</td>
       </table>
 </div><div class="memdoc">
 <p >Adds a string value at the end of the object. The <code>key</code> and <code>val</code> should be null-terminated UTF-8 strings. The value string is copied. This function allows duplicated key in one object.</p>
-<dl class="section warning"><dt>Warning</dt><dd>The key string are not copied, you should keep the string unmodified for the lifetime of this JSON document. </dd></dl>
+<dl class="section warning"><dt>Warning</dt><dd>The key string is not copied, you should keep the string unmodified for the lifetime of this JSON document. </dd></dl>
 
 </div>
 </div>
@@ -7994,7 +8535,7 @@ val_pool</td>
       </table>
 </div><div class="memdoc">
 <p >Adds a string value at the end of the object. The <code>key</code> should be a null-terminated UTF-8 string. The <code>val</code> should be a UTF-8 string, null-terminator is not required. The <code>len</code> should be the length of the <code>val</code>, in bytes. This function allows duplicated key in one object.</p>
-<dl class="section warning"><dt>Warning</dt><dd>The key/value string are not copied, you should keep these strings unmodified for the lifetime of this JSON document. </dd></dl>
+<dl class="section warning"><dt>Warning</dt><dd>The key/value strings are not copied, you should keep these strings unmodified for the lifetime of this JSON document. </dd></dl>
 
 </div>
 </div>
@@ -8042,7 +8583,7 @@ val_pool</td>
       </table>
 </div><div class="memdoc">
 <p >Adds a string value at the end of the object. The <code>key</code> should be a null-terminated UTF-8 string. The <code>val</code> should be a UTF-8 string, null-terminator is not required. The <code>len</code> should be the length of the <code>val</code>, in bytes. This function allows duplicated key in one object.</p>
-<dl class="section warning"><dt>Warning</dt><dd>The key/value string are not copied, you should keep these strings unmodified for the lifetime of this JSON document. </dd></dl>
+<dl class="section warning"><dt>Warning</dt><dd>The key/value strings are not copied, you should keep these strings unmodified for the lifetime of this JSON document. </dd></dl>
 
 </div>
 </div>
@@ -8078,7 +8619,7 @@ val_pool</td>
       </table>
 </div><div class="memdoc">
 <p >Adds a <code>true</code> value at the end of the object. The <code>key</code> should be a null-terminated UTF-8 string. This function allows duplicated key in one object.</p>
-<dl class="section warning"><dt>Warning</dt><dd>The key string are not copied, you should keep the string unmodified for the lifetime of this JSON document. </dd></dl>
+<dl class="section warning"><dt>Warning</dt><dd>The key string is not copied, you should keep the string unmodified for the lifetime of this JSON document. </dd></dl>
 
 </div>
 </div>
@@ -8120,7 +8661,7 @@ val_pool</td>
       </table>
 </div><div class="memdoc">
 <p >Adds an unsigned integer value at the end of the object. The <code>key</code> should be a null-terminated UTF-8 string. This function allows duplicated key in one object.</p>
-<dl class="section warning"><dt>Warning</dt><dd>The key string are not copied, you should keep the string unmodified for the lifetime of this JSON document. </dd></dl>
+<dl class="section warning"><dt>Warning</dt><dd>The key string is not copied, you should keep the string unmodified for the lifetime of this JSON document. </dd></dl>
 
 </div>
 </div>
@@ -8162,7 +8703,7 @@ val_pool</td>
       </table>
 </div><div class="memdoc">
 <p >Adds a JSON value at the end of the object. The <code>key</code> should be a null-terminated UTF-8 string. This function allows duplicated key in one object.</p>
-<dl class="section warning"><dt>Warning</dt><dd>The key string are not copied, you should keep the string unmodified for the lifetime of this JSON document. </dd></dl>
+<dl class="section warning"><dt>Warning</dt><dd>The key string is not copied, you should keep the string unmodified for the lifetime of this JSON document. </dd></dl>
 
 </div>
 </div>
@@ -8993,7 +9534,7 @@ val_pool</td>
 <dl class="section warning"><dt>Warning</dt><dd>The input string is not copied, you should keep this string unmodified for the lifetime of this JSON document.</dd></dl>
 <dl class="section user"><dt>Example</dt><dd><div class="fragment"><div class="line"><span class="keyword">const</span> <span class="keywordtype">char</span> *kv_pairs[4] = { <span class="stringliteral">&quot;id&quot;</span>, <span class="stringliteral">&quot;01&quot;</span>, <span class="stringliteral">&quot;name&quot;</span>, <span class="stringliteral">&quot;Harry&quot;</span> };</div>
 <div class="line"><a class="code hl_struct" href="yyjson_8h.html#structyyjson__mut__val">yyjson_mut_val</a> *obj = <a class="code hl_function" href="yyjson_8h.html#afc2749d9ed694b6d0a4f5c14da19c7d4">yyjson_mut_obj_with_kv</a>(doc, kv_pairs, 2);</div>
-<div class="ttc" id="ayyjson_8h_html_afc2749d9ed694b6d0a4f5c14da19c7d4"><div class="ttname"><a href="yyjson_8h.html#afc2749d9ed694b6d0a4f5c14da19c7d4">yyjson_mut_obj_with_kv</a></div><div class="ttdeci">yyjson_api_inline yyjson_mut_val * yyjson_mut_obj_with_kv(yyjson_mut_doc *doc, const char **kv_pairs, size_t pair_count)</div><div class="ttdef"><b>Definition:</b> yyjson.h:6391</div></div>
+<div class="ttc" id="ayyjson_8h_html_afc2749d9ed694b6d0a4f5c14da19c7d4"><div class="ttname"><a href="yyjson_8h.html#afc2749d9ed694b6d0a4f5c14da19c7d4">yyjson_mut_obj_with_kv</a></div><div class="ttdeci">yyjson_api_inline yyjson_mut_val * yyjson_mut_obj_with_kv(yyjson_mut_doc *doc, const char **kv_pairs, size_t pair_count)</div><div class="ttdef"><b>Definition:</b> yyjson.h:6596</div></div>
 </div><!-- fragment --> </dd></dl>
 
 </div>
@@ -9040,7 +9581,7 @@ val_pool</td>
 <dl class="section user"><dt>Example</dt><dd><div class="fragment"><div class="line"><span class="keyword">const</span> <span class="keywordtype">char</span> *keys[2] = { <span class="stringliteral">&quot;id&quot;</span>, <span class="stringliteral">&quot;name&quot;</span> };</div>
 <div class="line"><span class="keyword">const</span> <span class="keywordtype">char</span> *vals[2] = { <span class="stringliteral">&quot;01&quot;</span>, <span class="stringliteral">&quot;Harry&quot;</span> };</div>
 <div class="line"><a class="code hl_struct" href="yyjson_8h.html#structyyjson__mut__val">yyjson_mut_val</a> *obj = <a class="code hl_function" href="yyjson_8h.html#a49cfc79051b729689f4f08592b284cc9">yyjson_mut_obj_with_str</a>(doc, keys, vals, 2);</div>
-<div class="ttc" id="ayyjson_8h_html_a49cfc79051b729689f4f08592b284cc9"><div class="ttname"><a href="yyjson_8h.html#a49cfc79051b729689f4f08592b284cc9">yyjson_mut_obj_with_str</a></div><div class="ttdeci">yyjson_api_inline yyjson_mut_val * yyjson_mut_obj_with_str(yyjson_mut_doc *doc, const char **keys, const char **vals, size_t count)</div><div class="ttdef"><b>Definition:</b> yyjson.h:6360</div></div>
+<div class="ttc" id="ayyjson_8h_html_a49cfc79051b729689f4f08592b284cc9"><div class="ttname"><a href="yyjson_8h.html#a49cfc79051b729689f4f08592b284cc9">yyjson_mut_obj_with_str</a></div><div class="ttdeci">yyjson_api_inline yyjson_mut_val * yyjson_mut_obj_with_str(yyjson_mut_doc *doc, const char **keys, const char **vals, size_t count)</div><div class="ttdef"><b>Definition:</b> yyjson.h:6565</div></div>
 </div><!-- fragment --> </dd></dl>
 
 </div>
@@ -12124,8 +12665,8 @@ val_pool</td>
 <div class="line"><a class="code hl_function" href="yyjson_8h.html#adad98bd766cf52d99f2c54dcb120786d">yyjson_doc_free</a>(doc);</div>
 <div class="line"> </div>
 <div class="line">free(buf);</div>
-<div class="ttc" id="ayyjson_8h_html_adad98bd766cf52d99f2c54dcb120786d"><div class="ttname"><a href="yyjson_8h.html#adad98bd766cf52d99f2c54dcb120786d">yyjson_doc_free</a></div><div class="ttdeci">yyjson_api_inline void yyjson_doc_free(yyjson_doc *doc)</div><div class="ttdef"><b>Definition:</b> yyjson.h:4640</div></div>
-<div class="ttc" id="ayyjson_8h_html_ae511cac592355c2f60f170402b9d8dbf"><div class="ttname"><a href="yyjson_8h.html#ae511cac592355c2f60f170402b9d8dbf">yyjson_read_max_memory_usage</a></div><div class="ttdeci">yyjson_api_inline size_t yyjson_read_max_memory_usage(size_t len, yyjson_read_flag flg)</div><div class="ttdef"><b>Definition:</b> yyjson.h:872</div></div>
+<div class="ttc" id="ayyjson_8h_html_adad98bd766cf52d99f2c54dcb120786d"><div class="ttname"><a href="yyjson_8h.html#adad98bd766cf52d99f2c54dcb120786d">yyjson_doc_free</a></div><div class="ttdeci">yyjson_api_inline void yyjson_doc_free(yyjson_doc *doc)</div><div class="ttdef"><b>Definition:</b> yyjson.h:4829</div></div>
+<div class="ttc" id="ayyjson_8h_html_ae511cac592355c2f60f170402b9d8dbf"><div class="ttname"><a href="yyjson_8h.html#ae511cac592355c2f60f170402b9d8dbf">yyjson_read_max_memory_usage</a></div><div class="ttdeci">yyjson_api_inline size_t yyjson_read_max_memory_usage(size_t len, yyjson_read_flag flg)</div><div class="ttdef"><b>Definition:</b> yyjson.h:981</div></div>
 </div><!-- fragment --> </dd></dl>
 <dl class="section see"><dt>See also</dt><dd><a class="el" href="yyjson_8h.html#a6068c4293a2b35493b18421b9afbd3d5">yyjson_alc_pool_init()</a> </dd></dl>
 

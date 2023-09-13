@@ -36,7 +36,9 @@ var menudata={children:[
 {text:"Variables",url:"globals_vars.html",children:[
 {text:"y",url:"globals_vars.html#index_y"}]},
 {text:"Typedefs",url:"globals_type.html"},
-{text:"Macros",url:"globals_defs.html"}]},
+{text:"Macros",url:"globals_defs.html",children:[
+{text:"_",url:"globals_defs.html#index__5F"},
+{text:"y",url:"globals_defs.html#index_y"}]}]},
 {text:"Data Structures",url:"annotated.html",children:[
 {text:"Data Structures",url:"annotated.html"},
 {text:"Data Structure Index",url:"classes.html"},

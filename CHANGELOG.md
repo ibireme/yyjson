@@ -2,7 +2,7 @@
 All notable changes to this project will be documented in this file.
 
 
-## Unreleased
+## 0.8.0 (2023-09-13)
 #### Added
 - Add `YYJSON_SUBTYPE_NOESC` subtype to mark strings that do not need to be escaped.
 - Add `YYJSON_DISABLE_UTF8_VALIDATION` flag to allow disable UTF-8 validation at compile-time.
@@ -10,10 +10,11 @@ All notable changes to this project will be documented in this file.
 - Add the missing `yyjson_mut_obj_add_arr/obj()` API: #140
 
 #### Changed
-- Improve the write performance of strings.
+- Improve the write performance of strings with `YYJSON_SUBTYPE_NOESC`.
 
 #### Fixed
 - Fix clang-16 valgrind fail: #134
+- Fix compile break when both `FAST_FP` and `READER` are disabled
 
 
 ## 0.7.0 (2023-05-25)
