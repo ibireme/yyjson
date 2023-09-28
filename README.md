@@ -219,7 +219,7 @@ yyjson, feel free to open a PR to add it to this list.
 | [orjson][]     | Python   | JSON library for Python with an optional yyjson backend      |
 | [cpp-yyjson][] | C++      | C++ JSON library with a yyjson backend                       |
 | [yyjsonr][]    | R        | R binding for yyjson                                         |
-| [Anada][]      | Swift    | JSON model decoding based on yyjson                          |
+| [Ananda][]     | Swift    | JSON model decoding based on yyjson                          |
 | [duckdb][]     | C++      | DuckDB is an in-process SQL OLAP Database Management System  |
 
 
@@ -242,5 +242,5 @@ This project is released under the MIT license.
 [orjson]: https://github.com/ijl/orjson
 [cpp-yyjson]: https://github.com/yosh-matsuda/cpp-yyjson
 [yyjsonr]: https://github.com/coolbutuseless/yyjsonr
-[Anada]: https://github.com/nixzhu/Ananda
+[Ananda]: https://github.com/nixzhu/Ananda
 [duckdb]: https://github.com/duckdb/duckdb
