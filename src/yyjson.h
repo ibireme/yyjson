@@ -738,7 +738,7 @@ typedef uint32_t yyjson_read_flag;
     - Report error if double number is infinity.
     - Report error if string contains invalid UTF-8 character or BOM.
     - Report error on trailing commas, comments, inf and nan literals. */
-static const yyjson_read_flag YYJSON_READ_NOFLAG                = 0 << 0;
+static const yyjson_read_flag YYJSON_READ_NOFLAG                = 0;
 
 /** Read the input data in-situ.
     This option allows the reader to modify and use input data to store string
@@ -1067,7 +1067,7 @@ typedef uint32_t yyjson_write_flag;
     - Report error on inf or nan number.
     - Report error on invalid UTF-8 string.
     - Do not escape unicode or slash. */
-static const yyjson_write_flag YYJSON_WRITE_NOFLAG                  = 0 << 0;
+static const yyjson_write_flag YYJSON_WRITE_NOFLAG                  = 0;
 
 /** Write JSON pretty with 4 space indent. */
 static const yyjson_write_flag YYJSON_WRITE_PRETTY                  = 1 << 0;
