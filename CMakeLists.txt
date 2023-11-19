@@ -4,6 +4,7 @@
 
 cmake_minimum_required(VERSION 3.5)
 project(yyjson VERSION 0.8.0 LANGUAGES C)
+set(YYJSON_SOVERSION 0)
 
 
 
@@ -73,7 +74,7 @@ endif()
 # Library
 add_library(yyjson src/yyjson.h src/yyjson.c)
 target_include_directories(yyjson PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>)
-set_target_properties(yyjson PROPERTIES VERSION ${PROJECT_VERSION})
+set_target_properties(yyjson PROPERTIES VERSION ${PROJECT_VERSION} SOVERSION ${YYJSON_SOVERSION})
 
 
 
