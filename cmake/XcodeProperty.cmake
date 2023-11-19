@@ -31,29 +31,37 @@ macro(set_default_xcode_property TARGET)
 
     # Compiler Flags
     set_xcode_property(${TARGET} OTHER_CFLAGS[variant=Debug] " ")
+    set_xcode_property(${TARGET} OTHER_CFLAGS[variant=MinSizeRel] " ")
+    set_xcode_property(${TARGET} OTHER_CFLAGS[variant=RelWithDebInfo] " ")
     set_xcode_property(${TARGET} OTHER_CFLAGS[variant=Release] " ")
     set_xcode_property(${TARGET} OTHER_CPLUSPLUSFLAGS[variant=Debug] "$(OTHER_CFLAGS)")
+    set_xcode_property(${TARGET} OTHER_CPLUSPLUSFLAGS[variant=MinSizeRel] "$(OTHER_CFLAGS)")
+    set_xcode_property(${TARGET} OTHER_CPLUSPLUSFLAGS[variant=RelWithDebInfo] "$(OTHER_CFLAGS)")
     set_xcode_property(${TARGET} OTHER_CPLUSPLUSFLAGS[variant=Release] "$(OTHER_CFLAGS)")
     
     # Macros
     set_xcode_property(${TARGET} GCC_PREPROCESSOR_DEFINITIONS[variant=Debug] "DEBUG=1")
-    set_xcode_property(${TARGET} GCC_PREPROCESSOR_DEFINITIONS[variant=Release] " ")
-
-    # Optimization
-    set_xcode_property(${TARGET} GCC_OPTIMIZATION_LEVEL[variant=Debug] "0")
-    set_xcode_property(${TARGET} GCC_OPTIMIZATION_LEVEL[variant=Release] "3")
+    set_xcode_property(${TARGET} GCC_PREPROCESSOR_DEFINITIONS[variant=MinSizeRel] "NDEBUG=1")
+    set_xcode_property(${TARGET} GCC_PREPROCESSOR_DEFINITIONS[variant=RelWithDebInfo] "NDEBUG=1")
+    set_xcode_property(${TARGET} GCC_PREPROCESSOR_DEFINITIONS[variant=Release] "NDEBUG=1")
 
     # Architectures
     set_xcode_property(${TARGET} ARCHS "$(ARCHS_STANDARD)")
     set_xcode_property(${TARGET} ONLY_ACTIVE_ARCH[variant=Debug] "YES")
+    set_xcode_property(${TARGET} ONLY_ACTIVE_ARCH[variant=MinSizeRel] "NO")
+    set_xcode_property(${TARGET} ONLY_ACTIVE_ARCH[variant=RelWithDebInfo] "NO")
     set_xcode_property(${TARGET} ONLY_ACTIVE_ARCH[variant=Release] "NO")
     set_xcode_property(${TARGET} SDKROOT "macosx")
     
     # Debug Information
     set_xcode_property(${TARGET} DEBUG_INFORMATION_FORMAT[variant=Debug] "dwarf")
+    set_xcode_property(${TARGET} DEBUG_INFORMATION_FORMAT[variant=MinSizeRel] "dwarf-with-dsym")
+    set_xcode_property(${TARGET} DEBUG_INFORMATION_FORMAT[variant=RelWithDebInfo] "dwarf")
     set_xcode_property(${TARGET} DEBUG_INFORMATION_FORMAT[variant=Release] "dwarf-with-dsym")
     set_xcode_property(${TARGET} GCC_GENERATE_DEBUGGING_SYMBOLS[variant=Debug] "YES")
-    set_xcode_property(${TARGET} GCC_GENERATE_DEBUGGING_SYMBOLS[variant=Release] "YES")
+    set_xcode_property(${TARGET} GCC_GENERATE_DEBUGGING_SYMBOLS[variant=MinSizeRel] "NO")
+    set_xcode_property(${TARGET} GCC_GENERATE_DEBUGGING_SYMBOLS[variant=RelWithDebInfo] "YES")
+    set_xcode_property(${TARGET} GCC_GENERATE_DEBUGGING_SYMBOLS[variant=Release] "NO")
     set_xcode_property(${TARGET} GCC_NO_COMMON_BLOCKS "YES")
     
     # Common Warnings
@@ -101,6 +109,8 @@ macro(set_default_xcode_property TARGET)
     set_xcode_property(${TARGET} CLANG_ENABLE_OBJC_ARC "YES")
     set_xcode_property(${TARGET} CLANG_ENABLE_OBJC_WEAK "YES")
     set_xcode_property(${TARGET} ENABLE_NS_ASSERTIONS[variant=Debug] "YES")
+    set_xcode_property(${TARGET} ENABLE_NS_ASSERTIONS[variant=MinSizeRel] "NO")
+    set_xcode_property(${TARGET} ENABLE_NS_ASSERTIONS[variant=RelWithDebInfo] "NO")
     set_xcode_property(${TARGET} ENABLE_NS_ASSERTIONS[variant=Release] "NO")
 
 endmacro(set_default_xcode_property)
