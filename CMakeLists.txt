@@ -152,6 +152,8 @@ install(EXPORT yyjson-targets
         DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/yyjson")
 install(FILES src/yyjson.h DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}")
 
+configure_file(yyjson.pc.in ${CMAKE_BINARY_DIR}/yyjson.pc @ONLY)
+install(FILES ${CMAKE_BINARY_DIR}/yyjson.pc DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)
 
 
 # ------------------------------------------------------------------------------
