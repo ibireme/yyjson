@@ -2,6 +2,11 @@
 All notable changes to this project will be documented in this file.
 
 
+## Unreleased
+#### Added
+- Add `YYJSON_WRITE_NEWLINE_AT_END` flag for JSON writer: #147
+
+
 ## 0.8.0 (2023-09-13)
 #### Added
 - Add `YYJSON_SUBTYPE_NOESC` subtype to mark strings that do not need to be escaped.

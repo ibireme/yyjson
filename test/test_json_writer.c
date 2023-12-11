@@ -873,6 +873,73 @@ yy_test_case(test_json_writer) {
         yyjson_doc_free(doc);
         yyjson_mut_doc_free(mdoc);
     }
+    
+    
+    // test newline at end
+    {
+        size_t len;
+        const char *str;
+        yyjson_doc *doc;
+        yyjson_mut_doc *mdoc;
+        char *ret;
+        
+        // single value
+        str = "123";
+        doc = yyjson_read(str, strlen(str), 0);
+        ret = yyjson_write(doc, YYJSON_WRITE_NEWLINE_AT_END, &len);
+        yy_assert(strlen(ret) == len && len == strlen(str) + 1);
+        yy_assert(memcmp(str, ret, strlen(str)) == 0);
+        yy_assert(ret[strlen(str)] == '\n');
+        free(ret);
+        
+        mdoc = yyjson_doc_mut_copy(doc, NULL);
+        ret = yyjson_mut_write(mdoc, YYJSON_WRITE_NEWLINE_AT_END, &len);
+        yy_assert(strlen(ret) == len && len == strlen(str) + 1);
+        yy_assert(memcmp(str, ret, strlen(str)) == 0);
+        yy_assert(ret[strlen(str)] == '\n');
+        free(ret);
+        
+        yyjson_doc_free(doc);
+        yyjson_mut_doc_free(mdoc);
+        
+        // multiple values
+        str = "[123]";
+        doc = yyjson_read(str, strlen(str), 0);
+        ret = yyjson_write(doc, YYJSON_WRITE_NEWLINE_AT_END, &len);
+        yy_assert(strlen(ret) == len && len == strlen(str) + 1);
+        yy_assert(memcmp(str, ret, strlen(str)) == 0);
+        yy_assert(ret[strlen(str)] == '\n');
+        free(ret);
+        
+        mdoc = yyjson_doc_mut_copy(doc, NULL);
+        ret = yyjson_mut_write(mdoc, YYJSON_WRITE_NEWLINE_AT_END, &len);
+        yy_assert(strlen(ret) == len && len == strlen(str) + 1);
+        yy_assert(memcmp(str, ret, strlen(str)) == 0);
+        yy_assert(ret[strlen(str)] == '\n');
+        free(ret);
+        
+        yyjson_doc_free(doc);
+        yyjson_mut_doc_free(mdoc);
+        
+        // multiple values, pretty
+        str = "[\n    123\n]";
+        doc = yyjson_read(str, strlen(str), 0);
+        ret = yyjson_write(doc, YYJSON_WRITE_PRETTY | YYJSON_WRITE_NEWLINE_AT_END, &len);
+        yy_assert(strlen(ret) == len && len == strlen(str) + 1);
+        yy_assert(memcmp(str, ret, strlen(str)) == 0);
+        yy_assert(ret[strlen(str)] == '\n');
+        free(ret);
+        
+        mdoc = yyjson_doc_mut_copy(doc, NULL);
+        ret = yyjson_mut_write(mdoc, YYJSON_WRITE_PRETTY | YYJSON_WRITE_NEWLINE_AT_END, &len);
+        yy_assert(strlen(ret) == len && len == strlen(str) + 1);
+        yy_assert(memcmp(str, ret, strlen(str)) == 0);
+        yy_assert(ret[strlen(str)] == '\n');
+        free(ret);
+        
+        yyjson_doc_free(doc);
+        yyjson_mut_doc_free(mdoc);
+    }
 #endif
     
     // test build JSON on stack

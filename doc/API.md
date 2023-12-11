@@ -515,6 +515,10 @@ Invalid characters within string values will be copied byte by byte. If `YYJSON_
 
 This flag does not affect the performance of correctly encoded string.
 
+● **YYJSON_WRITE_NEWLINE_AT_END**<br/>
+Adds a newline character `\n` at the end of the JSON.
+This can be helpful for text editors or NDJSON.
+
 
 ---------------
 # Accessing JSON Document
