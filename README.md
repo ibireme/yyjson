@@ -213,15 +213,16 @@ A non-exhaustive list of projects that expose yyjson to other languages or
 use yyjson internally for a major feature. If you have a project that uses
 yyjson, feel free to open a PR to add it to this list.
 
-| Project         | Language | Description                                                                       |
-|-----------------|----------|-----------------------------------------------------------------------------------|
-| [py_yyjson][]   | Python   | Python bindings for yyjson                                                        |
-| [orjson][]      | Python   | JSON library for Python with an optional yyjson backend                           |
-| [cpp-yyjson][]  | C++      | C++ JSON library with a yyjson backend                                            |
-| [reflect-cpp][] | C++      | C++ library for serialization through automated field name retrieval from structs |
-| [yyjsonr][]     | R        | R binding for yyjson                                                              |
-| [Ananda][]      | Swift    | JSON model decoding based on yyjson                                               |
-| [duckdb][]      | C++      | DuckDB is an in-process SQL OLAP Database Management System                       |
+| Project         | Language | Description                                                                              |
+|-----------------|----------|------------------------------------------------------------------------------------------|
+| [py_yyjson][]   | Python   | Python bindings for yyjson                                                               |
+| [orjson][]      | Python   | JSON library for Python with an optional yyjson backend                                  |
+| [cpp-yyjson][]  | C++      | C++ JSON library with a yyjson backend                                                   |
+| [reflect-cpp][] | C++      | C++ library for serialization through automated field name retrieval from structs        |
+| [yyjsonr][]     | R        | R binding for yyjson                                                                     |
+| [Ananda][]      | Swift    | JSON model decoding based on yyjson                                                      |
+| [duckdb][]      | C++      | DuckDB is an in-process SQL OLAP Database Management System                              |
+| [fastfetch][]   | C        | A neofetch-like tool for fetching system information and displaying them in a pretty way |
 
 
 # TODO
@@ -246,3 +247,4 @@ This project is released under the MIT license.
 [yyjsonr]: https://github.com/coolbutuseless/yyjsonr
 [Ananda]: https://github.com/nixzhu/Ananda
 [duckdb]: https://github.com/duckdb/duckdb
+[fastfetch]: https://github.com/fastfetch-cli/fastfetch
