@@ -6,6 +6,9 @@ All notable changes to this project will be documented in this file.
 #### Added
 - Add `YYJSON_WRITE_NEWLINE_AT_END` flag for JSON writer: #147
 
+#### Changed
+- Add auto-type conversion (uint<->sint) to `yyjson_ptr_get_uint/sint()`: #152
+
 
 ## 0.8.0 (2023-09-13)
 #### Added

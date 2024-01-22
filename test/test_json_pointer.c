@@ -3259,6 +3259,10 @@ static void test_ptr_get_type(void) {
         \"answer\": {\"to\": {\"life\": 42}}, \
         \"true\": true, \
         \"-1\": -1, \
+        \"1\": 1, \
+        \"0\": 0, \
+        \"i64_max\": 9223372036854775807, \
+        \"i64_max+\": 9223372036854775808, \
         \"zero\": 0, \
         \"pi\": 3.14159, \
         \"pistr\": \"3.14159\" \
@@ -3277,6 +3281,13 @@ static void test_ptr_get_type(void) {
     yy_assert(yyjson_ptr_get_bool(root, "/true", &bool_value) == true && bool_value == true);
     yy_assert(yyjson_ptr_get_uint(root, "/answer/to/life", &uint_value) == true && uint_value == 42);
     yy_assert(yyjson_ptr_get_sint(root, "/-1", &sint_value) == true && sint_value == -1);
+    yy_assert(yyjson_ptr_get_sint(root, "/1", &sint_value) == true && sint_value == 1);
+    yy_assert(yyjson_ptr_get_uint(root, "/1", &uint_value) == true && uint_value == 1);
+    yy_assert(yyjson_ptr_get_sint(root, "/0", &sint_value) == true && sint_value == 0);
+    yy_assert(yyjson_ptr_get_uint(root, "/0", &uint_value) == true && uint_value == 0);
+    yy_assert(yyjson_ptr_get_sint(root, "/i64_max", &sint_value) == true);
+    yy_assert(yyjson_ptr_get_uint(root, "/i64_max", &uint_value) == true);
+    yy_assert(yyjson_ptr_get_uint(root, "/i64_max+", &uint_value) == true);
     yy_assert(yyjson_ptr_get_real(root, "/pi", &real_value) == true && real_value == (double)3.14159);
     yy_assert(yyjson_ptr_get_num(root, "/-1", &real_value) == true && real_value == (double)-1.0);
     yy_assert(yyjson_ptr_get_num(root, "/zero", &real_value) == true && real_value == (double)0.0);
@@ -3285,10 +3296,11 @@ static void test_ptr_get_type(void) {
     yy_assert(yyjson_ptr_get_str(root, "/pistr", &string_value) == true && strcmp(string_value, "3.14159") == 0);
     
     // unsuccessful gets
-    yy_assert(yyjson_ptr_get_uint(root, "/-1", &uint_value) == false);  // wrong type
+    yy_assert(yyjson_ptr_get_uint(root, "/-1", &uint_value) == false);  // type cast error
+    yy_assert(yyjson_ptr_get_sint(root, "/i64_max+", &sint_value) == false);  // type cast error
     yy_assert(yyjson_ptr_get_num(root, "/pistr", &real_value) == false);  // wrong type
     yy_assert(yyjson_ptr_get_str(root, "/answer/to", &string_value) == false);  // wrong type
-    yy_assert(yyjson_ptr_get_real(root, "/nosuch", &real_value) == false); // Does not exist
+    yy_assert(yyjson_ptr_get_real(root, "/nosuch", &real_value) == false); // not exist
     
     // type mismatch
     yy_assert(yyjson_ptr_get_bool(root, "/pi", &bool_value) == false);
