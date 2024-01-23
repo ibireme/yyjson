@@ -7740,7 +7740,7 @@ yyjson_api_inline bool yyjson_ptr_get_bool(
 yyjson_api_inline bool yyjson_ptr_get_uint(
     yyjson_val *root, const char *ptr, uint64_t *value) {
     yyjson_val *val = yyjson_ptr_get(root, ptr);
-    if (value) {
+    if (value && val) {
         uint64_t ret = val->uni.u64;
         if (unsafe_yyjson_is_uint(val) ||
             (unsafe_yyjson_is_sint(val) && !(ret >> 63))) {
@@ -7758,7 +7758,7 @@ yyjson_api_inline bool yyjson_ptr_get_uint(
 yyjson_api_inline bool yyjson_ptr_get_sint(
     yyjson_val *root, const char *ptr, int64_t *value) {
     yyjson_val *val = yyjson_ptr_get(root, ptr);
-    if (value) {
+    if (value && val) {
         int64_t ret = val->uni.i64;
         if (unsafe_yyjson_is_sint(val) ||
             (unsafe_yyjson_is_uint(val) && ret >= 0)) {

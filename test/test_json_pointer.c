@@ -3300,6 +3300,8 @@ static void test_ptr_get_type(void) {
     yy_assert(yyjson_ptr_get_sint(root, "/i64_max+", &sint_value) == false);  // type cast error
     yy_assert(yyjson_ptr_get_num(root, "/pistr", &real_value) == false);  // wrong type
     yy_assert(yyjson_ptr_get_str(root, "/answer/to", &string_value) == false);  // wrong type
+    yy_assert(yyjson_ptr_get_uint(root, "/nosuch", &uint_value) == false); // not exist
+    yy_assert(yyjson_ptr_get_sint(root, "/nosuch", &sint_value) == false); // not exist
     yy_assert(yyjson_ptr_get_real(root, "/nosuch", &real_value) == false); // not exist
     
     // type mismatch
