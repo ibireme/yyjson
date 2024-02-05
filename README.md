@@ -224,6 +224,7 @@ yyjson, feel free to open a PR to add it to this list.
 | [duckdb][]      | C++      | DuckDB is an in-process SQL OLAP Database Management System                              |
 | [fastfetch][]   | C        | A neofetch-like tool for fetching system information and displaying them in a pretty way |
 | [Zrythm][]      | C        | Digital Audio Workstation that uses yyjson to serialize JSON project files               |
+| [bemorehuman][] | C        | Recommendation engine with a focus on uniqueness of the person receiving the rec         |
 
 
 # TODO
@@ -250,3 +251,4 @@ This project is released under the MIT license.
 [duckdb]: https://github.com/duckdb/duckdb
 [fastfetch]: https://github.com/fastfetch-cli/fastfetch
 [Zrythm]: https://github.com/zrythm/zrythm
+[bemorehuman]: https://github.com/BeMoreHumanOrg/bemorehuman
