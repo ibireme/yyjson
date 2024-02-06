@@ -4833,6 +4833,7 @@ yyjson_api_inline size_t yyjson_doc_get_val_count(yyjson_doc *doc) {
 yyjson_api_inline void yyjson_doc_free(yyjson_doc *doc) {
     if (doc) {
         yyjson_alc alc = doc->alc;
+        memset(&doc->alc, 0, sizeof(alc));
         if (doc->str_pool) alc.free(alc.ctx, doc->str_pool);
         alc.free(alc.ctx, doc);
     }
