@@ -3699,7 +3699,7 @@ yyjson_api_inline bool yyjson_mut_obj_add_strcpy(yyjson_mut_doc *doc,
     The `len` should be the length of the `val`, in bytes.
     This function allows duplicated key in one object.
     
-    @warning The key/value strings are not copied, you should keep these strings
+    @warning The key strings are not copied, you should keep these strings
         unmodified for the lifetime of this JSON document. */
 yyjson_api_inline bool yyjson_mut_obj_add_strncpy(yyjson_mut_doc *doc,
                                                   yyjson_mut_val *obj,
