@@ -5673,6 +5673,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_bool(yyjson_mut_doc *doc,
     if (yyjson_likely(doc)) {
         yyjson_mut_val *val = unsafe_yyjson_mut_val(doc, 1);
         if (yyjson_likely(val)) {
+            _val = !!_val;
             val->tag = YYJSON_TYPE_BOOL | (uint8_t)((uint8_t)_val << 3);
             return val;
         }
@@ -5925,7 +5926,8 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_arr(yyjson_mut_doc *doc) {
 yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_with_bool(
     yyjson_mut_doc *doc, const bool *vals, size_t count) {
     yyjson_mut_arr_with_func({
-        val->tag = YYJSON_TYPE_BOOL | (uint8_t)((uint8_t)vals[i] << 3);
+        bool _val = !!vals[i];
+        val->tag = YYJSON_TYPE_BOOL | (uint8_t)((uint8_t)_val << 3);
     });
 }
 
@@ -6877,6 +6879,7 @@ yyjson_api_inline bool yyjson_mut_obj_add_bool(yyjson_mut_doc *doc,
                                                const char *_key,
                                                bool _val) {
     yyjson_mut_obj_add_func({
+        _val = !!_val;
         val->tag = YYJSON_TYPE_BOOL | (uint8_t)((uint8_t)(_val) << 3);
     });
 }

@@ -976,6 +976,41 @@ yy_test_case(test_json_writer) {
         char *json = yyjson_mut_val_write_opts(&root, 0, &alc, NULL, NULL);
         yy_assert(strcmp(json, expect) == 0);
     }
+    
+    // test bool conversion
+    // some environments don't have a native bool type
+    // and the bool type may store values other than 0/1
+    {
+        yyjson_mut_doc *mdoc = yyjson_mut_doc_new(NULL);
+        yyjson_mut_val *mobj = yyjson_mut_obj(mdoc);
+        yyjson_mut_doc_set_root(mdoc, mobj);
+        
+        for (u8 i = 0; i < 10; i++) {
+            char str[2];
+            snprintf(str, sizeof(str), "%d", (int)i);
+            yyjson_mut_val *key = yyjson_mut_strcpy(mdoc, str);
+            yyjson_mut_val *val = yyjson_mut_bool(mdoc, (bool)i);
+            yyjson_mut_obj_add(mobj, key, val);
+        }
+        
+        char *json = yyjson_mut_write(mdoc, YYJSON_WRITE_PRETTY, NULL);
+        yy_assert(json != NULL);
+        
+        yyjson_doc *doc = yyjson_read(json, strlen(json), 0);
+        yyjson_val *obj = yyjson_doc_get_root(doc);
+        yy_assert(yyjson_obj_size(obj) == 10);
+        for (u8 i = 0; i < 10; i++) {
+            char str[2];
+            snprintf(str, sizeof(str), "%d", (int)i);
+            yyjson_val *val = yyjson_obj_get(obj, str);
+            yy_assert(yyjson_is_bool(val));
+            yy_assert(yyjson_get_bool(val) == (i != 0));
+        }
+        
+        yyjson_mut_doc_free(mdoc);
+        yyjson_doc_free(doc);
+        free(json);
+    }
 }
 
 #else

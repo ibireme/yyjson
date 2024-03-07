@@ -9,6 +9,9 @@ All notable changes to this project will be documented in this file.
 #### Changed
 - Add auto-type conversion (uint<->sint) to `yyjson_ptr_get_uint/sint()`: #152
 
+#### Fixed
+- Fix incorrect output in environments lacking native `bool` type support: #161
+
 
 ## 0.8.0 (2023-09-13)
 #### Added
