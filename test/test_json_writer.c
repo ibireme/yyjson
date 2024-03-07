@@ -996,6 +996,7 @@ yy_test_case(test_json_writer) {
         char *json = yyjson_mut_write(mdoc, YYJSON_WRITE_PRETTY, NULL);
         yy_assert(json != NULL);
         
+#if !YYJSON_DISABLE_READER
         yyjson_doc *doc = yyjson_read(json, strlen(json), 0);
         yyjson_val *obj = yyjson_doc_get_root(doc);
         yy_assert(yyjson_obj_size(obj) == 10);
@@ -1006,9 +1007,10 @@ yy_test_case(test_json_writer) {
             yy_assert(yyjson_is_bool(val));
             yy_assert(yyjson_get_bool(val) == (i != 0));
         }
+        yyjson_doc_free(doc);
+#endif
         
         yyjson_mut_doc_free(mdoc);
-        yyjson_doc_free(doc);
         free(json);
     }
 }
