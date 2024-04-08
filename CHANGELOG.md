@@ -2,7 +2,7 @@
 All notable changes to this project will be documented in this file.
 
 
-## Unreleased
+## 0.9.0 (2024-04-08)
 #### Added
 - Add `YYJSON_WRITE_NEWLINE_AT_END` flag for JSON writer: #147
 

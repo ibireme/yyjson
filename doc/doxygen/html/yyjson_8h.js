@@ -500,6 +500,7 @@ var yyjson_8h =
     [ "YYJSON_WRITE_ESCAPE_SLASHES", "yyjson_8h.html#a0eeb35b40e688fce9dd61ed400984042", null ],
     [ "YYJSON_WRITE_ESCAPE_UNICODE", "yyjson_8h.html#ac234e82f7a1203e656bcbb0af2ce8c01", null ],
     [ "YYJSON_WRITE_INF_AND_NAN_AS_NULL", "yyjson_8h.html#a4408e0c5928db936b89d49ccf255100b", null ],
+    [ "YYJSON_WRITE_NEWLINE_AT_END", "yyjson_8h.html#ab0cfae40d7ae6489d73c6cf5db9c09e1", null ],
     [ "YYJSON_WRITE_NOFLAG", "yyjson_8h.html#ae152a6e8e8c6e4efd798fa6eca9d311f", null ],
     [ "YYJSON_WRITE_PRETTY", "yyjson_8h.html#aebdaa55a1673e99d2dcea01a15c633be", null ],
     [ "YYJSON_WRITE_PRETTY_TWO_SPACES", "yyjson_8h.html#a7b13411e137d8085b68b2e0fc9d6736b", null ],

@@ -50,8 +50,9 @@ var searchData=
   ['yyjson_5fwrite_5fescape_5fslashes_47',['YYJSON_WRITE_ESCAPE_SLASHES',['../yyjson_8h.html#a0eeb35b40e688fce9dd61ed400984042',1,'yyjson.h']]],
   ['yyjson_5fwrite_5fescape_5funicode_48',['YYJSON_WRITE_ESCAPE_UNICODE',['../yyjson_8h.html#ac234e82f7a1203e656bcbb0af2ce8c01',1,'yyjson.h']]],
   ['yyjson_5fwrite_5finf_5fand_5fnan_5fas_5fnull_49',['YYJSON_WRITE_INF_AND_NAN_AS_NULL',['../yyjson_8h.html#a4408e0c5928db936b89d49ccf255100b',1,'yyjson.h']]],
-  ['yyjson_5fwrite_5fnoflag_50',['YYJSON_WRITE_NOFLAG',['../yyjson_8h.html#ae152a6e8e8c6e4efd798fa6eca9d311f',1,'yyjson.h']]],
-  ['yyjson_5fwrite_5fpretty_51',['YYJSON_WRITE_PRETTY',['../yyjson_8h.html#aebdaa55a1673e99d2dcea01a15c633be',1,'yyjson.h']]],
-  ['yyjson_5fwrite_5fpretty_5ftwo_5fspaces_52',['YYJSON_WRITE_PRETTY_TWO_SPACES',['../yyjson_8h.html#a7b13411e137d8085b68b2e0fc9d6736b',1,'yyjson.h']]],
-  ['yyjson_5fwrite_5fsuccess_53',['YYJSON_WRITE_SUCCESS',['../yyjson_8h.html#a20d8f66fbe535a20596001dc2022f0b4',1,'yyjson.h']]]
+  ['yyjson_5fwrite_5fnewline_5fat_5fend_50',['YYJSON_WRITE_NEWLINE_AT_END',['../yyjson_8h.html#ab0cfae40d7ae6489d73c6cf5db9c09e1',1,'yyjson.h']]],
+  ['yyjson_5fwrite_5fnoflag_51',['YYJSON_WRITE_NOFLAG',['../yyjson_8h.html#ae152a6e8e8c6e4efd798fa6eca9d311f',1,'yyjson.h']]],
+  ['yyjson_5fwrite_5fpretty_52',['YYJSON_WRITE_PRETTY',['../yyjson_8h.html#aebdaa55a1673e99d2dcea01a15c633be',1,'yyjson.h']]],
+  ['yyjson_5fwrite_5fpretty_5ftwo_5fspaces_53',['YYJSON_WRITE_PRETTY_TWO_SPACES',['../yyjson_8h.html#a7b13411e137d8085b68b2e0fc9d6736b',1,'yyjson.h']]],
+  ['yyjson_5fwrite_5fsuccess_54',['YYJSON_WRITE_SUCCESS',['../yyjson_8h.html#a20d8f66fbe535a20596001dc2022f0b4',1,'yyjson.h']]]
 ];
