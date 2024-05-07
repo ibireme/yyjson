@@ -636,7 +636,107 @@ static void test_write_err_code(void) {
 #endif
 }
 
+
+
+static void test_locate_pos(void) {
+    const char *str;
+    size_t len, pos, line, col, chr;
+    
+    // -------------------------------------------------------------------------
+    // Invalid input.
+    yy_assert(!yyjson_locate_pos(NULL, 0, 0, NULL, NULL, NULL));
+    
+    line = col = chr = SIZE_MAX;
+    yy_assert(!yyjson_locate_pos(NULL, 0, 0, &line, &col, &chr));
+    yy_assert(line == 0 && col == 0 && chr == 0);
+    
+    yy_assert(!yyjson_locate_pos("abc", 3, 4, NULL, NULL, NULL));
+    
+    line = col = chr = SIZE_MAX;
+    yy_assert(!yyjson_locate_pos("abc", 3, 4, &line, &col, &chr));
+    yy_assert(line == 0 && col == 0 && chr == 0);
+    
+    // -------------------------------------------------------------------------
+    // Empty.
+    yy_assert(yyjson_locate_pos("", 0, 0, &line, &col, &chr));
+    yy_assert(line == 1 && col == 1 && chr == 0);
+    
+    // -------------------------------------------------------------------------
+    // Empty new line.
+    yy_assert(yyjson_locate_pos("\n", 1, 0, &line, &col, &chr));
+    yy_assert(line == 1 && col == 1 && chr == 0);
+    yy_assert(yyjson_locate_pos("\n", 1, 1, &line, &col, &chr));
+    yy_assert(line == 2 && col == 1 && chr == 1);
+    yy_assert(yyjson_locate_pos("\n\n", 2, 1, &line, &col, &chr));
+    yy_assert(line == 2 && col == 1 && chr == 1);
+    yy_assert(yyjson_locate_pos("\n\n", 2, 2, &line, &col, &chr));
+    yy_assert(line == 3 && col == 1 && chr == 2);
+    
+    // -------------------------------------------------------------------------
+    // 1 line.
+    str = "abc";
+    len = strlen(str);
+    for (pos = 0; pos <= len; pos++) {
+        yy_assert(yyjson_locate_pos(str, len, pos, &line, &col, &chr));
+        yy_assert(line == 1 && col == pos + 1 && chr == pos);
+    }
+    
+    // -------------------------------------------------------------------------
+    // 2 lines.
+    str = "abc\ndef";
+    len = strlen(str);
+    for (pos = 0; pos <= len; pos++) {
+        yy_assert(yyjson_locate_pos(str, len, pos, &line, &col, &chr));
+        if (pos <= 3) {
+            yy_assert(line == 1 && col == pos + 1 && chr == pos);
+        } else {
+            yy_assert(line == 2 && col == pos - 4 + 1 && chr == pos);
+        }
+    }
+    
+    // -------------------------------------------------------------------------
+    // 3 lines.
+    str = "abc\ndef\nghijklmn";
+    len = strlen(str);
+    for (pos = 0; pos <= len; pos++) {
+        yy_assert(yyjson_locate_pos(str, len, pos, &line, &col, &chr));
+        if (pos <= 3) {
+            yy_assert(line == 1 && col == pos + 1 && chr == pos);
+        } else if (pos <= 7) {
+            yy_assert(line == 2 && col == pos - 4 + 1 && chr == pos);
+        } else {
+            yy_assert(line == 3 && col == pos - 8 + 1 && chr == pos);
+        }
+    }
+    
+    // -------------------------------------------------------------------------
+    // Unicode.
+    str = "abcé果😀"; // 1-4 byte UTF-8
+    len = strlen(str);
+    for (pos = 0; pos <= len; pos++) {
+        size_t pos_uni = pos;
+        if (4 <= pos && pos <= 5) pos_uni = 4;
+        if (6 <= pos && pos <= 8) pos_uni = 5;
+        if (9 <= pos && pos <= 12) pos_uni = 6;
+        yy_assert(yyjson_locate_pos(str, len, pos, &line, &col, &chr));
+        yy_assert(line == 1 && col == pos_uni + 1 && chr == pos_uni);
+    }
+    str = "abcdef"; // invalid UTF-8
+    len = strlen(str);
+    char buf[7] = { 0 };
+    memcpy(buf, str, len + 1);
+    buf[1] = 0x80;
+    buf[2] = 0xF8;
+    for (pos = 0; pos <= len; pos++) {
+        yy_assert(yyjson_locate_pos(buf, len, pos, &line, &col, &chr));
+        yy_assert(line == 1 && col == pos + 1 && chr == pos);
+    }
+}
+
+
+
 yy_test_case(test_err_code) {
     test_read_err_code();
     test_write_err_code();
+    test_locate_pos();
 }

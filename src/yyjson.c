@@ -1831,6 +1831,42 @@ bool unsafe_yyjson_mut_equals(yyjson_mut_val *lhs, yyjson_mut_val *rhs) {
     }
 }
 
+bool yyjson_locate_pos(const char *str, size_t len, size_t pos,
+                       size_t *line, size_t *col, size_t *chr) {
+    usize line_sum = 0, line_pos = 0, chr_sum = 0;
+    const u8 *cur = (const u8 *)str;
+    const u8 *end = cur + pos;
+    
+    if (!str || pos > len) {
+        if (line) *line = 0;
+        if (col) *col = 0;
+        if (chr) *chr = 0;
+        return false;
+    }
+    
+    while (cur < end) {
+        u8 c = *cur;
+        chr_sum += 1;
+        if (likely(c < 0x80)) {         /* 0xxxxxxx (0x00-0x7F) ASCII */
+            if (c == '\n') {
+                line_sum += 1;
+                line_pos = chr_sum;
+            }
+            cur += 1;
+        }
+        else if (c < 0xC0) cur += 1;    /* 10xxxxxx (0x80-0xBF) Invalid */
+        else if (c < 0xE0) cur += 2;    /* 110xxxxx (0xC0-0xDF) 2-byte UTF-8 */
+        else if (c < 0xF0) cur += 3;    /* 1110xxxx (0xE0-0xEF) 3-byte UTF-8 */
+        else if (c < 0xF8) cur += 4;    /* 11110xxx (0xF0-0xF7) 4-byte UTF-8 */
+        else               cur += 1;    /* 11111xxx (0xF8-0xFF) Invalid */
+    }
+    
+    if (line) *line = line_sum + 1;
+    if (col) *col = chr_sum - line_pos + 1;
+    if (chr) *chr = chr_sum;
+    return true;
+}
+
 
 
 #if !YYJSON_DISABLE_UTILS
