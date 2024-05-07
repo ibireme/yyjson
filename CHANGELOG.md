@@ -2,6 +2,11 @@
 All notable changes to this project will be documented in this file.
 
 
+## Unreleased
+#### Added
+- Add `yyjson_locate_pos()` function to locate the line and column number for error position.
+
+
 ## 0.9.0 (2024-04-08)
 #### Added
 - Add `YYJSON_WRITE_NEWLINE_AT_END` flag for JSON writer: #147
