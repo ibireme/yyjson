@@ -7835,7 +7835,7 @@ static const u8 esc_single_char_table[512] = {
 
 /** Returns the encode table with options. */
 static_inline const char_enc_type *get_enc_table_with_flag(
-    yyjson_read_flag flg) {
+    yyjson_write_flag flg) {
     if (has_write_flag(ESCAPE_UNICODE)) {
         if (has_write_flag(ESCAPE_SLASHES)) {
             return enc_table_esc_slash;
