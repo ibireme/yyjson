@@ -9207,6 +9207,7 @@ doc_end:
     *dat_len = (usize)(cur - hdr);
     err->code = YYJSON_WRITE_SUCCESS;
     err->msg = "success";
+    alc.free(alc.ctx, hdr);
     return hdr;
     
 fail_alloc:
