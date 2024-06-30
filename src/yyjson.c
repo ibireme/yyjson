@@ -4470,7 +4470,7 @@ static_inline bool read_number(u8 **ptr,
     bool sign;
     
     /* read number as raw string if has `YYJSON_READ_NUMBER_AS_RAW` flag */
-    if (unlikely(pre && !has_read_flag(BIGNUM_AS_RAW))) {
+    if (has_read_flag(NUMBER_AS_RAW)) {
         return read_number_raw(ptr, pre, flg, val, msg);
     }
     

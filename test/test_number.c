@@ -78,7 +78,12 @@ static yy_inline int str_get_sig_len(const char *str) {
 static yy_inline num_type check_json_num(const char *str) {
     bool sign = (*str == '-');
     str += sign;
-    if (!char_is_digit(*str)) return NUM_TYPE_FAIL;
+    if (!char_is_digit(*str)) {
+        if (!yyb_str_cmp(str, "nan", true) ||
+            !yyb_str_cmp(str, "inf", true) ||
+            !yyb_str_cmp(str, "infinity", true)) return NUM_TYPE_INF_NAN_LITERAL;
+        return NUM_TYPE_FAIL;
+    }
     if (*str == '0' && char_is_digit(str[1])) return NUM_TYPE_FAIL;
     while (char_is_digit(*str)) str++;
     if (*str == '\0') return sign ? NUM_TYPE_SINT : NUM_TYPE_UINT;
@@ -169,6 +174,30 @@ static usize f64_write(char *buf, usize len, f64 val) {
 }
 
 #endif
+
+
+
+/// check if there's overflow when reading as integer number
+static bool check_int_overflow(const char *str, num_type type) {
+    if (type != NUM_TYPE_SINT && type != NUM_TYPE_UINT) return false;
+    
+    bool sign = (*str == '-');
+    str += sign;
+    const char *max = sign ? "9223372036854775808" : "18446744073709551615";
+    usize max_len = strlen(max);
+    usize str_len = strlen(str);
+    if (str_len > max_len) return true;
+    if (str_len == max_len && strcmp(str, max) > 0) return true;
+    return false;
+}
+
+/// check if there's overflow when reading as real number
+static bool check_real_overflow(const char *str, num_type type) {
+    if (type != NUM_TYPE_SINT && type != NUM_TYPE_UINT && type != NUM_TYPE_REAL) return false;
+    f64 val = 0;
+    f64_read(str, &val);
+    return isinf(val);
+}
 
 
 
@@ -617,7 +646,8 @@ static void test_nan_inf_write(const char *line, usize len, f64 num) {
 }
 
 static void test_nan_inf(const char *line, usize len) {
-    yy_assertf(check_json_num(line) == NUM_TYPE_FAIL,
+    num_type type = check_json_num(line);
+    yy_assertf(type == NUM_TYPE_FAIL || type == NUM_TYPE_INF_NAN_LITERAL,
                "input should not be a valid JSON number: %s\n", line);
     
     f64 num;
@@ -780,39 +810,181 @@ static void test_random_real(void) {
 }
 
 static void test_bignum(void) {
-    const char *json = "["
-    "123,\"uint\","
-    "9223372036854775807,\"uint\","
-    "9223372036854775807.0,\"real\","
-    "18446744073709551615,\"uint\","
-    "18446744073709551615.0,\"real\","
-    "18446744073709551616,\"raw\","
-    "123456789012345678901,\"raw\","
-    "1234567890123456789012,\"raw\","
-    "12345678901234567890123456789012345678901234567890"
-    "12345678901234567890123456789012345678901234567890"
-    "12345678901234567890123456789012345678901234567890"
-    "12345678901234567890123456789012345678901234567890"
-    "12345678901234567890123456789012345678901234567890"
-    "12345678901234567890123456789012345678901234567890"
-    "12345678901234567890123456789012345678901234567890"
-    ",\"raw\","
-    "-123,\"sint\","
-    "-9223372036854775808,\"sint\","
-    "-9223372036854775808.0,\"real\","
-    "-9223372036854775809,\"raw\","
-    "123e999,\"raw\""
-    "]";
-    yyjson_doc *doc = yyjson_read(json, strlen(json), YYJSON_READ_BIGNUM_AS_RAW);
-    yyjson_val *arr = yyjson_doc_get_root(doc);
-    yy_assert(yyjson_is_arr(arr));
-    for (size_t i = 0, max = yyjson_arr_size(arr); i < max; i+= 2) {
-        yyjson_val *num = yyjson_arr_get(arr, i);
-        yyjson_val *type = yyjson_arr_get(arr, i + 1);
-        const char *desc = yyjson_get_type_desc(num);
-        yy_assert(strcmp(desc, yyjson_get_str(type)) == 0);
+    const char *num_arr[] = {
+        "0", // uint
+        "-0", // sint
+        "0.0", // real
+        "-0.0", // real
+        
+        "123", // uint
+        "-123", // sint
+        "123.0", // real
+        "-123.0", // real
+        
+        "9223372036854775808", // uint
+        "9223372036854775808.0", // real
+        
+        "18446744073709551615", // uint
+        "18446744073709551615.0", // real
+        "18446744073709551616", // uint overflow
+        "184467440737095516160", // uint overflow
+        
+        "-9223372036854775808", // sint
+        "-9223372036854775808.0", // real
+        "-9223372036854775809", // sint overflow
+        "-92233720368547758090", // sint overflow
+        
+        "12345678901234567890123456789012345678901234567890"
+        "12345678901234567890123456789012345678901234567890"
+        "12345678901234567890123456789012345678901234567890"
+        "12345678901234567890123456789012345678901234567890"
+        "12345678901234567890123456789012345678901234567890"
+        "12345678901234567890123456789012345678901234567890"
+        "12345678901234567890123456789012345678901234567890"
+        "12345678901234567890123456789012345678901234567890", // uint->real overflow
+        "-12345678901234567890123456789012345678901234567890"
+        "12345678901234567890123456789012345678901234567890"
+        "12345678901234567890123456789012345678901234567890"
+        "12345678901234567890123456789012345678901234567890"
+        "12345678901234567890123456789012345678901234567890"
+        "12345678901234567890123456789012345678901234567890"
+        "12345678901234567890123456789012345678901234567890"
+        "12345678901234567890123456789012345678901234567890", // sint->real overflow
+        
+        "123e999", // real overflow
+        "-123e999", // real overflow
+        
+        "NaN", // nan
+        "Inf", // inf
+        "001", // fail
+    };
+    
+    yyjson_read_flag flag_arr[] = {
+        YYJSON_READ_NUMBER_AS_RAW,
+        YYJSON_READ_BIGNUM_AS_RAW,
+        YYJSON_READ_ALLOW_INF_AND_NAN,
+    };
+    
+    for (usize i = 0; i < yy_nelems(num_arr); i++) {
+        const char *num_str = num_arr[i];
+        usize num_len = strlen(num_str);
+        num_type type = check_json_num(num_str);
+        
+        // test flag combination
+        u32 flag_count = (u32)yy_nelems(flag_arr);
+        u32 comb_count = 1 << flag_count;
+        for (u32 c = 0; c < comb_count; c++) {
+            yyjson_read_flag comb_flag = 0;
+            for (u32 f = 0; f < flag_count; f++) {
+                if (c & (1 << f)) comb_flag |= flag_arr[f];
+            }
+            
+            yyjson_doc *doc = yyjson_read(num_str, num_len, comb_flag);
+            yyjson_val *val = yyjson_doc_get_root(doc);
+            if (type == NUM_TYPE_FAIL) {
+                // invalid number format
+                yy_assert(!doc);
+            } else if (comb_flag & YYJSON_READ_NUMBER_AS_RAW) {
+                // all number should be raw
+                if (type == NUM_TYPE_INF_NAN_LITERAL &&
+                    !(comb_flag & YYJSON_READ_ALLOW_INF_AND_NAN)) {
+                    yy_assert(!doc);
+                } else {
+                    yy_assert(yyjson_is_raw(val));
+                    yy_assert(!strcmp(num_str, yyjson_get_raw(val)));
+                }
+            } else switch (type) {
+                case NUM_TYPE_SINT:
+                case NUM_TYPE_UINT: {
+                    // integer number format
+                    if (!check_int_overflow(num_str, type)) {
+                        // integer number not overflow
+                        yy_assert(yyjson_is_int(val));
+                    } else if (!check_real_overflow(num_str, type)) {
+                        // integer number overflow, but real number not overflow
+                        if (comb_flag & YYJSON_READ_BIGNUM_AS_RAW) {
+                            yy_assert(yyjson_is_raw(val));
+                            yy_assert(!strcmp(num_str, yyjson_get_raw(val)));
+                        } else {
+                            yy_assert(yyjson_is_real(val));
+                        }
+                    } else {
+                        // real number overflow
+                        if (comb_flag & YYJSON_READ_BIGNUM_AS_RAW) {
+                            yy_assert(yyjson_is_raw(val));
+                            yy_assert(!strcmp(num_str, yyjson_get_raw(val)));
+                        } else if (comb_flag & YYJSON_READ_ALLOW_INF_AND_NAN) {
+                            yy_assert(yyjson_is_real(val));
+                        } else {
+                            yy_assert(!doc);
+                        }
+                    }
+                    break;
+                }
+                case NUM_TYPE_REAL: {
+                    // real number
+                    if (!check_real_overflow(num_str, type)) {
+                        // real number not overflow
+                        yy_assert(yyjson_is_real(val));
+                    } else {
+                        // real number overflow
+                        if (comb_flag & YYJSON_READ_BIGNUM_AS_RAW) {
+                            yy_assert(yyjson_is_raw(val));
+                            yy_assert(!strcmp(num_str, yyjson_get_raw(val)));
+                        } else if (comb_flag & YYJSON_READ_ALLOW_INF_AND_NAN) {
+                            yy_assert(yyjson_is_real(val));
+                        } else {
+                            yy_assert(!doc);
+                        }
+                    }
+                    break;
+                }
+                case NUM_TYPE_INF_NAN_LITERAL: {
+                    if ((comb_flag & YYJSON_READ_ALLOW_INF_AND_NAN)) {
+                        if (comb_flag & YYJSON_READ_BIGNUM_AS_RAW) {
+                            yy_assert(yyjson_is_raw(val));
+                            yy_assert(!strcmp(num_str, yyjson_get_raw(val)));
+                        } else {
+                            yy_assert(yyjson_is_real(val));
+                        }
+                    } else {
+                        yy_assert(!doc);
+                    }
+                    break;
+                }
+                default: {
+                    break;
+                }
+            }
+            
+            {   // check minity format
+                usize buf_len = num_len + 2;
+                char *buf = calloc(1, buf_len + 1);
+                buf[0] = '[';
+                memcpy(buf + 1, num_str, num_len);
+                buf[num_len + 1] = ']';
+                yyjson_doc *doc2 = yyjson_read(buf, buf_len, comb_flag);
+                yyjson_val *val2 = yyjson_arr_get_first(yyjson_doc_get_root(doc2));
+                yy_assert(val == val2 || yyjson_equals(val, val2));
+                yyjson_doc_free(doc2);
+                free(buf);
+            }
+            {   // check pretty format
+                usize buf_len = num_len + 6;
+                char *buf = calloc(1, buf_len + 1);
+                memcpy(buf, "[\n  ", 4);
+                memcpy(buf + 4, num_str, num_len);
+                memcpy(buf + 4 + num_len, "\n]", 2);
+                yyjson_doc *doc2 = yyjson_read(buf, buf_len, comb_flag);
+                yyjson_val *val2 = yyjson_arr_get_first(yyjson_doc_get_root(doc2));
+                yy_assert(val == val2 || yyjson_equals(val, val2));
+                yyjson_doc_free(doc2);
+                free(buf);
+            }
+            
+            yyjson_doc_free(doc);
+        }
     }
-    yyjson_doc_free(doc);
 }
 
 

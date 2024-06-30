@@ -314,6 +314,9 @@ bool yy_file_delete(const char *path);
 /** Copy a string, same as strdup(). */
 char *yy_str_copy(const char *str);
 
+/** Compares the C string str1 to the C string str2, similar to strcmp(). */
+int yyb_str_cmp(const char *str1, const char *str2, bool ignore_case);
+
 /** Returns whether the string contains a given string. */
 bool yy_str_contains(const char *str, const char *search);
 

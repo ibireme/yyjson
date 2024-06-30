@@ -533,12 +533,32 @@ bool yy_file_delete(const char *path) {
  * String Utils
  *============================================================================*/
 
+static char to_lower(char c) {
+    return ('A' <= c && c <= 'Z') ? c + ('a' - 'A') : c;
+}
+
 char *yy_str_copy(const char *str) {
     if (!str) return NULL;
     usize len = strlen(str) + 1;
     char *dup = malloc(len);
     if (dup) memcpy(dup, str, len);
     return dup;
+}
+
+int yyb_str_cmp(const char *str1, const char *str2, bool ignore_case) {
+    if (str1 == str2) return 0;
+    if (!str1) return -1;
+    if (!str2) return +1;
+    if (!ignore_case) {
+        return strcmp(str1, str2);
+    }
+    const unsigned char *s1 = (const unsigned char *)str1;
+    const unsigned char *s2 = (const unsigned char *)str2;
+    int result;
+    while ((result = to_lower(*s1) - to_lower(*s2++)) == 0) {
+        if (*s1++ == '\0') break;
+    }
+    return result;
 }
 
 bool yy_str_contains(const char *str, const char *search) {
