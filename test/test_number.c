@@ -862,7 +862,9 @@ static void test_bignum(void) {
     yyjson_read_flag flag_arr[] = {
         YYJSON_READ_NUMBER_AS_RAW,
         YYJSON_READ_BIGNUM_AS_RAW,
+#if !YYJSON_DISABLE_NON_STANDARD
         YYJSON_READ_ALLOW_INF_AND_NAN,
+#endif
     };
     
     for (usize i = 0; i < yy_nelems(num_arr); i++) {
