@@ -25,7 +25,7 @@ jobs:
         checker: [Valgrind, Sanitizer]
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: Prepare
       shell: bash
@@ -71,7 +71,7 @@ jobs:
         arch: [i386, arm32v7, arm64v8, ppc64le, s390x, riscv64]
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: Set up QEMU
       uses: docker/setup-qemu-action@v2
@@ -110,7 +110,7 @@ jobs:
           - no_utf8
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: CMake
       shell: bash
@@ -153,7 +153,7 @@ jobs:
   linux_clang_latest:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: Install
       run: |
@@ -192,7 +192,7 @@ jobs:
   linux_gcc_latest:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: Install
       run: |
@@ -229,7 +229,7 @@ jobs:
   linux_gcc5_i386:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: Set up QEMU
       uses: docker/setup-qemu-action@v2
@@ -256,7 +256,7 @@ jobs:
   linux_gcc4:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: Prepare
       shell: bash
@@ -290,7 +290,7 @@ jobs:
   linux_tinycc:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     
     - name: Prepare
       shell: bash
@@ -311,7 +311,7 @@ jobs:
   macos_clang:
     runs-on: macos-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Build and Test
       run: |
         mkdir build
@@ -325,7 +325,7 @@ jobs:
   windows_msvc:
     runs-on: windows-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Build and Test
       run: |
         mkdir build
@@ -339,7 +339,7 @@ jobs:
   fuzzing:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Fuzzing
       run: |
         mkdir build
@@ -353,7 +353,7 @@ jobs:
   codecov:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: Prepare
       shell: bash
