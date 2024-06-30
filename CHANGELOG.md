@@ -4,7 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## Unreleased
 #### Added
-- Add `yyjson_locate_pos()` function to locate the line and column number for error position.
+- Add `yyjson_locate_pos()` function to locate the line and column number for error position: #166
+
+#### Changed
+- Improve error messages for JSON reader: #168
 
 #### Fixed
 - Fix `YYJSON_READ_NUMBER_AS_RAW` not overriding `YYJSON_READ_BIGNUM_AS_RAW` as per documentation: #170
