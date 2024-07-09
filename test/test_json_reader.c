@@ -28,7 +28,7 @@ static void test_read_file(const char *path, flag_type type, expect_type expect)
         u8 *dat;
         usize dat_len;
         if (yy_file_read(path, &dat, &dat_len)) {
-            bool is_utf8 = yyb_str_is_utf8((const char *)dat, dat_len);
+            bool is_utf8 = yy_str_is_utf8((const char *)dat, dat_len);
             free(dat);
             if (!is_utf8) return;
         }

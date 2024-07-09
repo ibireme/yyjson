@@ -79,9 +79,9 @@ static yy_inline num_type check_json_num(const char *str) {
     bool sign = (*str == '-');
     str += sign;
     if (!char_is_digit(*str)) {
-        if (!yyb_str_cmp(str, "nan", true) ||
-            !yyb_str_cmp(str, "inf", true) ||
-            !yyb_str_cmp(str, "infinity", true)) return NUM_TYPE_INF_NAN_LITERAL;
+        if (!yy_str_cmp(str, "nan", true) ||
+            !yy_str_cmp(str, "inf", true) ||
+            !yy_str_cmp(str, "infinity", true)) return NUM_TYPE_INF_NAN_LITERAL;
         return NUM_TYPE_FAIL;
     }
     if (*str == '0' && char_is_digit(str[1])) return NUM_TYPE_FAIL;

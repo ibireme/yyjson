@@ -545,7 +545,7 @@ char *yy_str_copy(const char *str) {
     return dup;
 }
 
-int yyb_str_cmp(const char *str1, const char *str2, bool ignore_case) {
+int yy_str_cmp(const char *str1, const char *str2, bool ignore_case) {
     if (str1 == str2) return 0;
     if (!str1) return -1;
     if (!str2) return +1;
@@ -582,7 +582,7 @@ bool yy_str_has_suffix(const char *str, const char *suffix) {
     return memcmp(str + (len1 - len2), suffix, len2) == 0;
 }
 
-bool yyb_str_is_utf8(const char *str, size_t len) {
+bool yy_str_is_utf8(const char *str, size_t len) {
     // https://en.wikipedia.org/wiki/UTF-8
     const uint8_t *cur = (const uint8_t *)str;
     const uint8_t *end = cur + len;
