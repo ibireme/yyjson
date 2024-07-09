@@ -167,13 +167,49 @@ const char *dat = your_file.bytes;
 size_t len = your_file.size;
 
 yyjson_read_flag flg = YYJSON_READ_ALLOW_COMMENTS | YYJSON_READ_ALLOW_INF_AND_NAN;
-yyjson_err err;
-yyjson_doc *doc = yyjson_read_opts((char *)dat, len, flg, NULL, &err);
+yyjson_doc *doc = yyjson_read_opts((char *)dat, len, flg, NULL, NULL);
 
 if (doc) {...}
-else printf("read error: %s code: %u at position: %ld\n", err.msg, err.code, err.pos);
 
 yyjson_doc_free(doc);
+```
+
+## Reader error handling
+
+When reading JSON fails and you need error information, you can pass a `yyjson_read_err` pointer to the `yyjson_read_xxx()` functions to receive the error details.
+
+Sample code:
+```c
+char *dat = ...;
+size_t dat_len = ...;
+yyjson_read_err err;
+yyjson_doc *doc = yyjson_read_opts(dat, dat_len, 0, NULL, &err);
+
+if (!doc) {
+    printf("read error: %s, code: %u at byte position: %lu\n", 
+            err.msg, err.code, err.pos);
+    // printed:
+    // read error: trailing comma is not allowed, code: 7, at byte position: 40
+}
+
+yyjson_doc_free(doc);
+```
+
+The pos in the error information indicates the byte position where the error occurred. If you need the line and column number of the error, you can use the `yyjson_locate_pos()` function. Note that the `line` and `column` start from 1, while `character` starts from 0. All values are calculated based on Unicode characters to ensure compatibility with various text editors.
+
+Sample code:
+```c
+char *dat = ...;
+size_t dat_len = ...;
+yyjson_read_err err = ...;
+
+size_t line, col, chr;
+if (yyjson_locate_pos(dat, dat_len, err.pos, &line, &col, &chr)) {
+    printf("error at line: %lu, column: %lu, character index: %lu\n",
+           line, col, chr);
+    // printed:
+    // error at line: 3, column: 5, character index: 32
+}
 ```
 
 ## Reader flag
