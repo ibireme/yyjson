@@ -2,7 +2,7 @@
 All notable changes to this project will be documented in this file.
 
 
-## Unreleased
+## 0.10.0 (2024-07-09)
 #### Added
 - Add `yyjson_locate_pos()` function to locate the line and column number for error position: #166
 

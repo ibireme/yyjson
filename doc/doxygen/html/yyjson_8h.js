@@ -198,6 +198,7 @@ var yyjson_8h =
     [ "yyjson_is_str", "yyjson_8h.html#a52f3358d27af0b1f1aeb3fe4dc7da1c0", null ],
     [ "yyjson_is_true", "yyjson_8h.html#a527bfefae4532c4061e56d581ec4fc01", null ],
     [ "yyjson_is_uint", "yyjson_8h.html#ac4b6eb9e397730bbb264f64d46cafacf", null ],
+    [ "yyjson_locate_pos", "yyjson_8h.html#ac742b11ff26fb9af6362ffd2f3f21061", null ],
     [ "yyjson_merge_patch", "yyjson_8h.html#a9026faa4e022392c28e8f9afa553362f", null ],
     [ "yyjson_mut_arr", "yyjson_8h.html#aec0e874c4847338f3b61bf46257cb557", null ],
     [ "yyjson_mut_arr_add_arr", "yyjson_8h.html#a8e0dfe2ac2a53faadf137d159162d193", null ],
