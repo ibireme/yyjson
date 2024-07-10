@@ -254,4 +254,4 @@ This project is released under the MIT license.
 [fastfetch]: https://github.com/fastfetch-cli/fastfetch
 [Zrythm]: https://github.com/zrythm/zrythm
 [bemorehuman]: https://github.com/BeMoreHumanOrg/bemorehuman
-[mruby-yyson]: https://github.com/buty4649/mruby-yyjson/
+[mruby-yyjson]: https://github.com/buty4649/mruby-yyjson
