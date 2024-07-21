@@ -690,6 +690,30 @@ yyjson_api void yyjson_alc_dyn_free(yyjson_alc *alc);
 
 
 /*==============================================================================
+ * Text Locating
+ *============================================================================*/
+
+/**
+ Locate the line and column number for a byte position in a string.
+ This can be used to get better description for error position.
+ 
+ @param str The input string.
+ @param len The byte length of the input string.
+ @param pos The byte position within the input string.
+ @param line A pointer to receive the line number, starting from 1.
+ @param col  A pointer to receive the column number, starting from 1.
+ @param chr  A pointer to receive the character index, starting from 0.
+ @return true on success, false if `str` is NULL or `pos` is out of bounds.
+ @note Line/column/character are calculated based on Unicode characters for
+    compatibility with text editors. For multi-byte UTF-8 characters,
+    the returned value may not directly correspond to the byte position.
+ */
+yyjson_api bool yyjson_locate_pos(const char *str, size_t len, size_t pos,
+                                  size_t *line, size_t *col, size_t *chr);
+
+
+
+/*==============================================================================
  * JSON Structure
  *============================================================================*/
 
@@ -841,25 +865,9 @@ typedef struct yyjson_read_err {
     size_t pos;
 } yyjson_read_err;
 
-/**
- Locate the line and column number for a byte position in a string.
- This can be used to get better description for error position.
- 
- @param str The input string.
- @param len The byte length of the input string.
- @param pos The byte position within the input string.
- @param line A pointer to receive the line number, starting from 1.
- @param col  A pointer to receive the column number, starting from 1.
- @param chr  A pointer to receive the character index, starting from 0.
- @return true on success, false if `str` is NULL or `pos` is out of bounds.
- @note Line/column/character are calculated based on Unicode characters for
-    compatibility with text editors. For multi-byte UTF-8 characters,
-    the returned value may not directly correspond to the byte position.
- */
-yyjson_api bool yyjson_locate_pos(const char *str, size_t len, size_t pos,
-                                  size_t *line, size_t *col, size_t *chr);
 
 
+#if !defined(YYJSON_DISABLE_READER) || !YYJSON_DISABLE_READER
 
 /**
  Read JSON with options.
@@ -1072,6 +1080,9 @@ yyjson_api_inline const char *yyjson_mut_read_number(const char *dat,
     return yyjson_read_number(dat, (yyjson_val *)val, flg, alc, err);
 }
 
+#endif /* YYJSON_DISABLE_READER) */
+
+
 
 /*==============================================================================
  * JSON Writer API
@@ -1156,6 +1167,8 @@ typedef struct yyjson_write_err {
 } yyjson_write_err;
 
 
+
+#if !defined(YYJSON_DISABLE_WRITER) || !YYJSON_DISABLE_WRITER
 
 /*==============================================================================
  * JSON Document Writer API
@@ -1570,6 +1583,8 @@ yyjson_api_inline char *yyjson_mut_val_write(const yyjson_mut_val *val,
                                              size_t *len) {
     return yyjson_mut_val_write_opts(val, flg, NULL, len, NULL);
 }
+
+#endif /* YYJSON_DISABLE_WRITER */
 
 
 
@@ -3810,6 +3825,8 @@ yyjson_api_inline bool yyjson_mut_obj_rename_keyn(yyjson_mut_doc *doc,
 
 
 
+#if !defined(YYJSON_DISABLE_UTILS) || !YYJSON_DISABLE_UTILS
+
 /*==============================================================================
  * JSON Pointer API (RFC 6901)
  * https://tools.ietf.org/html/rfc6901
@@ -4491,6 +4508,8 @@ yyjson_api yyjson_mut_val *yyjson_merge_patch(yyjson_mut_doc *doc,
 yyjson_api yyjson_mut_val *yyjson_mut_merge_patch(yyjson_mut_doc *doc,
                                                   yyjson_mut_val *orig,
                                                   yyjson_mut_val *patch);
+
+#endif /* YYJSON_DISABLE_UTILS */
 
 
 
@@ -7077,6 +7096,8 @@ yyjson_api_inline bool yyjson_mut_obj_rename_keyn(yyjson_mut_doc *doc,
 
 
 
+#if !defined(YYJSON_DISABLE_UTILS) || !YYJSON_DISABLE_UTILS
+
 /*==============================================================================
  * JSON Pointer API (Implementation)
  *============================================================================*/
@@ -7918,6 +7939,8 @@ yyjson_api_inline yyjson_mut_val *unsafe_yyjson_mut_get_pointer(
     yyjson_ptr_err err;
     return unsafe_yyjson_mut_ptr_getx(val, ptr, len, NULL, &err);
 }
+
+#endif /* YYJSON_DISABLE_UTILS */
 
 
 
