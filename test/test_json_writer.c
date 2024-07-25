@@ -667,6 +667,19 @@ static void test_json_write(yyjson_alc *alc) {
     
     root = yyjson_mut_obj(doc);
     yyjson_mut_doc_set_root(doc, root);
+    val = yyjson_mut_arr(doc);
+    yyjson_mut_arr_add_val(val, yyjson_mut_raw(doc, "123"));
+    yyjson_mut_obj_add_val(doc, root, "a", val);
+    validate_json_write(doc, alc,
+                        "{\"a\":[123]}",
+                        "{\n"
+                        "    \"a\": [\n"
+                        "        123\n"
+                        "    ]\n"
+                        "}");
+    
+    root = yyjson_mut_obj(doc);
+    yyjson_mut_doc_set_root(doc, root);
     val = yyjson_mut_obj(doc);
     yyjson_mut_obj_add_val(doc, root, "a", val);
     val2 = yyjson_mut_obj(doc);

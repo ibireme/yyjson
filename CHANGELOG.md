@@ -2,6 +2,12 @@
 All notable changes to this project will be documented in this file.
 
 
+## Unreleased
+#### Fixed
+- Fix some warnings when directly including yyjson.c: #177
+- Fix missing indent for `YYJSON_TYPE_RAW` in prettify function: #178
+
+
 ## 0.10.0 (2024-07-09)
 #### Added
 - Add `yyjson_locate_pos()` function to locate the line and column number for error position: #166

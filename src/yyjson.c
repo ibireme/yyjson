@@ -8824,10 +8824,12 @@ val_begin:
         goto val_end;
     }
     if (val_type == YYJSON_TYPE_RAW) {
+        no_indent = (bool)((u8)ctn_obj & (u8)ctn_len);
         str_len = unsafe_yyjson_get_len(val);
         str_ptr = (const u8 *)unsafe_yyjson_get_str(val);
         check_str_len(str_len);
-        incr_len(str_len + 3);
+        incr_len(str_len + 3 + (no_indent ? 0 : level * 4));
+        cur = write_indent(cur, no_indent ? 0 : level, spaces);
         cur = write_raw(cur, str_ptr, str_len);
         *cur++ = ',';
         *cur++ = '\n';
@@ -9389,10 +9391,12 @@ val_begin:
         goto val_end;
     }
     if (val_type == YYJSON_TYPE_RAW) {
+        no_indent = (bool)((u8)ctn_obj & (u8)ctn_len);
         str_len = unsafe_yyjson_get_len(val);
         str_ptr = (const u8 *)unsafe_yyjson_get_str(val);
         check_str_len(str_len);
-        incr_len(str_len + 3);
+        incr_len(str_len + 3 + (no_indent ? 0 : level * 4));
+        cur = write_indent(cur, no_indent ? 0 : level, spaces);
         cur = write_raw(cur, str_ptr, str_len);
         *cur++ = ',';
         *cur++ = '\n';
