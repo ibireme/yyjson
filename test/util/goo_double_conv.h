@@ -26,18 +26,6 @@
 /// @return The string length, or 0 if failed.
 int goo_dtoa(double val, char *buf, int len);
 
-/// Convert double number to string with precision (with null-terminator).
-/// The string format follows the ECMAScript spec with the following changes:
-/// 1. Keep the negative sign of 0.0 to preserve input information.
-/// 2. Keep decimal point to indicate the number is floating point.
-/// 3. Remove positive sign of exponent part.
-/// @param val A double value.
-/// @param prec Max precision kept by string, should in range [1, 120].
-/// @param buf A string buffer to receive output.
-/// @param len The string buffer length.
-/// @return The string length, or 0 if failed.
-int goo_dtoa_prec(double val, int prec, char *buf, int len);
-
 /// Read double number from string, support same format as libc's strtod().
 /// @param str A string with double number.
 /// @param len In: the string length. Out: the processed length, or 0 if failed.

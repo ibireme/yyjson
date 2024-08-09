@@ -1951,10 +1951,10 @@ static void BignumDtoa(double v, BignumDtoaMode mode, int requested_digits,
         return;
     }
     
-    Bignum numerator;
-    Bignum denominator;
-    Bignum delta_minus;
-    Bignum delta_plus;
+    Bignum numerator = { 0 };
+    Bignum denominator = { 0 };
+    Bignum delta_minus = { 0 };
+    Bignum delta_plus = { 0 };
     // Make sure the bignum can grow large enough. The smallest double equals
     // 4e-324. In this case the denominator needs fewer than 324*4 binary digits.
     // The maximum double is 1.7976931348623157e308 which needs fewer than
@@ -6029,68 +6029,16 @@ static void D2S_DoubleToAscii(double v,
 /// C wrapper
 /// ============================================================================
 
-static int dtoa_reformat(double val, char *buf, int pos, int len) {
-    // detect inf and nan
-    if (pos >= 3) {
-        if (memcmp(buf, "Inf", 3) == 0) return pos;
-        if (memcmp(buf, "-In", 3) == 0) return pos;
-        if (memcmp(buf, "NaN", 3) == 0) return pos;
-    }
-    
-    // add negative sign for -0.0
-    if (val == 0.0) {
-        Double d = Double_make(val);
-        if (Double_Sign(&d) < 0) {
-            if (len < 4) return 0;
-            memcpy(buf, "0.0", 4);
-            return 3;
-        }
-    }
-    
-    // get position of '.' and 'e'
-    int dot_pos = -1;
-    int exp_pos = -1;
-    for (int i = 0; i < pos; i++) {
-        if (buf[i] == '.') dot_pos = i;
-        else if (buf[i] == 'e' || buf[i] == 'E') exp_pos = i;
-    }
-    
-    // add '.0' if output is integer
-    if (dot_pos < 0 && exp_pos < 0) {
-        if (pos + 3 > len) return 0;
-        memcpy(buf + pos, ".0", 3);
-        return pos + 2;
-    }
-    if (dot_pos > 0 || exp_pos > 0) return pos;
-    
-    // remove positive sign of exponent part
-    if (exp_pos > 0 && buf[exp_pos - 1] == '+') {
-        memmove(buf + exp_pos - 1, buf + exp_pos, pos - exp_pos + 1);
-        pos--;
-    }
-    return pos;
-}
-
 int goo_dtoa(double val, char *buf, int len) {
     if (!buf || len <= 1) return 0;
     StringBuilder sb = StringBuilder_make(buf, len);
     DoubleToStringConverter conv = D2S_EcmaScriptConverter;
+    conv.flags = D2S_EMIT_TRAILING_DECIMAL_POINT | D2S_EMIT_TRAILING_ZERO_AFTER_POINT;
     if (!D2S_ToShortest(&conv, val, &sb)) return 0;
     int pos = sb.position;
     if (pos >= len) return 0;
     buf[pos] = '\0';
-    return dtoa_reformat(val, buf, pos, len);
-}
-
-int goo_dtoa_prec(double val, int prec, char *buf, int len) {
-    if (!buf || len <= 1) return 0;
-    StringBuilder sb = StringBuilder_make(buf, len);
-    DoubleToStringConverter conv = D2S_EcmaScriptConverter;
-    if (!D2S_ToPrecision(&conv, val, prec, &sb)) return 0;
-    int pos = sb.position;
-    if (pos >= len) return 0;
-    buf[pos] = '\0';
-    return dtoa_reformat(val, buf, pos, len);
+    return pos;
 }
 
 double goo_strtod(const char *str, int *len) {

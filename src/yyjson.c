@@ -7268,76 +7268,81 @@ static_inline u8 *write_u64_len_1_to_17(u64 val, u8 *buf) {
 }
 
 /**
- Write an unsigned integer with a length of 15 to 17 with trailing zero trimmed.
- These digits are named as "aabbccddeeffgghhii" here.
+ Write an unsigned integer with a length of 16 or 17 with trailing zero trimmed.
+ These digits are named as "abbccddeeffgghhii" here.
  For example, input 1234567890123000, output "1234567890123".
  */
-static_inline u8 *write_u64_len_15_to_17_trim(u8 *buf, u64 sig) {
-    bool lz;                                        /* leading zero */
-    u32 tz1, tz2, tz;                               /* trailing zero */
+static_inline u8 *write_u64_len_16_to_17_trim(u64 sig, u8 *buf) {
+    u32 tz, tz1, tz2;
     
     u32 abbccddee = (u32)(sig / 100000000);
     u32 ffgghhii = (u32)(sig - (u64)abbccddee * 100000000);
-    u32 abbcc = abbccddee / 10000;                  /* (abbccddee / 10000) */
-    u32 ddee = abbccddee - abbcc * 10000;           /* (abbccddee % 10000) */
-    u32 abb = (u32)(((u64)abbcc * 167773) >> 24);   /* (abbcc / 100) */
-    u32 a = (abb * 41) >> 12;                       /* (abb / 100) */
-    u32 bb = abb - a * 100;                         /* (abb % 100) */
-    u32 cc = abbcc - abb * 100;                     /* (abbcc % 100) */
-    
-    /* write abbcc */
-    buf[0] = (u8)(a + '0');
-    buf += a > 0;
-    lz = bb < 10 && a == 0;
-    byte_copy_2(buf + 0, digit_table + bb * 2 + lz);
-    buf -= lz;
-    byte_copy_2(buf + 2, digit_table + cc * 2);
     
     if (ffgghhii) {
-        u32 dd = (ddee * 5243) >> 19;               /* (ddee / 100) */
-        u32 ee = ddee - dd * 100;                   /* (ddee % 100) */
+        u32 abbcc = abbccddee / 10000;
+        u32 ddee = abbccddee - abbcc * 10000;
+        u32 abb = (u32)(((u64)abbcc * 167773) >> 24);   /* (abbcc / 100) */
+        u32 a = (abb * 41) >> 12;                       /* (abb / 100) */
+        u32 bb = abb - a * 100;                         /* (abb % 100) */
+        u32 cc = abbcc - abb * 100;                     /* (abbcc % 100) */
+        u32 dd = (ddee * 5243) >> 19;                   /* (ddee / 100) */
+        u32 ee = ddee - dd * 100;                       /* (ddee % 100) */
+        
         u32 ffgg = (u32)(((u64)ffgghhii * 109951163) >> 40); /* (val / 10000) */
-        u32 hhii = ffgghhii - ffgg * 10000;         /* (val % 10000) */
-        u32 ff = (ffgg * 5243) >> 19;               /* (aabb / 100) */
-        u32 gg = ffgg - ff * 100;                   /* (aabb % 100) */
+        u32 hhii = ffgghhii - ffgg * 10000;             /* (val % 10000) */
+        u32 ff = (ffgg * 5243) >> 19;                   /* (aabb / 100) */
+        u32 gg = ffgg - ff * 100;                       /* (aabb % 100) */
+        
+        buf[0] = (u8)(a + '0');
+        buf += a > 0;
+        byte_copy_2(buf + 0, digit_table + bb * 2);
+        byte_copy_2(buf + 2, digit_table + cc * 2);
         byte_copy_2(buf + 4, digit_table + dd * 2);
         byte_copy_2(buf + 6, digit_table + ee * 2);
         byte_copy_2(buf + 8, digit_table + ff * 2);
         byte_copy_2(buf + 10, digit_table + gg * 2);
         if (hhii) {
-            u32 hh = (hhii * 5243) >> 19;           /* (ccdd / 100) */
-            u32 ii = hhii - hh * 100;               /* (ccdd % 100) */
+            u32 hh = (hhii * 5243) >> 19;               /* (ccdd / 100) */
+            u32 ii = hhii - hh * 100;                   /* (ccdd % 100) */
             byte_copy_2(buf + 12, digit_table + hh * 2);
             byte_copy_2(buf + 14, digit_table + ii * 2);
             tz1 = dec_trailing_zero_table[hh];
             tz2 = dec_trailing_zero_table[ii];
             tz = ii ? tz2 : (tz1 + 2);
-            buf += 16 - tz;
-            return buf;
+            return buf + 16 - tz;
         } else {
             tz1 = dec_trailing_zero_table[ff];
             tz2 = dec_trailing_zero_table[gg];
             tz = gg ? tz2 : (tz1 + 2);
-            buf += 12 - tz;
-            return buf;
+            return buf + 12 - tz;
         }
     } else {
+        u32 abbcc = abbccddee / 10000;
+        u32 ddee = abbccddee - abbcc * 10000;
+        u32 abb = (u32)(((u64)abbcc * 167773) >> 24);   /* (abbcc / 100) */
+        u32 a = (abb * 41) >> 12;                       /* (abb / 100) */
+        u32 bb = abb - a * 100;                         /* (abb % 100) */
+        u32 cc = abbcc - abb * 100;                     /* (abbcc % 100) */
+        
+        buf[0] = (u8)(a + '0');
+        buf += a > 0;
+        byte_copy_2(buf + 0, digit_table + bb * 2);
+        byte_copy_2(buf + 2, digit_table + cc * 2);
+        
         if (ddee) {
-            u32 dd = (ddee * 5243) >> 19;           /* (ddee / 100) */
-            u32 ee = ddee - dd * 100;               /* (ddee % 100) */
+            u32 dd = (ddee * 5243) >> 19;               /* (ddee / 100) */
+            u32 ee = ddee - dd * 100;                   /* (ddee % 100) */
             byte_copy_2(buf + 4, digit_table + dd * 2);
             byte_copy_2(buf + 6, digit_table + ee * 2);
             tz1 = dec_trailing_zero_table[dd];
             tz2 = dec_trailing_zero_table[ee];
             tz = ee ? tz2 : (tz1 + 2);
-            buf += 8 - tz;
-            return buf;
+            return buf + 8 - tz;
         } else {
             tz1 = dec_trailing_zero_table[bb];
             tz2 = dec_trailing_zero_table[cc];
             tz = cc ? tz2 : (tz1 + tz2);
-            buf += 4 - tz;
-            return buf;
+            return buf + 4 - tz;
         }
     }
 }
@@ -7372,18 +7377,6 @@ static_inline u64 round_to_odd(u64 hi, u64 lo, u64 cp) {
  Convert double number from binary to decimal.
  The output significand is shortest decimal but may have trailing zeros.
  
- This function use the Schubfach algorithm:
- Raffaello Giulietti, The Schubfach way to render doubles (5th version), 2022.
- https://drive.google.com/file/d/1gp5xv4CAa78SVgCeWfGqqI4FfYYYuNFb
- https://mail.openjdk.java.net/pipermail/core-libs-dev/2021-November/083536.html
- https://github.com/openjdk/jdk/pull/3402 (Java implementation)
- https://github.com/abolz/Drachennest (C++ implementation)
- 
- See also:
- Dragonbox: A New Floating-Point Binary-to-Decimal Conversion Algorithm, 2022.
- https://github.com/jk-jeon/dragonbox/blob/master/other_files/Dragonbox.pdf
- https://github.com/jk-jeon/dragonbox
- 
  @param sig_raw The raw value of significand in IEEE 754 format.
  @param exp_raw The raw value of exponent in IEEE 754 format.
  @param sig_bin The decoded value of significand in binary.
@@ -7396,36 +7389,94 @@ static_inline void f64_bin_to_dec(u64 sig_raw, u32 exp_raw,
                                   u64 sig_bin, i32 exp_bin,
                                   u64 *sig_dec, i32 *exp_dec) {
     
-    bool is_even, regular_spacing, u_inside, w_inside, round_up;
-    u64 s, sp, cb, cbl, cbr, vb, vbl, vbr, pow10hi, pow10lo, upper, lower, mid;
-    i32 k, h, exp10;
+    bool is_even, irregular, round_up, trim;
+    bool u0_inside, u1_inside, w0_inside, w1_inside;
+    u64 s, sp, cb, cbl, cbr, vb, vbl, vbr, p10_hi, p10_lo, upper, lower, mid;
+    i32 k, h;
     
+    /*
+     Fast path:
+     For regular spacing significand 'c', there are 4 candidates:
+     
+             u0             u1 c  w1                            w0
+     ----|----|----|----|----|-*--|----|----|----|----|----|----|----|----
+         9    0    1    2    3    4    5    6    7    8    9    0    1
+           |___________________|___________________|
+                             1ulp
+     
+     The `1ulp` is in the range [1.0, 10.0).
+     If (c - 0.5ulp < u0), trim the last digit and round down.
+     If (c + 0.5ulp > w0), trim the last digit and round up.
+     If (c - 0.5ulp < u1), round down.
+     If (c + 0.5ulp > w1), round up.
+     */
+    while (likely(sig_raw)) {
+        u64 mod, dec, add_1, add_10, s_hi, s_lo;
+        u64 c, half_ulp, t0, t1;
+        
+        /* k = floor(exp_bin * log10(2)); */
+        k = (i32)(exp_bin * 315653) >> 20;
+        
+        /* h = exp_bin + floor(log2(10) * -k); (h = 0/1/2/3) */
+        h = exp_bin + ((-k * 217707) >> 16);
+        pow10_table_get_sig(-k, &p10_hi, &p10_lo);
+        
+        /* sig_bin << (1/2/3/4) */
+        cb = sig_bin << (h + 1);
+        u128_mul(cb, p10_lo, &s_hi, &s_lo);
+        u128_mul_add(cb, p10_hi, s_hi, &s_hi, &s_lo);
+        mod = s_hi % 10;
+        dec = s_hi - mod;
+        
+        /* right shift 4 to fit in u64 */
+        c = (mod << 60) | (s_lo >> 4);
+        half_ulp = p10_hi >> (4 - h);
+        
+        w1_inside = (s_lo >= ((u64)1 << 63));
+        if (unlikely(s_lo == ((u64)1 << 63))) break;
+        
+        u0_inside = (half_ulp >= c);
+        if (unlikely(half_ulp == c)) break;
+        
+        t0 = (u64)10 << (64 - 4);
+        t1 = c + half_ulp;
+        w0_inside = t1 >= t0;
+        if (unlikely(t0 - t1 <= (u64)1)) break;
+        
+        trim = (u0_inside | w0_inside);
+        add_10 = (w0_inside ? 10 : 0);
+        add_1 = mod + w1_inside;
+        s = dec + (trim ? add_10 : add_1);
+        *sig_dec = s;
+        *exp_dec = k;
+        return;
+    }
+    
+    /*
+     Schubfach algorithm:
+     Raffaello Giulietti, The Schubfach way to render doubles, 2022.
+     https://drive.google.com/file/d/1gp5xv4CAa78SVgCeWfGqqI4FfYYYuNFb (Paper)
+     https://github.com/openjdk/jdk/pull/3402 (Java implementation)
+     https://github.com/abolz/Drachennest (C++ implementation)
+     */
+    irregular = (sig_raw == 0 && exp_raw > 1);
     is_even = !(sig_bin & 1);
-    regular_spacing = (sig_raw == 0 && exp_raw > 1);
-    
-    cbl = 4 * sig_bin - 2 + regular_spacing;
+    cbl = 4 * sig_bin - 2 + irregular;
     cb  = 4 * sig_bin;
     cbr = 4 * sig_bin + 2;
     
-    /* exp_bin: [-1074, 971]                                                  */
-    /* k = regular_spacing ? floor(log10(pow(2, exp_bin)))                    */
-    /*                     : floor(log10(pow(2, exp_bin) * 3.0 / 4.0))        */
-    /*   = regular_spacing ? floor(exp_bin * log10(2))                        */
-    /*                     : floor(exp_bin * log10(2) + log10(3.0 / 4.0))     */
-    k = (i32)(exp_bin * 315653 - (regular_spacing ? 131237 : 0)) >> 20;
+    /* k = floor(exp_bin * log10(2) + (irregular ? log10(3.0 / 4.0) : 0)); */
+    k = (i32)(exp_bin * 315653 - (irregular ? 131237 : 0)) >> 20;
     
-    /* k: [-324, 292]                                                         */
-    /* h = exp_bin + floor(log2(pow(10, e)))                                  */
-    /*   = exp_bin + floor(log2(10) * e)                                      */
-    exp10 = -k;
-    h = exp_bin + ((exp10 * 217707) >> 16) + 1;
+    /* h = exp_bin + floor(log2(10) * -k) + 1; (h = 1/2/3/4) */
+    h = exp_bin + ((-k * 217707) >> 16) + 1;
     
-    pow10_table_get_sig(exp10, &pow10hi, &pow10lo);
-    pow10lo += (exp10 < POW10_SIG_TABLE_MIN_EXACT_EXP ||
-                exp10 > POW10_SIG_TABLE_MAX_EXACT_EXP);
-    vbl = round_to_odd(pow10hi, pow10lo, cbl << h);
-    vb  = round_to_odd(pow10hi, pow10lo, cb  << h);
-    vbr = round_to_odd(pow10hi, pow10lo, cbr << h);
+    pow10_table_get_sig(-k, &p10_hi, &p10_lo);
+    p10_lo += 1;
+    
+    vbl = round_to_odd(p10_hi, p10_lo, cbl << h);
+    vb  = round_to_odd(p10_hi, p10_lo, cb  << h);
+    vbr = round_to_odd(p10_hi, p10_lo, cbr << h);
     
     lower = vbl + !is_even;
     upper = vbr - !is_even;
@@ -7433,27 +7484,27 @@ static_inline void f64_bin_to_dec(u64 sig_raw, u32 exp_raw,
     s = vb / 4;
     if (s >= 10) {
         sp = s / 10;
-        u_inside = (lower <= 40 * sp);
-        w_inside = (upper >= 40 * sp + 40);
-        if (u_inside != w_inside) {
-            *sig_dec = sp + w_inside;
-            *exp_dec = k + 1;
+        u0_inside = (lower <= 40 * sp);
+        w0_inside = (upper >= 40 * sp + 40);
+        if (u0_inside != w0_inside) {
+            *sig_dec = sp * 10 + (w0_inside ? 10 : 0);
+            *exp_dec = k;
             return;
         }
     }
     
-    u_inside = (lower <= 4 * s);
-    w_inside = (upper >= 4 * s + 4);
+    u1_inside = (lower <= 4 * s);
+    w1_inside = (upper >= 4 * s + 4);
     
     mid = 4 * s + 2;
     round_up = (vb > mid) || (vb == mid && (s & 1) != 0);
     
-    *sig_dec = s + ((u_inside != w_inside) ? w_inside : round_up);
+    *sig_dec = s + ((u1_inside != w1_inside) ? w1_inside : round_up);
     *exp_dec = k;
 }
 
 /**
- Write a double number (requires 32 bytes buffer).
+ Write a double number (requires 40 bytes buffer).
  
  We follows the ECMAScript specification to print floating point numbers,
  but with the following changes:
@@ -7461,11 +7512,11 @@ static_inline void f64_bin_to_dec(u64 sig_raw, u32 exp_raw,
  2. Keep decimal point to indicate the number is floating point.
  3. Remove positive sign of exponent part.
  */
-static_inline u8 *write_f64_raw(u8 *buf, u64 raw, yyjson_write_flag flg) {
+static_noinline u8 *write_f64_raw(u8 *buf, u64 raw, yyjson_write_flag flg) {
     u64 sig_bin, sig_dec, sig_raw;
-    i32 exp_bin, exp_dec, sig_len, dot_pos, i, max;
+    i32 exp_bin, exp_dec, sig_len, dot_ofs;
     u32 exp_raw, hi, lo;
-    u8 *hdr, *num_hdr, *num_end, *dot_end;
+    u8 *hdr, *end;
     bool sign;
     
     /* decode raw bytes from IEEE-754 double format. */
@@ -7473,19 +7524,18 @@ static_inline u8 *write_f64_raw(u8 *buf, u64 raw, yyjson_write_flag flg) {
     sig_raw = raw & F64_SIG_MASK;
     exp_raw = (u32)((raw & F64_EXP_MASK) >> F64_SIG_BITS);
     
-    /* return inf and nan */
+    /* return inf or nan */
     if (unlikely(exp_raw == ((u32)1 << F64_EXP_BITS) - 1)) {
         if (has_write_flag(INF_AND_NAN_AS_NULL)) {
             byte_copy_4(buf, "null");
             return buf + 4;
         }
-        else if (has_write_flag(ALLOW_INF_AND_NAN)) {
+        if (has_write_flag(ALLOW_INF_AND_NAN)) {
             if (sig_raw == 0) {
                 buf[0] = '-';
                 buf += sign;
                 byte_copy_8(buf, "Infinity");
-                buf += 8;
-                return buf;
+                return buf + 8;
             } else {
                 byte_copy_4(buf, "NaN");
                 return buf + 3;
@@ -7494,7 +7544,7 @@ static_inline u8 *write_f64_raw(u8 *buf, u64 raw, yyjson_write_flag flg) {
         return NULL;
     }
     
-    /* add sign for all finite double value, including 0.0 and inf */
+    /* add sign for all finite number */
     buf[0] = '-';
     buf += sign;
     hdr = buf;
@@ -7502,8 +7552,7 @@ static_inline u8 *write_f64_raw(u8 *buf, u64 raw, yyjson_write_flag flg) {
     /* return zero */
     if ((raw << 1) == 0) {
         byte_copy_4(buf, "0.0");
-        buf += 3;
-        return buf;
+        return buf + 3;
     }
     
     if (likely(exp_raw != 0)) {
@@ -7518,52 +7567,52 @@ static_inline u8 *write_f64_raw(u8 *buf, u64 raw, yyjson_write_flag flg) {
                 sig_dec = sig_bin >> -exp_bin;
                 buf = write_u64_len_1_to_16(sig_dec, buf);
                 byte_copy_2(buf, ".0");
-                buf += 2;
-                return buf;
+                return buf + 2;
             }
         }
         
         /* binary to decimal */
         f64_bin_to_dec(sig_raw, exp_raw, sig_bin, exp_bin, &sig_dec, &exp_dec);
         
-        /* the sig length is 15 to 17 */
-        sig_len = 17;
-        sig_len -= (sig_dec < (u64)100000000 * 100000000);
-        sig_len -= (sig_dec < (u64)100000000 * 10000000);
+        /* the sig length is 16 or 17 */
+        sig_len = 16 + (sig_dec >= (u64)100000000 * 100000000);
         
-        /* the decimal point position relative to the first digit */
-        dot_pos = sig_len + exp_dec;
+        /* the decimal point offset relative to the first digit */
+        dot_ofs = sig_len + exp_dec;
         
-        if (-6 < dot_pos && dot_pos <= 21) {
-            /* no need to write exponent part */
-            if (dot_pos <= 0) {
-                /* dot before first digit */
-                /* such as 0.1234, 0.000001234 */
-                num_hdr = hdr + (2 - dot_pos);
-                num_end = write_u64_len_15_to_17_trim(num_hdr, sig_dec);
-                hdr[0] = '0';
-                hdr[1] = '.';
-                hdr += 2;
-                max = -dot_pos;
-                for (i = 0; i < max; i++) hdr[i] = '0';
-                return num_end;
-            } else {
-                /* dot after first digit */
-                /* such as 1.234, 1234.0, 123400000000000000000.0 */
-                memset(hdr +  0, '0', 8);
-                memset(hdr +  8, '0', 8);
-                memset(hdr + 16, '0', 8);
-                num_hdr = hdr + 1;
-                num_end = write_u64_len_15_to_17_trim(num_hdr, sig_dec);
-                for (i = 0; i < dot_pos; i++) hdr[i] = hdr[i + 1];
-                hdr[dot_pos] = '.';
-                dot_end = hdr + dot_pos + 2;
-                return dot_end < num_end ? num_end : dot_end;
-            }
+        if (-6 < dot_ofs && dot_ofs <= 21) {
+            i32 num_sep_pos, dot_set_pos, pre_ofs;
+            u8 *num_hdr, *num_end, *num_sep, *dot_end;
+            bool no_pre_zero;
+            
+            /* fill zeros */
+            memset(hdr, '0', 32);
+            
+            /* not prefixed with zero, e.g. 1.234, 1234.0 */
+            no_pre_zero = (dot_ofs > 0);
+            
+            /* write the number as digits */
+            pre_ofs = no_pre_zero ? 0 : (2 - dot_ofs);
+            num_hdr = hdr + pre_ofs;
+            num_end = write_u64_len_16_to_17_trim(sig_dec, num_hdr);
+            
+            /* seperate these digits to leave a space for dot */
+            num_sep_pos = no_pre_zero ? dot_ofs : 0;
+            num_sep = num_hdr + num_sep_pos;
+            byte_move_16(num_sep + no_pre_zero, num_sep);
+            num_end += no_pre_zero;
+            
+            /* write the dot */
+            dot_set_pos = no_pre_zero ? dot_ofs : 1;
+            hdr[dot_set_pos] = '.';
+            
+            /* return the ending */
+            dot_end = hdr + dot_ofs + 2;
+            return dot_end < num_end ? num_end : dot_end;
+            
         } else {
-            /* write with scientific notation */
-            /* such as 1.234e56 */
-            u8 *end = write_u64_len_15_to_17_trim(buf + 1, sig_dec);
+            /* write with scientific notation, e.g. 1.234e56 */
+            end = write_u64_len_16_to_17_trim(sig_dec, buf + 1);
             end -= (end == buf + 2); /* remove '.0', e.g. 2.0e34 -> 2e34 */
             exp_dec += sig_len - 1;
             hdr[0] = hdr[1];
@@ -7585,31 +7634,28 @@ static_inline u8 *write_f64_raw(u8 *buf, u64 raw, yyjson_write_flag flg) {
         buf = write_u64_len_1_to_17(sig_dec, buf + 1);
         hdr[0] = hdr[1];
         hdr[1] = '.';
-        do {
-            buf--;
-            exp_dec++;
-        } while (*buf == '0');
-        exp_dec += (i32)(buf - hdr - 2);
-        buf += (*buf != '.');
-        buf[0] = 'e';
-        buf++;
+        exp_dec += (i32)(buf - hdr) - 2;
+        
+        /* trim trailing zeros */
+        buf -= *(buf - 1) == '0'; /* branchless for last zero */
+        buf -= *(buf - 1) == '0'; /* branchless for second last zero */
+        while (*(buf - 1) == '0') buf--; /* for unlikely more trailing zeros */
+        buf -= *(buf - 1) == '.'; /* remove dot, e.g. 2.e-321 -> 2e-321 */
         
         /* write exponent part */
-        buf[0] = '-';
-        buf++;
+        byte_copy_2(buf, "e-");
         exp_dec = -exp_dec;
         hi = ((u32)exp_dec * 656) >> 16; /* exp / 100 */
         lo = (u32)exp_dec - hi * 100; /* exp % 100 */
-        buf[0] = (u8)((u8)hi + (u8)'0');
-        byte_copy_2(buf + 1, digit_table + lo * 2);
-        buf += 3;
-        return buf;
+        buf[2] = (u8)((u8)hi + (u8)'0');
+        byte_copy_2(buf + 3, digit_table + lo * 2);
+        return buf + 5;
     }
 }
 
 #else /* FP_WRITER */
 
-/** Write a double number (requires 32 bytes buffer). */
+/** Write a double number (requires 40 bytes buffer). */
 static_inline u8 *write_f64_raw(u8 *buf, u64 raw, yyjson_write_flag flg) {
     /*
      For IEEE 754, `DBL_DECIMAL_DIG` is 17 for round-trip.
@@ -7649,8 +7695,7 @@ static_inline u8 *write_f64_raw(u8 *buf, u64 raw, yyjson_write_flag flg) {
         else if (has_write_flag(ALLOW_INF_AND_NAN)) {
             if (*cur == 'i') {
                 byte_copy_8(cur, "Infinity");
-                cur += 8;
-                return cur;
+                return cur + 8;
             } else if (*cur == 'n') {
                 byte_copy_4(buf, "NaN");
                 return buf + 3;
@@ -7666,8 +7711,8 @@ static_inline u8 *write_f64_raw(u8 *buf, u64 raw, yyjson_write_flag flg) {
             if (digi_is_fp((u8)buf[i])) fp = true;
         }
         if (!fp) {
-            buf[len++] = '.';
-            buf[len++] = '0';
+            byte_copy_2(buf + len, ".0");
+            len += 2;
         }
     }
     return buf + len;
@@ -7675,7 +7720,7 @@ static_inline u8 *write_f64_raw(u8 *buf, u64 raw, yyjson_write_flag flg) {
 
 #endif /* FP_WRITER */
 
-/** Write a JSON number (requires 32 bytes buffer). */
+/** Write a JSON number (requires 40 bytes buffer). */
 static_inline u8 *write_number(u8 *cur, yyjson_val *val,
                                yyjson_write_flag flg) {
     if (val->tag & YYJSON_SUBTYPE_REAL) {
@@ -8435,7 +8480,7 @@ static_inline u8 *yyjson_write_single(yyjson_val *val,
             break;
             
         case YYJSON_TYPE_NUM:
-            incr_len(32 + end_len);
+            incr_len(40 + end_len);
             cur = write_number(cur, val, flg);
             if (unlikely(!cur)) goto fail_num;
             break;
@@ -8578,7 +8623,7 @@ val_begin:
         goto val_end;
     }
     if (val_type == YYJSON_TYPE_NUM) {
-        incr_len(32);
+        incr_len(40);
         cur = write_number(cur, val, flg);
         if (unlikely(!cur)) goto fail_num;
         *cur++ = ',';
@@ -8771,7 +8816,7 @@ val_begin:
     }
     if (val_type == YYJSON_TYPE_NUM) {
         no_indent = (bool)((u8)ctn_obj & (u8)ctn_len);
-        incr_len(32 + (no_indent ? 0 : level * 4));
+        incr_len(40 + (no_indent ? 0 : level * 4));
         cur = write_indent(cur, no_indent ? 0 : level, spaces);
         cur = write_number(cur, val, flg);
         if (unlikely(!cur)) goto fail_num;
@@ -9137,7 +9182,7 @@ val_begin:
         goto val_end;
     }
     if (val_type == YYJSON_TYPE_NUM) {
-        incr_len(32);
+        incr_len(40);
         cur = write_number(cur, (yyjson_val *)val, flg);
         if (unlikely(!cur)) goto fail_num;
         *cur++ = ',';
@@ -9336,7 +9381,7 @@ val_begin:
     }
     if (val_type == YYJSON_TYPE_NUM) {
         no_indent = (bool)((u8)ctn_obj & (u8)ctn_len);
-        incr_len(32 + (no_indent ? 0 : level * 4));
+        incr_len(40 + (no_indent ? 0 : level * 4));
         cur = write_indent(cur, no_indent ? 0 : level, spaces);
         cur = write_number(cur, (yyjson_val *)val, flg);
         if (unlikely(!cur)) goto fail_num;

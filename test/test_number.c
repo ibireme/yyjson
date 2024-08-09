@@ -800,16 +800,44 @@ static void test_random_real(void) {
         usize out_len = f64_write(buf, sizeof(buf), rnd);
         end = buf + out_len;
         yy_assertf(out_len > 0, "f64_write() fail: %.17g\n", rnd);
-        if (!yy_str_contains(buf, "e") && !yy_str_contains(buf, ".")) {
-            *end++ = '.';
-            *end++ = '0';
-            *end = '\0';
-        }
         test_real(buf, end - buf);
     }
 }
 
-static void test_bignum(void) {
+static void test_special_real(void) {
+    char buf[64] = { 0 };
+    
+    // short digits
+    for (int sig = 1; sig <= 200; sig++) {
+        for (int exp = -326; exp <= 308; exp++) {
+            int len = snprintf(buf, sizeof(buf), "%de%d", sig, exp);
+            f64 num = 0;
+            f64_read(buf, &num);
+            if (!isfinite(num)) continue;
+            test_real(buf, len);
+        }
+    }
+    
+    // edge cases
+    for (u64 exp = 0; exp <= 2046; exp++) {
+        for (u64 sig = 0; sig <= 100; sig++) {
+            u64 raw = (exp << 52) | sig;
+            f64 num = f64_from_u64_raw(raw);
+            if (!isfinite(num)) continue;
+            usize len = f64_write(buf, sizeof(buf), num);
+            test_real(buf, len);
+        }
+        for (u64 sig = 0xFFFFFFFFFFFFFULL; sig >= (0xFFFFFFFFFFFFFULL - 100); sig--) {
+            u64 raw = (exp << 52) | sig;
+            f64 num = f64_from_u64_raw(raw);
+            if (!isfinite(num)) continue;
+            usize len = f64_write(buf, sizeof(buf), num);
+            test_real(buf, len);
+        }
+    }
+}
+
+static void test_num_types(void) {
     const char *num_arr[] = {
         "0", // uint
         "-0", // sint
@@ -1011,7 +1039,8 @@ static void test_number_locale(void) {
     test_with_file("nan_inf_literal_fail.txt", NUM_TYPE_FAIL);
     test_random_int();
     test_random_real();
-    test_bignum();
+    test_special_real();
+    test_num_types();
 }
 
 yy_test_case(test_number) {
