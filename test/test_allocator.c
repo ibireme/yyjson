@@ -258,7 +258,7 @@ static void test_alc_dyn(void) {
     alc = yyjson_alc_dyn_new();
     ptr[0] = alc->malloc(alc->ctx, 0x100);
     yy_assert(ptr[0]);
-    memset(ptr[0], 0x100, 0xFF);
+    memset(ptr[0], 0xFF, 0x100);
     alc->free(alc->ctx, ptr[0]);
     yyjson_alc_dyn_free(alc);
     
@@ -270,7 +270,7 @@ static void test_alc_dyn(void) {
         usize len = yy_rand_u32_uniform(0x4000) + 1;
         ptr[0] = alc->malloc(alc->ctx, len);
         yy_assert(ptr[0]);
-        memset(ptr[0], len, 0xFF);
+        memset(ptr[0], 0xFF, len);
         alc->free(alc->ctx, ptr[0]);
     }
     yyjson_alc_dyn_free(alc);
@@ -283,7 +283,7 @@ static void test_alc_dyn(void) {
         usize len = yy_rand_u32_uniform(0x4000) + 1;
         ptr[0] = alc->malloc(alc->ctx, len);
         yy_assert(ptr[0]);
-        memset(ptr[0], len, 0xFF);
+        memset(ptr[0], 0xFF, len);
         alc->free(alc->ctx, ptr[0]);
     }
     yyjson_alc_dyn_free(alc);
@@ -297,10 +297,10 @@ static void test_alc_dyn(void) {
         usize inc = yy_rand_u32_uniform(0x4000) + 1;
         ptr[0] = alc->malloc(alc->ctx, len);
         yy_assert(ptr[0]);
-        memset(ptr[0], len, 0xFF);
+        memset(ptr[0], 0xFF, len);
         ptr[0] = alc->realloc(alc->ctx, ptr[0], len, len + inc);
         yy_assert(ptr[0]);
-        memset(ptr[0], len + inc, 0xFF);
+        memset(ptr[0], 0xFF, len + inc);
         alc->free(alc->ctx, ptr[0]);
     }
     yyjson_alc_dyn_free(alc);
