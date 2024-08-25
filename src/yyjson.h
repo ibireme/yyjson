@@ -1131,6 +1131,28 @@ static const yyjson_write_flag YYJSON_WRITE_NEWLINE_AT_END          = 1 << 7;
 
 
 
+/** The highest 8 bits of `yyjson_write_flag` and real number value's `tag`
+    are reserved for controlling the output format of floating-point numbers. */
+#define YYJSON_WRITE_FP_FLAG_BITS 8
+
+/** The highest 4 bits of flag are reserved for precision value. */
+#define YYJSON_WRITE_FP_PREC_BITS 4
+
+/** Write floating-point number using fixed-point notation.
+    - This is similar to ECMAScript `Number.prototype.toFixed(prec)`,
+      but with trailing zeros removed. The `prec` ranges from 1 to 15.
+    - This will produce shorter output but may lose some precision. */
+#define YYJSON_WRITE_FP_TO_FIXED(prec) ((yyjson_write_flag)( \
+    (uint32_t)((uint32_t)(prec)) << (32 - 4) ))
+
+/** Write floating-point numbers using single-precision (float).
+    - This casts `double` to `float` before serialization.
+    - This will produce shorter output, but may lose some precision.
+    - This flag is ignored if `YYJSON_WRITE_FP_TO_FIXED(prec)` is also used. */
+#define YYJSON_WRITE_FP_TO_FLOAT ((yyjson_write_flag)(1 << (32 - 5)))
+
+
+
 /** Result code for JSON writer */
 typedef uint32_t yyjson_write_code;
 
@@ -1780,10 +1802,32 @@ yyjson_api_inline bool yyjson_set_sint(yyjson_val *val, int64_t num);
     @warning This will modify the `immutable` value, use with caution. */
 yyjson_api_inline bool yyjson_set_int(yyjson_val *val, int num);
 
+/** Set the value to float.
+    Returns false if input is NULL or `val` is object or array.
+    @warning This will modify the `immutable` value, use with caution. */
+yyjson_api_inline bool yyjson_set_float(yyjson_val *val, float num);
+
+/** Set the value to double.
+    Returns false if input is NULL or `val` is object or array.
+    @warning This will modify the `immutable` value, use with caution. */
+yyjson_api_inline bool yyjson_set_double(yyjson_val *val, double num);
+
 /** Set the value to real.
     Returns false if input is NULL or `val` is object or array.
     @warning This will modify the `immutable` value, use with caution. */
 yyjson_api_inline bool yyjson_set_real(yyjson_val *val, double num);
+
+/** Set the floating-point number's output format to fixed-point notation.
+    Returns false if input is NULL or `val` is not real type.
+    @see YYJSON_WRITE_FP_TO_FIXED flag.
+    @warning This will modify the `immutable` value, use with caution. */
+yyjson_api_inline bool yyjson_set_fp_to_fixed(yyjson_val *val, int prec);
+
+/** Set the floating-point number's output format to single-precision.
+    Returns false if input is NULL or `val` is not real type.
+    @see YYJSON_WRITE_FP_TO_FLOAT flag.
+    @warning This will modify the `immutable` value, use with caution. */
+yyjson_api_inline bool yyjson_set_fp_to_float(yyjson_val *val, bool flt);
 
 /** Set the value to string (null-terminated).
     Returns false if input is NULL or `val` is object or array.
@@ -1795,6 +1839,14 @@ yyjson_api_inline bool yyjson_set_str(yyjson_val *val, const char *str);
     @warning This will modify the `immutable` value, use with caution. */
 yyjson_api_inline bool yyjson_set_strn(yyjson_val *val,
                                        const char *str, size_t len);
+
+/** Marks this string as not needing to be escaped during JSON writing.
+    This can be used to avoid the overhead of escaping if the string contains
+    only characters that do not require escaping.
+    Returns false if input is NULL or `val` is not string.
+    @see YYJSON_SUBTYPE_NOESC subtype.
+    @warning This will modify the `immutable` value, use with caution. */
+yyjson_api_inline bool yyjson_set_str_noesc(yyjson_val *val, bool noesc);
 
 
 
@@ -2353,10 +2405,34 @@ yyjson_api_inline bool yyjson_mut_set_sint(yyjson_mut_val *val, int64_t num);
     @warning This function should not be used on an existing object or array. */
 yyjson_api_inline bool yyjson_mut_set_int(yyjson_mut_val *val, int num);
 
+/** Set the value to float.
+    Returns false if input is NULL.
+    @warning This function should not be used on an existing object or array. */
+yyjson_api_inline bool yyjson_mut_set_float(yyjson_mut_val *val, float num);
+
+/** Set the value to double.
+    Returns false if input is NULL.
+    @warning This function should not be used on an existing object or array. */
+yyjson_api_inline bool yyjson_mut_set_double(yyjson_mut_val *val, double num);
+
 /** Set the value to real.
     Returns false if input is NULL.
     @warning This function should not be used on an existing object or array. */
 yyjson_api_inline bool yyjson_mut_set_real(yyjson_mut_val *val, double num);
+
+/** Set the floating-point number's output format to fixed-point notation.
+    Returns false if input is NULL or `val` is not real type.
+    @see YYJSON_WRITE_FP_TO_FIXED flag.
+    @warning This will modify the `immutable` value, use with caution. */
+yyjson_api_inline bool yyjson_mut_set_fp_to_fixed(yyjson_mut_val *val,
+                                                  int prec);
+
+/** Set the floating-point number's output format to single-precision.
+    Returns false if input is NULL or `val` is not real type.
+    @see YYJSON_WRITE_FP_TO_FLOAT flag.
+    @warning This will modify the `immutable` value, use with caution. */
+yyjson_api_inline bool yyjson_mut_set_fp_to_float(yyjson_mut_val *val, 
+                                                  bool flt);
 
 /** Set the value to string (null-terminated).
     Returns false if input is NULL.
@@ -2368,6 +2444,15 @@ yyjson_api_inline bool yyjson_mut_set_str(yyjson_mut_val *val, const char *str);
     @warning This function should not be used on an existing object or array. */
 yyjson_api_inline bool yyjson_mut_set_strn(yyjson_mut_val *val,
                                            const char *str, size_t len);
+
+/** Marks this string as not needing to be escaped during JSON writing.
+    This can be used to avoid the overhead of escaping if the string contains
+    only characters that do not require escaping.
+    Returns false if input is NULL or `val` is not string.
+    @see YYJSON_SUBTYPE_NOESC subtype.
+    @warning This will modify the `immutable` value, use with caution. */
+yyjson_api_inline bool yyjson_mut_set_str_noesc(yyjson_mut_val *val,
+                                                bool noesc);
 
 /** Set the value to array.
     Returns false if input is NULL.
@@ -2440,7 +2525,15 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_sint(yyjson_mut_doc *doc,
 yyjson_api_inline yyjson_mut_val *yyjson_mut_int(yyjson_mut_doc *doc,
                                                  int64_t num);
 
-/** Creates and returns an real number value, returns NULL on error. */
+/** Creates and returns a float number value, returns NULL on error. */
+yyjson_api_inline yyjson_mut_val *yyjson_mut_float(yyjson_mut_doc *doc,
+                                                   float num);
+
+/** Creates and returns a double number value, returns NULL on error. */
+yyjson_api_inline yyjson_mut_val *yyjson_mut_double(yyjson_mut_doc *doc,
+                                                    double num);
+
+/** Creates and returns a real number value, returns NULL on error. */
 yyjson_api_inline yyjson_mut_val *yyjson_mut_real(yyjson_mut_doc *doc,
                                                   double num);
 
@@ -3155,7 +3248,7 @@ yyjson_api_inline bool yyjson_mut_arr_add_sint(yyjson_mut_doc *doc,
                                                int64_t num);
 
 /**
- Adds a integer value at the end of the array.
+ Adds an integer value at the end of the array.
  @param doc The `doc` is only used for memory allocation.
  @param arr The array to which the value is to be inserted.
     Returns false if it is NULL or not an array.
@@ -3165,6 +3258,30 @@ yyjson_api_inline bool yyjson_mut_arr_add_sint(yyjson_mut_doc *doc,
 yyjson_api_inline bool yyjson_mut_arr_add_int(yyjson_mut_doc *doc,
                                               yyjson_mut_val *arr,
                                               int64_t num);
+
+/**
+ Adds a float value at the end of the array.
+ @param doc The `doc` is only used for memory allocation.
+ @param arr The array to which the value is to be inserted.
+    Returns false if it is NULL or not an array.
+ @param num The number to be added.
+ @return Whether successful.
+ */
+yyjson_api_inline bool yyjson_mut_arr_add_float(yyjson_mut_doc *doc,
+                                                yyjson_mut_val *arr,
+                                                float num);
+
+/**
+ Adds a double value at the end of the array.
+ @param doc The `doc` is only used for memory allocation.
+ @param arr The array to which the value is to be inserted.
+    Returns false if it is NULL or not an array.
+ @param num The number to be added.
+ @return Whether successful.
+ */
+yyjson_api_inline bool yyjson_mut_arr_add_double(yyjson_mut_doc *doc,
+                                                 yyjson_mut_val *arr,
+                                                 double num);
 
 /**
  Adds a double value at the end of the array.
@@ -3681,7 +3798,27 @@ yyjson_api_inline bool yyjson_mut_obj_add_int(yyjson_mut_doc *doc,
                                               yyjson_mut_val *obj,
                                               const char *key, int64_t val);
 
+/** Adds a float value at the end of the object.
+    The `key` should be a null-terminated UTF-8 string.
+    This function allows duplicated key in one object.
+    
+    @warning The key string is not copied, you should keep the string
+        unmodified for the lifetime of this JSON document. */
+yyjson_api_inline bool yyjson_mut_obj_add_float(yyjson_mut_doc *doc,
+                                                yyjson_mut_val *obj,
+                                                const char *key, float val);
+
 /** Adds a double value at the end of the object.
+    The `key` should be a null-terminated UTF-8 string.
+    This function allows duplicated key in one object.
+    
+    @warning The key string is not copied, you should keep the string
+        unmodified for the lifetime of this JSON document. */
+yyjson_api_inline bool yyjson_mut_obj_add_double(yyjson_mut_doc *doc,
+                                                 yyjson_mut_val *obj,
+                                                 const char *key, double val);
+
+/** Adds a real value at the end of the object.
     The `key` should be a null-terminated UTF-8 string.
     This function allows duplicated key in one object.
     
@@ -4606,6 +4743,19 @@ yyjson_api_inline bool unsafe_yyjson_is_str_noesc(const char *str, size_t len) {
     return false;
 }
 
+yyjson_api_inline double unsafe_yyjson_u64_to_f64(uint64_t num) {
+#if YYJSON_U64_TO_F64_NO_IMPL
+        uint64_t msb = ((uint64_t)1) << 63;
+        if ((num & msb) == 0) {
+            return (double)(int64_t)num;
+        } else {
+            return ((double)(int64_t)((num >> 1) | (num & 1))) * (double)2.0;
+        }
+#else
+        return (double)num;
+#endif
+}
+
 yyjson_api_inline yyjson_type unsafe_yyjson_get_type(void *val) {
     uint8_t tag = (uint8_t)((yyjson_val *)val)->tag;
     return (yyjson_type)(tag & YYJSON_TYPE_MASK);
@@ -4723,17 +4873,7 @@ yyjson_api_inline double unsafe_yyjson_get_num(void *val) {
     } else if (tag == (YYJSON_TYPE_NUM | YYJSON_SUBTYPE_SINT)) {
         return (double)((yyjson_val *)val)->uni.i64;
     } else if (tag == (YYJSON_TYPE_NUM | YYJSON_SUBTYPE_UINT)) {
-#if YYJSON_U64_TO_F64_NO_IMPL
-        uint64_t msb = ((uint64_t)1) << 63;
-        uint64_t num = ((yyjson_val *)val)->uni.u64;
-        if ((num & msb) == 0) {
-            return (double)(int64_t)num;
-        } else {
-            return ((double)(int64_t)((num >> 1) | (num & 1))) * (double)2.0;
-        }
-#else
-        return (double)((yyjson_val *)val)->uni.u64;
-#endif
+        return unsafe_yyjson_u64_to_f64(((yyjson_val *)val)->uni.u64);
     }
     return 0.0;
 }
@@ -4781,6 +4921,14 @@ yyjson_api_inline void unsafe_yyjson_set_len(void *val, size_t len) {
     ((yyjson_val *)val)->tag = tag;
 }
 
+yyjson_api_inline void unsafe_yyjson_set_tag(void *val, yyjson_type type,
+                                             yyjson_subtype subtype,
+                                             size_t len) {
+    uint64_t tag = (uint64_t)len << YYJSON_TAG_BIT;
+    tag |= (type | subtype);
+    ((yyjson_val *)val)->tag = tag;
+}
+
 yyjson_api_inline void unsafe_yyjson_inc_len(void *val) {
     uint64_t tag = ((yyjson_val *)val)->tag;
     tag += (uint64_t)(1 << YYJSON_TAG_BIT);
@@ -4789,64 +4937,81 @@ yyjson_api_inline void unsafe_yyjson_inc_len(void *val) {
 
 yyjson_api_inline void unsafe_yyjson_set_raw(void *val, const char *raw,
                                              size_t len) {
-    unsafe_yyjson_set_type(val, YYJSON_TYPE_RAW, YYJSON_SUBTYPE_NONE);
-    unsafe_yyjson_set_len(val, len);
+    unsafe_yyjson_set_tag(val, YYJSON_TYPE_RAW, YYJSON_SUBTYPE_NONE, len);
     ((yyjson_val *)val)->uni.str = raw;
 }
 
 yyjson_api_inline void unsafe_yyjson_set_null(void *val) {
-    unsafe_yyjson_set_type(val, YYJSON_TYPE_NULL, YYJSON_SUBTYPE_NONE);
-    unsafe_yyjson_set_len(val, 0);
+    unsafe_yyjson_set_tag(val, YYJSON_TYPE_NULL, YYJSON_SUBTYPE_NONE, 0);
 }
 
 yyjson_api_inline void unsafe_yyjson_set_bool(void *val, bool num) {
     yyjson_subtype subtype = num ? YYJSON_SUBTYPE_TRUE : YYJSON_SUBTYPE_FALSE;
-    unsafe_yyjson_set_type(val, YYJSON_TYPE_BOOL, subtype);
-    unsafe_yyjson_set_len(val, 0);
+    unsafe_yyjson_set_tag(val, YYJSON_TYPE_BOOL, subtype, 0);
 }
 
 yyjson_api_inline void unsafe_yyjson_set_uint(void *val, uint64_t num) {
-    unsafe_yyjson_set_type(val, YYJSON_TYPE_NUM, YYJSON_SUBTYPE_UINT);
-    unsafe_yyjson_set_len(val, 0);
+    unsafe_yyjson_set_tag(val, YYJSON_TYPE_NUM, YYJSON_SUBTYPE_UINT, 0);
     ((yyjson_val *)val)->uni.u64 = num;
 }
 
 yyjson_api_inline void unsafe_yyjson_set_sint(void *val, int64_t num) {
-    unsafe_yyjson_set_type(val, YYJSON_TYPE_NUM, YYJSON_SUBTYPE_SINT);
-    unsafe_yyjson_set_len(val, 0);
+    unsafe_yyjson_set_tag(val, YYJSON_TYPE_NUM, YYJSON_SUBTYPE_SINT, 0);
     ((yyjson_val *)val)->uni.i64 = num;
 }
 
-yyjson_api_inline void unsafe_yyjson_set_real(void *val, double num) {
-    unsafe_yyjson_set_type(val, YYJSON_TYPE_NUM, YYJSON_SUBTYPE_REAL);
-    unsafe_yyjson_set_len(val, 0);
+yyjson_api_inline void unsafe_yyjson_set_fp_to_fixed(void *val, int prec) {
+    ((yyjson_val *)val)->tag &= ~((uint64_t)YYJSON_WRITE_FP_TO_FIXED(15) << 32);
+    ((yyjson_val *)val)->tag |= (uint64_t)YYJSON_WRITE_FP_TO_FIXED(prec) << 32;
+}
+
+yyjson_api_inline void unsafe_yyjson_set_fp_to_float(void *val, bool flt) {
+    uint64_t flag = (uint64_t)YYJSON_WRITE_FP_TO_FLOAT << 32;
+    if (flt) ((yyjson_val *)val)->tag |= flag;
+    else ((yyjson_val *)val)->tag &= ~flag;
+}
+
+yyjson_api_inline void unsafe_yyjson_set_float(void *val, float num) {
+    unsafe_yyjson_set_tag(val, YYJSON_TYPE_NUM, YYJSON_SUBTYPE_REAL, 0);
+    ((yyjson_val *)val)->tag |= (uint64_t)YYJSON_WRITE_FP_TO_FLOAT << 32;
+    ((yyjson_val *)val)->uni.f64 = (double)num;
+}
+
+yyjson_api_inline void unsafe_yyjson_set_double(void *val, double num) {
+    unsafe_yyjson_set_tag(val, YYJSON_TYPE_NUM, YYJSON_SUBTYPE_REAL, 0);
     ((yyjson_val *)val)->uni.f64 = num;
+}
+
+yyjson_api_inline void unsafe_yyjson_set_real(void *val, double num) {
+    unsafe_yyjson_set_tag(val, YYJSON_TYPE_NUM, YYJSON_SUBTYPE_REAL, 0);
+    ((yyjson_val *)val)->uni.f64 = num;
+}
+
+yyjson_api_inline void unsafe_yyjson_set_str_noesc(void *val, bool noesc) {
+    ((yyjson_val *)val)->tag &= ~(uint64_t)YYJSON_SUBTYPE_MASK;
+    if (noesc) ((yyjson_val *)val)->tag |= (uint64_t)YYJSON_SUBTYPE_NOESC;
+}
+
+yyjson_api_inline void unsafe_yyjson_set_strn(void *val, const char *str,
+                                              size_t len) {
+    unsafe_yyjson_set_tag(val, YYJSON_TYPE_STR, YYJSON_SUBTYPE_NONE, len);
+    ((yyjson_val *)val)->uni.str = str;
 }
 
 yyjson_api_inline void unsafe_yyjson_set_str(void *val, const char *str) {
     size_t len = strlen(str);
     bool noesc = unsafe_yyjson_is_str_noesc(str, len);
-    yyjson_subtype sub = noesc ? YYJSON_SUBTYPE_NOESC : YYJSON_SUBTYPE_NONE;
-    unsafe_yyjson_set_type(val, YYJSON_TYPE_STR, sub);
-    unsafe_yyjson_set_len(val, len);
-    ((yyjson_val *)val)->uni.str = str;
-}
-
-yyjson_api_inline void unsafe_yyjson_set_strn(void *val, const char *str,
-                                              size_t len) {
-    unsafe_yyjson_set_type(val, YYJSON_TYPE_STR, YYJSON_SUBTYPE_NONE);
-    unsafe_yyjson_set_len(val, len);
+    yyjson_subtype subtype = noesc ? YYJSON_SUBTYPE_NOESC : YYJSON_SUBTYPE_NONE;
+    unsafe_yyjson_set_tag(val, YYJSON_TYPE_STR, subtype, len);
     ((yyjson_val *)val)->uni.str = str;
 }
 
 yyjson_api_inline void unsafe_yyjson_set_arr(void *val, size_t size) {
-    unsafe_yyjson_set_type(val, YYJSON_TYPE_ARR, YYJSON_SUBTYPE_NONE);
-    unsafe_yyjson_set_len(val, size);
+    unsafe_yyjson_set_tag(val, YYJSON_TYPE_ARR, YYJSON_SUBTYPE_NONE, size);
 }
 
 yyjson_api_inline void unsafe_yyjson_set_obj(void *val, size_t size) {
-    unsafe_yyjson_set_type(val, YYJSON_TYPE_OBJ, YYJSON_SUBTYPE_NONE);
-    unsafe_yyjson_set_len(val, size);
+    unsafe_yyjson_set_tag(val, YYJSON_TYPE_OBJ, YYJSON_SUBTYPE_NONE, size);
 }
 
 
@@ -5070,9 +5235,33 @@ yyjson_api_inline bool yyjson_set_int(yyjson_val *val, int num) {
     return true;
 }
 
+yyjson_api_inline bool yyjson_set_float(yyjson_val *val, float num) {
+    if (yyjson_unlikely(!val || unsafe_yyjson_is_ctn(val))) return false;
+    unsafe_yyjson_set_float(val, num);
+    return true;
+}
+
+yyjson_api_inline bool yyjson_set_double(yyjson_val *val, double num) {
+    if (yyjson_unlikely(!val || unsafe_yyjson_is_ctn(val))) return false;
+    unsafe_yyjson_set_double(val, num);
+    return true;
+}
+
 yyjson_api_inline bool yyjson_set_real(yyjson_val *val, double num) {
     if (yyjson_unlikely(!val || unsafe_yyjson_is_ctn(val))) return false;
     unsafe_yyjson_set_real(val, num);
+    return true;
+}
+
+yyjson_api_inline bool yyjson_set_fp_to_fixed(yyjson_val *val, int prec) {
+    if (yyjson_unlikely(!yyjson_is_real(val))) return false;
+    unsafe_yyjson_set_fp_to_fixed(val, prec);
+    return true;
+}
+
+yyjson_api_inline bool yyjson_set_fp_to_float(yyjson_val *val, bool flt) {
+    if (yyjson_unlikely(!yyjson_is_real(val))) return false;
+    unsafe_yyjson_set_fp_to_float(val, flt);
     return true;
 }
 
@@ -5088,6 +5277,12 @@ yyjson_api_inline bool yyjson_set_strn(yyjson_val *val,
     if (yyjson_unlikely(!val || unsafe_yyjson_is_ctn(val))) return false;
     if (yyjson_unlikely(!str)) return false;
     unsafe_yyjson_set_strn(val, str, len);
+    return true;
+}
+
+yyjson_api_inline bool yyjson_set_str_noesc(yyjson_val *val, bool noesc) {
+    if (yyjson_unlikely(!yyjson_is_str(val))) return false;
+    unsafe_yyjson_set_str_noesc(val, noesc);
     return true;
 }
 
@@ -5593,9 +5788,35 @@ yyjson_api_inline bool yyjson_mut_set_int(yyjson_mut_val *val, int num) {
     return true;
 }
 
+yyjson_api_inline bool yyjson_mut_set_float(yyjson_mut_val *val, float num) {
+    if (yyjson_unlikely(!val)) return false;
+    unsafe_yyjson_set_float(val, num);
+    return true;
+}
+
+yyjson_api_inline bool yyjson_mut_set_double(yyjson_mut_val *val, double num) {
+    if (yyjson_unlikely(!val)) return false;
+    unsafe_yyjson_set_double(val, num);
+    return true;
+}
+
 yyjson_api_inline bool yyjson_mut_set_real(yyjson_mut_val *val, double num) {
     if (yyjson_unlikely(!val)) return false;
     unsafe_yyjson_set_real(val, num);
+    return true;
+}
+
+yyjson_api_inline bool yyjson_mut_set_fp_to_fixed(yyjson_mut_val *val,
+                                                  int prec) {
+    if (yyjson_unlikely(!yyjson_mut_is_real(val))) return false;
+    unsafe_yyjson_set_fp_to_fixed(val, prec);
+    return true;
+}
+
+yyjson_api_inline bool yyjson_mut_set_fp_to_float(yyjson_mut_val *val, 
+                                                  bool flt) {
+    if (yyjson_unlikely(!yyjson_mut_is_real(val))) return false;
+    unsafe_yyjson_set_fp_to_float(val, flt);
     return true;
 }
 
@@ -5610,6 +5831,13 @@ yyjson_api_inline bool yyjson_mut_set_strn(yyjson_mut_val *val,
                                            const char *str, size_t len) {
     if (yyjson_unlikely(!val || !str)) return false;
     unsafe_yyjson_set_strn(val, str, len);
+    return true;
+}
+
+yyjson_api_inline bool yyjson_mut_set_str_noesc(yyjson_mut_val *val,
+                                                bool noesc) {
+    if (yyjson_unlikely(!yyjson_mut_is_str(val))) return false;
+    unsafe_yyjson_set_str_noesc(val, noesc);
     return true;
 }
 
@@ -5631,200 +5859,140 @@ yyjson_api_inline bool yyjson_mut_set_obj(yyjson_mut_val *val) {
  * Mutable JSON Value Creation API (Implementation)
  *============================================================================*/
 
+#define yyjson_mut_val_one(func) \
+    if (yyjson_likely(doc)) { \
+        yyjson_mut_val *val = unsafe_yyjson_mut_val(doc, 1); \
+        if (yyjson_likely(val)) { \
+            func \
+            return val; \
+        } \
+    } \
+    return NULL
+
+#define yyjson_mut_val_one_str(func) \
+    if (yyjson_likely(doc && str)) { \
+        yyjson_mut_val *val = unsafe_yyjson_mut_val(doc, 1); \
+        if (yyjson_likely(val)) { \
+            func \
+            return val; \
+        } \
+    } \
+    return NULL
+
 yyjson_api_inline yyjson_mut_val *yyjson_mut_raw(yyjson_mut_doc *doc,
                                                  const char *str) {
-    if (yyjson_likely(str)) return yyjson_mut_rawn(doc, str, strlen(str));
-    return NULL;
+    yyjson_mut_val_one_str({ unsafe_yyjson_set_raw(val, str, strlen(str)); });
 }
 
 yyjson_api_inline yyjson_mut_val *yyjson_mut_rawn(yyjson_mut_doc *doc,
                                                   const char *str,
                                                   size_t len) {
-    if (yyjson_likely(doc && str)) {
-        yyjson_mut_val *val = unsafe_yyjson_mut_val(doc, 1);
-        if (yyjson_likely(val)) {
-            val->tag = ((uint64_t)len << YYJSON_TAG_BIT) | YYJSON_TYPE_RAW;
-            val->uni.str = str;
-            return val;
-        }
-    }
-    return NULL;
+    yyjson_mut_val_one_str({ unsafe_yyjson_set_raw(val, str, len); });
 }
 
 yyjson_api_inline yyjson_mut_val *yyjson_mut_rawcpy(yyjson_mut_doc *doc,
                                                     const char *str) {
-    if (yyjson_likely(str)) return yyjson_mut_rawncpy(doc, str, strlen(str));
-    return NULL;
+    yyjson_mut_val_one_str({
+        size_t len = strlen(str);
+        char *new_str = unsafe_yyjson_mut_strncpy(doc, str, len);
+        if (yyjson_unlikely(!new_str)) return NULL;
+        unsafe_yyjson_set_raw(val, new_str, len);
+    });
 }
 
 yyjson_api_inline yyjson_mut_val *yyjson_mut_rawncpy(yyjson_mut_doc *doc,
                                                      const char *str,
                                                      size_t len) {
-    if (yyjson_likely(doc && str)) {
-        yyjson_mut_val *val = unsafe_yyjson_mut_val(doc, 1);
+    yyjson_mut_val_one_str({
         char *new_str = unsafe_yyjson_mut_strncpy(doc, str, len);
-        if (yyjson_likely(val && new_str)) {
-            val->tag = ((uint64_t)len << YYJSON_TAG_BIT) | YYJSON_TYPE_RAW;
-            val->uni.str = new_str;
-            return val;
-        }
-    }
-    return NULL;
+        if (yyjson_unlikely(!new_str)) return NULL;
+        unsafe_yyjson_set_raw(val, new_str, len);
+    });
 }
 
 yyjson_api_inline yyjson_mut_val *yyjson_mut_null(yyjson_mut_doc *doc) {
-    if (yyjson_likely(doc)) {
-        yyjson_mut_val *val = unsafe_yyjson_mut_val(doc, 1);
-        if (yyjson_likely(val)) {
-            val->tag = YYJSON_TYPE_NULL | YYJSON_SUBTYPE_NONE;
-            return val;
-        }
-    }
-    return NULL;
+    yyjson_mut_val_one({ unsafe_yyjson_set_null(val); });
 }
 
 yyjson_api_inline yyjson_mut_val *yyjson_mut_true(yyjson_mut_doc *doc) {
-    if (yyjson_likely(doc)) {
-        yyjson_mut_val *val = unsafe_yyjson_mut_val(doc, 1);
-        if (yyjson_likely(val)) {
-            val->tag = YYJSON_TYPE_BOOL | YYJSON_SUBTYPE_TRUE;
-            return val;
-        }
-    }
-    return NULL;
+    yyjson_mut_val_one({ unsafe_yyjson_set_bool(val, true); });
 }
 
 yyjson_api_inline yyjson_mut_val *yyjson_mut_false(yyjson_mut_doc *doc) {
-    if (yyjson_likely(doc)) {
-        yyjson_mut_val *val = unsafe_yyjson_mut_val(doc, 1);
-        if (yyjson_likely(val)) {
-            val->tag = YYJSON_TYPE_BOOL | YYJSON_SUBTYPE_FALSE;
-            return val;
-        }
-    }
-    return NULL;
+    yyjson_mut_val_one({ unsafe_yyjson_set_bool(val, false); });
 }
 
 yyjson_api_inline yyjson_mut_val *yyjson_mut_bool(yyjson_mut_doc *doc,
                                                   bool _val) {
-    if (yyjson_likely(doc)) {
-        yyjson_mut_val *val = unsafe_yyjson_mut_val(doc, 1);
-        if (yyjson_likely(val)) {
-            _val = !!_val;
-            val->tag = YYJSON_TYPE_BOOL | (uint8_t)((uint8_t)_val << 3);
-            return val;
-        }
-    }
-    return NULL;
+    yyjson_mut_val_one({ unsafe_yyjson_set_bool(val, _val); });
 }
 
 yyjson_api_inline yyjson_mut_val *yyjson_mut_uint(yyjson_mut_doc *doc,
                                                   uint64_t num) {
-    if (yyjson_likely(doc)) {
-        yyjson_mut_val *val = unsafe_yyjson_mut_val(doc, 1);
-        if (yyjson_likely(val)) {
-            val->tag = YYJSON_TYPE_NUM | YYJSON_SUBTYPE_UINT;
-            val->uni.u64 = num;
-            return val;
-        }
-    }
-    return NULL;
+    yyjson_mut_val_one({ unsafe_yyjson_set_uint(val, num); });
 }
 
 yyjson_api_inline yyjson_mut_val *yyjson_mut_sint(yyjson_mut_doc *doc,
                                                   int64_t num) {
-    if (yyjson_likely(doc)) {
-        yyjson_mut_val *val = unsafe_yyjson_mut_val(doc, 1);
-        if (yyjson_likely(val)) {
-            val->tag = YYJSON_TYPE_NUM | YYJSON_SUBTYPE_SINT;
-            val->uni.i64 = num;
-            return val;
-        }
-    }
-    return NULL;
+    yyjson_mut_val_one({ unsafe_yyjson_set_sint(val, num); });
 }
 
 yyjson_api_inline yyjson_mut_val *yyjson_mut_int(yyjson_mut_doc *doc,
                                                  int64_t num) {
-    return yyjson_mut_sint(doc, num);
+    yyjson_mut_val_one({ unsafe_yyjson_set_sint(val, num); });
+}
+
+yyjson_api_inline yyjson_mut_val *yyjson_mut_float(yyjson_mut_doc *doc,
+                                                   float num) {
+    yyjson_mut_val_one({ unsafe_yyjson_set_float(val, num); });
+}
+
+yyjson_api_inline yyjson_mut_val *yyjson_mut_double(yyjson_mut_doc *doc,
+                                                    double num) {
+    yyjson_mut_val_one({ unsafe_yyjson_set_double(val, num); });
 }
 
 yyjson_api_inline yyjson_mut_val *yyjson_mut_real(yyjson_mut_doc *doc,
                                                   double num) {
-    if (yyjson_likely(doc)) {
-        yyjson_mut_val *val = unsafe_yyjson_mut_val(doc, 1);
-        if (yyjson_likely(val)) {
-            val->tag = YYJSON_TYPE_NUM | YYJSON_SUBTYPE_REAL;
-            val->uni.f64 = num;
-            return val;
-        }
-    }
-    return NULL;
+    yyjson_mut_val_one({ unsafe_yyjson_set_real(val, num); });
 }
 
 yyjson_api_inline yyjson_mut_val *yyjson_mut_str(yyjson_mut_doc *doc,
                                                  const char *str) {
-    if (yyjson_likely(doc && str)) {
-        size_t len = strlen(str);
-        bool noesc = unsafe_yyjson_is_str_noesc(str, len);
-        yyjson_subtype sub = noesc ? YYJSON_SUBTYPE_NOESC : YYJSON_SUBTYPE_NONE;
-        yyjson_mut_val *val = unsafe_yyjson_mut_val(doc, 1);
-        if (yyjson_likely(val)) {
-            val->tag = ((uint64_t)len << YYJSON_TAG_BIT) |
-                        (uint64_t)(YYJSON_TYPE_STR | sub);
-            val->uni.str = str;
-            return val;
-        }
-    }
-    return NULL;
+    yyjson_mut_val_one_str({ unsafe_yyjson_set_str(val, str); });
 }
 
 yyjson_api_inline yyjson_mut_val *yyjson_mut_strn(yyjson_mut_doc *doc,
                                                   const char *str,
                                                   size_t len) {
-    if (yyjson_likely(doc && str)) {
-        yyjson_mut_val *val = unsafe_yyjson_mut_val(doc, 1);
-        if (yyjson_likely(val)) {
-            val->tag = ((uint64_t)len << YYJSON_TAG_BIT) | YYJSON_TYPE_STR;
-            val->uni.str = str;
-            return val;
-        }
-    }
-    return NULL;
+    yyjson_mut_val_one_str({ unsafe_yyjson_set_strn(val, str, len); });
 }
 
 yyjson_api_inline yyjson_mut_val *yyjson_mut_strcpy(yyjson_mut_doc *doc,
                                                     const char *str) {
-    if (yyjson_likely(doc && str)) {
+    yyjson_mut_val_one_str({
         size_t len = strlen(str);
         bool noesc = unsafe_yyjson_is_str_noesc(str, len);
         yyjson_subtype sub = noesc ? YYJSON_SUBTYPE_NOESC : YYJSON_SUBTYPE_NONE;
-        yyjson_mut_val *val = unsafe_yyjson_mut_val(doc, 1);
         char *new_str = unsafe_yyjson_mut_strncpy(doc, str, len);
-        if (yyjson_likely(val && new_str)) {
-            val->tag = ((uint64_t)len << YYJSON_TAG_BIT) |
-                        (uint64_t)(YYJSON_TYPE_STR | sub);
-            val->uni.str = new_str;
-            return val;
-        }
-    }
-    return NULL;
+        if (yyjson_unlikely(!new_str)) return NULL;
+        unsafe_yyjson_set_tag(val, YYJSON_TYPE_STR, sub, len);
+        val->uni.str = new_str;
+    });
 }
 
 yyjson_api_inline yyjson_mut_val *yyjson_mut_strncpy(yyjson_mut_doc *doc,
                                                      const char *str,
                                                      size_t len) {
-    if (yyjson_likely(doc && str)) {
-        yyjson_mut_val *val = unsafe_yyjson_mut_val(doc, 1);
+    yyjson_mut_val_one_str({
         char *new_str = unsafe_yyjson_mut_strncpy(doc, str, len);
-        if (yyjson_likely(val && new_str)) {
-            val->tag = ((uint64_t)len << YYJSON_TAG_BIT) | YYJSON_TYPE_STR;
-            val->uni.str = new_str;
-            return val;
-        }
-    }
-    return NULL;
+        if (yyjson_unlikely(!new_str)) return NULL;
+        unsafe_yyjson_set_strn(val, new_str, len);
+    });
 }
+
+#undef yyjson_mut_val_one
+#undef yyjson_mut_val_one_str
 
 
 
@@ -5963,8 +6131,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_arr(yyjson_mut_doc *doc) {
 yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_with_bool(
     yyjson_mut_doc *doc, const bool *vals, size_t count) {
     yyjson_mut_arr_with_func({
-        bool _val = !!vals[i];
-        val->tag = YYJSON_TYPE_BOOL | (uint8_t)((uint8_t)_val << 3);
+        unsafe_yyjson_set_bool(val, vals[i]);
     });
 }
 
@@ -5980,96 +6147,86 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_with_uint(
 
 yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_with_real(
     yyjson_mut_doc *doc, const double *vals, size_t count) {
-    return yyjson_mut_arr_with_double(doc, vals, count);
+    yyjson_mut_arr_with_func({
+        unsafe_yyjson_set_real(val, vals[i]);
+    });
 }
 
 yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_with_sint8(
     yyjson_mut_doc *doc, const int8_t *vals, size_t count) {
     yyjson_mut_arr_with_func({
-        val->tag = YYJSON_TYPE_NUM | YYJSON_SUBTYPE_SINT;
-        val->uni.i64 = (int64_t)vals[i];
+        unsafe_yyjson_set_sint(val, vals[i]);
     });
 }
 
 yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_with_sint16(
     yyjson_mut_doc *doc, const int16_t *vals, size_t count) {
     yyjson_mut_arr_with_func({
-        val->tag = YYJSON_TYPE_NUM | YYJSON_SUBTYPE_SINT;
-        val->uni.i64 = vals[i];
+        unsafe_yyjson_set_sint(val, vals[i]);
     });
 }
 
 yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_with_sint32(
     yyjson_mut_doc *doc, const int32_t *vals, size_t count) {
     yyjson_mut_arr_with_func({
-        val->tag = YYJSON_TYPE_NUM | YYJSON_SUBTYPE_SINT;
-        val->uni.i64 = vals[i];
+        unsafe_yyjson_set_sint(val, vals[i]);
     });
 }
 
 yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_with_sint64(
     yyjson_mut_doc *doc, const int64_t *vals, size_t count) {
     yyjson_mut_arr_with_func({
-        val->tag = YYJSON_TYPE_NUM | YYJSON_SUBTYPE_SINT;
-        val->uni.i64 = vals[i];
+        unsafe_yyjson_set_sint(val, vals[i]);
     });
 }
 
 yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_with_uint8(
     yyjson_mut_doc *doc, const uint8_t *vals, size_t count) {
     yyjson_mut_arr_with_func({
-        val->tag = YYJSON_TYPE_NUM | YYJSON_SUBTYPE_UINT;
-        val->uni.u64 = vals[i];
+        unsafe_yyjson_set_uint(val, vals[i]);
     });
 }
 
 yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_with_uint16(
     yyjson_mut_doc *doc, const uint16_t *vals, size_t count) {
     yyjson_mut_arr_with_func({
-        val->tag = YYJSON_TYPE_NUM | YYJSON_SUBTYPE_UINT;
-        val->uni.u64 = vals[i];
+        unsafe_yyjson_set_uint(val, vals[i]);
     });
 }
 
 yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_with_uint32(
     yyjson_mut_doc *doc, const uint32_t *vals, size_t count) {
     yyjson_mut_arr_with_func({
-        val->tag = YYJSON_TYPE_NUM | YYJSON_SUBTYPE_UINT;
-        val->uni.u64 = vals[i];
+        unsafe_yyjson_set_uint(val, vals[i]);
     });
 }
 
 yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_with_uint64(
     yyjson_mut_doc *doc, const uint64_t *vals, size_t count) {
     yyjson_mut_arr_with_func({
-        val->tag = YYJSON_TYPE_NUM | YYJSON_SUBTYPE_UINT;
-        val->uni.u64 = vals[i];
+        unsafe_yyjson_set_uint(val, vals[i]);
     });
 }
 
 yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_with_float(
     yyjson_mut_doc *doc, const float *vals, size_t count) {
     yyjson_mut_arr_with_func({
-        val->tag = YYJSON_TYPE_NUM | YYJSON_SUBTYPE_REAL;
-        val->uni.f64 = (double)vals[i];
+        unsafe_yyjson_set_float(val, vals[i]);
     });
 }
 
 yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_with_double(
     yyjson_mut_doc *doc, const double *vals, size_t count) {
     yyjson_mut_arr_with_func({
-        val->tag = YYJSON_TYPE_NUM | YYJSON_SUBTYPE_REAL;
-        val->uni.f64 = vals[i];
+        unsafe_yyjson_set_double(val, vals[i]);
     });
 }
 
 yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_with_str(
     yyjson_mut_doc *doc, const char **vals, size_t count) {
     yyjson_mut_arr_with_func({
-        uint64_t len = (uint64_t)strlen(vals[i]);
-        val->tag = (len << YYJSON_TAG_BIT) | YYJSON_TYPE_STR;
-        val->uni.str = vals[i];
-        if (yyjson_unlikely(!val->uni.str)) return NULL;
+        if (yyjson_unlikely(!vals[i])) return NULL;
+        unsafe_yyjson_set_str(val, vals[i]);
     });
 }
 
@@ -6077,37 +6234,37 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_with_strn(
     yyjson_mut_doc *doc, const char **vals, const size_t *lens, size_t count) {
     if (yyjson_unlikely(count > 0 && !lens)) return NULL;
     yyjson_mut_arr_with_func({
-        val->tag = ((uint64_t)lens[i] << YYJSON_TAG_BIT) | YYJSON_TYPE_STR;
-        val->uni.str = vals[i];
-        if (yyjson_unlikely(!val->uni.str)) return NULL;
+        if (yyjson_unlikely(!vals[i])) return NULL;
+        unsafe_yyjson_set_strn(val, vals[i], lens[i]);
     });
 }
 
 yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_with_strcpy(
     yyjson_mut_doc *doc, const char **vals, size_t count) {
     size_t len;
-    const char *str;
+    const char *str, *new_str;
     yyjson_mut_arr_with_func({
         str = vals[i];
-        if (!str) return NULL;
+        if (yyjson_unlikely(!str)) return NULL;
         len = strlen(str);
-        val->tag = ((uint64_t)len << YYJSON_TAG_BIT) | YYJSON_TYPE_STR;
-        val->uni.str = unsafe_yyjson_mut_strncpy(doc, str, len);
-        if (yyjson_unlikely(!val->uni.str)) return NULL;
+        new_str = unsafe_yyjson_mut_strncpy(doc, str, len);
+        if (yyjson_unlikely(!new_str)) return NULL;
+        unsafe_yyjson_set_strn(val, new_str, len);
     });
 }
 
 yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_with_strncpy(
     yyjson_mut_doc *doc, const char **vals, const size_t *lens, size_t count) {
     size_t len;
-    const char *str;
+    const char *str, *new_str;
     if (yyjson_unlikely(count > 0 && !lens)) return NULL;
     yyjson_mut_arr_with_func({
         str = vals[i];
+        if (yyjson_unlikely(!str)) return NULL;
         len = lens[i];
-        val->tag = ((uint64_t)len << YYJSON_TAG_BIT) | YYJSON_TYPE_STR;
-        val->uni.str = unsafe_yyjson_mut_strncpy(doc, str, len);
-        if (yyjson_unlikely(!val->uni.str)) return NULL;
+        new_str = unsafe_yyjson_mut_strncpy(doc, str, len);
+        if (yyjson_unlikely(!new_str)) return NULL;
+        unsafe_yyjson_set_strn(val, new_str, len);
     });
 }
 
@@ -6396,6 +6553,26 @@ yyjson_api_inline bool yyjson_mut_arr_add_int(yyjson_mut_doc *doc,
                                               int64_t num) {
     if (yyjson_likely(doc && yyjson_mut_is_arr(arr))) {
         yyjson_mut_val *val = yyjson_mut_sint(doc, num);
+        return yyjson_mut_arr_append(arr, val);
+    }
+    return false;
+}
+
+yyjson_api_inline bool yyjson_mut_arr_add_float(yyjson_mut_doc *doc,
+                                                yyjson_mut_val *arr,
+                                                float num) {
+    if (yyjson_likely(doc && yyjson_mut_is_arr(arr))) {
+        yyjson_mut_val *val = yyjson_mut_float(doc, num);
+        return yyjson_mut_arr_append(arr, val);
+    }
+    return false;
+}
+
+yyjson_api_inline bool yyjson_mut_arr_add_double(yyjson_mut_doc *doc,
+                                                 yyjson_mut_val *arr,
+                                                 double num) {
+    if (yyjson_likely(doc && yyjson_mut_is_arr(arr))) {
+        yyjson_mut_val *val = yyjson_mut_double(doc, num);
         return yyjson_mut_arr_append(arr, val);
     }
     return false;
@@ -6890,75 +7067,68 @@ yyjson_api_inline bool yyjson_mut_obj_rotate(yyjson_mut_val *obj,
 yyjson_api_inline bool yyjson_mut_obj_add_null(yyjson_mut_doc *doc,
                                                yyjson_mut_val *obj,
                                                const char *_key) {
-    yyjson_mut_obj_add_func({
-        val->tag = YYJSON_TYPE_NULL | YYJSON_SUBTYPE_NONE;
-    });
+    yyjson_mut_obj_add_func({ unsafe_yyjson_set_null(val); });
 }
 
 yyjson_api_inline bool yyjson_mut_obj_add_true(yyjson_mut_doc *doc,
                                                yyjson_mut_val *obj,
                                                const char *_key) {
-    yyjson_mut_obj_add_func({
-        val->tag = YYJSON_TYPE_BOOL | YYJSON_SUBTYPE_TRUE;
-    });
+    yyjson_mut_obj_add_func({ unsafe_yyjson_set_bool(val, true); });
 }
 
 yyjson_api_inline bool yyjson_mut_obj_add_false(yyjson_mut_doc *doc,
                                                 yyjson_mut_val *obj,
                                                 const char *_key) {
-    yyjson_mut_obj_add_func({
-        val->tag = YYJSON_TYPE_BOOL | YYJSON_SUBTYPE_FALSE;
-    });
+    yyjson_mut_obj_add_func({ unsafe_yyjson_set_bool(val, false); });
 }
 
 yyjson_api_inline bool yyjson_mut_obj_add_bool(yyjson_mut_doc *doc,
                                                yyjson_mut_val *obj,
                                                const char *_key,
                                                bool _val) {
-    yyjson_mut_obj_add_func({
-        _val = !!_val;
-        val->tag = YYJSON_TYPE_BOOL | (uint8_t)((uint8_t)(_val) << 3);
-    });
+    yyjson_mut_obj_add_func({ unsafe_yyjson_set_bool(val, _val); });
 }
 
 yyjson_api_inline bool yyjson_mut_obj_add_uint(yyjson_mut_doc *doc,
                                                yyjson_mut_val *obj,
                                                const char *_key,
                                                uint64_t _val) {
-    yyjson_mut_obj_add_func({
-        val->tag = YYJSON_TYPE_NUM | YYJSON_SUBTYPE_UINT;
-        val->uni.u64 = _val;
-    });
+    yyjson_mut_obj_add_func({ unsafe_yyjson_set_uint(val, _val); });
 }
 
 yyjson_api_inline bool yyjson_mut_obj_add_sint(yyjson_mut_doc *doc,
                                                yyjson_mut_val *obj,
                                                const char *_key,
                                                int64_t _val) {
-    yyjson_mut_obj_add_func({
-        val->tag = YYJSON_TYPE_NUM | YYJSON_SUBTYPE_SINT;
-        val->uni.i64 = _val;
-    });
+    yyjson_mut_obj_add_func({ unsafe_yyjson_set_sint(val, _val); });
 }
 
 yyjson_api_inline bool yyjson_mut_obj_add_int(yyjson_mut_doc *doc,
                                               yyjson_mut_val *obj,
                                               const char *_key,
                                               int64_t _val) {
-    yyjson_mut_obj_add_func({
-        val->tag = YYJSON_TYPE_NUM | YYJSON_SUBTYPE_SINT;
-        val->uni.i64 = _val;
-    });
+    yyjson_mut_obj_add_func({ unsafe_yyjson_set_sint(val, _val); });
+}
+
+yyjson_api_inline bool yyjson_mut_obj_add_float(yyjson_mut_doc *doc,
+                                                yyjson_mut_val *obj,
+                                                const char *_key,
+                                                float _val) {
+    yyjson_mut_obj_add_func({ unsafe_yyjson_set_float(val, _val); });
+}
+
+yyjson_api_inline bool yyjson_mut_obj_add_double(yyjson_mut_doc *doc,
+                                                 yyjson_mut_val *obj,
+                                                 const char *_key,
+                                                 double _val) {
+    yyjson_mut_obj_add_func({ unsafe_yyjson_set_double(val, _val); });
 }
 
 yyjson_api_inline bool yyjson_mut_obj_add_real(yyjson_mut_doc *doc,
                                                yyjson_mut_val *obj,
                                                const char *_key,
                                                double _val) {
-    yyjson_mut_obj_add_func({
-        val->tag = YYJSON_TYPE_NUM | YYJSON_SUBTYPE_REAL;
-        val->uni.f64 = _val;
-    });
+    yyjson_mut_obj_add_func({ unsafe_yyjson_set_real(val, _val); });
 }
 
 yyjson_api_inline bool yyjson_mut_obj_add_str(yyjson_mut_doc *doc,

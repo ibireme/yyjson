@@ -555,6 +555,19 @@ This flag does not affect the performance of correctly encoded string.
 Adds a newline character `\n` at the end of the JSON.
 This can be helpful for text editors or NDJSON.
 
+● **YYJSON_WRITE_FP_TO_FLOAT**<br/>
+Write floating-point numbers using single-precision (float).
+This casts `double` to `float` before serialization.
+This will produce shorter output, but may lose some precision.
+This flag is ignored if `YYJSON_WRITE_FP_TO_FIXED(prec)` is also used.
+
+● **YYJSON_WRITE_FP_TO_FIXED(prec)**<br/>
+Write floating-point number using fixed-point notation.
+This is similar to ECMAScript `Number.prototype.toFixed(prec)`,
+but with trailing zeros removed. The `prec` ranges from 1 to 15.
+This will produce shorter output but may lose some precision.
+
+
 
 ---------------
 # Accessing JSON Document
@@ -689,6 +702,8 @@ bool yyjson_set_bool(yyjson_val *val, bool num);
 bool yyjson_set_uint(yyjson_val *val, uint64_t num);
 bool yyjson_set_sint(yyjson_val *val, int64_t num);
 bool yyjson_set_int(yyjson_val *val, int num);
+bool yyjson_set_float(yyjson_val *val, float num);
+bool yyjson_set_double(yyjson_val *val, double num);
 bool yyjson_set_real(yyjson_val *val, double num);
 
 // The string is not copied, should be held by caller.
@@ -961,6 +976,8 @@ yyjson_mut_val *yyjson_mut_bool(yyjson_mut_doc *doc, bool val);
 yyjson_mut_val *yyjson_mut_uint(yyjson_mut_doc *doc, uint64_t num);
 yyjson_mut_val *yyjson_mut_sint(yyjson_mut_doc *doc, int64_t num);
 yyjson_mut_val *yyjson_mut_int(yyjson_mut_doc *doc, int64_t num);
+yyjson_mut_val *yyjson_mut_float(yyjson_mut_doc *doc, float num);
+yyjson_mut_val *yyjson_mut_double(yyjson_mut_doc *doc, double num);
 yyjson_mut_val *yyjson_mut_real(yyjson_mut_doc *doc, double num);
 
 // Creates a string value, the input string is NOT copied.
@@ -1057,6 +1074,8 @@ bool yyjson_mut_arr_add_bool(yyjson_mut_doc *doc, yyjson_mut_val *arr, bool val)
 bool yyjson_mut_arr_add_uint(yyjson_mut_doc *doc, yyjson_mut_val *arr, uint64_t num);
 bool yyjson_mut_arr_add_sint(yyjson_mut_doc *doc, yyjson_mut_val *arr, int64_t num);
 bool yyjson_mut_arr_add_int(yyjson_mut_doc *doc, yyjson_mut_val *arr, int64_t num);
+bool yyjson_mut_arr_add_float(yyjson_mut_doc *doc, yyjson_mut_val *arr, float num);
+bool yyjson_mut_arr_add_double(yyjson_mut_doc *doc, yyjson_mut_val *arr, double num);
 bool yyjson_mut_arr_add_real(yyjson_mut_doc *doc, yyjson_mut_val *arr, double num);
 bool yyjson_mut_arr_add_str(yyjson_mut_doc *doc, yyjson_mut_val *arr, const char *str);
 bool yyjson_mut_arr_add_strn(yyjson_mut_doc *doc, yyjson_mut_val *arr, const char *str, size_t len);
@@ -1136,6 +1155,8 @@ bool yyjson_mut_obj_add_bool(yyjson_mut_doc *doc, yyjson_mut_val *obj, const cha
 bool yyjson_mut_obj_add_uint(yyjson_mut_doc *doc, yyjson_mut_val *obj, const char *key, uint64_t val);
 bool yyjson_mut_obj_add_sint(yyjson_mut_doc *doc, yyjson_mut_val *obj, const char *key, int64_t val);
 bool yyjson_mut_obj_add_int(yyjson_mut_doc *doc, yyjson_mut_val *obj, const char *key, int64_t val);
+bool yyjson_mut_obj_add_float(yyjson_mut_doc *doc, yyjson_mut_val *obj, const char *key, float val);
+bool yyjson_mut_obj_add_double(yyjson_mut_doc *doc, yyjson_mut_val *obj, const char *key, double val);
 bool yyjson_mut_obj_add_real(yyjson_mut_doc *doc, yyjson_mut_val *obj, const char *key, double val);
 bool yyjson_mut_obj_add_str(yyjson_mut_doc *doc, yyjson_mut_val *obj, const char *key, const char *val);
 bool yyjson_mut_obj_add_strn(yyjson_mut_doc *doc, yyjson_mut_val *obj, const char *key, const char *val, size_t len);
@@ -1358,13 +1379,18 @@ it will write numbers according to these rules by default:<br/>
     * The positive sign in the exponent part is removed.
 * The floating-point number writer will generate the shortest correctly rounded decimal representation.
 
-There are 2 flags that can be used to adjust the number writing strategy:
+There are several flags that can be used to adjust the number writing strategy:
 
-- `YYJSON_WRITE_ALLOW_INF_AND_NAN` write inf/nan numbers as `Infinity` and `NaN` literals without error (non-standard).
-- `YYJSON_WRITE_INF_AND_NAN_AS_NULL` write inf/nan numbers as `null` literal.
+- `YYJSON_WRITE_ALLOW_INF_AND_NAN` writes inf/nan numbers as `Infinity` and `NaN` literals without error (non-standard).
+- `YYJSON_WRITE_INF_AND_NAN_AS_NULL` writes inf/nan numbers as `null` literal.
+- `YYJSON_WRITE_FP_TO_FLOAT` writes real numbers as `float` instead of `double`.
+- `YYJSON_WRITE_FP_TO_FIXED(prec)` writes real numbers using fixed-point notation.
 
-See the "Writer flag" section for more details.
+See the `Writer flag` section for more details.
 
+There are also some helper functions to control the output format of individual values:
+- `yyjson_set_fp_to_float(yyjson_val *val, bool fpt)` and `yyjson_mut_set_fp_to_float(yyjson_mut_val *val, bool flt)` write this real number with `float` or `double` precision.
+- `yyjson_set_fp_to_fixed(yyjson_val *val, int prec)` and `yyjson_mut_set_fp_to_fixed(yyjson_mut_val *val, int prec)` write this real number using fixed-point notation, the prec should be in the range of 1 to 15.
 
 
 # Text Processing
@@ -1377,7 +1403,9 @@ This library only supports UTF-8 encoding without BOM, as specified in [RFC 8259
 
 By default, yyjson performs strict UTF-8 encoding validation on input strings. If an invalid character is encountered, an error will be reported.
 
-You can use `YYJSON_READ_ALLOW_INVALID_UNICODE` and `YYJSON_WRITE_ALLOW_INVALID_UNICODE` flags to allow invalid Unicode encoding. However, please note that if you enable these flags, the resulting value from yyjson may contain invalid characters, which can be used by other code and may introduce security risks.
+You can use `YYJSON_READ_ALLOW_INVALID_UNICODE` and `YYJSON_WRITE_ALLOW_INVALID_UNICODE` flags to allow invalid Unicode encoding. However, please note that if you enable these flags, the resulting values from yyjson may contain invalid characters, which could be used by other code and introduce security risks.
+
+You can use `yyjson_set_str_noesc(yyjson_val *val, bool noesc)` or `yyjson_mut_set_str_noesc(yyjson_mut_val *val, bool noesc)` to mark a string as not needing to be escaped during JSON writing. This will make string writing faster and preserve the original string bytes.
 
 ## NUL Character
 This library supports the `NUL` character (also known as the `null terminator`, or Unicode `U+0000`, ASCII `\0`) inside strings.

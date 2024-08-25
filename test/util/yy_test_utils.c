@@ -762,3 +762,73 @@ char *yy_dat_copy_line(yy_dat *dat, usize *len) {
     if (len) *len = _len;
     return str;
 }
+
+
+
+/*==============================================================================
+ * Time Utils
+ *============================================================================*/
+
+#ifdef __APPLE__
+#include <mach/mach_time.h>
+#endif
+
+double yy_get_time(void) {
+#if defined(_WIN32)
+    // Available since Windows 2000.
+    // precision: 1e-6 seconds (1us)
+    LARGE_INTEGER counter;
+    LARGE_INTEGER freq;
+    QueryPerformanceCounter(&counter);
+    QueryPerformanceFrequency(&freq);
+    return (double)counter.QuadPart / (double)freq.QuadPart;
+    
+#elif defined(__APPLE__)
+    // mach_timebase_info is stable
+    static mach_timebase_info_data_t clock_timebase = { 0 };
+    if (!clock_timebase.denom) {
+        mach_timebase_info(&clock_timebase);
+    }
+    uint64_t t = mach_absolute_time();
+    return ((double)t * clock_timebase.numer) / clock_timebase.denom / 1e9;
+    
+#else
+#   if defined(CLOCK_MONOTONIC)
+    // Elapsed wall-clock time, monotonic.
+    // https://man7.org/linux/man-pages/man2/clock_gettime.2.html
+    // https://man.freebsd.org/cgi/man.cgi?query=clock_gettime
+    struct timespec ts;
+    if (clock_gettime(CLOCK_MONOTONIC, &ts) == 0) { // Linux/BSD
+        return (double)ts.tv_sec + ts.tv_nsec / 1e9;
+    }
+#   endif
+    // fallback...
+    // Available since POSIX Issue 4, <sys/time.h>.
+    // precision: 1e-6 seconds (1us)
+    struct timeval now;
+    if (gettimeofday(&now, NULL) == -1) return 0;
+    return (double)now.tv_sec + (double)now.tv_usec * 1e-6;
+#endif
+}
+
+double yy_get_timestamp(void) {
+#ifdef _WIN32
+    // Available since Windows 2000.
+    // precision: 1e-3 seconds (1ms)
+    FILETIME ft;
+    GetSystemTimeAsFileTime(&ft);
+    
+    ULARGE_INTEGER ui;
+    ui.LowPart = ft.dwLowDateTime;
+    ui.HighPart = ft.dwHighDateTime;
+    
+    long long t = ui.QuadPart;
+    return (double)t * 1e-7 - 11644473600.0;
+#else
+    // Available since POSIX Issue 4, <sys/time.h>.
+    // precision: 1e-6 seconds (1us)
+    struct timeval now;
+    if (gettimeofday(&now, NULL) == -1) return 0;
+    return (double)now.tv_sec + (double)now.tv_usec * 1e-6;
+#endif
+}

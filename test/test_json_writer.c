@@ -857,6 +857,16 @@ yy_test_case(test_json_writer) {
         yy_assert(strcmp(ret, "[\"abc\"]") == 0);
         free(ret);
         
+        yyjson_set_str(val, "abc\n");
+        yyjson_set_str_noesc(val, true);
+        ret = yyjson_write(doc, 0, NULL);
+        yy_assert(strcmp(ret, "[\"abc\n\"]") == 0);
+        free(ret);
+        yyjson_set_str_noesc(val, false);
+        ret = yyjson_write(doc, 0, NULL);
+        yy_assert(strcmp(ret, "[\"abc\\n\"]") == 0);
+        free(ret);
+        
         yyjson_set_strn(val, "abcd", 3);
         ret = yyjson_write(doc, 0, NULL);
         yy_assert(strcmp(ret, "[\"abc\"]") == 0);

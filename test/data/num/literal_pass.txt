@@ -1,4 +1,5 @@
-# NaN and Infinity
+# ==============================================================================
+# NaN and Infinity literals
 
 NAN
 NaN

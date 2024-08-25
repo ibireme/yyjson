@@ -276,7 +276,7 @@ if(YYJSON_BUILD_TESTS)
                 add_test(${SRC_NAME} ${SRC_NAME})
             endif()
             
-            set_tests_properties(${SRC_NAME} PROPERTIES TIMEOUT 300)
+            set_tests_properties(${SRC_NAME} PROPERTIES TIMEOUT 600)
             message(STATUS "Add test: ${SRC_NAME}")
         endforeach()
         
@@ -475,7 +475,7 @@ if (YYJSON_BUILD_FUZZER)
 
         add_executable(fuzzer "fuzz/fuzzer.c")
         target_link_libraries(fuzzer yyjson)
-        add_test(test_fuzzer ${CMAKE_CURRENT_BINARY_DIR}/fuzzer -dict=fuzzer.dict -max_total_time=300 ${CMAKE_CURRENT_BINARY_DIR}/corpus)
+        add_test(test_fuzzer ${CMAKE_CURRENT_BINARY_DIR}/fuzzer -dict=fuzzer.dict -max_total_time=600 ${CMAKE_CURRENT_BINARY_DIR}/corpus)
         set_tests_properties(test_fuzzer PROPERTIES TIMEOUT 600)
     else()
         message(WARNING "LibFuzzer requires LLVM Clang as compiler")

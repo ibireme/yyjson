@@ -22,7 +22,23 @@
 #   include <io.h>
 #else
 #   include <dirent.h>
+#   include <unistd.h>
 #   include <sys/stat.h>
+#   include <sys/time.h>
+#endif
+
+/* warning suppress for tests */
+#if defined(__clang__)
+#   pragma clang diagnostic ignored "-Wunused-function"
+#   pragma clang diagnostic ignored "-Wunused-parameter"
+#   pragma clang diagnostic ignored "-Wunused-variable"
+#elif defined(__GNUC__)
+#   pragma GCC diagnostic ignored "-Wunused-function"
+#   pragma GCC diagnostic ignored "-Wunused-parameter"
+#   pragma GCC diagnostic ignored "-Wunused-variable"
+#elif defined(_MSC_VER)
+#   pragma warning(disable:4101) /* unused-parameter */
+#   pragma warning(disable:4100) /* unused-variable */
 #endif
 
 /* compiler builtin check (clang) */
@@ -388,6 +404,18 @@ char *yy_dat_read_line(yy_dat *dat, usize *len);
     The cursor will moved to next line.
     The return value should be release with free(). */
 char *yy_dat_copy_line(yy_dat *dat, usize *len);
+
+
+
+/*==============================================================================
+ * Time Utils
+ *============================================================================*/
+
+/**Get monotonic time in seconds (used to measure elapsed time). */
+double yy_get_time(void);
+
+/** Get UNIX timestamp in seconds since 1970 (system's wall clock). */
+double yy_get_timestamp(void);
 
 
 

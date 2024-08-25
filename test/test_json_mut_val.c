@@ -174,6 +174,28 @@ static void test_json_mut_val_api(void) {
     yy_assert(yyjson_mut_get_real(val) == (f64)0);
     yy_assert(yyjson_mut_get_num(val) == (f64)-123);
 
+    yy_assert(yyjson_mut_float(NULL, (f32)123.0) == NULL);
+    val = yyjson_mut_float(doc, (f32)123.0);
+    yy_assert(validate_mut_val_type(val, YYJSON_TYPE_NUM, YYJSON_SUBTYPE_REAL));
+    yy_assert((val->tag >> 32) == YYJSON_WRITE_FP_TO_FLOAT);
+    yy_assert(strcmp(yyjson_mut_get_type_desc(val), "real") == 0);
+    yy_assert(yyjson_mut_get_uint(val) == (u64)0);
+    yy_assert(yyjson_mut_get_sint(val) == (i64)0);
+    yy_assert(yyjson_mut_get_int(val) == (i64)0);
+    yy_assert((f32)yyjson_mut_get_real(val) == (f32)123.0);
+    yy_assert((f32)yyjson_mut_get_num(val) == (f32)123.0);
+    
+    yy_assert(yyjson_mut_double(NULL, 123.0) == NULL);
+    val = yyjson_mut_double(doc, 123.0);
+    yy_assert(validate_mut_val_type(val, YYJSON_TYPE_NUM, YYJSON_SUBTYPE_REAL));
+    yy_assert((val->tag >> 32) == 0);
+    yy_assert(strcmp(yyjson_mut_get_type_desc(val), "real") == 0);
+    yy_assert(yyjson_mut_get_uint(val) == (u64)0);
+    yy_assert(yyjson_mut_get_sint(val) == (i64)0);
+    yy_assert(yyjson_mut_get_int(val) == (i64)0);
+    yy_assert(yyjson_mut_get_real(val) == (f64)123.0);
+    yy_assert(yyjson_mut_get_num(val) == (f64)123.0);
+    
     yy_assert(yyjson_mut_real(NULL, 123.0) == NULL);
     val = yyjson_mut_real(doc, 123.0);
     yy_assert(validate_mut_val_type(val, YYJSON_TYPE_NUM, YYJSON_SUBTYPE_REAL));
@@ -810,6 +832,18 @@ static void test_json_mut_arr_api(void) {
     yy_assert(yyjson_mut_arr_add_int(doc, arr, -12));
     val = yyjson_mut_arr_get_last(arr);
     yy_assert(yyjson_mut_get_int(val) == -12);
+    
+    yy_assert(!yyjson_mut_arr_add_float(NULL, arr, (float)-20.0));
+    yy_assert(!yyjson_mut_arr_add_float(doc, NULL, (float)-20.0));
+    yy_assert(yyjson_mut_arr_add_float(doc, arr, (float)-20.0));
+    val = yyjson_mut_arr_get_last(arr);
+    yy_assert((float)yyjson_mut_get_real(val) == (float)-20.0);
+    
+    yy_assert(!yyjson_mut_arr_add_double(NULL, arr, -20.0));
+    yy_assert(!yyjson_mut_arr_add_double(doc, NULL, -20.0));
+    yy_assert(yyjson_mut_arr_add_double(doc, arr, -20.0));
+    val = yyjson_mut_arr_get_last(arr);
+    yy_assert(yyjson_mut_get_real(val) == -20.0);
     
     yy_assert(!yyjson_mut_arr_add_real(NULL, arr, -20.0));
     yy_assert(!yyjson_mut_arr_add_real(doc, NULL, -20.0));
@@ -1631,6 +1665,14 @@ static void test_json_mut_obj_api(void) {
     yy_assert(yyjson_mut_obj_add_int(doc, obj, "g", -456));
     val = yyjson_mut_obj_get(obj, "g");
     yy_assert(yyjson_mut_get_int(val) == -456);
+    
+    yy_assert(yyjson_mut_obj_add_float(doc, obj, "h", (float)789.0));
+    val = yyjson_mut_obj_get(obj, "h");
+    yy_assert((float)yyjson_mut_get_real(val) == (float)789.0);
+    
+    yy_assert(yyjson_mut_obj_add_double(doc, obj, "h", 789.0));
+    val = yyjson_mut_obj_get(obj, "h");
+    yy_assert(yyjson_mut_get_real(val) == 789.0);
     
     yy_assert(yyjson_mut_obj_add_real(doc, obj, "h", 789.0));
     val = yyjson_mut_obj_get(obj, "h");

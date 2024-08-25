@@ -1,6 +1,6 @@
-// Source code from: https://github.com/google/double-conversion (2022-01-31)
-// The code was rewritten from C++ into a single C file for easier integration.
-
+// Source code from: https://github.com/google/double-conversion (v3.3.0)
+// Rewritten from C++ to a single C file for easier integration.
+// Original code released under BSD 3-Clause, see full license below.
 
 
 // Copyright 2006-2011 the V8 project authors. All rights reserved.
@@ -91,23 +91,23 @@ static void fp_force_eval(double x) {
 static const double toint = 1/EPS;
 
 static double fp_ceil(double x) {
-    union {double f; uint64_t i;} u;
+    uint64_t u;
     memcpy((void *)&u, (void *)&x, sizeof(uint64_t));
     
-    int e = u.i >> 52 & 0x7ff;
+    int e = u >> 52 & 0x7ff;
     double y;
     
     if (e >= 0x3ff+52 || x == 0)
         return x;
     /* y = int(x) - x, where int(x) is an integer neighbor of x */
-    if (u.i >> 63)
+    if (u >> 63)
         y = x - toint + toint - x;
     else
         y = x + toint - toint - x;
     /* special case because of non-nearest rounding modes */
     if (e <= 0x3ff-1) {
         fp_force_eval(y);
-        return u.i >> 63 ? -0.0 : 1;
+        return u >> 63 ? -0.0 : 1;
     }
     if (y < 0)
         return x + y + 1;
@@ -126,6 +126,13 @@ static double fp_ceil(double x) {
 
 #ifndef MIN
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
+#endif
+
+// For C++11 and C23 compatibility
+#if __cplusplus >= 201103L || __STDC_VERSION__ >= 202311L
+#define DOUBLE_CONVERSION_NULLPTR nullptr
+#else
+#define DOUBLE_CONVERSION_NULLPTR NULL
 #endif
 
 // Use DOUBLE_CONVERSION_NON_PREFIXED_MACROS to get unprefixed macros as was
@@ -298,7 +305,7 @@ typedef struct Vector {
 } Vector;
 
 static void Vector_init(Vector *vec, char *data, int len) {
-    DOUBLE_CONVERSION_ASSERT(len == 0 || (len > 0 && data != NULL));
+    DOUBLE_CONVERSION_ASSERT(len == 0 || (len > 0 && data != DOUBLE_CONVERSION_NULLPTR));
     vec->start = data;
     vec->length = len;
 }
@@ -417,7 +424,7 @@ static void StringBuilder_AddCharacter(StringBuilder *sb, char c) {
 static void StringBuilder_AddSubstring(StringBuilder *sb, const char* s, int n) {
     DOUBLE_CONVERSION_ASSERT(!StringBuilder_is_finalized(sb) && sb->position + n < sb->buffer.length);
     DOUBLE_CONVERSION_ASSERT((size_t)(n) <= strlen(s));
-    memmove(sb->buffer.start + sb->position, s, n);
+    memmove(sb->buffer.start + sb->position, s, (size_t)n);
     sb->position += n;
 }
 
@@ -1062,8 +1069,8 @@ static void Bignum_Align(Bignum *b, Bignum *other) {
         for (int i = 0; i < zero_bigits; ++i) {
             *Bignum_RawBigit(b, i) = 0;
         }
-        b->used_bigits += zero_bigits;
-        b->exponent -= zero_bigits;
+        b->used_bigits += (int16_t)zero_bigits;
+        b->exponent -= (int16_t)zero_bigits;
         
         DOUBLE_CONVERSION_ASSERT(b->used_bigits >= 0);
         DOUBLE_CONVERSION_ASSERT(b->exponent >= 0);
@@ -1332,7 +1339,7 @@ static void Bignum_ShiftLeft(Bignum *b, int shift_amount) {
     if (b->used_bigits == 0) {
         return;
     }
-    b->exponent += (shift_amount / Bignum_kBigitSize);
+    b->exponent += (int16_t)(shift_amount / Bignum_kBigitSize);
     const int local_shift = shift_amount % Bignum_kBigitSize;
     Bignum_EnsureCapacity(b->used_bigits + 1);
     Bignum_BigitsShiftLeft(b, local_shift);
@@ -1491,7 +1498,7 @@ static void Bignum_AssignHexString(Bignum *b, Vector *value) {
     }
     if (tmp > 0) {
         DOUBLE_CONVERSION_ASSERT(tmp <= Bignum_kBigitMask);
-        *Bignum_RawBigit(b, b->used_bigits++) = (tmp & Bignum_kBigitMask);
+        *Bignum_RawBigit(b, b->used_bigits++) = (Bignum_Chunk)(tmp & Bignum_kBigitMask);
     }
     Bignum_Clamp(b);
 }
@@ -5266,7 +5273,9 @@ typedef enum D2S_Flags {
     D2S_EMIT_TRAILING_DECIMAL_POINT = 2,
     D2S_EMIT_TRAILING_ZERO_AFTER_POINT = 4,
     D2S_UNIQUE_ZERO = 8,
-    D2S_NO_TRAILING_ZERO = 16
+    D2S_NO_TRAILING_ZERO = 16,
+    EMIT_TRAILING_DECIMAL_POINT_IN_EXPONENTIAL = 32,
+    EMIT_TRAILING_ZERO_AFTER_POINT_IN_EXPONENTIAL = 64
 } D2S_Flags;
 
 // Flags should be a bit-or combination of the possible Flags-enum.
@@ -5285,6 +5294,13 @@ typedef enum D2S_Flags {
 //    of the result in precision mode. Matches printf's %g.
 //    When EMIT_TRAILING_ZERO_AFTER_POINT is also given, one trailing zero is
 //    preserved.
+//  - EMIT_TRAILING_DECIMAL_POINT_IN_EXPONENTIAL: when the input number has
+//    exactly one significant digit and is converted into exponent form then a
+//    trailing decimal point is appended to the significand in shortest mode
+//    or in precision mode with one requested digit.
+//  - EMIT_TRAILING_ZERO_AFTER_POINT_IN_EXPONENTIAL: in addition to a trailing
+//    decimal point emits a trailing '0'-character. This flag requires the
+//    EMIT_TRAILING_DECIMAL_POINT_IN_EXPONENTIAL flag.
 //
 // Infinity symbol and nan_symbol provide the string representation for these
 // special values. If the string is NULL and the special value is encountered
@@ -5319,6 +5335,22 @@ typedef enum D2S_Flags {
 //   ToPrecision(230.0, 2) -> "230"
 //   ToPrecision(230.0, 2) -> "230."  with EMIT_TRAILING_DECIMAL_POINT.
 //   ToPrecision(230.0, 2) -> "2.3e2" with EMIT_TRAILING_ZERO_AFTER_POINT.
+//
+// When converting numbers with exactly one significant digit to exponent
+// form in shortest mode or in precision mode with one requested digit, the
+// EMIT_TRAILING_DECIMAL_POINT and EMIT_TRAILING_ZERO_AFTER_POINT flags have
+// no effect. Use the EMIT_TRAILING_DECIMAL_POINT_IN_EXPONENTIAL flag to
+// append a decimal point in this case and the
+// EMIT_TRAILING_ZERO_AFTER_POINT_IN_EXPONENTIAL flag to also append a
+// '0'-character in this case.
+// Example with decimal_in_shortest_low = 0:
+//   ToShortest(0.0009) -> "9e-4"
+//     with EMIT_TRAILING_DECIMAL_POINT_IN_EXPONENTIAL deactivated.
+//   ToShortest(0.0009) -> "9.e-4"
+//     with EMIT_TRAILING_DECIMAL_POINT_IN_EXPONENTIAL activated.
+//   ToShortest(0.0009) -> "9.0e-4"
+//     with EMIT_TRAILING_DECIMAL_POINT_IN_EXPONENTIAL activated and
+//     EMIT_TRAILING_ZERO_AFTER_POINT_IN_EXPONENTIAL activated.
 //
 // The min_exponent_width is used for exponential representations.
 // The converter adds leading '0's to the exponent until the exponent
@@ -5641,7 +5673,7 @@ static bool D2S_HandleSpecialValues(DoubleToStringConverter *conv,
                                     StringBuilder *sb) {
     Double double_inspect = Double_make(value);
     if (Double_IsInfinite(&double_inspect)) {
-        if (conv->infinity_symbol == NULL) return false;
+        if (conv->infinity_symbol == DOUBLE_CONVERSION_NULLPTR) return false;
         if (value < 0) {
             StringBuilder_AddCharacter(sb, '-');
         }
@@ -5649,7 +5681,7 @@ static bool D2S_HandleSpecialValues(DoubleToStringConverter *conv,
         return true;
     }
     if (Double_IsNan(&double_inspect)) {
-        if (conv->nan_symbol == NULL) return false;
+        if (conv->nan_symbol == DOUBLE_CONVERSION_NULLPTR) return false;
         StringBuilder_AddString(sb, conv->nan_symbol);
         return true;
     }
@@ -5663,7 +5695,14 @@ static void D2S_CreateExponentialRepresentation(DoubleToStringConverter *conv,
                                                 StringBuilder *sb) {
     DOUBLE_CONVERSION_ASSERT(length != 0);
     StringBuilder_AddCharacter(sb, decimal_digits[0]);
-    if (length != 1) {
+    if (length == 1) {
+      if ((conv->flags & EMIT_TRAILING_DECIMAL_POINT_IN_EXPONENTIAL) != 0) {
+          StringBuilder_AddCharacter(sb, '.');
+        if ((conv->flags & EMIT_TRAILING_ZERO_AFTER_POINT_IN_EXPONENTIAL) != 0) {
+            StringBuilder_AddCharacter(sb, '0');
+        }
+      }
+    } else {
         StringBuilder_AddCharacter(sb, '.');
         StringBuilder_AddSubstring(sb, &decimal_digits[1], length-1);
     }
@@ -6029,23 +6068,36 @@ static void D2S_DoubleToAscii(double v,
 /// C wrapper
 /// ============================================================================
 
-int goo_dtoa(double val, char *buf, int len) {
-    if (!buf || len <= 1) return 0;
+static int imp_dtoa(bool is_double, double val, goo_fmt fmt, int prec, char *buf, int len) {
+    if (!buf || len < 1) return 0;
     StringBuilder sb = StringBuilder_make(buf, len);
+    
     DoubleToStringConverter conv = D2S_EcmaScriptConverter;
     conv.flags = D2S_EMIT_TRAILING_DECIMAL_POINT | D2S_EMIT_TRAILING_ZERO_AFTER_POINT;
-    if (!D2S_ToShortest(&conv, val, &sb)) return 0;
+    if (fmt == GOO_FMT_SHORTEST) {
+        if (is_double) {
+            if (!D2S_ToShortest(&conv, val, &sb)) return 0;
+        } else {
+            if (!D2S_ToShortestSingle(&conv, (float)val, &sb)) return 0;
+        }
+    } else if (fmt == GOO_FMT_FIXED) {
+        if (!D2S_ToFixed(&conv, val, prec, &sb)) return 0;
+    } else if (fmt == GOO_FMT_PRECISION) {
+        if (!D2S_ToPrecision(&conv, val, prec, &sb)) return 0;
+    } else if (fmt == GOO_FMT_EXPONENTIAL) {
+        if (!D2S_ToExponential(&conv, val, prec, &sb)) return 0;
+    }
+    
     int pos = sb.position;
     if (pos >= len) return 0;
     buf[pos] = '\0';
     return pos;
 }
 
-double goo_strtod(const char *str, int *len) {
-    if (!len) return 0.0;
-    int input_len = *len;
-    *len = 0;
-    if (!str || input_len < 1) return 0.0;
+double imp_strtod(bool is_double, const char *str, int len, int *proc_out) {
+    if (proc_out) *proc_out = 0;
+    if (!str || !len) return 0.0;
+    int proc = 0;
     
     StringToDoubleConverter conv;
     conv.flags =
@@ -6061,36 +6113,34 @@ double goo_strtod(const char *str, int *len) {
     conv.nan_symbol = "nan";
     conv.separator = '\0';
     
-    int processed = 0;
-    double val = StringToDouble(&conv, str, input_len, &processed);
-    if (processed == 0) {
-        *len = 0;
+    double val = StringToIeee(&conv, str, len, is_double, &proc);
+    if (proc == 0) {
+        if (proc_out) *proc_out = proc;
         return 0.0;
     }
     
     // process "infinity" literal
     Double d = Double_make(val);
     if (Double_IsInfinite(&d)) {
-        for (int i = 0; i < processed; i++) {
-            const char *full = "infinity";
-            int full_len = (int)strlen(full);
+        const char *cur = str;
+        while (S2D_isWhitespace(*cur)) cur++;
+        if (*cur == '-' || *cur == '+') cur++;
+        
+        const char *full = "infinity";
+        int full_len = (int)strlen(full);
+        int full_proc = (int)(cur - str) + full_len;
+        if (full_proc <= len) {
             bool full_match = true;
-            for (int j = 0; j < full_len; j++) {
-                if (S2D_ToLower(str[i + j]) != full[j]) {
-                    full_match = false;
-                    break;
-                }
+            for (int i = 0; i < full_len; i++) {
+                if (S2D_ToLower(cur[i]) != full[i]) full_match = false;
             }
-            if (full_match) {
-                processed += (int)(strlen(full) - strlen(conv.infinity_symbol));
-                break;
-            }
+            if (full_match) proc = full_proc;
         }
     }
     
     // process -0.0
-    if (val == 0.0) {
-        for (int i = 0; i < processed; i++) {
+    if (d.d64 == 0) {
+        for (int i = 0; i < proc; i++) {
             if (!S2D_isWhitespace(str[i])) {
                 if (str[i] == '-') val = -0.0;
                 break;
@@ -6098,8 +6148,24 @@ double goo_strtod(const char *str, int *len) {
         }
     }
     
-    *len = processed;
+    if (proc_out) *proc_out = proc;
     return val;
+}
+
+int goo_dtoa(double val, goo_fmt fmt, int prec, char *buf, int len) {
+    return imp_dtoa(true, val, fmt, prec, buf, len);
+}
+
+int goo_ftoa(float val, goo_fmt fmt, int prec, char *buf, int len) {
+    return imp_dtoa(false, val, fmt, prec, buf, len);
+}
+
+double goo_strtod(const char *str, int len, int *proc) {
+    return imp_strtod(true, str, len, proc);
+}
+
+float goo_strtof(const char *str, int len, int *proc) {
+    return (float)imp_strtod(false, str, len, proc);
 }
 
 

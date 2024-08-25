@@ -3,6 +3,15 @@ All notable changes to this project will be documented in this file.
 
 
 ## Unreleased
+#### Added
+- Add `YYJSON_WRITE_FP_TO_FLOAT` flag to write real numbers using single-precison.
+- Add `YYJSON_WRITE_FP_TO_FIXED(prec)` flag to write real numbers using fix-point notation.
+- Add `set_fp_to_fixed(val)` and `set_fp_to_prec(val, prec)` functions to control the output format of a specific number.
+- Add `set_str_noesc(val)` function to skip escaping for a specific string during writing.
+
+#### Changed
+- Rewrite the floating-point number to string functions using faster algorithm.
+
 #### Fixed
 - Fix some warnings when directly including yyjson.c: #177
 - Fix missing indent for `YYJSON_TYPE_RAW` in prettify function: #178
