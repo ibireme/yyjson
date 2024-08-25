@@ -234,7 +234,7 @@ yyjson, feel free to open a PR to add it to this list.
 * [x] Add more tests: valgrind, sanitizer, fuzzing.
 * [x] Support JSON Pointer to query and modify JSON.
 * [x] Add `RAW` type for JSON reader and writer.
-* [ ] Add option to limit real number output precision.
+* [x] Add option to limit real number output precision.
 * [ ] Add option to support JSON5 (if feasible).
 * [ ] Add functions to diff two JSON documents.
 * [ ] Add documentation on performance optimizations.
