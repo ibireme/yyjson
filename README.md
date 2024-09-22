@@ -226,7 +226,7 @@ yyjson, feel free to open a PR to add it to this list.
 | [Zrythm][]      | C        | Digital Audio Workstation that uses yyjson to serialize JSON project files               |
 | [bemorehuman][] | C        | Recommendation engine with a focus on uniqueness of the person receiving the rec         |
 | [mruby-yyjson][]| mruby    | Efficient JSON parsing and serialization library for mruby using yyjson                  |
-
+| [YYJSON.jl][]   | Julia    | Julia bindings for yyjson                                                                |
 
 # TODO for v1.0
 * [x] Add documentation page.
@@ -243,7 +243,6 @@ yyjson, feel free to open a PR to add it to this list.
 # License
 This project is released under the MIT license.
 
-
 [py_yyjson]: https://github.com/tktech/py_yyjson
 [orjson]: https://github.com/ijl/orjson
 [cpp-yyjson]: https://github.com/yosh-matsuda/cpp-yyjson
@@ -255,3 +254,4 @@ This project is released under the MIT license.
 [Zrythm]: https://github.com/zrythm/zrythm
 [bemorehuman]: https://github.com/BeMoreHumanOrg/bemorehuman
 [mruby-yyjson]: https://github.com/buty4649/mruby-yyjson
+[YYJSON.jl]: https://github.com/bhftbootcamp/YYJSON.jl
