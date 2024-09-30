@@ -908,6 +908,7 @@ yyjson_mut_val *name3 = yyjson_mut_str(doc, "Hermione");
 yyjson_mut_arr_append(names, name1);
 yyjson_mut_arr_append(names, name2);
 yyjson_mut_arr_append(names, name3);
+yyjson_mut_obj_add(root, yyjson_mut_str(doc, "names"), names);
 
 // ❌ Wrong! the value is already added to another container.
 yyjson_mut_obj_add(root, key, name1);
