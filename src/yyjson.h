@@ -3913,6 +3913,18 @@ yyjson_api_inline bool yyjson_mut_obj_add_val(yyjson_mut_doc *doc,
                                               const char *key,
                                               yyjson_mut_val *val);
 
+/** Adds a JSON value at the end of the object.
+    The `key` could contain a null byte.
+    This function allows duplicated key in one object.
+
+    @warning The key string is not copied, you should keep the string
+        unmodified for the lifetime of this JSON document. */
+yyjson_api_inline bool yyjson_mut_obj_add_keyn_val(yyjson_mut_doc *doc,
+                                                   yyjson_mut_val *obj,
+                                                   const char *key,
+                                                   size_t key_len,
+                                                   yyjson_mut_val *val);
+
 /** Removes all key-value pairs for the given key.
     Returns the first value to which the specified key is mapped or NULL if this
     object contains no mapping for the key.
@@ -7064,6 +7076,25 @@ yyjson_api_inline bool yyjson_mut_obj_rotate(yyjson_mut_val *obj,
     } \
     return false
 
+#define yyjson_mut_obj_add_keyn_func(func) \
+    if (yyjson_likely(doc && yyjson_mut_is_obj(obj) && _key)) { \
+        yyjson_mut_val *key = unsafe_yyjson_mut_val(doc, 2); \
+        if (yyjson_likely(key)) { \
+            size_t len = unsafe_yyjson_get_len(obj); \
+            yyjson_mut_val *val = key + 1; \
+            size_t key_len = _key_len; \
+            bool noesc = unsafe_yyjson_is_str_noesc(_key, key_len); \
+            key->tag = YYJSON_TYPE_STR; \
+            key->tag |= noesc ? YYJSON_SUBTYPE_NOESC : YYJSON_SUBTYPE_NONE; \
+            key->tag |= (uint64_t)_key_len << YYJSON_TAG_BIT; \
+            key->uni.str = _key; \
+            func \
+            unsafe_yyjson_mut_obj_add(obj, key, val, len); \
+            return true; \
+        } \
+    } \
+    return false
+
 yyjson_api_inline bool yyjson_mut_obj_add_null(yyjson_mut_doc *doc,
                                                yyjson_mut_val *obj,
                                                const char *_key) {
@@ -7205,6 +7236,17 @@ yyjson_api_inline bool yyjson_mut_obj_add_val(yyjson_mut_doc *doc,
                                               yyjson_mut_val *_val) {
     if (yyjson_unlikely(!_val)) return false;
     yyjson_mut_obj_add_func({
+        val = _val;
+    });
+}
+
+yyjson_api_inline bool yyjson_mut_obj_add_keyn_val(yyjson_mut_doc *doc,
+                                                   yyjson_mut_val *obj,
+                                                   const char *_key,
+                                                   size_t _key_len,
+                                                   yyjson_mut_val *_val) {
+    if (yyjson_unlikely(!_val)) return false;
+    yyjson_mut_obj_add_keyn_func({
         val = _val;
     });
 }
