@@ -7082,8 +7082,7 @@ yyjson_api_inline bool yyjson_mut_obj_rotate(yyjson_mut_val *obj,
         if (yyjson_likely(key)) { \
             size_t len = unsafe_yyjson_get_len(obj); \
             yyjson_mut_val *val = key + 1; \
-            size_t key_len = _key_len; \
-            bool noesc = unsafe_yyjson_is_str_noesc(_key, key_len); \
+            bool noesc = unsafe_yyjson_is_str_noesc(_key, _key_len); \
             key->tag = YYJSON_TYPE_STR; \
             key->tag |= noesc ? YYJSON_SUBTYPE_NOESC : YYJSON_SUBTYPE_NONE; \
             key->tag |= (uint64_t)_key_len << YYJSON_TAG_BIT; \
