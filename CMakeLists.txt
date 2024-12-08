@@ -81,6 +81,7 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 include(XcodeProperty)
 
 if(XCODE)
+    # Flag string for Xcode property
     set(YYJSON_FLAGS "-Wall -Wextra -Werror -pedantic -pedantic-errors")
     if(YYJSON_ENABLE_FASTMATH)
         set(YYJSON_FLAGS "${YYJSON_FLAGS} -ffast-math")
@@ -98,18 +99,20 @@ if(XCODE)
     set_xcode_property(yyjson OTHER_CFLAGS[variant=Release] ${YYJSON_FLAGS})
     
 elseif(MSVC)
+    # Flag list for MSVC
     set(YYJSON_FLAGS "/utf-8")
     if(YYJSON_ENABLE_FASTMATH)
-        set(YYJSON_FLAGS "${YYJSON_FLAGS} /fp:fast")
+        list(APPEND YYJSON_FLAGS "/fp:fast")
     endif()
     
     target_compile_options(yyjson PRIVATE $<$<C_COMPILER_ID:MSVC>:${YYJSON_FLAGS}>)
     target_compile_options(yyjson PRIVATE $<$<CXX_COMPILER_ID:MSVC>:${YYJSON_FLAGS}>)
     
 elseif(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang|Intel")
-    set(YYJSON_FLAGS "")
+    # Flag list for GCC like compilers
+    set(YYJSON_FLAGS)
     if(YYJSON_ENABLE_FASTMATH)
-        set(YYJSON_FLAGS "-ffast-math")
+        list(APPEND YYJSON_FLAGS "-ffast-math")
     endif()
     
     target_compile_options(yyjson PRIVATE $<$<COMPILE_LANGUAGE:C>:${YYJSON_FLAGS}>)
