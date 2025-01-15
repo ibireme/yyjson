@@ -808,6 +808,9 @@ static const yyjson_read_flag YYJSON_READ_ALLOW_INVALID_UNICODE = 1 << 6;
     The flag will be overridden by `YYJSON_READ_NUMBER_AS_RAW` flag. */
 static const yyjson_read_flag YYJSON_READ_BIGNUM_AS_RAW         = 1 << 7;
 
+/** Read incrementally. TODO: Documentation. */
+static const yyjson_read_flag YYJSON_READ_INCREMENTAL           = 1 << 8;
+
 
 
 /** Result code for JSON reader. */
@@ -855,6 +858,9 @@ static const yyjson_read_code YYJSON_READ_ERROR_FILE_OPEN               = 12;
 /** Failed to read a file. */
 static const yyjson_read_code YYJSON_READ_ERROR_FILE_READ               = 13;
 
+/** Unexpected ending during incremental parsing. Parsing state is saved. */
+static const yyjson_read_code YYJSON_READ_ERROR_MORE                    = 14;
+
 /** Error information for JSON reader. */
 typedef struct yyjson_read_err {
     /** Error code, see `yyjson_read_code` for all possible values. */
@@ -864,6 +870,26 @@ typedef struct yyjson_read_err {
     /** Error byte position for input data (0 if success). */
     size_t pos;
 } yyjson_read_err;
+
+/** State for incremental JSON reader, including error information. */
+typedef struct yyjson_read_incremental_state {
+    /** Embedded error, see `yyjson_read_err`. */
+    yyjson_read_err err;
+    /** Parser state, to be able to resume parsing. */
+    uint8_t *hdr;
+    uint8_t *cur;
+    uint8_t *end;
+    size_t dat_len;
+    size_t hdr_len;
+    size_t alc_len;
+    size_t alc_max;
+    size_t ctn_len;
+    yyjson_val *val_hdr; /* the head of allocated values */
+    yyjson_val *val_end; /* the end of allocated values */
+    yyjson_val *val; /* current JSON value */
+    yyjson_val *ctn; /* current container */
+    int label; /* current parser goto label */
+} yyjson_read_incremental_state;
 
 
 
@@ -897,6 +923,22 @@ yyjson_api yyjson_doc *yyjson_read_opts(char *dat,
                                         yyjson_read_flag flg,
                                         const yyjson_alc *alc,
                                         yyjson_read_err *err);
+
+/**
+ * Incrementally read JSON.
+ *
+ * This function is like `yyjson_read_opts` and allows incremental parsing.
+ *
+ * If NULL is returned, the error code is stored in `state->err.code`. If the
+ * error code is YYJSON_READ_ERROR_MORE, append more JSON data to `dat` and call
+ * this function again with the same `state`. The ... (fixme: references to the
+ * string pool)
+ */
+yyjson_api yyjson_doc *yyjson_read_incremental(char *dat,
+                                               size_t len,
+                                               yyjson_read_flag flg,
+                                               const yyjson_alc *alc,
+                                               yyjson_read_incremental_state *state);
 
 /**
  Read a JSON file.

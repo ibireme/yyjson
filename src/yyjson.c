@@ -388,6 +388,15 @@ uint32_t yyjson_version(void) {
 #define has_read_flag(_flag) unlikely(read_flag_eq(flg, YYJSON_READ_##_flag))
 #define has_write_flag(_flag) unlikely(write_flag_eq(flg, YYJSON_WRITE_##_flag))
 
+/* labels within read functions for resuming parsing */
+#define YYJSON_READ_LABEL_doc_begin 0
+#define YYJSON_READ_LABEL_arr_val_begin 1
+#define YYJSON_READ_LABEL_arr_val_end 2
+#define YYJSON_READ_LABEL_obj_key_begin 3
+#define YYJSON_READ_LABEL_obj_key_end 4
+#define YYJSON_READ_LABEL_obj_val_begin 5
+#define YYJSON_READ_LABEL_obj_val_end 6
+
 static_inline bool read_flag_eq(yyjson_read_flag flg, yyjson_read_flag chk) {
 #if YYJSON_DISABLE_NON_STANDARD
     if (chk == YYJSON_READ_ALLOW_INF_AND_NAN ||
@@ -5889,6 +5898,7 @@ static_inline yyjson_doc *read_root_minify(u8 *hdr,
 #define return_err(_pos, _code, _msg) do { \
     if (is_truncated_end(hdr, _pos, end, YYJSON_READ_ERROR_##_code, flg)) { \
         err->pos = (usize)(end - hdr); \
+        if (has_read_flag(INCREMENTAL)) goto incremental_unexpected_end; \
         err->code = YYJSON_READ_ERROR_UNEXPECTED_END; \
         err->msg = "unexpected end of data"; \
     } else { \
@@ -5914,8 +5924,26 @@ static_inline yyjson_doc *read_root_minify(u8 *hdr,
         if ((!val_tmp)) goto fail_alloc; \
         val = val_tmp + val_ofs; \
         ctn = val_tmp + ctn_ofs; \
+        if (has_read_flag(INCREMENTAL)) { \
+            yyjson_read_incremental_state *state = (yyjson_read_incremental_state *)err; \
+            usize saved_val_ofs = (usize)(state->val - val_hdr); \
+            state->val = val_tmp + saved_val_ofs; \
+        } \
         val_hdr = val_tmp; \
         val_end = val_tmp + (alc_len - 2); \
+    } \
+} while (false)
+
+#define save_incremental_state(_label) do { \
+    /* save position where it's possible to resume incremental parsing */ \
+    if (has_read_flag(INCREMENTAL)) { \
+        yyjson_read_incremental_state *state = (yyjson_read_incremental_state *)err; \
+        state->label = YYJSON_READ_LABEL_##_label; \
+        state->cur = cur; \
+        state->val = val; \
+        state->ctn_len = ctn_len; \
+        state->hdr_len = hdr_len; \
+        if (unlikely(cur >= end)) goto incremental_unexpected_end; \
     } \
 } while (false)
 
@@ -5937,11 +5965,62 @@ static_inline yyjson_doc *read_root_minify(u8 *hdr,
     bool inv; /* allow invalid unicode */
     u8 *raw_end; /* raw end for null-terminator */
     u8 **pre; /* previous raw end pointer */
+    u8 saved_end = '\0'; /* saved end char in incremental parsing */
+
+    /* initialized for early return_err */
+    alc_len = 0;
+    val_end = 0;
+    val_hdr = NULL;
+    ctn = NULL;
+
+    alc_max = USIZE_MAX / sizeof(yyjson_val);
+    raw = has_read_flag(NUMBER_AS_RAW) || has_read_flag(BIGNUM_AS_RAW);
+    inv = has_read_flag(ALLOW_INVALID_UNICODE) != 0;
+    raw_end = NULL;
+    pre = raw ? &raw_end : NULL;
+
+    if (has_read_flag(INCREMENTAL)) {
+        yyjson_read_incremental_state *state = (yyjson_read_incremental_state *)err;
+        if (!has_read_flag(INSITU)) {
+            return_err(hdr, INVALID_PARAMETER, "incremental read requires INSITU");
+        }
+        /* insert null terminator to make us stop at the specified end, even if
+           the data contains more valid JSON */
+        saved_end = *end;
+        *end = '\0';
+        if (err->code == YYJSON_READ_ERROR_MORE && state->label != YYJSON_READ_LABEL_doc_begin) {
+#ifdef DEBUG
+            printf("Reading %2ld bytes stating from offset %2ld: %s\n", (end - hdr), state->cur - hdr, state->cur);
+#endif
+            /* restore parser state */
+            if (hdr != state->hdr) {
+                return_err(hdr, INVALID_PARAMETER, "data pointer has changed");
+            }
+            cur = state->cur;
+            val = state->val;
+            ctn_len = state->ctn_len;
+            hdr_len = state->hdr_len;
+            alc_len = state->alc_len;
+            val_hdr = state->val_hdr;
+            val_end = state->val_end;
+            ctn = state->ctn;
+
+            /* resume parsing from the last save point */
+            switch (state->label) {
+            case YYJSON_READ_LABEL_arr_val_begin: goto arr_val_begin;
+            case YYJSON_READ_LABEL_arr_val_end: goto arr_val_end;
+            case YYJSON_READ_LABEL_obj_key_begin: goto obj_key_begin;
+            case YYJSON_READ_LABEL_obj_key_end: goto obj_key_end;
+            case YYJSON_READ_LABEL_obj_val_begin: goto obj_val_begin;
+            case YYJSON_READ_LABEL_obj_val_end: goto obj_val_end;
+            default: return_err(hdr, INVALID_PARAMETER, "invalid incremental state");
+            }
+        }
+    }
 
     dat_len = has_read_flag(STOP_WHEN_DONE) ? 256 : (usize)(end - cur);
     hdr_len = sizeof(yyjson_doc) / sizeof(yyjson_val);
     hdr_len += (sizeof(yyjson_doc) % sizeof(yyjson_val)) > 0;
-    alc_max = USIZE_MAX / sizeof(yyjson_val);
     alc_len = hdr_len + (dat_len / YYJSON_READER_ESTIMATED_MINIFY_RATIO) + 4;
     alc_len = yyjson_min(alc_len, alc_max);
 
@@ -5951,10 +6030,6 @@ static_inline yyjson_doc *read_root_minify(u8 *hdr,
     val = val_hdr + hdr_len;
     ctn = val;
     ctn_len = 0;
-    raw = has_read_flag(NUMBER_AS_RAW) || has_read_flag(BIGNUM_AS_RAW);
-    inv = has_read_flag(ALLOW_INVALID_UNICODE) != 0;
-    raw_end = NULL;
-    pre = raw ? &raw_end : NULL;
 
     if (*cur++ == '{') {
         ctn->tag = YYJSON_TYPE_OBJ;
@@ -5981,6 +6056,7 @@ arr_begin:
     ctn_len = 0;
 
 arr_val_begin:
+    save_incremental_state(arr_val_begin);
     if (*cur == '{') {
         cur++;
         goto obj_begin;
@@ -5992,7 +6068,7 @@ arr_val_begin:
     if (char_is_number(*cur)) {
         val_incr();
         ctn_len++;
-        if (likely(read_number(&cur, pre, flg, val, &msg))) goto arr_val_end;
+        if (likely(read_number(&cur, pre, flg, val, &msg))) goto arr_val_maybe_end;
         goto fail_number;
     }
     if (*cur == '"') {
@@ -6037,7 +6113,7 @@ arr_val_begin:
         (*cur == 'i' || *cur == 'I' || *cur == 'N')) {
         val_incr();
         ctn_len++;
-        if (read_inf_or_nan(false, &cur, pre, flg, val)) goto arr_val_end;
+        if (read_inf_or_nan(false, &cur, pre, flg, val)) goto arr_val_maybe_end;
         goto fail_character_val;
     }
     if (has_read_flag(ALLOW_COMMENTS)) {
@@ -6046,7 +6122,13 @@ arr_val_begin:
     }
     goto fail_character_val;
 
+arr_val_maybe_end:
+    /* if incremental parsing stops in the middle of a number, it may continue
+       with more digits, so arr val maybe didn't end yet */
+    if (has_read_flag(INCREMENTAL) && cur >= end) goto incremental_unexpected_end;
+
 arr_val_end:
+    save_incremental_state(arr_val_end);
     if (*cur == ',') {
         cur++;
         goto arr_val_begin;
@@ -6095,6 +6177,7 @@ obj_begin:
     ctn_len = 0;
 
 obj_key_begin:
+    save_incremental_state(obj_key_begin);
     if (likely(*cur == '"')) {
         val_incr();
         ctn_len++;
@@ -6119,6 +6202,7 @@ obj_key_begin:
     goto fail_character_obj_key;
 
 obj_key_end:
+    save_incremental_state(obj_key_end);
     if (*cur == ':') {
         cur++;
         goto obj_val_begin;
@@ -6134,6 +6218,7 @@ obj_key_end:
     goto fail_character_obj_sep;
 
 obj_val_begin:
+    save_incremental_state(obj_val_begin);
     if (*cur == '"') {
         val++;
         ctn_len++;
@@ -6143,7 +6228,7 @@ obj_val_begin:
     if (char_is_number(*cur)) {
         val++;
         ctn_len++;
-        if (likely(read_number(&cur, pre, flg, val, &msg))) goto obj_val_end;
+        if (likely(read_number(&cur, pre, flg, val, &msg))) goto obj_val_maybe_end;
         goto fail_number;
     }
     if (*cur == '{') {
@@ -6183,7 +6268,7 @@ obj_val_begin:
         (*cur == 'i' || *cur == 'I' || *cur == 'N')) {
         val++;
         ctn_len++;
-        if (read_inf_or_nan(false, &cur, pre, flg, val)) goto obj_val_end;
+        if (read_inf_or_nan(false, &cur, pre, flg, val)) goto obj_val_maybe_end;
         goto fail_character_val;
     }
     if (has_read_flag(ALLOW_COMMENTS)) {
@@ -6192,7 +6277,13 @@ obj_val_begin:
     }
     goto fail_character_val;
 
+obj_val_maybe_end:
+    /* if incremental parsing stops in the middle of a number, it may continue
+       with more digits, so obj val maybe didn't end yet */
+    if (has_read_flag(INCREMENTAL) && cur >= end) goto incremental_unexpected_end;
+
 obj_val_end:
+    save_incremental_state(obj_val_end);
     if (likely(*cur == ',')) {
         cur++;
         goto obj_key_begin;
@@ -6246,6 +6337,23 @@ doc_end:
     doc->val_read = (usize)((val - doc->root) + 1);
     doc->str_pool = has_read_flag(INSITU) ? NULL : (char *)hdr;
     return doc;
+
+incremental_unexpected_end:
+    /* save parser state in extended error struct, in addition to what was
+     * stored in the last save_incremental_state */
+    err->code = YYJSON_READ_ERROR_MORE;
+    err->msg = "need more data";
+    {
+        yyjson_read_incremental_state *state = (yyjson_read_incremental_state *)err;
+        state->hdr = hdr;
+        state->val_hdr = val_hdr;
+        state->val_end = val_end;
+        state->ctn = ctn;
+        state->alc_len = alc_len;
+    }
+    /* restore the end where we've inserted a null terminator */
+    *end = saved_end;
+    return NULL;
 
 fail_string:
     return_err(cur, INVALID_STRING, msg);
@@ -6303,6 +6411,7 @@ static_inline yyjson_doc *read_root_pretty(u8 *hdr,
 #define return_err(_pos, _code, _msg) do { \
     if (is_truncated_end(hdr, _pos, end, YYJSON_READ_ERROR_##_code, flg)) { \
         err->pos = (usize)(end - hdr); \
+        if (has_read_flag(INCREMENTAL)) goto incremental_unexpected_end; \
         err->code = YYJSON_READ_ERROR_UNEXPECTED_END; \
         err->msg = "unexpected end of data"; \
     } else { \
@@ -6328,8 +6437,26 @@ static_inline yyjson_doc *read_root_pretty(u8 *hdr,
         if ((!val_tmp)) goto fail_alloc; \
         val = val_tmp + val_ofs; \
         ctn = val_tmp + ctn_ofs; \
+        if (has_read_flag(INCREMENTAL)) { \
+            yyjson_read_incremental_state *state = (yyjson_read_incremental_state *)err; \
+            usize saved_val_ofs = (usize)(state->val - val_hdr); \
+            state->val = val_tmp + saved_val_ofs; \
+        } \
         val_hdr = val_tmp; \
         val_end = val_tmp + (alc_len - 2); \
+    } \
+} while (false)
+
+#define save_incremental_state(_label) do { \
+    /* save position where it's possible to resume incremental parsing */ \
+    if (has_read_flag(INCREMENTAL)) { \
+        yyjson_read_incremental_state *state = (yyjson_read_incremental_state *)err; \
+        state->label = YYJSON_READ_LABEL_##_label; \
+        state->cur = cur; \
+        state->val = val; \
+        state->ctn_len = ctn_len; \
+        state->hdr_len = hdr_len; \
+        if (unlikely(cur >= end)) goto incremental_unexpected_end; \
     } \
 } while (false)
 
@@ -6351,6 +6478,58 @@ static_inline yyjson_doc *read_root_pretty(u8 *hdr,
     bool inv; /* allow invalid unicode */
     u8 *raw_end; /* raw end for null-terminator */
     u8 **pre; /* previous raw end pointer */
+    u8 saved_end = '\0'; /* saved end char in incremental parsing */
+
+    /* initialized for early return_err */
+    alc_len = 0;
+    val_end = 0;
+    val_hdr = NULL;
+    ctn = NULL;
+
+    alc_max = USIZE_MAX / sizeof(yyjson_val);
+    raw = has_read_flag(NUMBER_AS_RAW) || has_read_flag(BIGNUM_AS_RAW);
+    inv = has_read_flag(ALLOW_INVALID_UNICODE) != 0;
+    raw_end = NULL;
+    pre = raw ? &raw_end : NULL;
+
+    if (has_read_flag(INCREMENTAL)) {
+        yyjson_read_incremental_state *state = (yyjson_read_incremental_state *)err;
+        if (!has_read_flag(INSITU)) {
+            return_err(hdr, INVALID_PARAMETER, "incremental read requires INSITU");
+        }
+        /* insert null terminator to make us stop at the specified end, even if
+           the data contains more valid JSON */
+        saved_end = *end;
+        *end = '\0';
+        if (err->code == YYJSON_READ_ERROR_MORE && state->label != YYJSON_READ_LABEL_doc_begin) {
+#ifdef DEBUG
+            printf("Reading %2d bytes stating from offset %2d: %s\n", (end - hdr), state->cur - hdr, state->cur);
+#endif
+            /* restore parser state */
+            if (hdr != state->hdr) {
+                return_err(hdr, INVALID_PARAMETER, "data pointer has changed");
+            }
+            cur = state->cur;
+            val = state->val;
+            ctn_len = state->ctn_len;
+            hdr_len = state->hdr_len;
+            alc_len = state->alc_len;
+            val_hdr = state->val_hdr;
+            val_end = state->val_end;
+            ctn = state->ctn;
+
+            /* resume parsing from the last save point */
+            switch (state->label) {
+            case YYJSON_READ_LABEL_arr_val_begin: goto arr_val_begin;
+            case YYJSON_READ_LABEL_arr_val_end: goto arr_val_end;
+            case YYJSON_READ_LABEL_obj_key_begin: goto obj_key_begin;
+            case YYJSON_READ_LABEL_obj_key_end: goto obj_key_end;
+            case YYJSON_READ_LABEL_obj_val_begin: goto obj_val_begin;
+            case YYJSON_READ_LABEL_obj_val_end: goto obj_val_end;
+            default: return_err(hdr, INVALID_PARAMETER, "invalid incremental state");
+            }
+        }
+    }
 
     dat_len = has_read_flag(STOP_WHEN_DONE) ? 256 : (usize)(end - cur);
     hdr_len = sizeof(yyjson_doc) / sizeof(yyjson_val);
@@ -6365,10 +6544,6 @@ static_inline yyjson_doc *read_root_pretty(u8 *hdr,
     val = val_hdr + hdr_len;
     ctn = val;
     ctn_len = 0;
-    raw = has_read_flag(NUMBER_AS_RAW) || has_read_flag(BIGNUM_AS_RAW);
-    inv = has_read_flag(ALLOW_INVALID_UNICODE) != 0;
-    raw_end = NULL;
-    pre = raw ? &raw_end : NULL;
 
     if (*cur++ == '{') {
         ctn->tag = YYJSON_TYPE_OBJ;
@@ -6398,6 +6573,7 @@ arr_begin:
     if (*cur == '\n') cur++;
 
 arr_val_begin:
+    save_incremental_state(arr_val_begin);
 #if YYJSON_IS_REAL_GCC
     while (true) repeat16({
         if (byte_match_2(cur, "  ")) cur += 2;
@@ -6421,7 +6597,7 @@ arr_val_begin:
     if (char_is_number(*cur)) {
         val_incr();
         ctn_len++;
-        if (likely(read_number(&cur, pre, flg, val, &msg))) goto arr_val_end;
+        if (likely(read_number(&cur, pre, flg, val, &msg))) goto arr_val_maybe_end;
         goto fail_number;
     }
     if (*cur == '"') {
@@ -6466,7 +6642,7 @@ arr_val_begin:
         (*cur == 'i' || *cur == 'I' || *cur == 'N')) {
         val_incr();
         ctn_len++;
-        if (read_inf_or_nan(false, &cur, pre, flg, val)) goto arr_val_end;
+        if (read_inf_or_nan(false, &cur, pre, flg, val)) goto arr_val_maybe_end;
         goto fail_character_val;
     }
     if (has_read_flag(ALLOW_COMMENTS)) {
@@ -6475,7 +6651,13 @@ arr_val_begin:
     }
     goto fail_character_val;
 
+arr_val_maybe_end:
+    /* if incremental parsing stops in the middle of a number, it may continue
+       with more digits, so arr val maybe didn't end yet */
+    if (has_read_flag(INCREMENTAL) && cur >= end) goto incremental_unexpected_end;
+
 arr_val_end:
+    save_incremental_state(arr_val_end);
     if (byte_match_2(cur, ",\n")) {
         cur += 2;
         goto arr_val_begin;
@@ -6530,6 +6712,7 @@ obj_begin:
     if (*cur == '\n') cur++;
 
 obj_key_begin:
+    save_incremental_state(obj_key_begin);
 #if YYJSON_IS_REAL_GCC
     while (true) repeat16({
         if (byte_match_2(cur, "  ")) cur += 2;
@@ -6565,6 +6748,7 @@ obj_key_begin:
     goto fail_character_obj_key;
 
 obj_key_end:
+    save_incremental_state(obj_key_end);
     if (byte_match_2(cur, ": ")) {
         cur += 2;
         goto obj_val_begin;
@@ -6584,6 +6768,7 @@ obj_key_end:
     goto fail_character_obj_sep;
 
 obj_val_begin:
+    save_incremental_state(obj_val_begin);
     if (*cur == '"') {
         val++;
         ctn_len++;
@@ -6593,7 +6778,7 @@ obj_val_begin:
     if (char_is_number(*cur)) {
         val++;
         ctn_len++;
-        if (likely(read_number(&cur, pre, flg, val, &msg))) goto obj_val_end;
+        if (likely(read_number(&cur, pre, flg, val, &msg))) goto obj_val_maybe_end;
         goto fail_number;
     }
     if (*cur == '{') {
@@ -6633,7 +6818,7 @@ obj_val_begin:
         (*cur == 'i' || *cur == 'I' || *cur == 'N')) {
         val++;
         ctn_len++;
-        if (read_inf_or_nan(false, &cur, pre, flg, val)) goto obj_val_end;
+        if (read_inf_or_nan(false, &cur, pre, flg, val)) goto obj_val_maybe_end;
         goto fail_character_val;
     }
     if (has_read_flag(ALLOW_COMMENTS)) {
@@ -6642,7 +6827,13 @@ obj_val_begin:
     }
     goto fail_character_val;
 
+obj_val_maybe_end:
+    /* if incremental parsing stops in the middle of a number, it may continue
+       with more digits, so obj val maybe didn't end yet */
+    if (has_read_flag(INCREMENTAL) && cur >= end) goto incremental_unexpected_end;
+
 obj_val_end:
+    save_incremental_state(obj_val_end);
     if (byte_match_2(cur, ",\n")) {
         cur += 2;
         goto obj_key_begin;
@@ -6701,6 +6892,23 @@ doc_end:
     doc->val_read = (usize)((val - val_hdr)) - hdr_len + 1;
     doc->str_pool = has_read_flag(INSITU) ? NULL : (char *)hdr;
     return doc;
+
+incremental_unexpected_end:
+    /* save parser state in extended error struct, in addition to what was
+     * stored in the last save_incremental_state */
+    err->code = YYJSON_READ_ERROR_MORE;
+    err->msg = "need more data";
+    {
+        yyjson_read_incremental_state *state = (yyjson_read_incremental_state *)err;
+        state->hdr = hdr;
+        state->val_hdr = val_hdr;
+        state->val_end = val_end;
+        state->ctn = ctn;
+        state->alc_len = alc_len;
+    }
+    /* restore the end where we've inserted a null terminator */
+    *end = saved_end;
+    return NULL;
 
 fail_string:
     return_err(cur, INVALID_STRING, msg);
@@ -6785,6 +6993,9 @@ yyjson_doc *yyjson_read_opts(char *dat,
     if (unlikely(!len)) {
         return_err(0, INVALID_PARAMETER, "input length is 0");
     }
+    if (has_read_flag(INCREMENTAL) && !has_read_flag(INSITU)) {
+        return_err(0, INVALID_PARAMETER, "INCREMENTAL requires INSITU");
+    }
 
     /* add 4-byte zero padding for input data if necessary */
     if (has_read_flag(INSITU)) {
@@ -6806,7 +7017,7 @@ yyjson_doc *yyjson_read_opts(char *dat,
     }
 
     /* skip empty contents before json document */
-    if (unlikely(char_is_space_or_comment(*cur))) {
+    if (unlikely(char_is_space_or_comment(*cur)) && err->code != YYJSON_READ_ERROR_MORE) {
         if (has_read_flag(ALLOW_COMMENTS)) {
             if (!skip_spaces_and_comments(&cur)) {
                 return_err(cur - hdr, INVALID_COMMENT,
