@@ -106,8 +106,6 @@ jobs:
             mkdir build
             cd build
             cmake ../yyjson -DYYJSON_BUILD_TESTS=ON
-            sync
-            echo 3 > /proc/sys/vm/drop_caches
             cmake --build . --config Release -j1
             ctest -C Release --output-on-failure
           '
