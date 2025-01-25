@@ -6084,7 +6084,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_iter_remove(
         iter->max--;
         unsafe_yyjson_set_len(iter->arr, iter->max);
         prev->next = next;
-        iter->cur = next;
+        iter->cur = prev;
         return cur;
     }
     return NULL;

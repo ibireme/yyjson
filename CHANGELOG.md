@@ -15,6 +15,7 @@ All notable changes to this project will be documented in this file.
 #### Fixed
 - Fix some warnings when directly including yyjson.c: #177
 - Fix missing indent for `YYJSON_TYPE_RAW` in prettify function: #178
+- Fix bug in `yyjson_mut_arr_iter_remove()`: #194
 
 
 ## 0.10.0 (2024-07-09)
