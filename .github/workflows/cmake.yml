@@ -64,7 +64,7 @@ jobs:
 
   # Check different architectures (qemu, ubuntu:gcc)
   linux_archs:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     strategy:
       fail-fast: false
       matrix:
@@ -93,11 +93,6 @@ jobs:
 
     - name: CMake and CTest
       run: |
-          # clear cache
-          sudo sync
-          sudo sh -c 'echo 3 > /proc/sys/vm/drop_caches'
-
-          # run docker
           docker run --platform linux/${{ matrix.plat }} -v "$PWD:/yyjson" ${{ matrix.arch }}/ubuntu bash -e -c '
             FORCE_COLOR=1
             CLICOLOR_FORCE=1
@@ -106,7 +101,7 @@ jobs:
             mkdir build
             cd build
             cmake ../yyjson -DYYJSON_BUILD_TESTS=ON
-            cmake --build . --config Release -j1
+            cmake --build . --config Release
             ctest -C Release --output-on-failure
           '
 
