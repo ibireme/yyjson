@@ -888,6 +888,7 @@ typedef struct yyjson_read_incremental_state {
     yyjson_val *val_end; /* the end of allocated values */
     yyjson_val *val; /* current JSON value */
     yyjson_val *ctn; /* current container */
+    uint8_t *string_cont[2]; /* string parser incremental state */
     int label; /* current parser goto label */
 } yyjson_read_incremental_state;
 

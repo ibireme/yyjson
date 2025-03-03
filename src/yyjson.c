@@ -5255,13 +5255,15 @@ read_double:
  @param inv Allow invalid unicode.
  @param val The string value to be written.
  @param msg The error message pointer.
+ @param cont Continuation for incremental parsing.
  @return Whether success.
  */
 static_inline bool read_string(u8 **ptr,
                                u8 *lst,
                                bool inv,
                                yyjson_val *val,
-                               const char **msg) {
+                               const char **msg,
+                               u8 **cont) {
     /*
      Each unicode code point is encoded as 1 to 4 bytes in UTF-8 encoding,
      we use 4-byte mask and pattern value to validate UTF-8 byte sequence,
@@ -5391,14 +5393,27 @@ static_inline bool read_string(u8 **ptr,
 #define return_err(_end, _msg) do { \
     *msg = _msg; \
     *end = _end; \
+    if (cont != NULL) { \
+        cont[0] = _end; \
+        cont[1] = dst; \
+    } \
     return false; \
 } while (false)
 
     u8 *cur = *ptr;
     u8 **end = ptr;
-    u8 *src = ++cur, *dst, *pos;
+    u8 *src = ++cur, *dst = NULL, *pos;
     u16 hi, lo;
     u32 uni, tmp;
+
+    if (cont != NULL && cont[0] != NULL) {
+        /* Resume incremental parsing. */
+        src = cont[0];
+        dst = cont[1];
+        if (dst != NULL) {
+            goto copy_ascii;
+        }
+    }
 
 skip_ascii:
     /* Most strings have no escaped characters, so we can jump them quickly. */
@@ -5451,6 +5466,9 @@ skip_ascii_end:
         val->uni.str = (const char *)cur;
         *src = '\0';
         *end = src + 1;
+        if (unlikely(cont != NULL)) {
+            cont[0] = cont[1] = NULL;
+        }
         return true;
     }
 
@@ -5554,6 +5572,7 @@ copy_escape:
                     src += 6;
                 }
                 break;
+            case '\0': return_err(src - 1, "invalid escaped sequence in string");
             default: return_err(src, "invalid escaped character in string");
         }
     } else if (likely(*src == '"')) {
@@ -5561,6 +5580,9 @@ copy_escape:
         val->uni.str = (const char *)cur;
         *dst = '\0';
         *end = src + 1;
+        if (unlikely(cont != NULL)) {
+            cont[0] = cont[1] = NULL;
+        }
         return true;
     } else {
         if (!inv) return_err(src, "unexpected control character in string");
@@ -5813,7 +5835,7 @@ static_noinline yyjson_doc *read_root_single(u8 *hdr,
         goto fail_number;
     }
     if (*cur == '"') {
-        if (likely(read_string(&cur, end, inv, val, &msg))) goto doc_end;
+        if (likely(read_string(&cur, end, inv, val, &msg, NULL))) goto doc_end;
         goto fail_string;
     }
     if (*cur == 't') {
@@ -5965,6 +5987,7 @@ static_inline yyjson_doc *read_root_minify(u8 *hdr,
     bool inv; /* allow invalid unicode */
     u8 *raw_end; /* raw end for null-terminator */
     u8 **pre; /* previous raw end pointer */
+    u8 **string_cont = NULL; /* for incremental string parsing */
     u8 saved_end = '\0'; /* saved end char in incremental parsing */
 
     /* initialized for early return_err */
@@ -5988,6 +6011,8 @@ static_inline yyjson_doc *read_root_minify(u8 *hdr,
            the data contains more valid JSON */
         saved_end = *end;
         *end = '\0';
+        /* initiate string reader continuation */
+        string_cont = state->string_cont;
         if (err->code == YYJSON_READ_ERROR_MORE && state->label != YYJSON_READ_LABEL_doc_begin) {
 #ifdef DEBUG
             printf("Reading %2ld bytes stating from offset %2ld: %s\n", (end - hdr), state->cur - hdr, state->cur);
@@ -6074,7 +6099,7 @@ arr_val_begin:
     if (*cur == '"') {
         val_incr();
         ctn_len++;
-        if (likely(read_string(&cur, end, inv, val, &msg))) goto arr_val_end;
+        if (likely(read_string(&cur, end, inv, val, &msg, string_cont))) goto arr_val_end;
         goto fail_string;
     }
     if (*cur == 't') {
@@ -6181,7 +6206,7 @@ obj_key_begin:
     if (likely(*cur == '"')) {
         val_incr();
         ctn_len++;
-        if (likely(read_string(&cur, end, inv, val, &msg))) goto obj_key_end;
+        if (likely(read_string(&cur, end, inv, val, &msg, string_cont))) goto obj_key_end;
         goto fail_string;
     }
     if (likely(*cur == '}')) {
@@ -6222,7 +6247,7 @@ obj_val_begin:
     if (*cur == '"') {
         val++;
         ctn_len++;
-        if (likely(read_string(&cur, end, inv, val, &msg))) goto obj_val_end;
+        if (likely(read_string(&cur, end, inv, val, &msg, string_cont))) goto obj_val_end;
         goto fail_string;
     }
     if (char_is_number(*cur)) {
@@ -6478,6 +6503,7 @@ static_inline yyjson_doc *read_root_pretty(u8 *hdr,
     bool inv; /* allow invalid unicode */
     u8 *raw_end; /* raw end for null-terminator */
     u8 **pre; /* previous raw end pointer */
+    u8 **string_cont = NULL; /* for incremental string parsing */
     u8 saved_end = '\0'; /* saved end char in incremental parsing */
 
     /* initialized for early return_err */
@@ -6501,6 +6527,8 @@ static_inline yyjson_doc *read_root_pretty(u8 *hdr,
            the data contains more valid JSON */
         saved_end = *end;
         *end = '\0';
+        /* initiate string reader continuation */
+        string_cont = state->string_cont;
         if (err->code == YYJSON_READ_ERROR_MORE && state->label != YYJSON_READ_LABEL_doc_begin) {
 #ifdef DEBUG
             printf("Reading %2d bytes stating from offset %2d: %s\n", (end - hdr), state->cur - hdr, state->cur);
@@ -6603,7 +6631,7 @@ arr_val_begin:
     if (*cur == '"') {
         val_incr();
         ctn_len++;
-        if (likely(read_string(&cur, end, inv, val, &msg))) goto arr_val_end;
+        if (likely(read_string(&cur, end, inv, val, &msg, string_cont))) goto arr_val_end;
         goto fail_string;
     }
     if (*cur == 't') {
@@ -6727,7 +6755,7 @@ obj_key_begin:
     if (likely(*cur == '"')) {
         val_incr();
         ctn_len++;
-        if (likely(read_string(&cur, end, inv, val, &msg))) goto obj_key_end;
+        if (likely(read_string(&cur, end, inv, val, &msg, string_cont))) goto obj_key_end;
         goto fail_string;
     }
     if (likely(*cur == '}')) {
@@ -6772,7 +6800,7 @@ obj_val_begin:
     if (*cur == '"') {
         val++;
         ctn_len++;
-        if (likely(read_string(&cur, end, inv, val, &msg))) goto obj_val_end;
+        if (likely(read_string(&cur, end, inv, val, &msg, string_cont))) goto obj_val_end;
         goto fail_string;
     }
     if (char_is_number(*cur)) {
@@ -7046,7 +7074,11 @@ yyjson_doc *yyjson_read_opts(char *dat,
 
     /* check result */
     if (likely(doc)) {
-        memset(err, 0, sizeof(yyjson_read_err));
+        if (has_read_flag(INCREMENTAL)) {
+            memset(err, 0, sizeof(yyjson_read_incremental_state));
+        } else {
+            memset(err, 0, sizeof(yyjson_read_err));
+        }
     } else {
         /* RFC 8259: JSON text MUST be encoded using UTF-8 */
         if (err->pos == 0 && err->code != YYJSON_READ_ERROR_MEMORY_ALLOCATION) {

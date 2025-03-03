@@ -769,11 +769,13 @@ char *yy_dat_copy_line(yy_dat *dat, usize *len) {
  * JSON generator
  *============================================================================*/
 
+// Generates a JSON string representing nested arrays and objects.
+// For roundtrip equality, use writer flags
+// YYJSON_WRITE_ESCAPE_UNICODE | YYJSON_WRITE_ESCAPE_SLASHES
 char *yy_create_json(usize obj_len, usize arr_len) {
     yy_buf buf;
     char *values[] = {"12.3", "45", "\"hello\"", "false",
-                      "null", "{}", "[]"};
-    /* TODO: Handle strings with escapes, e.g. "\"\\n\\\"\\/\"" */
+                      "null", "{}", "[]", "\"\\u066Dhey\\\"\\/\""};
     usize i, j;
     if (!yy_buf_init(&buf, 1024)) return NULL;
     if (!yy_buf_append(&buf, "{", 1)) goto error;
