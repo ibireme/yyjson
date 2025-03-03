@@ -118,7 +118,6 @@ static yyjson_doc *test_read_string_incremental(char *dat, usize len, usize chun
 #if YYJSON_DISABLE_UTF8_VALIDATION
     if (!yy_str_is_utf8(dat, len)) return NULL;
 #endif
-    printf("%s\n", dat);
 
     yyjson_read_flag flag = YYJSON_READ_INSITU | YYJSON_READ_INCREMENTAL;
     if (type & FLAG_COMMA) flag |= YYJSON_READ_ALLOW_TRAILING_COMMAS;
@@ -154,8 +153,6 @@ static yyjson_doc *test_read_string_incremental(char *dat, usize len, usize chun
         yy_assert(yyjson_doc_get_val_count(doc) == 0);
         yy_assert(state.err.code != YYJSON_READ_SUCCESS);
         yy_assert(state.err.msg != NULL);
-        printf("Incremental read fail at position %d (read %d of %d): %s (%d)\n", state.err.pos, read_len, len, state.err.msg, state.err.code);
-        printf("Char at %d: '%c' (%d)\n", state.err.pos, dat[state.err.pos], dat[state.err.pos]);
     }
     yy_assert(state.err.code != YYJSON_READ_ERROR_MORE);
     return doc;
@@ -352,7 +349,6 @@ static void test_json_incremental(void) {
     usize minify_len;
     char *minify;
     minify = yyjson_write(doc, YYJSON_WRITE_ESCAPE_UNICODE | YYJSON_WRITE_ESCAPE_SLASHES, &minify_len);
-    printf("%s\n", minify);
     free(pretty_padded);
     yy_assertf(strcmp(minify, dat_dup) == 0, "roundtrip to minified JSON mismatch\n");
     free(minify);

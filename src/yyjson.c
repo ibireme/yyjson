@@ -6014,9 +6014,6 @@ static_inline yyjson_doc *read_root_minify(u8 *hdr,
         /* initiate string reader continuation */
         string_cont = state->string_cont;
         if (err->code == YYJSON_READ_ERROR_MORE && state->label != YYJSON_READ_LABEL_doc_begin) {
-#ifdef DEBUG
-            printf("Reading %2ld bytes stating from offset %2ld: %s\n", (end - hdr), state->cur - hdr, state->cur);
-#endif
             /* restore parser state */
             if (hdr != state->hdr) {
                 return_err(hdr, INVALID_PARAMETER, "data pointer has changed");
@@ -6530,9 +6527,6 @@ static_inline yyjson_doc *read_root_pretty(u8 *hdr,
         /* initiate string reader continuation */
         string_cont = state->string_cont;
         if (err->code == YYJSON_READ_ERROR_MORE && state->label != YYJSON_READ_LABEL_doc_begin) {
-#ifdef DEBUG
-            printf("Reading %2d bytes stating from offset %2d: %s\n", (end - hdr), state->cur - hdr, state->cur);
-#endif
             /* restore parser state */
             if (hdr != state->hdr) {
                 return_err(hdr, INVALID_PARAMETER, "data pointer has changed");
