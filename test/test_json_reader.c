@@ -22,7 +22,7 @@ typedef enum {
 } flag_type;
 
 static void test_read_file(const char *path, flag_type type, expect_type expect) {
-    
+    static int counter = 0;
 #if YYJSON_DISABLE_UTF8_VALIDATION
     {
         u8 *dat;
@@ -111,6 +111,75 @@ static void test_read_file(const char *path, flag_type type, expect_type expect)
     }
     yyjson_doc_free(doc);
     free(buf);
+    free(dat);
+
+    // test incremental read
+    // extend input length in chunks of one byte at a time
+    const size_t chunk_len = 1;
+    flag |= YYJSON_READ_INCREMENTAL;
+    size_t read_len = 0;
+restart_incremental_read:
+    read_suc = yy_file_read_with_padding(path, &dat, &len, YYJSON_PADDING_SIZE);
+    yy_assert(read_suc);
+    yyjson_read_incremental_state state = {0};
+    while (read_len < len || len == 0) {
+        read_len += chunk_len;
+        if (read_len > len) {
+            read_len = len;
+        }
+        /* put some garbage where the parser is supposed to stop */
+        u8 saved_end = dat[read_len];
+        dat[read_len] = 'X';
+        doc = yyjson_read_opts((char *)dat, read_len, flag, NULL, &state.err);
+        dat[read_len] = saved_end;
+        if (doc != NULL && read_len < len) {
+            /* Incremental parsing is complete but there is more data to parse.
+               This can happen when we are parsing a number on the root level
+               and not all digits have been provided to the parser yet.
+
+               Discard incremental state and restart parsing. To do that, read
+               the file again because insitu parsing is destructive. */
+            yyjson_doc_free(doc);
+            doc = NULL;
+            goto restart_incremental_read;
+        }
+        if (doc != NULL || state.err.code != YYJSON_READ_ERROR_MORE) {
+            break;
+        }
+    }
+    if (doc) { // test write again
+#if !YYJSON_DISABLE_WRITER
+        usize len;
+        char *ret;
+        ret = yyjson_write(doc, YYJSON_WRITE_ALLOW_INF_AND_NAN, &len);
+        yy_assert(ret && len);
+        free(ret);
+        ret = yyjson_write(doc, YYJSON_WRITE_PRETTY | YYJSON_WRITE_ALLOW_INF_AND_NAN, &len);
+        yy_assert(ret && len);
+        free(ret);
+#endif
+    }
+    if (expect == EXPECT_PASS) {
+        yy_assertf(doc != NULL,
+                   "file should pass but fail '%s' (%d) at %d:\n%s\n"
+                   "string src = %p (ofs %ld)\n",
+                   state.err.msg, state.err.code, state.err.pos, path,
+                   state.string_cont[0], (state.string_cont[0] - dat));
+        yy_assertf(doc != NULL, "file should pass but fail:\n%s\n", path);
+        yy_assert(yyjson_doc_get_read_size(doc) > 0);
+        yy_assert(yyjson_doc_get_val_count(doc) > 0);
+        yy_assert(state.err.code == YYJSON_READ_SUCCESS);
+        yy_assert(state.err.msg == NULL);
+    }
+    if (expect == EXPECT_FAIL) {
+        yy_assertf(doc == NULL, "file should fail but pass:\n%s\n", path);
+        yy_assert(yyjson_doc_get_read_size(doc) == 0);
+        yy_assert(yyjson_doc_get_val_count(doc) == 0);
+        yy_assertf(state.err.code != YYJSON_READ_SUCCESS, "file should fail but pass (%d '%s'):\n%s\n", state.err.code, state.err.msg, path);
+        yy_assert(state.err.code != YYJSON_READ_SUCCESS);
+        yy_assert(state.err.msg != NULL);
+    }
+    yyjson_doc_free(doc);
     free(dat);
 }
 

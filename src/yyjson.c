@@ -396,6 +396,7 @@ uint32_t yyjson_version(void) {
 #define YYJSON_READ_LABEL_obj_key_end 4
 #define YYJSON_READ_LABEL_obj_val_begin 5
 #define YYJSON_READ_LABEL_obj_val_end 6
+#define YYJSON_READ_LABEL_doc_end 7
 
 static_inline bool read_flag_eq(yyjson_read_flag flg, yyjson_read_flag chk) {
 #if YYJSON_DISABLE_NON_STANDARD
@@ -3868,12 +3869,17 @@ static_inline bool read_inf(bool sign, u8 **ptr, u8 **pre,
     if ((cur[0] == 'I' || cur[0] == 'i') &&
         (cur[1] == 'N' || cur[1] == 'n') &&
         (cur[2] == 'F' || cur[2] == 'f')) {
-        if ((cur[3] == 'I' || cur[3] == 'i') &&
-            (cur[4] == 'N' || cur[4] == 'n') &&
-            (cur[5] == 'I' || cur[5] == 'i') &&
-            (cur[6] == 'T' || cur[6] == 't') &&
-            (cur[7] == 'Y' || cur[7] == 'y')) {
-            cur += 8;
+        if (cur[3] == 'I' || cur[3] == 'i') {
+            if ((cur[4] == 'N' || cur[4] == 'n') &&
+                (cur[5] == 'I' || cur[5] == 'i') &&
+                (cur[6] == 'T' || cur[6] == 't') &&
+                (cur[7] == 'Y' || cur[7] == 'y')) {
+                cur += 8;
+            } else {
+                /* Don't accept INF as a complete value if it's followed by I.
+                   This is to better support incremental parsing. */
+                return false;
+            }
         } else {
             cur += 3;
         }
@@ -4111,6 +4117,25 @@ static_noinline bool is_truncated_end(u8 *hdr, u8 *cur, u8 *end,
                     if (!char_is_hex(*cur)) return false;
                 }
                 return true;
+            } else if (len <= 11) {
+                /* incomplete surrogate pair? */
+                u16 hi;
+                if (*++cur != 'u') return false;
+                if (!read_hex_u16(++cur, &hi)) return false;
+                if ((hi & 0xF800) != 0xD800) return false;
+                cur += 4;
+                if (cur >= end) return true;
+                /* valid low surrogate is DC00...DFFF */
+                if (*cur != '\\') return false;
+                if (++cur >= end) return true;
+                if (*cur != 'u') return false;
+                if (++cur >= end) return true;
+                if (*cur != 'd' && *cur != 'D') return false;
+                if (++cur >= end) return true;
+                if ((*cur < 'c' || *cur > 'f') && (*cur < 'C' || *cur > 'F')) return false;
+                if (++cur >= end) return true;
+                if (!char_is_hex(*cur)) return false;
+                return true;
             }
             return false;
         }
@@ -4149,6 +4174,16 @@ static_noinline bool is_truncated_end(u8 *hdr, u8 *cur, u8 *end,
                     return 0x01 <= pat && pat <= 0x10;
                 }
             }
+        }
+    }
+    if (has_read_flag(ALLOW_COMMENTS)) {
+        if (code == YYJSON_READ_ERROR_INVALID_COMMENT) {
+            /* unclosed multiline comment */
+            return true;
+        }
+        if (code == YYJSON_READ_ERROR_UNEXPECTED_CHARACTER && *cur == '/' && cur + 1 == end) {
+            /* truncated beginning of comment */
+            return true;
         }
     }
     return false;
@@ -5555,13 +5590,13 @@ copy_escape:
                         return_err(src - 6, "invalid high surrogate in string");
                     }
                     if (unlikely(!byte_match_2(src, "\\u"))) {
-                        return_err(src, "no low surrogate in string");
+                        return_err(src - 6, "no low surrogate in string");
                     }
                     if (unlikely(!read_hex_u16(src + 2, &lo))) {
-                        return_err(src, "invalid escaped sequence in string");
+                        return_err(src - 6, "invalid escaped sequence in string");
                     }
                     if (unlikely((lo & 0xFC00) != 0xDC00)) {
-                        return_err(src, "invalid low surrogate in string");
+                        return_err(src - 6, "invalid low surrogate in string");
                     }
                     uni = ((((u32)hi - 0xD800) << 10) |
                             ((u32)lo - 0xDC00)) + 0x10000;
@@ -5572,8 +5607,7 @@ copy_escape:
                     src += 6;
                 }
                 break;
-            case '\0': return_err(src - 1, "invalid escaped sequence in string");
-            default: return_err(src, "invalid escaped character in string");
+            default: return_err(src - 1, "invalid escaped sequence in string");
         }
     } else if (likely(*src == '"')) {
         val->tag = ((u64)(dst - cur) << YYJSON_TAG_BIT) | YYJSON_TYPE_STR;
@@ -5795,6 +5829,7 @@ static_noinline yyjson_doc *read_root_single(u8 *hdr,
 #define return_err(_pos, _code, _msg) do { \
     if (is_truncated_end(hdr, _pos, end, YYJSON_READ_ERROR_##_code, flg)) { \
         err->pos = (usize)(end - hdr); \
+        if (has_read_flag(INCREMENTAL)) goto incremental_unexpected_end; \
         err->code = YYJSON_READ_ERROR_UNEXPECTED_END; \
         err->msg = "unexpected end of data"; \
     } else { \
@@ -5817,6 +5852,8 @@ static_noinline yyjson_doc *read_root_single(u8 *hdr,
     bool inv; /* allow invalid unicode */
     u8 *raw_end; /* raw end for null-terminator */
     u8 **pre; /* previous raw end pointer */
+    u8 **string_cont = NULL; /* for incremental string parsing */
+    u8 saved_end = '\0'; /* saved end char in incremental parsing */
 
     hdr_len = sizeof(yyjson_doc) / sizeof(yyjson_val);
     hdr_len += (sizeof(yyjson_doc) % sizeof(yyjson_val)) > 0;
@@ -5830,12 +5867,33 @@ static_noinline yyjson_doc *read_root_single(u8 *hdr,
     raw_end = NULL;
     pre = raw ? &raw_end : NULL;
 
+    if (has_read_flag(INCREMENTAL)) {
+        yyjson_read_incremental_state *state = (yyjson_read_incremental_state *)err;
+        if (!has_read_flag(INSITU)) {
+            return_err(hdr, INVALID_PARAMETER, "incremental read requires INSITU");
+        }
+        /* insert null terminator to make us stop at the specified end, even if
+           the data contains more valid JSON */
+        saved_end = *end;
+        *end = '\0';
+        /* initiate string reader continuation */
+        string_cont = state->string_cont;
+        if (err->code == YYJSON_READ_ERROR_MORE) {
+            if (hdr != state->hdr) {
+                return_err(hdr, INVALID_PARAMETER, "data pointer has changed");
+            }
+            if (state->label != YYJSON_READ_LABEL_doc_begin) {
+                return_err(hdr, INVALID_PARAMETER, "invalid incremental state");
+            }
+        }
+    }
+
     if (char_is_number(*cur)) {
         if (likely(read_number(&cur, pre, flg, val, &msg))) goto doc_end;
         goto fail_number;
     }
     if (*cur == '"') {
-        if (likely(read_string(&cur, end, inv, val, &msg, NULL))) goto doc_end;
+        if (likely(read_string(&cur, end, inv, val, &msg, string_cont))) goto doc_end;
         goto fail_string;
     }
     if (*cur == 't') {
@@ -5879,6 +5937,18 @@ doc_end:
     doc->val_read = 1;
     doc->str_pool = has_read_flag(INSITU) ? NULL : (char *)hdr;
     return doc;
+
+incremental_unexpected_end:
+    err->code = YYJSON_READ_ERROR_MORE;
+    err->msg = "need more data";
+    {
+        yyjson_read_incremental_state *state = (yyjson_read_incremental_state *)err;
+        state->label = YYJSON_READ_LABEL_doc_begin;
+        state->hdr = hdr;
+    }
+    /* restore the end where we've inserted a null terminator */
+    *end = saved_end;
+    return NULL;
 
 fail_string:
     return_err(cur, INVALID_STRING, msg);
@@ -6035,6 +6105,7 @@ static_inline yyjson_doc *read_root_minify(u8 *hdr,
             case YYJSON_READ_LABEL_obj_key_end: goto obj_key_end;
             case YYJSON_READ_LABEL_obj_val_begin: goto obj_val_begin;
             case YYJSON_READ_LABEL_obj_val_end: goto obj_val_end;
+            case YYJSON_READ_LABEL_doc_end: goto doc_end;
             default: return_err(hdr, INVALID_PARAMETER, "invalid incremental state");
             }
         }
@@ -6079,6 +6150,7 @@ arr_begin:
 
 arr_val_begin:
     save_incremental_state(arr_val_begin);
+arr_val_continue:
     if (*cur == '{') {
         cur++;
         goto obj_begin;
@@ -6129,7 +6201,7 @@ arr_val_begin:
     }
     if (char_is_space(*cur)) {
         while (char_is_space(*++cur));
-        goto arr_val_begin;
+        goto arr_val_continue;
     }
     if (has_read_flag(ALLOW_INF_AND_NAN) &&
         (*cur == 'i' || *cur == 'I' || *cur == 'N')) {
@@ -6139,7 +6211,7 @@ arr_val_begin:
         goto fail_character_val;
     }
     if (has_read_flag(ALLOW_COMMENTS)) {
-        if (skip_spaces_and_comments(&cur)) goto arr_val_begin;
+        if (skip_spaces_and_comments(&cur)) goto arr_val_continue;
         if (byte_match_2(cur, "/*")) goto fail_comment;
     }
     goto fail_character_val;
@@ -6200,6 +6272,7 @@ obj_begin:
 
 obj_key_begin:
     save_incremental_state(obj_key_begin);
+obj_key_continue:
     if (likely(*cur == '"')) {
         val_incr();
         ctn_len++;
@@ -6215,10 +6288,10 @@ obj_key_begin:
     }
     if (char_is_space(*cur)) {
         while (char_is_space(*++cur));
-        goto obj_key_begin;
+        goto obj_key_continue;
     }
     if (has_read_flag(ALLOW_COMMENTS)) {
-        if (skip_spaces_and_comments(&cur)) goto obj_key_begin;
+        if (skip_spaces_and_comments(&cur)) goto obj_key_continue;
         if (byte_match_2(cur, "/*")) goto fail_comment;
     }
     goto fail_character_obj_key;
@@ -6241,6 +6314,7 @@ obj_key_end:
 
 obj_val_begin:
     save_incremental_state(obj_val_begin);
+obj_val_continue:
     if (*cur == '"') {
         val++;
         ctn_len++;
@@ -6284,7 +6358,7 @@ obj_val_begin:
     }
     if (char_is_space(*cur)) {
         while (char_is_space(*++cur));
-        goto obj_val_begin;
+        goto obj_val_continue;
     }
     if (has_read_flag(ALLOW_INF_AND_NAN) &&
         (*cur == 'i' || *cur == 'I' || *cur == 'N')) {
@@ -6294,7 +6368,7 @@ obj_val_begin:
         goto fail_character_val;
     }
     if (has_read_flag(ALLOW_COMMENTS)) {
-        if (skip_spaces_and_comments(&cur)) goto obj_val_begin;
+        if (skip_spaces_and_comments(&cur)) goto obj_val_continue;
         if (byte_match_2(cur, "/*")) goto fail_comment;
     }
     goto fail_character_val;
@@ -6342,9 +6416,14 @@ obj_end:
 doc_end:
     /* check invalid contents after json document */
     if (unlikely(cur < end) && !has_read_flag(STOP_WHEN_DONE)) {
+        save_incremental_state(doc_end);
         if (has_read_flag(ALLOW_COMMENTS)) {
             skip_spaces_and_comments(&cur);
             if (byte_match_2(cur, "/*")) goto fail_comment;
+            if (*cur == '/' && cur + 1 == end && has_read_flag(INCREMENTAL)) {
+                /* truncated beginning of comment */
+                goto incremental_unexpected_end;
+            }
         } else {
             while (char_is_space(*cur)) cur++;
         }
@@ -6548,6 +6627,7 @@ static_inline yyjson_doc *read_root_pretty(u8 *hdr,
             case YYJSON_READ_LABEL_obj_key_end: goto obj_key_end;
             case YYJSON_READ_LABEL_obj_val_begin: goto obj_val_begin;
             case YYJSON_READ_LABEL_obj_val_end: goto obj_val_end;
+            case YYJSON_READ_LABEL_doc_end: goto doc_end;
             default: return_err(hdr, INVALID_PARAMETER, "invalid incremental state");
             }
         }
@@ -6608,6 +6688,7 @@ arr_val_begin:
     })
 #endif
 
+arr_val_continue:
     if (*cur == '{') {
         cur++;
         goto obj_begin;
@@ -6658,7 +6739,7 @@ arr_val_begin:
     }
     if (char_is_space(*cur)) {
         while (char_is_space(*++cur));
-        goto arr_val_begin;
+        goto arr_val_continue;
     }
     if (has_read_flag(ALLOW_INF_AND_NAN) &&
         (*cur == 'i' || *cur == 'I' || *cur == 'N')) {
@@ -6668,7 +6749,7 @@ arr_val_begin:
         goto fail_character_val;
     }
     if (has_read_flag(ALLOW_COMMENTS)) {
-        if (skip_spaces_and_comments(&cur)) goto arr_val_begin;
+        if (skip_spaces_and_comments(&cur)) goto arr_val_continue;
         if (byte_match_2(cur, "/*")) goto fail_comment;
     }
     goto fail_character_val;
@@ -6746,6 +6827,7 @@ obj_key_begin:
         else break;
     })
 #endif
+obj_key_continue:
     if (likely(*cur == '"')) {
         val_incr();
         ctn_len++;
@@ -6761,10 +6843,10 @@ obj_key_begin:
     }
     if (char_is_space(*cur)) {
         while (char_is_space(*++cur));
-        goto obj_key_begin;
+        goto obj_key_continue;
     }
     if (has_read_flag(ALLOW_COMMENTS)) {
-        if (skip_spaces_and_comments(&cur)) goto obj_key_begin;
+        if (skip_spaces_and_comments(&cur)) goto obj_key_continue;
         if (byte_match_2(cur, "/*")) goto fail_comment;
     }
     goto fail_character_obj_key;
@@ -6791,6 +6873,7 @@ obj_key_end:
 
 obj_val_begin:
     save_incremental_state(obj_val_begin);
+obj_val_continue:
     if (*cur == '"') {
         val++;
         ctn_len++;
@@ -6834,7 +6917,7 @@ obj_val_begin:
     }
     if (char_is_space(*cur)) {
         while (char_is_space(*++cur));
-        goto obj_val_begin;
+        goto obj_val_continue;
     }
     if (has_read_flag(ALLOW_INF_AND_NAN) &&
         (*cur == 'i' || *cur == 'I' || *cur == 'N')) {
@@ -6844,7 +6927,7 @@ obj_val_begin:
         goto fail_character_val;
     }
     if (has_read_flag(ALLOW_COMMENTS)) {
-        if (skip_spaces_and_comments(&cur)) goto obj_val_begin;
+        if (skip_spaces_and_comments(&cur)) goto obj_val_continue;
         if (byte_match_2(cur, "/*")) goto fail_comment;
     }
     goto fail_character_val;
@@ -6897,9 +6980,14 @@ obj_end:
 doc_end:
     /* check invalid contents after json document */
     if (unlikely(cur < end) && !has_read_flag(STOP_WHEN_DONE)) {
+        save_incremental_state(doc_end);
         if (has_read_flag(ALLOW_COMMENTS)) {
             skip_spaces_and_comments(&cur);
             if (byte_match_2(cur, "/*")) goto fail_comment;
+            if (*cur == '/' && cur + 1 == end && has_read_flag(INCREMENTAL)) {
+                /* truncated beginning of comment */
+                goto incremental_unexpected_end;
+            }
         } else {
             while (char_is_space(*cur)) cur++;
         }
@@ -7039,9 +7127,10 @@ yyjson_doc *yyjson_read_opts(char *dat,
     }
 
     /* skip empty contents before json document */
-    if (unlikely(char_is_space_or_comment(*cur)) && err->code != YYJSON_READ_ERROR_MORE) {
+    if (unlikely(char_is_space_or_comment(*cur))) {
         if (has_read_flag(ALLOW_COMMENTS)) {
             if (!skip_spaces_and_comments(&cur)) {
+                if (has_read_flag(INCREMENTAL)) goto incremental_unexpected_end;
                 return_err(cur - hdr, INVALID_COMMENT,
                            "unclosed multiline comment");
             }
@@ -7051,6 +7140,7 @@ yyjson_doc *yyjson_read_opts(char *dat,
             }
         }
         if (unlikely(cur >= end)) {
+            if (has_read_flag(INCREMENTAL)) goto incremental_unexpected_end;
             return_err(0, EMPTY_CONTENT, "input data is empty");
         }
     }
@@ -7093,6 +7183,17 @@ yyjson_doc *yyjson_read_opts(char *dat,
         if (!has_read_flag(INSITU)) alc.free(alc.ctx, (void *)hdr);
     }
     return doc;
+
+incremental_unexpected_end:
+    err->code = YYJSON_READ_ERROR_MORE;
+    err->msg = "need more data";
+    err->pos = (usize)(cur - hdr);
+    {
+        yyjson_read_incremental_state *state = (yyjson_read_incremental_state *)err;
+        state->label = YYJSON_READ_LABEL_doc_begin;
+        state->hdr = hdr;
+    }
+    return NULL;
 
 #undef return_err
 }
