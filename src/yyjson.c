@@ -5859,9 +5859,7 @@ static_noinline yyjson_doc *read_root_single(u8 *hdr,
     hdr_len += (sizeof(yyjson_doc) % sizeof(yyjson_val)) > 0;
     alc_num = hdr_len + 1; /* single value */
 
-    val_hdr = (yyjson_val *)alc.malloc(alc.ctx, alc_num * sizeof(yyjson_val));
-    if (unlikely(!val_hdr)) goto fail_alloc;
-    val = val_hdr + hdr_len;
+    val_hdr = NULL;
     raw = has_read_flag(NUMBER_AS_RAW) || has_read_flag(BIGNUM_AS_RAW);
     inv = has_read_flag(ALLOW_INVALID_UNICODE) != 0;
     raw_end = NULL;
@@ -5879,15 +5877,25 @@ static_noinline yyjson_doc *read_root_single(u8 *hdr,
         /* initiate string reader continuation */
         string_cont = state->string_cont;
         if (err->code == YYJSON_READ_ERROR_MORE) {
+            /* restore parser state */
             if (hdr != state->hdr) {
                 return_err(hdr, INVALID_PARAMETER, "data pointer has changed");
             }
             if (state->label != YYJSON_READ_LABEL_doc_begin) {
                 return_err(hdr, INVALID_PARAMETER, "invalid incremental state");
             }
+            val = state->val;
+            hdr_len = state->hdr_len;
+            val_hdr = state->val_hdr;
+            if (state->label == YYJSON_READ_LABEL_doc_begin) goto doc_begin;
+            return_err(hdr, INVALID_PARAMETER, "invalid incremental state");
         }
     }
+    val_hdr = (yyjson_val *)alc.malloc(alc.ctx, alc_num * sizeof(yyjson_val));
+    if (unlikely(!val_hdr)) goto fail_alloc;
+    val = val_hdr + hdr_len;
 
+doc_begin:
     if (char_is_number(*cur)) {
         if (likely(read_number(&cur, pre, flg, val, &msg))) goto doc_end;
         goto fail_number;
@@ -5945,6 +5953,9 @@ incremental_unexpected_end:
         yyjson_read_incremental_state *state = (yyjson_read_incremental_state *)err;
         state->label = YYJSON_READ_LABEL_doc_begin;
         state->hdr = hdr;
+        state->val = val;
+        state->hdr_len = hdr_len;
+        state->val_hdr = val_hdr;
     }
     /* restore the end where we've inserted a null terminator */
     *end = saved_end;
@@ -7196,6 +7207,24 @@ incremental_unexpected_end:
     return NULL;
 
 #undef return_err
+}
+
+yyjson_doc *yyjson_read_incremental(char *dat,
+                                    size_t len,
+                                    yyjson_read_flag flg,
+                                    const yyjson_alc *alc,
+                                    yyjson_read_incremental_state *state) {
+    flg |= YYJSON_READ_INCREMENTAL;
+    return yyjson_read_opts(dat, len, flg, alc, &state->err);
+}
+
+void yyjson_reset_read_incremental_state(yyjson_read_incremental_state *state,
+                                         const yyjson_alc *alc_ptr) {
+    if (state->err.code == YYJSON_READ_ERROR_MORE && state->val_hdr != NULL) {
+        yyjson_alc alc = alc_ptr ? *alc_ptr : YYJSON_DEFAULT_ALC;
+        alc.free(alc.ctx, (void *)state->val_hdr);
+    }
+    memset(state, 0, sizeof(yyjson_read_incremental_state));
 }
 
 yyjson_doc *yyjson_read_file(const char *path,

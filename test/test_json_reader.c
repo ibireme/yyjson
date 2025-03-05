@@ -116,7 +116,6 @@ static void test_read_file(const char *path, flag_type type, expect_type expect)
     // test incremental read
     // extend input length in chunks of one byte at a time
     const size_t chunk_len = 1;
-    flag |= YYJSON_READ_INCREMENTAL;
     size_t read_len = 0;
 restart_incremental_read:
     read_suc = yy_file_read_with_padding(path, &dat, &len, YYJSON_PADDING_SIZE);
@@ -130,7 +129,7 @@ restart_incremental_read:
         /* put some garbage where the parser is supposed to stop */
         u8 saved_end = dat[read_len];
         dat[read_len] = 'X';
-        doc = yyjson_read_opts((char *)dat, read_len, flag, NULL, &state.err);
+        doc = yyjson_read_incremental((char *)dat, read_len, flag, NULL, &state);
         dat[read_len] = saved_end;
         if (doc != NULL && read_len < len) {
             /* Incremental parsing is complete but there is more data to parse.
@@ -141,6 +140,8 @@ restart_incremental_read:
                the file again because insitu parsing is destructive. */
             yyjson_doc_free(doc);
             doc = NULL;
+            free(dat);
+            yyjson_reset_read_incremental_state(&state, NULL);
             goto restart_incremental_read;
         }
         if (doc != NULL || state.err.code != YYJSON_READ_ERROR_MORE) {
@@ -179,6 +180,7 @@ restart_incremental_read:
         yy_assert(state.err.code != YYJSON_READ_SUCCESS);
         yy_assert(state.err.msg != NULL);
     }
+    yyjson_reset_read_incremental_state(&state, NULL);
     yyjson_doc_free(doc);
     free(dat);
 }
@@ -188,7 +190,7 @@ static yyjson_doc *test_read_string_incremental(char *dat, usize len, usize chun
     if (!yy_str_is_utf8(dat, len)) return NULL;
 #endif
 
-    yyjson_read_flag flag = YYJSON_READ_INSITU | YYJSON_READ_INCREMENTAL;
+    yyjson_read_flag flag = YYJSON_READ_INSITU;
     if (type & FLAG_COMMA) flag |= YYJSON_READ_ALLOW_TRAILING_COMMAS;
     if (type & FLAG_COMMENT) flag |= YYJSON_READ_ALLOW_COMMENTS;
     if (type & FLAG_INF_NAN) flag |= YYJSON_READ_ALLOW_INF_AND_NAN;
@@ -206,7 +208,7 @@ static yyjson_doc *test_read_string_incremental(char *dat, usize len, usize chun
         /* put some garbage where the parser is supposed to stop */
         u8 saved_end = dat[read_len];
         dat[read_len] = 'X';
-        doc = yyjson_read_opts((char *)dat, read_len, flag, NULL, &state.err);
+        doc = yyjson_read_incremental((char *)dat, read_len, flag, NULL, &state);
         dat[read_len] = saved_end;
         if (doc != NULL || state.err.code != YYJSON_READ_ERROR_MORE) {
             break;
@@ -224,6 +226,7 @@ static yyjson_doc *test_read_string_incremental(char *dat, usize len, usize chun
         yy_assert(state.err.msg != NULL);
     }
     yy_assert(state.err.code != YYJSON_READ_ERROR_MORE);
+    yyjson_reset_read_incremental_state(&state, NULL);
     return doc;
 }
 

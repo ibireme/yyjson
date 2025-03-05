@@ -808,7 +808,8 @@ static const yyjson_read_flag YYJSON_READ_ALLOW_INVALID_UNICODE = 1 << 6;
     The flag will be overridden by `YYJSON_READ_NUMBER_AS_RAW` flag. */
 static const yyjson_read_flag YYJSON_READ_BIGNUM_AS_RAW         = 1 << 7;
 
-/** Read incrementally. TODO: Documentation. */
+/** Read incrementally. This flag is set implicitly by
+    `yyjson_read_incremental()`. */
 static const yyjson_read_flag YYJSON_READ_INCREMENTAL           = 1 << 8;
 
 
@@ -926,20 +927,55 @@ yyjson_api yyjson_doc *yyjson_read_opts(char *dat,
                                         yyjson_read_err *err);
 
 /**
- * Incrementally read JSON.
- *
- * This function is like `yyjson_read_opts` and allows incremental parsing.
- *
- * If NULL is returned, the error code is stored in `state->err.code`. If the
- * error code is YYJSON_READ_ERROR_MORE, append more JSON data to `dat` and call
- * this function again with the same `state`. The ... (fixme: references to the
- * string pool)
+ Incrementally read JSON.
+
+ This function is similar to `yyjson_read_opts()` and allows incremental
+ parsing.
+
+ To incrementally read a large JSON document, call this function repeatedly with
+ a greater `len` each time, finally providing the full length of the JSON data
+ in the last call. When the parsing is incomplete, this function returns NULL
+ and the error code `state->err.code` is set to `YYJSON_READ_ERROR_MORE`. This
+ indicates that it's possible to resume parsing and that more data should be
+ provided.
+
+ When resuming incremental parsing, the same values of `dat`, `flg`, `alc` and
+ `state` should be provided in each call. When done, call
+ `yyjson_reset_read_incremental_state()` to free memory held by the state.
+
+ @param dat The JSON data (UTF-8 without BOM), null-terminator is not required.
+    If this parameter is NULL, the function will fail and return NULL.
+    When this function is called repeatedly to parse JSON data incrementally,
+    the `dat` pointer must be the same in every call.
+ @param len The number of bytes of JSON data available to parse.
+    If this parameter is 0, the function will fail and return NULL.
+ @param flg The JSON read options.
+    Multiple options can be combined with `|` operator.
+    The flag `YYJSON_READ_INSITU` must be used when incremental parsing is used.
+ @param alc The memory allocator used by JSON reader.
+    Pass NULL to use the libc's default allocator.
+ @param state A pointer to a struct holding state needed to resume incremental parsing.
+    This struct contains an `err` field which is used to receive error information.
+ @return A new JSON document, or NULL if an error occurs.
+    When it's no longer needed, it should be freed with `yyjson_doc_free()`.
  */
 yyjson_api yyjson_doc *yyjson_read_incremental(char *dat,
                                                size_t len,
                                                yyjson_read_flag flg,
                                                const yyjson_alc *alc,
                                                yyjson_read_incremental_state *state);
+
+/**
+ Resets the incremental state and frees memory allocations helt by it after
+ calling `yyjson_read_incremental()`.
+
+ @param state A pointer to a struct holding state needed to resume incremental parsing.
+    This struct contains an `err` field which is used to receive error information.
+ @param alc The memory allocator used by JSON reader.
+    Pass NULL to use the libc's default allocator.
+*/
+yyjson_api void yyjson_reset_read_incremental_state(yyjson_read_incremental_state *state,
+                                                    const yyjson_alc *alc);
 
 /**
  Read a JSON file.
