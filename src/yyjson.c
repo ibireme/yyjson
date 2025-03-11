@@ -4416,11 +4416,13 @@ static_inline u64 diy_fp_to_ieee_raw(diy_fp fp) {
 /** Maximum exact pow10 exponent for double value. */
 #define F64_POW10_EXP_MAX_EXACT 22
 
+#if YYJSON_DOUBLE_MATH_CORRECT
 /** Cached pow10 table. */
 static const f64 f64_pow10_table[] = {
     1e0, 1e1, 1e2, 1e3, 1e4, 1e5, 1e6, 1e7, 1e8, 1e9, 1e10, 1e11, 1e12,
     1e13, 1e14, 1e15, 1e16, 1e17, 1e18, 1e19, 1e20, 1e21, 1e22
 };
+#endif
 
 /**
  Read a JSON number.
