@@ -782,7 +782,7 @@ char *yy_create_json(usize obj_len, usize arr_len) {
     for (i = 0; i < obj_len; i++) {
         char key[32];
         if (i > 0 && !yy_buf_append(&buf, ",", 1)) goto error;
-        sprintf(key, "\"key%d\":[", i);
+        sprintf(key, "\"key%zu\":[", i);
         if (!yy_buf_append(&buf, key, strlen(key))) goto error;
         for (j = 0; j < arr_len; j++) {
             char *tmp;

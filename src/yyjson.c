@@ -5860,6 +5860,7 @@ static_noinline yyjson_doc *read_root_single(u8 *hdr,
     alc_num = hdr_len + 1; /* single value */
 
     val_hdr = NULL;
+    val = NULL;
     raw = has_read_flag(NUMBER_AS_RAW) || has_read_flag(BIGNUM_AS_RAW);
     inv = has_read_flag(ALLOW_INVALID_UNICODE) != 0;
     raw_end = NULL;

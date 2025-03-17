@@ -162,7 +162,7 @@ restart_incremental_read:
     }
     if (expect == EXPECT_PASS) {
         yy_assertf(doc != NULL,
-                   "file should pass but fail '%s' (%d) at %d:\n%s\n"
+                   "file should pass but fail '%s' (%d) at %zu:\n%s\n"
                    "string src = %p (ofs %ld)\n",
                    state.err.msg, state.err.code, state.err.pos, path,
                    state.string_cont[0], (state.string_cont[0] - dat));
