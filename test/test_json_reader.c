@@ -113,6 +113,7 @@ static void test_read_file(const char *path, flag_type type, expect_type expect)
     free(buf);
     free(dat);
 
+#if YYJSON_ENABLE_INCREMENTAL
     // test incremental read
     // extend input length in chunks of one byte at a time
     const size_t chunk_len = 1;
@@ -177,8 +178,10 @@ restart_incremental_read:
     yyjson_reset_read_incremental_state(&state, NULL);
     yyjson_doc_free(doc);
     free(dat);
+#endif
 }
 
+#if YYJSON_ENABLE_INCREMENTAL
 static yyjson_doc *test_read_string_incremental(char *dat, usize len, usize chunk_len, flag_type type) {
 #if YYJSON_DISABLE_UTF8_VALIDATION
     if (!yy_str_is_utf8(dat, len)) return NULL;
@@ -223,6 +226,7 @@ static yyjson_doc *test_read_string_incremental(char *dat, usize len, usize chun
     yyjson_reset_read_incremental_state(&state, NULL);
     return doc;
 }
+#endif
 
 // yyjson test data
 static void test_json_yyjson(void) {
@@ -397,6 +401,7 @@ static void test_json_encoding(void) {
 
 // yyjson incremental
 static void test_json_incremental(void) {
+#if YYJSON_ENABLE_INCREMENTAL
     u8 *dat = yy_create_json(3, 10);
     usize len = strlen(dat);
     u8 *dat_dup = yy_str_copy(dat);
@@ -423,6 +428,7 @@ static void test_json_incremental(void) {
     yyjson_doc_free(doc);
     free(dat);
     free(dat_dup);
+#endif
 }
 
 yy_test_case(test_json_reader) {

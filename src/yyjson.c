@@ -333,6 +333,9 @@ uint32_t yyjson_version(void) {
 #ifndef YYJSON_DISABLE_UTF8_VALIDATION
 #define YYJSON_DISABLE_UTF8_VALIDATION 0
 #endif
+#ifndef YYJSON_ENABLE_INCREMENTAL
+#define YYJSON_ENABLE_INCREMENTAL 0
+#endif
 
 
 
@@ -399,6 +402,10 @@ uint32_t yyjson_version(void) {
 #define YYJSON_READ_LABEL_doc_end 7
 
 static_inline bool read_flag_eq(yyjson_read_flag flg, yyjson_read_flag chk) {
+#if !YYJSON_ENABLE_INCREMENTAL
+    if (chk == YYJSON_READ_INCREMENTAL)
+        return false; /* this should be evaluated at compile-time */
+#endif
 #if YYJSON_DISABLE_NON_STANDARD
     if (chk == YYJSON_READ_ALLOW_INF_AND_NAN ||
         chk == YYJSON_READ_ALLOW_COMMENTS ||
@@ -5441,6 +5448,7 @@ static_inline bool read_string(u8 **ptr,
     u16 hi, lo;
     u32 uni, tmp;
 
+#if YYJSON_ENABLE_INCREMENTAL
     if (unlikely(cont != NULL && cont[0] != NULL)) {
         /* Resume incremental parsing. */
         src = cont[0];
@@ -5449,6 +5457,7 @@ static_inline bool read_string(u8 **ptr,
             goto copy_ascii;
         }
     }
+#endif
 
 skip_ascii:
     /* Most strings have no escaped characters, so we can jump them quickly. */
@@ -5501,9 +5510,11 @@ skip_ascii_end:
         val->uni.str = (const char *)cur;
         *src = '\0';
         *end = src + 1;
+#if YYJSON_ENABLE_INCREMENTAL
         if (unlikely(cont != NULL)) {
             cont[0] = cont[1] = NULL;
         }
+#endif
         return true;
     }
 
@@ -7215,8 +7226,15 @@ yyjson_doc *yyjson_read_incremental(char *dat,
                                     yyjson_read_flag flg,
                                     const yyjson_alc *alc,
                                     yyjson_read_incremental_state *state) {
+#if YYJSON_ENABLE_INCREMENTAL
     flg |= YYJSON_READ_INCREMENTAL;
     return yyjson_read_opts(dat, len, flg, alc, &state->err);
+#else
+    state->err.pos = 0;
+    state->err.code = YYJSON_READ_ERROR_INVALID_PARAMETER;
+    state->err.msg = "compiled without incremental parsing";
+    return NULL;
+#endif
 }
 
 void yyjson_reset_read_incremental_state(yyjson_read_incremental_state *state,
