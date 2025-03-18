@@ -161,11 +161,6 @@ restart_incremental_read:
 #endif
     }
     if (expect == EXPECT_PASS) {
-        yy_assertf(doc != NULL,
-                   "file should pass but fail '%s' (%d) at %zu:\n%s\n"
-                   "string src = %p (ofs %ld)\n",
-                   state.err.msg, state.err.code, state.err.pos, path,
-                   state.string_cont[0], (state.string_cont[0] - dat));
         yy_assertf(doc != NULL, "file should pass but fail:\n%s\n", path);
         yy_assert(yyjson_doc_get_read_size(doc) > 0);
         yy_assert(yyjson_doc_get_val_count(doc) > 0);
@@ -176,7 +171,6 @@ restart_incremental_read:
         yy_assertf(doc == NULL, "file should fail but pass:\n%s\n", path);
         yy_assert(yyjson_doc_get_read_size(doc) == 0);
         yy_assert(yyjson_doc_get_val_count(doc) == 0);
-        yy_assertf(state.err.code != YYJSON_READ_SUCCESS, "file should fail but pass (%d '%s'):\n%s\n", state.err.code, state.err.msg, path);
         yy_assert(state.err.code != YYJSON_READ_SUCCESS);
         yy_assert(state.err.msg != NULL);
     }
