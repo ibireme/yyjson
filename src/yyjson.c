@@ -5441,7 +5441,7 @@ static_inline bool read_string(u8 **ptr,
     u16 hi, lo;
     u32 uni, tmp;
 
-    if (cont != NULL && cont[0] != NULL) {
+    if (unlikely(cont != NULL && cont[0] != NULL)) {
         /* Resume incremental parsing. */
         src = cont[0];
         dst = cont[1];
