@@ -2799,11 +2799,18 @@ yyjson_mut_val *yyjson_mut_merge_patch(yyjson_mut_doc *doc,
             patch_val = yyjson_mut_obj_getn(patch,
                                             unsafe_yyjson_get_str(key),
                                             unsafe_yyjson_get_len(key));
-            if (!patch_val) {
-                mut_key = yyjson_mut_val_mut_copy(doc, key);
-                mut_val = yyjson_mut_val_mut_copy(doc, orig_val);
-                if (!yyjson_mut_obj_add(builder, mut_key, mut_val)) return NULL;
+            if (patch_val) {
+                /* null indicates the field is removed. */
+                if (unsafe_yyjson_is_null(patch_val)) {
+                    continue;
+                }
+                mut_val = yyjson_mut_merge_patch(doc, orig_val, patch_val);
             }
+            else {
+                mut_val = yyjson_mut_val_mut_copy(doc, orig_val);
+            }
+            mut_key = yyjson_mut_val_mut_copy(doc, key);
+            if (!yyjson_mut_obj_add(builder, mut_key, mut_val)) return NULL;
         }
     }
 
@@ -2813,12 +2820,16 @@ yyjson_mut_val *yyjson_mut_merge_patch(yyjson_mut_doc *doc,
         if (unsafe_yyjson_is_null(patch_val)) {
             continue;
         }
-        mut_key = yyjson_mut_val_mut_copy(doc, key);
         orig_val = yyjson_mut_obj_getn(orig,
                                        unsafe_yyjson_get_str(key),
                                        unsafe_yyjson_get_len(key));
-        merged_val = yyjson_mut_merge_patch(doc, orig_val, patch_val);
-        if (!yyjson_mut_obj_add(builder, mut_key, merged_val)) return NULL;
+        if (orig_val) {
+            /* merged already */
+            continue;
+        }
+        mut_key = yyjson_mut_val_mut_copy(doc, key);
+        mut_val = yyjson_mut_val_mut_copy(doc, patch_val);
+        if (!yyjson_mut_obj_add(builder, mut_key, mut_val)) return NULL;
     }
 
     return builder;
