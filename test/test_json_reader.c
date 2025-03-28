@@ -18,7 +18,8 @@ typedef enum {
     FLAG_INF_NAN    = 1 << 2,
     FLAG_EXTRA      = 1 << 3,
     FLAG_NUM_RAW    = 1 << 4,
-    FLAG_MAX        = 1 << 5,
+    FLAG_BOM        = 1 << 5,
+    FLAG_MAX        = 1 << 6,
 } flag_type;
 
 static void test_read_file(const char *path, flag_type type, expect_type expect) {
@@ -41,6 +42,7 @@ static void test_read_file(const char *path, flag_type type, expect_type expect)
     if (type & FLAG_INF_NAN) flag |= YYJSON_READ_ALLOW_INF_AND_NAN;
     if (type & FLAG_EXTRA) flag |= YYJSON_READ_STOP_WHEN_DONE;
     if (type & FLAG_NUM_RAW) flag |= YYJSON_READ_NUMBER_AS_RAW;
+    if (type & FLAG_BOM) flag |= YYJSON_READ_ALLOW_BOM;
     
     // test read from file
     yyjson_read_err err;
@@ -278,8 +280,13 @@ static void test_json_encoding(void) {
         
         if (strcmp(name, "utf8.json") == 0) {
             test_read_file(path, FLAG_NONE, EXPECT_PASS);
+            test_read_file(path, FLAG_BOM, EXPECT_PASS);
+        } else if (strcmp(name, "utf8bom.json") == 0) {
+            test_read_file(path, FLAG_NONE, EXPECT_FAIL);
+            test_read_file(path, FLAG_BOM, EXPECT_PASS);
         } else {
             test_read_file(path, FLAG_NONE, EXPECT_FAIL);
+            test_read_file(path, FLAG_BOM, EXPECT_FAIL);
         }
     }
     yy_dir_free(names);

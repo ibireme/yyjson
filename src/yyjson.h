@@ -808,6 +808,9 @@ static const yyjson_read_flag YYJSON_READ_ALLOW_INVALID_UNICODE = 1 << 6;
     The flag will be overridden by `YYJSON_READ_NUMBER_AS_RAW` flag. */
 static const yyjson_read_flag YYJSON_READ_BIGNUM_AS_RAW         = 1 << 7;
 
+/** Allow UTF-8 BOM and skip it before parsing if any (non-standard). */
+static const yyjson_read_flag YYJSON_READ_ALLOW_BOM             = 1 << 8;
+
 
 
 /** Result code for JSON reader. */
