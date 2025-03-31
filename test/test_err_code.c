@@ -510,6 +510,25 @@ static void test_read_err_code(void) {
     
     
     // -------------------------------------------------------------------------
+    // UTF-8 BOM
+    buf[0] = 0xEF;
+    buf[1] = 0xBB;
+    buf[2] = 0xBF;
+    memcpy(buf + 3, "abcde", 6);
+    memset(&err, -1, sizeof(err));
+    yyjson_doc_free(yyjson_read_opts((char *)buf, strlen(buf), 0, NULL, &err));
+    yy_assert(err.code == YYJSON_READ_ERROR_UNEXPECTED_CHARACTER);
+    yy_assert(err.pos == 0);
+    
+#if !YYJSON_DISABLE_NON_STANDARD
+    memset(&err, -1, sizeof(err));
+    yyjson_doc_free(yyjson_read_opts((char *)buf, strlen(buf), YYJSON_READ_ALLOW_BOM, NULL, &err));
+    yy_assert(err.code == YYJSON_READ_ERROR_UNEXPECTED_CHARACTER);
+    yy_assert(err.pos == 3);
+#endif
+    
+    
+    // -------------------------------------------------------------------------
     // Invalid JSON literal, such as `truu`.
     str = "[truu]";
     //      ^ invalid literal
@@ -736,10 +755,15 @@ static void test_locate_pos(void) {
     buf[1] = 0xBB;
     buf[2] = 0xBF;
     for (pos = 0; pos <= len; pos++) {
-        // Don't count BOM as a character.
-        size_t pos_uni = pos < 3 ? 0 : pos - 3;
         yy_assert(yyjson_locate_pos(buf, len, pos, &line, &col, &chr));
-        yy_assert(line == 1 && col == pos_uni + 1 && chr == pos_uni);
+        if (pos < 3) {
+            // Don't allow BOM, pos should always be 0.
+            yy_assert(line == 1 && col == (pos ? 2 : 1) && chr == (pos ? 1 : 0));
+        } else {
+            // Allow BOM, don't count BOM as a character.
+            size_t pos_uni = pos - 3;
+            yy_assert(line == 1 && col == pos_uni + 1 && chr == pos_uni);
+        }
     }
 }
 

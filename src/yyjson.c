@@ -1872,7 +1872,7 @@ bool yyjson_locate_pos(const char *str, size_t len, size_t pos,
         return false;
     }
 
-    if (len >= 3 && cur[0] == 0xEF && cur[1] == 0xBB && cur[2] == 0xBF) {
+    if (pos >= 3 && cur[0] == 0xEF && cur[1] == 0xBB && cur[2] == 0xBF) {
         cur += 3;
     }
 
