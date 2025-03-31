@@ -651,7 +651,7 @@ typedef struct yyjson_alc {
     function will fail and return false.
  @return true if the `alc` has been successfully initialized.
 
- @par Example
+ @b Example
  @code
     // parse JSON with stack memory
     char buf[1024];
@@ -980,7 +980,7 @@ yyjson_api_inline yyjson_doc *yyjson_read(const char *dat,
  @param flg The JSON read options.
  @return The maximum memory size to read this JSON, or 0 if overflow.
 
- @par Example
+ @b Example
  @code
     // read multiple JSON with same pre-allocated memory
 
@@ -1886,7 +1886,7 @@ yyjson_api_inline yyjson_val *yyjson_arr_get_last(yyjson_val *arr);
 /**
  A JSON array iterator.
 
- @par Example
+ @b Example
  @code
     yyjson_val *val;
     yyjson_arr_iter iter = yyjson_arr_iter_with(arr);
@@ -1942,7 +1942,7 @@ yyjson_api_inline yyjson_val *yyjson_arr_iter_next(yyjson_arr_iter *iter);
  Macro for iterating over an array.
  It works like iterator, but with a more intuitive API.
 
- @par Example
+ @b Example
  @code
     size_t idx, max;
     yyjson_val *val;
@@ -1998,7 +1998,7 @@ yyjson_api_inline yyjson_val *yyjson_obj_getn(yyjson_val *obj, const char *key,
 /**
  A JSON object iterator.
 
- @par Example
+ @b Example
  @code
     yyjson_val *key, *val;
     yyjson_obj_iter iter = yyjson_obj_iter_with(obj);
@@ -2113,7 +2113,7 @@ yyjson_api_inline yyjson_val *yyjson_obj_iter_getn(yyjson_obj_iter *iter,
  Macro for iterating over an object.
  It works like iterator, but with a more intuitive API.
 
- @par Example
+ @b Example
  @code
     size_t idx, max;
     yyjson_val *key, *val;
@@ -2604,7 +2604,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_get_last(yyjson_mut_val *arr);
  @warning You should not modify the array while iterating over it, but you can
     use `yyjson_mut_arr_iter_remove()` to remove current value.
 
- @par Example
+ @b Example
  @code
     yyjson_mut_val *val;
     yyjson_mut_arr_iter iter = yyjson_mut_arr_iter_with(arr);
@@ -2677,7 +2677,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_iter_remove(
 
  @warning You should not modify the array while iterating over it.
 
- @par Example
+ @b Example
  @code
     size_t idx, max;
     yyjson_mut_val *val;
@@ -2716,7 +2716,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_arr(yyjson_mut_doc *doc);
  @param count The value count. If this value is 0, an empty array will return.
  @return The new array. NULL if input is invalid or memory allocation failed.
 
- @par Example
+ @b Example
  @code
     const bool vals[3] = { true, false, true };
     yyjson_mut_val *arr = yyjson_mut_arr_with_bool(doc, vals, 3);
@@ -2734,7 +2734,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_with_bool(
  @param count The number count. If this value is 0, an empty array will return.
  @return The new array. NULL if input is invalid or memory allocation failed.
 
- @par Example
+ @b Example
  @code
     const int64_t vals[3] = { -1, 0, 1 };
     yyjson_mut_val *arr = yyjson_mut_arr_with_sint64(doc, vals, 3);
@@ -2752,7 +2752,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_with_sint(
  @param count The number count. If this value is 0, an empty array will return.
  @return The new array. NULL if input is invalid or memory allocation failed.
 
- @par Example
+ @b Example
  @code
     const uint64_t vals[3] = { 0, 1, 0 };
     yyjson_mut_val *arr = yyjson_mut_arr_with_uint(doc, vals, 3);
@@ -2770,7 +2770,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_with_uint(
  @param count The number count. If this value is 0, an empty array will return.
  @return The new array. NULL if input is invalid or memory allocation failed.
 
- @par Example
+ @b Example
  @code
     const double vals[3] = { 0.1, 0.2, 0.3 };
     yyjson_mut_val *arr = yyjson_mut_arr_with_real(doc, vals, 3);
@@ -2788,7 +2788,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_with_real(
  @param count The number count. If this value is 0, an empty array will return.
  @return The new array. NULL if input is invalid or memory allocation failed.
 
- @par Example
+ @b Example
  @code
     const int8_t vals[3] = { -1, 0, 1 };
     yyjson_mut_val *arr = yyjson_mut_arr_with_sint8(doc, vals, 3);
@@ -2806,7 +2806,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_with_sint8(
  @param count The number count. If this value is 0, an empty array will return.
  @return The new array. NULL if input is invalid or memory allocation failed.
 
- @par Example
+ @b Example
  @code
     const int16_t vals[3] = { -1, 0, 1 };
     yyjson_mut_val *arr = yyjson_mut_arr_with_sint16(doc, vals, 3);
@@ -2824,7 +2824,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_with_sint16(
  @param count The number count. If this value is 0, an empty array will return.
  @return The new array. NULL if input is invalid or memory allocation failed.
 
- @par Example
+ @b Example
  @code
     const int32_t vals[3] = { -1, 0, 1 };
     yyjson_mut_val *arr = yyjson_mut_arr_with_sint32(doc, vals, 3);
@@ -2842,7 +2842,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_with_sint32(
  @param count The number count. If this value is 0, an empty array will return.
  @return The new array. NULL if input is invalid or memory allocation failed.
 
- @par Example
+ @b Example
  @code
     const int64_t vals[3] = { -1, 0, 1 };
     yyjson_mut_val *arr = yyjson_mut_arr_with_sint64(doc, vals, 3);
@@ -2860,7 +2860,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_with_sint64(
  @param count The number count. If this value is 0, an empty array will return.
  @return The new array. NULL if input is invalid or memory allocation failed.
 
- @par Example
+ @b Example
  @code
     const uint8_t vals[3] = { 0, 1, 0 };
     yyjson_mut_val *arr = yyjson_mut_arr_with_uint8(doc, vals, 3);
@@ -2878,7 +2878,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_with_uint8(
  @param count The number count. If this value is 0, an empty array will return.
  @return The new array. NULL if input is invalid or memory allocation failed.
 
- @par Example
+ @b Example
  @code
     const uint16_t vals[3] = { 0, 1, 0 };
     yyjson_mut_val *arr = yyjson_mut_arr_with_uint16(doc, vals, 3);
@@ -2896,7 +2896,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_with_uint16(
  @param count The number count. If this value is 0, an empty array will return.
  @return The new array. NULL if input is invalid or memory allocation failed.
 
- @par Example
+ @b Example
  @code
     const uint32_t vals[3] = { 0, 1, 0 };
     yyjson_mut_val *arr = yyjson_mut_arr_with_uint32(doc, vals, 3);
@@ -2914,7 +2914,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_with_uint32(
  @param count The number count. If this value is 0, an empty array will return.
  @return The new array. NULL if input is invalid or memory allocation failed.
 
- @par Example
+ @b Example
  @code
      const uint64_t vals[3] = { 0, 1, 0 };
      yyjson_mut_val *arr = yyjson_mut_arr_with_uint64(doc, vals, 3);
@@ -2932,7 +2932,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_with_uint64(
  @param count The number count. If this value is 0, an empty array will return.
  @return The new array. NULL if input is invalid or memory allocation failed.
 
- @par Example
+ @b Example
  @code
     const float vals[3] = { -1.0f, 0.0f, 1.0f };
     yyjson_mut_val *arr = yyjson_mut_arr_with_float(doc, vals, 3);
@@ -2950,7 +2950,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_with_float(
  @param count The number count. If this value is 0, an empty array will return.
  @return The new array. NULL if input is invalid or memory allocation failed.
 
- @par Example
+ @b Example
  @code
     const double vals[3] = { -1.0, 0.0, 1.0 };
     yyjson_mut_val *arr = yyjson_mut_arr_with_double(doc, vals, 3);
@@ -2975,7 +2975,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_with_double(
     unmodified for the lifetime of this JSON document. If these strings will be
     modified, you should use `yyjson_mut_arr_with_strcpy()` instead.
 
- @par Example
+ @b Example
  @code
     const char *vals[3] = { "a", "b", "c" };
     yyjson_mut_val *arr = yyjson_mut_arr_with_str(doc, vals, 3);
@@ -3001,7 +3001,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_with_str(
     unmodified for the lifetime of this JSON document. If these strings will be
     modified, you should use `yyjson_mut_arr_with_strncpy()` instead.
 
- @par Example
+ @b Example
  @code
     const char *vals[3] = { "a", "bb", "c" };
     const size_t lens[3] = { 1, 2, 1 };
@@ -3023,7 +3023,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_with_strn(
     If this value is 0, an empty array will return.
  @return The new array. NULL if input is invalid or memory allocation failed.
 
- @par Example
+ @b Example
  @code
     const char *vals[3] = { "a", "b", "c" };
     yyjson_mut_val *arr = yyjson_mut_arr_with_strcpy(doc, vals, 3);
@@ -3045,7 +3045,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_with_strcpy(
     If this value is 0, an empty array will return.
  @return The new array. NULL if input is invalid or memory allocation failed.
 
- @par Example
+ @b Example
  @code
     const char *vals[3] = { "a", "bb", "c" };
     const size_t lens[3] = { 1, 2, 1 };
@@ -3418,7 +3418,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_obj_getn(yyjson_mut_val *obj,
  @warning You should not modify the object while iterating over it, but you can
     use `yyjson_mut_obj_iter_remove()` to remove current value.
 
- @par Example
+ @b Example
  @code
     yyjson_mut_val *key, *val;
     yyjson_mut_obj_iter iter = yyjson_mut_obj_iter_with(obj);
@@ -3549,7 +3549,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_obj_iter_getn(
 
  @warning You should not modify the object while iterating over it.
 
- @par Example
+ @b Example
  @code
     size_t idx, max;
     yyjson_val *key, *val;
@@ -3585,7 +3585,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_obj(yyjson_mut_doc *doc);
  @warning The input string is not copied, you should keep this string
     unmodified for the lifetime of this JSON document.
 
- @par Example
+ @b Example
  @code
     const char *keys[2] = { "id", "name" };
     const char *vals[2] = { "01", "Harry" };
@@ -3605,7 +3605,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_obj_with_str(yyjson_mut_doc *doc,
  @warning The input string is not copied, you should keep this string
     unmodified for the lifetime of this JSON document.
 
- @par Example
+ @b Example
  @code
     const char *kv_pairs[4] = { "id", "01", "name", "Harry" };
     yyjson_mut_val *obj = yyjson_mut_obj_with_kv(doc, kv_pairs, 2);
