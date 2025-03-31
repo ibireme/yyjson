@@ -393,7 +393,8 @@ static_inline bool read_flag_eq(yyjson_read_flag flg, yyjson_read_flag chk) {
     if (chk == YYJSON_READ_ALLOW_INF_AND_NAN ||
         chk == YYJSON_READ_ALLOW_COMMENTS ||
         chk == YYJSON_READ_ALLOW_TRAILING_COMMAS ||
-        chk == YYJSON_READ_ALLOW_INVALID_UNICODE)
+        chk == YYJSON_READ_ALLOW_INVALID_UNICODE ||
+        chk == YYJSON_READ_ALLOW_BOM)
         return false; /* this should be evaluated at compile-time */
 #endif
     return (flg & chk) != 0;
@@ -1869,6 +1870,10 @@ bool yyjson_locate_pos(const char *str, size_t len, size_t pos,
         if (col) *col = 0;
         if (chr) *chr = 0;
         return false;
+    }
+
+    if (len >= 3 && cur[0] == 0xEF && cur[1] == 0xBB && cur[2] == 0xBF) {
+        cur += 3;
     }
 
     while (cur < end) {
@@ -6805,6 +6810,12 @@ yyjson_doc *yyjson_read_opts(char *dat,
         cur = hdr;
         memcpy(hdr, dat, len);
         memset(end, 0, YYJSON_PADDING_SIZE);
+    }
+
+    if (has_read_flag(ALLOW_BOM)) {
+        if (len >= 3 && cur[0] == 0xEF && cur[1] == 0xBB && cur[2] == 0xBF) {
+            cur += 3;
+        }
     }
 
     /* skip empty contents before json document */

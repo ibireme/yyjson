@@ -341,6 +341,9 @@ This flag permits invalid characters to appear in the string values, but it stil
 
 ***Warning***: when using this option, be aware that strings within JSON values may contain incorrect encoding, so you need to handle these strings carefully to avoid security risks.
 
+● **YYJSON_READ_ALLOW_BOM**<br/>
+Allow UTF-8 BOM and skip it before parsing if any (non-standard).
+
 
 ---------------
 # Writing JSON

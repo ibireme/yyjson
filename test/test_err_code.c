@@ -731,6 +731,16 @@ static void test_locate_pos(void) {
         yy_assert(yyjson_locate_pos(buf, len, pos, &line, &col, &chr));
         yy_assert(line == 1 && col == pos + 1 && chr == pos);
     }
+    // UTF-8 BOM.
+    buf[0] = 0xEF;
+    buf[1] = 0xBB;
+    buf[2] = 0xBF;
+    for (pos = 0; pos <= len; pos++) {
+        // Don't count BOM as a character.
+        size_t pos_uni = pos < 3 ? 0 : pos - 3;
+        yy_assert(yyjson_locate_pos(buf, len, pos, &line, &col, &chr));
+        yy_assert(line == 1 && col == pos_uni + 1 && chr == pos_uni);
+    }
 }
 
 
