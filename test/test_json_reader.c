@@ -283,7 +283,11 @@ static void test_json_encoding(void) {
             test_read_file(path, FLAG_BOM, EXPECT_PASS);
         } else if (strcmp(name, "utf8bom.json") == 0) {
             test_read_file(path, FLAG_NONE, EXPECT_FAIL);
+#if !YYJSON_DISABLE_NON_STANDARD
             test_read_file(path, FLAG_BOM, EXPECT_PASS);
+#else
+            test_read_file(path, FLAG_BOM, EXPECT_FAIL);
+#endif
         } else {
             test_read_file(path, FLAG_NONE, EXPECT_FAIL);
             test_read_file(path, FLAG_BOM, EXPECT_FAIL);
