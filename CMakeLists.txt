@@ -78,10 +78,19 @@ set_target_properties(yyjson PROPERTIES VERSION ${PROJECT_VERSION} SOVERSION ${Y
 # ------------------------------------------------------------------------------
 # Project Config
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
-include(XcodeProperty)
+
+# Enable C++ for tests
+if(YYJSON_BUILD_TESTS)
+    include(CheckLanguage)
+    check_language(CXX)
+    if(CMAKE_CXX_COMPILER)
+        enable_language(CXX)
+    endif()
+endif()
 
 if(XCODE)
     # Flag string for Xcode property
+    include(XcodeProperty)
     set(YYJSON_FLAGS "-Wall -Wextra -Werror -pedantic -pedantic-errors")
     if(YYJSON_ENABLE_FASTMATH)
         set(YYJSON_FLAGS "${YYJSON_FLAGS} -ffast-math")
@@ -106,7 +115,9 @@ elseif(MSVC)
     endif()
     
     target_compile_options(yyjson PRIVATE $<$<C_COMPILER_ID:MSVC>:${YYJSON_FLAGS}>)
-    target_compile_options(yyjson PRIVATE $<$<CXX_COMPILER_ID:MSVC>:${YYJSON_FLAGS}>)
+    if(CMAKE_CXX_COMPILER)
+        target_compile_options(yyjson PRIVATE $<$<CXX_COMPILER_ID:MSVC>:${YYJSON_FLAGS}>)
+    endif()
     
 elseif(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang|Intel")
     # Flag list for GCC like compilers
@@ -116,7 +127,9 @@ elseif(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang|Intel")
     endif()
     
     target_compile_options(yyjson PRIVATE $<$<COMPILE_LANGUAGE:C>:${YYJSON_FLAGS}>)
-    target_compile_options(yyjson PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${YYJSON_FLAGS}>)
+    if(CMAKE_CXX_COMPILER)
+        target_compile_options(yyjson PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${YYJSON_FLAGS}>)
+    endif()
     
     if(YYJSON_FORCE_32_BIT)
         set(CMAKE_C_FLAGS -m32)
@@ -164,13 +177,6 @@ install(FILES ${CMAKE_BINARY_DIR}/yyjson.pc DESTINATION ${CMAKE_INSTALL_LIBDIR}/
 if(YYJSON_BUILD_TESTS)
     enable_testing()
 
-    # Check C++ compiler
-    include(CheckLanguage)
-    check_language(CXX)
-    if(CMAKE_CXX_COMPILER)
-        enable_language(CXX)
-    endif()
-    
     if(XCODE)
         # Config XCTest
         find_package(XCTest REQUIRED)
