@@ -2,7 +2,7 @@
 # Released under the MIT License:
 # https://github.com/ibireme/yyjson/blob/master/LICENSE
 
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.5...3.31)
 project(yyjson VERSION 0.10.0 LANGUAGES C)
 set(YYJSON_SOVERSION 0)
 
