@@ -401,6 +401,9 @@ uint32_t yyjson_version(void) {
 #define YYJSON_READ_LABEL_obj_val_end 6
 #define YYJSON_READ_LABEL_doc_end 7
 
+/* Maximum length of a number, in incremental parsing */
+#define YYJSON_NUMBER_MAX_LEN 1024
+
 static_inline bool read_flag_eq(yyjson_read_flag flg, yyjson_read_flag chk) {
 #if YYJSON_DISABLE_NON_STANDARD
     if (chk == YYJSON_READ_ALLOW_INF_AND_NAN ||
@@ -7067,6 +7070,16 @@ yyjson_doc *yyjson_incr_read(yyjson_incr_state *state, size_t len, yyjson_read_e
     if (unlikely(cur >= end)) goto unexpected_end; \
 } while (false)
 
+#define check_maybe_truncated_number() do { \
+    if (unlikely(cur >= end)) { \
+        if (unlikely(cur > state->cur + YYJSON_NUMBER_MAX_LEN)) { \
+            msg = "number too long"; \
+            goto fail_number; \
+        } \
+        goto unexpected_end; \
+    } \
+} while (false)
+
     u8 *hdr = NULL, *end = NULL, *cur = NULL;
     yyjson_read_flag flg;
     yyjson_alc alc;
@@ -7335,7 +7348,7 @@ arr_val_continue:
 arr_val_maybe_end:
     /* if incremental parsing stops in the middle of a number, it may continue
        with more digits, so arr val maybe didn't end yet */
-    if (cur >= end) goto unexpected_end;
+    check_maybe_truncated_number();
 
 arr_val_end:
     save_incr_state(arr_val_end);
@@ -7492,7 +7505,7 @@ obj_val_continue:
 obj_val_maybe_end:
     /* if incremental parsing stops in the middle of a number, it may continue
        with more digits, so obj val maybe didn't end yet */
-    if (cur >= end) goto unexpected_end;
+    check_maybe_truncated_number();
 
 obj_val_end:
     save_incr_state(obj_val_end);
