@@ -72,8 +72,9 @@ yyjson_mut_val *yyjson_mut_strncpy(yyjson_mut_doc *doc, const char *str, size_t 
 
 
 ---------------
+
 # Reading JSON
-The library provides 4 functions for reading JSON.<br/>
+The library provides 5 functions for reading JSON.<br/>
 Each function accepts an input of UTF-8 data or a file,<br/>
 returns a document if it successful or `NULL` if it fails.
 
@@ -170,6 +171,89 @@ yyjson_read_flag flg = YYJSON_READ_ALLOW_COMMENTS | YYJSON_READ_ALLOW_INF_AND_NA
 yyjson_doc *doc = yyjson_read_opts((char *)dat, len, flg, NULL, NULL);
 
 if (doc) {...}
+
+yyjson_doc_free(doc);
+```
+
+## Read JSON incrementally
+
+Reading a very large JSON document can freeze the program for a short while. If
+this is not acceptable, incremental reading can be used.
+
+Incremental reading is recommended only for large documents and only when the
+program needs to be responsive. Incremental reading is slightly slower than
+`yyjson_read()` and `yyjson_read_opts()`.
+
+To read a large JSON document incrementally:
+
+1. Call `yyjson_incr_new()` to create the state for incremental reading.
+2. Call `yyjson_incr_read()` repeatedly.
+3. Call `yyjson_incr_free()` to free the state.
+
+### Create the state for incremental reading
+
+The `buf` should be a UTF-8 string, null-terminator is not required.
+You can pass a const string if you don't use the `YYJSON_READ_INSITU` flag.<br/>
+The `buf_len` is the length of `buf` in bytes.
+The `flg` is reader flag. Pass 0 if you don't need it. See reader flag for details.
+The `alc` is memory allocator, pass NULL if you don't need it. See `memory allocator` for details.<br/>
+
+The function returns a new state, or NULL if `flg` is invalid or if a memory allocation error occurs.
+
+```c
+yyjson_incr_state *yyjson_incr_new(char *buf, size_t buf_len, yyjson_read_flag flg, const yyjson_alc *alc);
+```
+
+### Perform incremental read
+
+Performs incremental read of up to `len` bytes.
+
+The `state` for incremental reading is created using `yyjson_incr_new()`.<br/>
+The `len` is the maximum number of bytes to read, counting from the start of the JSON data.</br/>
+The `err` is a pointer to receive the error information. Required.<br/>
+
+The function returns a document object when the reading is complete and NULL otherwise.
+If `err->code` is set to `YYJSON_READ_ERROR_MORE`, it indicates that parsing is not yet complete.
+Then, increase `len` by some kilobytes and call this function again.
+Continue increasing `len` until `len == buf_len` (the total length of the input buffer) or until an error other than `YYJSON_READ_ERROR_MORE` is returned.
+
+Note: Parsing in very small increments is not efficient.
+An increment of several kilobytes or megabytes is recommended.
+
+```c
+yyjson_doc *yyjson_incr_read(yyjson_incr_state *state, size_t len, yyjson_read_err *err);
+```
+
+### Free the state used for incremental reading
+
+Free the `state` created by `yyjson_incr_new()`.
+
+```c
+void yyjson_incr_free(yyjson_incr_state *state);
+```
+
+### Sample code
+
+```c
+const char *dat = your_file.bytes;
+size_t len = your_file.size;
+
+yyjson_read_flag flg = YYJSON_READ_NOFLAG;
+yyjson_incr_state *state = yyjson_incr_new(dat, len, flg, NULL);
+yyjson_doc *doc;
+yyjson_read_err err;
+size_t read_so_far = 0;
+do {
+    read_so_far += 100000;
+    if (read_so_far > len)
+        read_so_far = len;
+    doc = yyjson_incr_read(state, read_so_far, &err);
+    if (err.code != YYJSON_READ_ERROR_MORE)
+        break;
+} while (read_so_far < len);
+yyjson_incr_free(state);
+
+if (doc != NULL) { ... }
 
 yyjson_doc_free(doc);
 ```
@@ -308,7 +392,7 @@ Allow nan/inf number or case-insensitive literal (non-standard), for example:
     "large": 123e999,
     "nan1": NaN,
     "nan2": nan,
-    "inf1:" Inf,
+    "inf1": Inf,
     "inf2": -Infinity
 }
 ```
