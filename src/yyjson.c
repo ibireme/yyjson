@@ -5895,30 +5895,25 @@ static_noinline yyjson_doc *read_root_single(u8 *hdr,
     bool inv; /* allow invalid unicode */
     u8 *raw_end; /* raw end for null-terminator */
     u8 **pre; /* previous raw end pointer */
-    u8 **str_cont = NULL; /* for incremental string parsing */
 
     hdr_len = sizeof(yyjson_doc) / sizeof(yyjson_val);
     hdr_len += (sizeof(yyjson_doc) % sizeof(yyjson_val)) > 0;
     alc_num = hdr_len + 1; /* single value */
 
-    val_hdr = NULL;
-    val = NULL;
+    val_hdr = (yyjson_val *)alc.malloc(alc.ctx, alc_num * sizeof(yyjson_val));
+    if (unlikely(!val_hdr)) goto fail_alloc;
+    val = val_hdr + hdr_len;
     raw = has_read_flag(NUMBER_AS_RAW) || has_read_flag(BIGNUM_AS_RAW);
     inv = has_read_flag(ALLOW_INVALID_UNICODE) != 0;
     raw_end = NULL;
     pre = raw ? &raw_end : NULL;
 
-    val_hdr = (yyjson_val *)alc.malloc(alc.ctx, alc_num * sizeof(yyjson_val));
-    if (unlikely(!val_hdr)) goto fail_alloc;
-    val = val_hdr + hdr_len;
-
-doc_begin:
     if (char_is_number(*cur)) {
         if (likely(read_number(&cur, pre, flg, val, &msg))) goto doc_end;
         goto fail_number;
     }
     if (*cur == '"') {
-        if (likely(read_string(&cur, end, inv, val, &msg, str_cont)))
+        if (likely(read_string(&cur, end, inv, val, &msg, NULL)))
             goto doc_end;
         goto fail_string;
     }

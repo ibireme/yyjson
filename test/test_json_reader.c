@@ -23,7 +23,6 @@ typedef enum {
 } flag_type;
 
 static void test_read_file(const char *path, flag_type type, expect_type expect) {
-    static int counter = 0;
 #if YYJSON_DISABLE_UTF8_VALIDATION
     {
         u8 *dat;
