@@ -905,54 +905,6 @@ yyjson_api yyjson_doc *yyjson_read_opts(char *dat,
                                         const yyjson_alc *alc,
                                         yyjson_read_err *err);
 
-#if !defined(YYJSON_DISABLE_INCREMENTAL) || !YYJSON_DISABLE_INCREMENTAL
-
-/**
- Initialize state for incremental read.
-
- To read a large JSON document incrementally:
- 1. Call `yyjson_incr_new()` to create the state for incremental reading.
- 2. Call `yyjson_incr_read()` repeatedly.
- 3. Call `yyjson_incr_free()` to free the state.
-
- @param buf The JSON data, null-terminator is not required.
-    If this parameter is NULL, the function will fail and return NULL.
- @param buf_len The length of the JSON data in `buf`.
- @param flg The JSON read options.
-    Multiple options can be combined with `|` operator.
- @param alc The memory allocator used by JSON reader.
-    Pass NULL to use the libc's default allocator.
- @return A state for incremental reading.
-    It should be freed with `yyjson_incr_free()`.
-    NULL is returned if memory allocation fails.
-*/
-yyjson_incr_state *yyjson_incr_new(char *buf, size_t buf_len, yyjson_read_flag flg, const yyjson_alc *alc);
-
-/**
- Performs incremental read of up to `len` bytes.
-
- If NULL is returned and `err->code` is set to `YYJSON_READ_ERROR_MORE`, it
- indicates that more data is required to continue parsing. Then, call this
- function again with incremented `len`. Continue until a document is returned or
- an error other than `YYJSON_READ_ERROR_MORE` is returned.
-
- Note: Parsing in very small increments is not efficient. An increment of
- several kilobytes or megabytes is recommended.
-
- @param state The state for incremental reading, created using `yyjson_incr_new()`.
- @param len The number of bytes of JSON data available to parse.
-    If this parameter is 0, the function will fail and return NULL.
- @param err A pointer to receive error information.
- @return A new JSON document, or NULL if an error occurs.
-    When the document is no longer needed, it should be freed with `yyjson_doc_free()`.
-*/
-yyjson_doc *yyjson_incr_read(yyjson_incr_state *state, size_t len, yyjson_read_err *err);
-
-/** Release the incremental read state and free the memory. */
-void yyjson_incr_free(yyjson_incr_state *state);
-
-#endif
-
 /**
  Read a JSON file.
 
@@ -1021,6 +973,61 @@ yyjson_api_inline yyjson_doc *yyjson_read(const char *dat,
     return yyjson_read_opts((char *)(void *)(size_t)(const void *)dat,
                             len, flg, NULL, NULL);
 }
+
+
+
+#if !defined(YYJSON_DISABLE_INCREMENTAL) || !YYJSON_DISABLE_INCREMENTAL
+
+/**
+ Initialize state for incremental read.
+
+ To read a large JSON document incrementally:
+ 1. Call `yyjson_incr_new()` to create the state for incremental reading.
+ 2. Call `yyjson_incr_read()` repeatedly.
+ 3. Call `yyjson_incr_free()` to free the state.
+
+ @param buf The JSON data, null-terminator is not required.
+    If this parameter is NULL, the function will fail and return NULL.
+ @param buf_len The length of the JSON data in `buf`.
+ @param flg The JSON read options.
+    Multiple options can be combined with `|` operator.
+ @param alc The memory allocator used by JSON reader.
+    Pass NULL to use the libc's default allocator.
+ @return A state for incremental reading.
+    It should be freed with `yyjson_incr_free()`.
+    NULL is returned if memory allocation fails.
+*/
+yyjson_api yyjson_incr_state *yyjson_incr_new(char *buf, size_t buf_len,
+                                              yyjson_read_flag flg,
+                                              const yyjson_alc *alc);
+
+/**
+ Performs incremental read of up to `len` bytes.
+
+ If NULL is returned and `err->code` is set to `YYJSON_READ_ERROR_MORE`, it
+ indicates that more data is required to continue parsing. Then, call this
+ function again with incremented `len`. Continue until a document is returned or
+ an error other than `YYJSON_READ_ERROR_MORE` is returned.
+
+ Note: Parsing in very small increments is not efficient. An increment of
+ several kilobytes or megabytes is recommended.
+
+ @param state The state for incremental reading, created using
+    `yyjson_incr_new()`.
+ @param len The number of bytes of JSON data available to parse.
+    If this parameter is 0, the function will fail and return NULL.
+ @param err A pointer to receive error information.
+ @return A new JSON document, or NULL if an error occurs.
+    When the document is no longer needed, it should be freed with
+    `yyjson_doc_free()`.
+*/
+yyjson_api yyjson_doc *yyjson_incr_read(yyjson_incr_state *state, size_t len,
+                                        yyjson_read_err *err);
+
+/** Release the incremental read state and free the memory. */
+yyjson_api void yyjson_incr_free(yyjson_incr_state *state);
+
+#endif /* YYJSON_DISABLE_INCREMENTAL */
 
 /**
  Returns the size of maximum memory usage to read a JSON data.

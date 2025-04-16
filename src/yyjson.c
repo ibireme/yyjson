@@ -4159,7 +4159,8 @@ static_noinline bool is_truncated_end(u8 *hdr, u8 *cur, u8 *end,
                 if (++cur >= end) return true;
                 if (*cur != 'd' && *cur != 'D') return false;
                 if (++cur >= end) return true;
-                if ((*cur < 'c' || *cur > 'f') && (*cur < 'C' || *cur > 'F')) return false;
+                if ((*cur < 'c' || *cur > 'f') && (*cur < 'C' || *cur > 'F'))
+                    return false;
                 if (++cur >= end) return true;
                 if (!char_is_hex(*cur)) return false;
                 return true;
@@ -4208,12 +4209,14 @@ static_noinline bool is_truncated_end(u8 *hdr, u8 *cur, u8 *end,
             /* unclosed multiline comment */
             return true;
         }
-        if (code == YYJSON_READ_ERROR_UNEXPECTED_CHARACTER && *cur == '/' && cur + 1 == end) {
+        if (code == YYJSON_READ_ERROR_UNEXPECTED_CHARACTER &&
+            *cur == '/' && cur + 1 == end) {
             /* truncated beginning of comment */
             return true;
         }
     }
-    if (code == YYJSON_READ_ERROR_UNEXPECTED_CHARACTER && has_read_flag(ALLOW_BOM)) {
+    if (code == YYJSON_READ_ERROR_UNEXPECTED_CHARACTER &&
+        has_read_flag(ALLOW_BOM)) {
         /* truncated UTF-8 BOM */
         if (cur == hdr && is_truncated_str(cur, end, "\xEF\xBB\xBF", true)) {
             return true;
@@ -5632,7 +5635,7 @@ copy_escape:
                         return_err(src - 6, "no low surrogate in string");
                     }
                     if (unlikely(!read_hex_u16(src + 2, &lo))) {
-                        return_err(src - 6, "invalid escaped sequence in string");
+                        return_err(src - 6, "invalid escape in string");
                     }
                     if (unlikely((lo & 0xFC00) != 0xDC00)) {
                         return_err(src - 6, "invalid low surrogate in string");
@@ -5892,7 +5895,7 @@ static_noinline yyjson_doc *read_root_single(u8 *hdr,
     bool inv; /* allow invalid unicode */
     u8 *raw_end; /* raw end for null-terminator */
     u8 **pre; /* previous raw end pointer */
-    u8 **string_cont = NULL; /* for incremental string parsing */
+    u8 **str_cont = NULL; /* for incremental string parsing */
 
     hdr_len = sizeof(yyjson_doc) / sizeof(yyjson_val);
     hdr_len += (sizeof(yyjson_doc) % sizeof(yyjson_val)) > 0;
@@ -5915,7 +5918,8 @@ doc_begin:
         goto fail_number;
     }
     if (*cur == '"') {
-        if (likely(read_string(&cur, end, inv, val, &msg, string_cont))) goto doc_end;
+        if (likely(read_string(&cur, end, inv, val, &msg, str_cont)))
+            goto doc_end;
         goto fail_string;
     }
     if (*cur == 't') {
@@ -6109,7 +6113,8 @@ arr_val_begin:
     if (*cur == '"') {
         val_incr();
         ctn_len++;
-        if (likely(read_string(&cur, end, inv, val, &msg, NULL))) goto arr_val_end;
+        if (likely(read_string(&cur, end, inv, val, &msg, NULL)))
+            goto arr_val_end;
         goto fail_string;
     }
     if (*cur == 't') {
@@ -6209,7 +6214,8 @@ obj_key_begin:
     if (likely(*cur == '"')) {
         val_incr();
         ctn_len++;
-        if (likely(read_string(&cur, end, inv, val, &msg, NULL))) goto obj_key_end;
+        if (likely(read_string(&cur, end, inv, val, &msg, NULL)))
+            goto obj_key_end;
         goto fail_string;
     }
     if (likely(*cur == '}')) {
@@ -6248,7 +6254,8 @@ obj_val_begin:
     if (*cur == '"') {
         val++;
         ctn_len++;
-        if (likely(read_string(&cur, end, inv, val, &msg, NULL))) goto obj_val_end;
+        if (likely(read_string(&cur, end, inv, val, &msg, NULL)))
+            goto obj_val_end;
         goto fail_string;
     }
     if (char_is_number(*cur)) {
@@ -6538,7 +6545,8 @@ arr_val_begin:
     if (*cur == '"') {
         val_incr();
         ctn_len++;
-        if (likely(read_string(&cur, end, inv, val, &msg, NULL))) goto arr_val_end;
+        if (likely(read_string(&cur, end, inv, val, &msg, NULL)))
+            goto arr_val_end;
         goto fail_string;
     }
     if (*cur == 't') {
@@ -6655,7 +6663,8 @@ obj_key_begin:
     if (likely(*cur == '"')) {
         val_incr();
         ctn_len++;
-        if (likely(read_string(&cur, end, inv, val, &msg, NULL))) goto obj_key_end;
+        if (likely(read_string(&cur, end, inv, val, &msg, NULL)))
+            goto obj_key_end;
         goto fail_string;
     }
     if (likely(*cur == '}')) {
@@ -6698,7 +6707,8 @@ obj_val_begin:
     if (*cur == '"') {
         val++;
         ctn_len++;
-        if (likely(read_string(&cur, end, inv, val, &msg, NULL))) goto obj_val_end;
+        if (likely(read_string(&cur, end, inv, val, &msg, NULL)))
+            goto obj_val_end;
         goto fail_string;
     }
     if (char_is_number(*cur)) {
@@ -6979,11 +6989,14 @@ yyjson_doc *yyjson_read_opts(char *dat,
 
 #if !YYJSON_DISABLE_INCREMENTAL
 
-yyjson_incr_state *yyjson_incr_new(char *buf, size_t buf_len, yyjson_read_flag flg, const yyjson_alc *alc) {
+yyjson_incr_state *yyjson_incr_new(char *buf, size_t buf_len,
+                                   yyjson_read_flag flg,
+                                   const yyjson_alc *alc) {
     yyjson_incr_state *state = NULL;
     if (unlikely(!buf)) goto error;
     if (likely(!alc)) alc = &YYJSON_DEFAULT_ALC;
-    state = (yyjson_incr_state *)alc->malloc(alc->ctx, sizeof(yyjson_incr_state));
+    state = (yyjson_incr_state *)alc->malloc(alc->ctx,
+                                             sizeof(yyjson_incr_state));
     if (!state) goto error;
     memset(state, 0, sizeof(yyjson_incr_state));
     state->alc = alc;
@@ -7020,7 +7033,8 @@ void yyjson_incr_free(yyjson_incr_state *state) {
     alc->free(alc->ctx, (void *)state);
 }
 
-yyjson_doc *yyjson_incr_read(yyjson_incr_state *state, size_t len, yyjson_read_err *err) {
+yyjson_doc *yyjson_incr_read(yyjson_incr_state *state, size_t len,
+                             yyjson_read_err *err) {
 
 #define return_err_inv_param(_msg) do { \
     err->pos = 0; \
@@ -7187,14 +7201,16 @@ doc_begin:
         hdr_len += (sizeof(yyjson_doc) % sizeof(yyjson_val)) > 0;
         if (likely(char_is_container(*cur))) {
             dat_len = has_read_flag(STOP_WHEN_DONE) ? 256 : state->len;
-            alc_len = hdr_len + (dat_len / YYJSON_READER_ESTIMATED_MINIFY_RATIO) + 4;
+            alc_len = hdr_len +
+                    (dat_len / YYJSON_READER_ESTIMATED_MINIFY_RATIO) + 4;
             alc_len = yyjson_min(alc_len, alc_max);
         } else {
             alc_len = hdr_len + 1; /* single value */
         }
-        val_hdr = (yyjson_val *)alc.malloc(alc.ctx, alc_len * sizeof(yyjson_val));
+        val_hdr = (yyjson_val *)alc.malloc(alc.ctx,
+                                           alc_len * sizeof(yyjson_val));
         if (unlikely(!val_hdr)) goto fail_alloc;
-        val_end = val_hdr + (alc_len - 2); /* padding for key-value pair reading */
+        val_end = val_hdr + (alc_len - 2); /* padding for kv pair reading */
         val = val_hdr + hdr_len;
         ctn = val;
         ctn_len = 0;
@@ -7221,7 +7237,8 @@ doc_begin:
         goto fail_number;
     }
     if (*cur == '"') {
-        if (likely(read_string(&cur, end, inv, val, &msg, string_cont))) goto doc_end;
+        if (likely(read_string(&cur, end, inv, val, &msg, string_cont)))
+            goto doc_end;
         goto fail_string;
     }
     if (*cur == 't') {
@@ -7290,13 +7307,15 @@ arr_val_continue:
     if (char_is_number(*cur)) {
         val_incr();
         ctn_len++;
-        if (likely(read_number(&cur, pre, flg, val, &msg))) goto arr_val_maybe_end;
+        if (likely(read_number(&cur, pre, flg, val, &msg)))
+            goto arr_val_maybe_end;
         goto fail_number;
     }
     if (*cur == '"') {
         val_incr();
         ctn_len++;
-        if (likely(read_string(&cur, end, inv, val, &msg, string_cont))) goto arr_val_end;
+        if (likely(read_string(&cur, end, inv, val, &msg, string_cont)))
+            goto arr_val_end;
         goto fail_string;
     }
     if (*cur == 't') {
@@ -7404,7 +7423,8 @@ obj_key_continue:
     if (likely(*cur == '"')) {
         val_incr();
         ctn_len++;
-        if (likely(read_string(&cur, end, inv, val, &msg, string_cont))) goto obj_key_end;
+        if (likely(read_string(&cur, end, inv, val, &msg, string_cont)))
+            goto obj_key_end;
         goto fail_string;
     }
     if (likely(*cur == '}')) {
@@ -7446,13 +7466,15 @@ obj_val_continue:
     if (*cur == '"') {
         val++;
         ctn_len++;
-        if (likely(read_string(&cur, end, inv, val, &msg, string_cont))) goto obj_val_end;
+        if (likely(read_string(&cur, end, inv, val, &msg, string_cont)))
+            goto obj_val_end;
         goto fail_string;
     }
     if (char_is_number(*cur)) {
         val++;
         ctn_len++;
-        if (likely(read_number(&cur, pre, flg, val, &msg))) goto obj_val_maybe_end;
+        if (likely(read_number(&cur, pre, flg, val, &msg)))
+            goto obj_val_maybe_end;
         goto fail_number;
     }
     if (*cur == '{') {
