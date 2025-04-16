@@ -124,8 +124,9 @@ static void test_read_file(const char *path, flag_type type, expect_type expect)
     read_suc = yy_file_read_with_padding(path, &dat, &len, YYJSON_PADDING_SIZE);
     yy_assert(read_suc);
 
+    yyjson_incr_state *state = NULL;
 restart_incr_read:
-    yyjson_incr_state *state = yyjson_incr_new(dat, len, flag, NULL);
+    state = yyjson_incr_new(dat, len, flag, NULL);
     yy_assert(state != NULL);
     while (read_len < len || len == 0) {
         read_len += chunk_len;
@@ -213,9 +214,6 @@ static yyjson_doc *test_incr_read_insitu(char *dat, usize len, usize chunk_len, 
     if (doc != NULL) {
         yy_assert(yyjson_doc_get_read_size(doc) > 0);
         yy_assert(yyjson_doc_get_val_count(doc) > 0);
-        if (err.code != YYJSON_READ_SUCCESS) {
-            printf("Code %d '%s' at %d\n", err.code, err.msg, err.pos);
-        }
         yy_assert(err.code == YYJSON_READ_SUCCESS);
         yy_assert(err.msg == NULL);
     } else {
@@ -433,7 +431,9 @@ static void test_json_incremental(void) {
     char *minify;
     minify = yyjson_write(doc, YYJSON_WRITE_ESCAPE_UNICODE | YYJSON_WRITE_ESCAPE_SLASHES, &minify_len);
     free(pretty);
+#if !YYJSON_DISABLE_FAST_FP_CONV
     yy_assertf(strcmp(minify, dat_dup) == 0, "roundtrip to minified JSON mismatch\n");
+#endif
     free(minify);
 #endif
 

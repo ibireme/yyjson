@@ -369,7 +369,6 @@ static void test_read_err_code(void) {
     //              ^ no low surrogate in string
     memset(&err, -1, sizeof(err));
     yyjson_doc_free(yyjson_read_opts((char *)str, strlen(str), 0, NULL, &err));
-    printf("Code %ld '%s' at %ld (strlen %ld)\n", err.code, err.msg, err.pos, strlen(str));
     yy_assert(err.code == YYJSON_READ_ERROR_INVALID_STRING);
     yy_assert(err.pos == 1);
     

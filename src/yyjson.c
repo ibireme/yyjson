@@ -5893,7 +5893,6 @@ static_noinline yyjson_doc *read_root_single(u8 *hdr,
     u8 *raw_end; /* raw end for null-terminator */
     u8 **pre; /* previous raw end pointer */
     u8 **string_cont = NULL; /* for incremental string parsing */
-    u8 saved_end = '\0'; /* saved end char in incremental parsing */
 
     hdr_len = sizeof(yyjson_doc) / sizeof(yyjson_val);
     hdr_len += (sizeof(yyjson_doc) % sizeof(yyjson_val)) > 0;
