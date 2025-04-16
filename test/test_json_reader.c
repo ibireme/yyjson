@@ -23,7 +23,7 @@ typedef enum {
 } flag_type;
 
 static void test_read_file(const char *path, flag_type type, expect_type expect) {
-    
+    static int counter = 0;
 #if YYJSON_DISABLE_UTF8_VALIDATION
     {
         u8 *dat;
@@ -114,7 +114,121 @@ static void test_read_file(const char *path, flag_type type, expect_type expect)
     yyjson_doc_free(doc);
     free(buf);
     free(dat);
+
+#if !YYJSON_DISABLE_INCREMENTAL
+    // test incremental read
+    // extend input length in chunks of one byte at a time
+    const size_t chunk_len = 1;
+    size_t read_len = 0;
+    flag &= ~YYJSON_READ_INSITU;
+    read_suc = yy_file_read_with_padding(path, &dat, &len, YYJSON_PADDING_SIZE);
+    yy_assert(read_suc);
+
+restart_incr_read:
+    yyjson_incr_state *state = yyjson_incr_new(dat, len, flag, NULL);
+    yy_assert(state != NULL);
+    while (read_len < len || len == 0) {
+        read_len += chunk_len;
+        if (read_len > len) {
+            read_len = len;
+        }
+        doc = yyjson_incr_read(state, read_len, &err);
+        if (doc != NULL && read_len < len) {
+            /* Incremental parsing is complete but there is more data to parse.
+               This can happen when we are parsing a number on the root level
+               and not all digits have been provided to the parser yet.
+
+               Discard incremental state and restart parsing. */
+            yyjson_doc_free(doc);
+            yyjson_incr_free(state);
+            goto restart_incr_read;
+        }
+        if (doc != NULL || err.code != YYJSON_READ_ERROR_MORE) {
+            break;
+        }
+    }
+    if (doc) { // test write again
+#if !YYJSON_DISABLE_WRITER
+        usize len;
+        char *ret;
+        ret = yyjson_write(doc, YYJSON_WRITE_ALLOW_INF_AND_NAN, &len);
+        yy_assert(ret && len);
+        free(ret);
+        ret = yyjson_write(doc, YYJSON_WRITE_PRETTY | YYJSON_WRITE_ALLOW_INF_AND_NAN, &len);
+        yy_assert(ret && len);
+        free(ret);
+#endif
+    }
+    if (expect == EXPECT_PASS) {
+        yy_assertf(doc != NULL, "file should pass but fail:\n%s\n", path);
+        yy_assert(yyjson_doc_get_read_size(doc) > 0);
+        yy_assert(yyjson_doc_get_val_count(doc) > 0);
+        yy_assert(err.code == YYJSON_READ_SUCCESS);
+        yy_assert(err.msg == NULL);
+    }
+    if (expect == EXPECT_FAIL) {
+        yy_assertf(doc == NULL, "file should fail but pass:\n%s\n", path);
+        yy_assert(yyjson_doc_get_read_size(doc) == 0);
+        yy_assert(yyjson_doc_get_val_count(doc) == 0);
+        yy_assert(err.code != YYJSON_READ_SUCCESS);
+        yy_assert(err.msg != NULL);
+    }
+    yyjson_incr_free(state);
+    yyjson_doc_free(doc);
+    free(dat);
+#endif
 }
+
+#if !YYJSON_DISABLE_INCREMENTAL
+static yyjson_doc *test_incr_read_insitu(char *dat, usize len, usize chunk_len, flag_type type) {
+#if YYJSON_DISABLE_UTF8_VALIDATION
+    if (!yy_str_is_utf8(dat, len)) return NULL;
+#endif
+
+    yyjson_read_flag flag = YYJSON_READ_INSITU;
+    if (type & FLAG_COMMA) flag |= YYJSON_READ_ALLOW_TRAILING_COMMAS;
+    if (type & FLAG_COMMENT) flag |= YYJSON_READ_ALLOW_COMMENTS;
+    if (type & FLAG_INF_NAN) flag |= YYJSON_READ_ALLOW_INF_AND_NAN;
+    if (type & FLAG_EXTRA) flag |= YYJSON_READ_STOP_WHEN_DONE;
+    if (type & FLAG_NUM_RAW) flag |= YYJSON_READ_NUMBER_AS_RAW;
+
+    yyjson_read_err err;
+    yyjson_incr_state *state = yyjson_incr_new(dat, len, flag, NULL);
+    size_t read_len = 0;
+    yyjson_doc *doc = NULL;
+    while (read_len < len) {
+        read_len += chunk_len;
+        if (read_len > len) {
+            read_len = len;
+        }
+        /* put some garbage where the parser is supposed to stop */
+        u8 saved_end = dat[read_len];
+        dat[read_len] = 'X';
+        doc = yyjson_incr_read(state, read_len, &err);
+        dat[read_len] = saved_end;
+        if (doc != NULL || err.code != YYJSON_READ_ERROR_MORE) {
+            break;
+        }
+    }
+    if (doc != NULL) {
+        yy_assert(yyjson_doc_get_read_size(doc) > 0);
+        yy_assert(yyjson_doc_get_val_count(doc) > 0);
+        if (err.code != YYJSON_READ_SUCCESS) {
+            printf("Code %d '%s' at %d\n", err.code, err.msg, err.pos);
+        }
+        yy_assert(err.code == YYJSON_READ_SUCCESS);
+        yy_assert(err.msg == NULL);
+    } else {
+        yy_assert(yyjson_doc_get_read_size(doc) == 0);
+        yy_assert(yyjson_doc_get_val_count(doc) == 0);
+        yy_assert(err.code != YYJSON_READ_SUCCESS);
+        yy_assert(err.msg != NULL);
+    }
+    yy_assert(err.code != YYJSON_READ_ERROR_MORE);
+    yyjson_incr_free(state);
+    return doc;
+}
+#endif
 
 // yyjson test data
 static void test_json_yyjson(void) {
@@ -296,12 +410,49 @@ static void test_json_encoding(void) {
     yy_dir_free(names);
 }
 
+#if !YYJSON_DISABLE_INCREMENTAL
+
+// yyjson incremental with insitu
+static void test_json_incremental(void) {
+    u8 *dat = yy_create_json(3, 10);
+    usize len = strlen(dat);
+    u8 *dat_dup = yy_str_copy(dat);
+    yyjson_doc *doc = test_incr_read_insitu(dat, len, 1, FLAG_NONE);
+    yy_assertf(doc != NULL, "incremental read should pass but fail\n");
+
+#if !YYJSON_DISABLE_WRITER
+    usize pretty_len;
+    char *pretty;
+    pretty = yyjson_write(doc, YYJSON_WRITE_PRETTY, &pretty_len);
+    yy_assert(pretty && pretty_len);
+    yyjson_doc_free(doc);
+    pretty = realloc(pretty, pretty_len + YYJSON_PADDING_SIZE); /* for insitu */
+    doc = test_incr_read_insitu(pretty, pretty_len, 1, FLAG_NONE);
+    yy_assertf(doc != NULL, "incremental read pretty should pass but fail\n");
+    usize minify_len;
+    char *minify;
+    minify = yyjson_write(doc, YYJSON_WRITE_ESCAPE_UNICODE | YYJSON_WRITE_ESCAPE_SLASHES, &minify_len);
+    free(pretty);
+    yy_assertf(strcmp(minify, dat_dup) == 0, "roundtrip to minified JSON mismatch\n");
+    free(minify);
+#endif
+
+    yyjson_doc_free(doc);
+    free(dat);
+    free(dat_dup);
+}
+
+#endif
+
 yy_test_case(test_json_reader) {
     test_json_yyjson();
     test_json_checker();
     test_json_parsing();
     test_json_transform();
     test_json_encoding();
+#if !YYJSON_DISABLE_INCREMENTAL
+    test_json_incremental();
+#endif
 }
 
 #else

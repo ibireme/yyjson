@@ -42,6 +42,7 @@ option(YYJSON_DISABLE_FAST_FP_CONV "Disable custom floating-point number convers
 option(YYJSON_DISABLE_NON_STANDARD "Disable non-standard JSON support" OFF)
 option(YYJSON_DISABLE_UTF8_VALIDATION "Disable UTF-8 validation" OFF)
 option(YYJSON_DISABLE_UNALIGNED_MEMORY_ACCESS "Disable unaligned memory access explicit" OFF)
+option(YYJSON_DISABLE_INCREMENTAL "Disable incremental parsing" OFF)
 
 if(YYJSON_DISABLE_READER)
     add_definitions(-DYYJSON_DISABLE_READER)
@@ -63,6 +64,9 @@ if(YYJSON_DISABLE_UTF8_VALIDATION)
 endif()
 if(YYJSON_DISABLE_UNALIGNED_MEMORY_ACCESS)
     add_definitions(-DYYJSON_DISABLE_UNALIGNED_MEMORY_ACCESS)
+endif()
+if(YYJSON_DISABLE_INCREMENTAL)
+    add_definitions(-DYYJSON_DISABLE_INCREMENTAL)
 endif()
 
 

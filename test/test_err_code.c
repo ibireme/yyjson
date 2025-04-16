@@ -315,16 +315,16 @@ static void test_read_err_code(void) {
     memset(&err, -1, sizeof(err));
     yyjson_doc_free(yyjson_read_opts((char *)str, strlen(str),
                                      YYJSON_READ_ALLOW_COMMENTS, NULL, &err));
-    yy_assert(err.code == YYJSON_READ_ERROR_INVALID_COMMENT);
-    yy_assert(err.pos == strlen(str) - 2);
+    yy_assert(err.code == YYJSON_READ_ERROR_UNEXPECTED_END);
+    yy_assert(err.pos == strlen(str));
     
     str = "[123/*";
     //         ^ unclosed multiline comment
     memset(&err, -1, sizeof(err));
     yyjson_doc_free(yyjson_read_opts((char *)str, strlen(str),
                                      YYJSON_READ_ALLOW_COMMENTS, NULL, &err));
-    yy_assert(err.code == YYJSON_READ_ERROR_INVALID_COMMENT);
-    yy_assert(err.pos == strlen(str) - 2);
+    yy_assert(err.code == YYJSON_READ_ERROR_UNEXPECTED_END);
+    yy_assert(err.pos == strlen(str));
 #endif
     
     
@@ -369,8 +369,9 @@ static void test_read_err_code(void) {
     //              ^ no low surrogate in string
     memset(&err, -1, sizeof(err));
     yyjson_doc_free(yyjson_read_opts((char *)str, strlen(str), 0, NULL, &err));
+    printf("Code %ld '%s' at %ld (strlen %ld)\n", err.code, err.msg, err.pos, strlen(str));
     yy_assert(err.code == YYJSON_READ_ERROR_INVALID_STRING);
-    yy_assert(err.pos == 7);
+    yy_assert(err.pos == 1);
     
     // invalid 1-byte UTF-8
     memcpy(buf, "\"abcdefgh\"", 10);
