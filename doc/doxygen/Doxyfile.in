@@ -1,4 +1,4 @@
-# Doxyfile 1.9.4
+# Doxyfile 1.13.2
 
 PROJECT_NAME           = yyjson
 PROJECT_NUMBER         = @PROJECT_VERSION@
@@ -6,10 +6,12 @@ PROJECT_BRIEF          = "A high performance C JSON library."
 OUTPUT_DIRECTORY       = @CMAKE_CURRENT_BINARY_DIR@/doxygen
 FULL_PATH_NAMES        = NO
 OPTIMIZE_OUTPUT_FOR_C  = YES
+MARKDOWN_ID_STYLE      = GITHUB
 INLINE_SIMPLE_STRUCTS  = YES
 TYPEDEF_HIDES_STRUCT   = YES
 EXTRACT_STATIC         = YES
 HIDE_UNDOC_MEMBERS     = YES
+SORT_MEMBER_DOCS       = NO
 LAYOUT_FILE            = @CMAKE_CURRENT_SOURCE_DIR@/doc/doxygen/DoxyLayout.xml
 INPUT                  = @CMAKE_CURRENT_SOURCE_DIR@/src/yyjson.h \
                          @CMAKE_CURRENT_SOURCE_DIR@/README.md \
@@ -27,8 +29,9 @@ HTML_EXTRA_STYLESHEET  = @CMAKE_CURRENT_SOURCE_DIR@/doc/doxygen/theme/doxygen-aw
                          @CMAKE_CURRENT_SOURCE_DIR@/doc/doxygen/theme/doxygen-awesome-sidebar-only-darkmode-toggle.css \
                          @CMAKE_CURRENT_SOURCE_DIR@/doc/doxygen/theme/yyjson-style.css
 HTML_EXTRA_FILES       = @CMAKE_CURRENT_SOURCE_DIR@/doc/doxygen/theme/doxygen-awesome-darkmode-toggle.js
-HTML_DYNAMIC_SECTIONS  = YES
+HTML_COLORSTYLE        = LIGHT
+DISABLE_INDEX          = NO
 GENERATE_TREEVIEW      = YES
-FULL_SIDEBAR           = YES
+FULL_SIDEBAR           = NO
 GENERATE_LATEX         = NO
 QUIET                  = YES

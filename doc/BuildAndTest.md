@@ -32,14 +32,14 @@ If the version is out of date, please [create an issue or pull request](https://
 
 # CMake
 
-## Use CMake to build a library
+## Use CMake to build the library
 
 Clone the repository and create build directory:
 ```shell
 git clone https://github.com/ibireme/yyjson.git
-mkdir build
-cd build
+mkdir build; cd build
 ```
+
 Build static library:
 ```shell
 cmake .. 
@@ -111,6 +111,8 @@ target_link_libraries(your_target PRIVATE yyjson)
 ## Use CMake to generate project
 If you want to build or debug yyjson with another compiler or IDE, try these commands:
 ```shell
+mkdir build; cd build
+
 # Clang for Linux/Unix:
 cmake .. -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
 
@@ -137,18 +139,29 @@ cmake .. -G Xcode -DYYJSON_BUILD_TESTS=ON
 
 ## Use CMake to generate documentation
 
-This library uses [doxygen](https://www.doxygen.nl/) to generate the documentation, (make sure you have `doxygen` installed before proceeding):
+This project uses [doxygen](https://www.doxygen.nl/) to generate the documentation.
+Make sure `doxygen` is installed on your system before proceeding,
+it's best to use the version specified in `doc/Doxyfile.in`.
+
+
+To build the documentation:
 ```shell
+mkdir build; cd build
 cmake .. -DYYJSON_BUILD_DOC=ON
 cmake --build .
 ```
-After executing this script, doxygen will generate HTML files, which can be found in `build/doxygen/html`. You can also access the pre-generated document online at: https://ibireme.github.io/yyjson/doc/doxygen/html/
+
+The generated HTML files will be located in `build/doxygen/html`.
+
+You can also browse the pre-generated documentation online:
+https://ibireme.github.io/yyjson/doc/doxygen/html/
 
 
 ## Testing With CMake and CTest
 
 Build and run all tests:
 ```shell
+mkdir build; cd build
 cmake .. -DYYJSON_BUILD_TESTS=ON
 cmake --build .
 ctest --output-on-failure
@@ -156,6 +169,7 @@ ctest --output-on-failure
 
 Build and run tests with [valgrind](https://valgrind.org/) memory checker, (make sure you have `valgrind` installed before proceeding):
 ```shell
+mkdir build; cd build
 cmake .. -DYYJSON_BUILD_TESTS=ON -DYYJSON_ENABLE_VALGRIND=ON
 cmake --build .
 ctest --output-on-failure
@@ -163,6 +177,7 @@ ctest --output-on-failure
 
 Build and run tests with sanitizer (compiler should be `gcc` or `clang`):
 ```shell
+mkdir build; cd build
 cmake .. -DYYJSON_BUILD_TESTS=ON -DYYJSON_ENABLE_SANITIZE=ON
 cmake --build .
 ctest --output-on-failure
@@ -170,6 +185,7 @@ ctest --output-on-failure
 
 Build and run code coverage with `gcc`:
 ```shell
+mkdir build; cd build
 cmake .. -DCMAKE_BUILD_TYPE=Debug -DYYJSON_BUILD_TESTS=ON -DYYJSON_ENABLE_COVERAGE=ON
 cmake --build . --config Debug
 ctest --output-on-failure
@@ -180,13 +196,14 @@ genhtml cov.info -o ./cov_report
 
 Build and run code coverage with `clang`:
 ```shell
+mkdir build; cd build
 cmake .. -DCMAKE_BUILD_TYPE=Debug -DYYJSON_BUILD_TESTS=ON -DYYJSON_ENABLE_COVERAGE=ON -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
 cmake --build . --config Debug
 
 export LLVM_PROFILE_FILE=cov/profile-%p.profraw
 ctest --output-on-failure
 
-ctest_files=$(grep -o "test_\w\+ " CTestTestfile.cmake | uniq | tr '\n' ' ')
+ctest_files=$(grep -o "test_\w\+" CTestTestfile.cmake | uniq | tr '\n' ' ')
 ctest_files=$(echo $ctest_files | sed 's/  $//' | sed "s/ / -object /g")
 llvm-profdata merge -sparse cov/profile-*.profraw -o coverage.profdata
 llvm-cov show $ctest_files -instr-profile=coverage.profdata -format=html > coverage.html
@@ -194,6 +211,7 @@ llvm-cov show $ctest_files -instr-profile=coverage.profdata -format=html > cover
 
 Build and run fuzz test with [LibFuzzer](https://llvm.org/docs/LibFuzzer.html) (compiler should be `LLVM Clang`, while `Apple Clang` or `gcc` are not supported):
 ```shell
+mkdir build; cd build
 cmake .. -DYYJSON_BUILD_FUZZER=ON -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
 cmake --build .
 ./fuzzer -dict=fuzzer.dict ./corpus
@@ -202,8 +220,13 @@ cmake --build .
 
 # Compile-time Options
 This library provides various compile-time options that can be defined as 1 to disable specific features during compilation.
+For example, to disable the JSON writer:
+```shell
+cmake .. -DYYJSON_DISABLE_WRITER=ON
+gcc -DYYJSON_DISABLE_WRITER=1 ...
+```
 
-● **YYJSON_DISABLE_READER**<br/>
+## YYJSON_DISABLE_READER
 Define this as 1 to disable the JSON reader.<br/>
 This will disable these functions at compile-time:
 ```c
@@ -214,7 +237,7 @@ yyjson_read()
 This will reduce the binary size by about 60%.<br/>
 It is recommended when JSON parsing is not required.
 
-● **YYJSON_DISABLE_WRITER**<br/>
+## YYJSON_DISABLE_WRITER
 Define this as 1 to disable JSON writer.<br/>
 This will disable these functions at compile-time:
 ```c
@@ -234,7 +257,7 @@ yyjson_mut_val_write_opts()
 This will reduce the binary size by about 30%.<br/>
 It is recommended when JSON serialization is not required.
 
-● **YYJSON_DISABLE_UTILS**<br/>
+## YYJSON_DISABLE_UTILS
  Define this as 1 to disable JSON Pointer, JSON Patch and JSON Merge Patch supports.
  
  This will disable these functions at compile-time:
@@ -250,13 +273,13 @@ It is recommended when JSON serialization is not required.
  ```
 It is recommended when these functions are not required.
 
-● **YYJSON_DISABLE_FAST_FP_CONV**<br/>
+## YYJSON_DISABLE_FAST_FP_CONV
 Define this as 1 to disable the fast floating-point number conversion in yyjson,
  and use libc's `strtod/snprintf` instead.<br/>
 This will reduce binary size by about 30%, but significantly slows down the floating-point read/write speed.<br/>
 It is recommended when dealing with JSON that contains a minimal number of floating-point numbers.
 
-● **YYJSON_DISABLE_NON_STANDARD**<br/>
+## YYJSON_DISABLE_NON_STANDARD
 Define this as 1 to disable non-standard JSON support at compile-time:
 
 - Reading and writing inf/nan literal, such as `NaN`, `-Infinity`.
@@ -277,7 +300,7 @@ YYJSON_WRITE_ALLOW_INVALID_UNICODE
 This will reduce binary size by about 10%, and slightly improves performance.<br/>
 It is recommended when not dealing with non-standard JSON.
 
-● **YYJSON_DISABLE_UTF8_VALIDATION**<br/>
+## YYJSON_DISABLE_UTF8_VALIDATION
 Define as 1 to disable UTF-8 validation at compile time.
 
 If all input strings are guaranteed to be valid UTF-8 encoding 
@@ -292,8 +315,8 @@ Note: If this flag is used while passing in illegal UTF-8 strings, the following
 - Ending quotes are ignored when parsing JSON strings, causing the string to be concatenated to the next value.
 - When accessing `yyjson_mut_val` for serialization, the string ending is accessed out of bounds, causing a segmentation fault.
 
-● **YYJSON_EXPORTS**<br/>
+## YYJSON_EXPORTS
 Define this as 1 to export symbols when building the library as a Windows DLL.
 
-● **YYJSON_IMPORTS**<br/>
+## YYJSON_IMPORTS
 Define this as 1 to import symbols when using the library as a Windows DLL.

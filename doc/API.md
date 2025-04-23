@@ -209,7 +209,7 @@ yyjson_incr_state *yyjson_incr_new(char *buf, size_t buf_len, yyjson_read_flag f
 Performs incremental read of up to `len` bytes.
 
 The `state` for incremental reading is created using `yyjson_incr_new()`.<br/>
-The `len` is the maximum number of bytes to read, counting from the start of the JSON data.</br/>
+The `len` is the maximum number of bytes to read, counting from the start of the JSON data.<br/>
 The `err` is a pointer to receive the error information. Required.<br/>
 
 The function returns a document object when the reading is complete and NULL otherwise.
@@ -298,9 +298,10 @@ if (yyjson_locate_pos(dat, dat_len, err.pos, &line, &col, &chr)) {
 
 ## Reader flag
 The library provides a set of flags for JSON reader.<br/>
+
 You can use a single flag, or combine multiple flags with bitwise `|` operator.
 
-● **YYJSON_READ_NOFLAG = 0**<br/>
+### **YYJSON_READ_NOFLAG = 0**
 
 This is the default flag for JSON reader (RFC-8259 or ECMA-404 compliant):
 
@@ -312,8 +313,9 @@ This is the default flag for JSON reader (RFC-8259 or ECMA-404 compliant):
 - Report error if string contains invalid UTF-8 character or BOM.
 - Report error on trailing commas, comments, `Inf` and `NaN` literals.
 
-● **YYJSON_READ_INSITU**<br/>
+### **YYJSON_READ_INSITU**
 Read the input data in-situ.<br/>
+
 This option allows the reader to modify and use the input data to store string values, which can slightly improve reading speed. However, the caller must ensure that the input data is held until the document is freed. The input data must be padded with at least `YYJSON_PADDING_SIZE` bytes. For example: `[1,2]` should be `[1,2]\0\0\0\0`, input length should be 5.
 
 Sample code:
@@ -330,8 +332,9 @@ yyjson_doc_free(doc);
 free(buf); // the input dat should free after document.
 ```
 
-● **YYJSON_READ_STOP_WHEN_DONE**<br/>
-Stop parsing when reaching the end of a JSON document instead of issues an error if there's additional content after it.<br/> 
+### **YYJSON_READ_STOP_WHEN_DONE**
+Stop parsing when reaching the end of a JSON document instead of issues an error if there's additional content after it.<br/>
+
 This option is useful for parsing small pieces of JSON within larger data, such as [NDJSON](https://en.wikipedia.org/wiki/JSON_streaming).<br/>
 
 Sample code:
@@ -359,7 +362,7 @@ while (true) {
 free(dat);
 ```
 
-● **YYJSON_READ_ALLOW_TRAILING_COMMAS**<br/>
+### **YYJSON_READ_ALLOW_TRAILING_COMMAS**
 Allow a single trailing comma at the end of an object or array (non-standard), for example:
 
 ```
@@ -374,7 +377,7 @@ Allow a single trailing comma at the end of an object or array (non-standard), f
 ]
 ```
 
-● **YYJSON_READ_ALLOW_COMMENTS**<br/>
+### **YYJSON_READ_ALLOW_COMMENTS**
 Allow C-style single line and multiple line comments (non-standard), for example:
 
 ```
@@ -384,7 +387,7 @@ Allow C-style single line and multiple line comments (non-standard), for example
 }
 ```
 
-● **YYJSON_READ_ALLOW_INF_AND_NAN**<br/>
+### **YYJSON_READ_ALLOW_INF_AND_NAN**
 Allow nan/inf number or case-insensitive literal (non-standard), for example:
 
 ```
@@ -397,8 +400,9 @@ Allow nan/inf number or case-insensitive literal (non-standard), for example:
 }
 ```
 
-● **YYJSON_READ_NUMBER_AS_RAW**<br/>
+### **YYJSON_READ_NUMBER_AS_RAW**
 Read all numbers as raw strings without parsing.
+
 This flag is useful if you want to handle number parsing yourself.
 You can use the following functions to extract raw strings:
 ```c
@@ -407,14 +411,15 @@ const char *yyjson_get_raw(yyjson_val *val);
 size_t yyjson_get_len(yyjson_val *val)
 ```
 
-● **YYJSON_READ_BIGNUM_AS_RAW**<br/>
+### **YYJSON_READ_BIGNUM_AS_RAW**
 Read big numbers as raw strings.
+
 This flag is useful if you want to parse these big numbers yourself.
 These big numbers include integers that cannot be represented by `int64_t` and `uint64_t`, and floating-point numbers that cannot be represented by finite `double`.
 
 Note that this flag will be overridden by `YYJSON_READ_NUMBER_AS_RAW` flag.
 
-● **YYJSON_READ_ALLOW_INVALID_UNICODE**<br/>
+### **YYJSON_READ_ALLOW_INVALID_UNICODE**
 Allow reading invalid unicode when parsing string values (non-standard),
 for example:
 ```
@@ -425,7 +430,7 @@ This flag permits invalid characters to appear in the string values, but it stil
 
 ***Warning***: when using this option, be aware that strings within JSON values may contain incorrect encoding, so you need to handle these strings carefully to avoid security risks.
 
-● **YYJSON_READ_ALLOW_BOM**<br/>
+### **YYJSON_READ_ALLOW_BOM**
 Allow UTF-8 BOM and skip it before parsing if any (non-standard).
 
 
@@ -583,7 +588,7 @@ alc.free(alc.ctx, json);
 The library provides a set of flags for JSON writer.<br/>
 You can use a single flag, or combine multiple flags with bitwise `|` operator.
 
-● **YYJSON_WRITE_NOFLAG = 0**<br/>
+### **YYJSON_WRITE_NOFLAG = 0**
 This is the default flag for JSON writer:
 
 - Writes JSON in minified format.
@@ -591,14 +596,14 @@ This is the default flag for JSON writer:
 - Reports an error on encountering invalid UTF-8 strings.
 - Does not escape unicode or slashes.
 
-● **YYJSON_WRITE_PRETTY**<br/>
+### **YYJSON_WRITE_PRETTY**
 Writes JSON with a pretty format uing a 4-space indent.
 
-● **YYJSON_WRITE_PRETTY_TWO_SPACES**<br/>
+### **YYJSON_WRITE_PRETTY_TWO_SPACES**
 Writes JSON with a pretty format uing a 2-space indent.
 This flag will override `YYJSON_WRITE_PRETTY` flag.
 
-● **YYJSON_WRITE_ESCAPE_UNICODE**<br/>
+### **YYJSON_WRITE_ESCAPE_UNICODE**
 Escape unicode as `\uXXXX`, making the output ASCII-only, for example:
 
 ```json
@@ -606,7 +611,7 @@ Escape unicode as `\uXXXX`, making the output ASCII-only, for example:
 ["Aliz\\u00E9e, \\uD83D\\uDE0A"]
 ```
 
-● **YYJSON_WRITE_ESCAPE_SLASHES**<br/>
+### **YYJSON_WRITE_ESCAPE_SLASHES**
 Escapes the forward slash character `/` as `\/`, for example:
 
 ```json
@@ -614,7 +619,7 @@ Escapes the forward slash character `/` as `\/`, for example:
 ["https:\/\/github.com"]
 ```
 
-● **YYJSON_WRITE_ALLOW_INF_AND_NAN**<br/>
+### **YYJSON_WRITE_ALLOW_INF_AND_NAN**
 Writes inf/nan numbers as `Infinity` and `NaN` literals instead of reporting errors.<br/>
 
 Note that this output is **NOT** standard JSON and may be rejected by other JSON libraries, for example:
@@ -623,7 +628,7 @@ Note that this output is **NOT** standard JSON and may be rejected by other JSON
 {"not_a_number":NaN,"large_number":Infinity}
 ```
 
-● **YYJSON_WRITE_INF_AND_NAN_AS_NULL**<br/>
+### **YYJSON_WRITE_INF_AND_NAN_AS_NULL**
 Writes inf/nan numbers as `null` literals instead of reporting errors.<br/>
 This flag will override `YYJSON_WRITE_ALLOW_INF_AND_NAN` flag, for example:
 
@@ -631,24 +636,24 @@ This flag will override `YYJSON_WRITE_ALLOW_INF_AND_NAN` flag, for example:
 {"not_a_number":null,"large_number":null}
 ```
 
-● **YYJSON_WRITE_ALLOW_INVALID_UNICODE**<br/>
+### **YYJSON_WRITE_ALLOW_INVALID_UNICODE**
 Allows invalid unicode when encoding string values.
 
 Invalid characters within string values will be copied byte by byte. If `YYJSON_WRITE_ESCAPE_UNICODE` flag is also set, invalid characters will be escaped as `\uFFFD` (replacement character).
 
 This flag does not affect the performance of correctly encoded string.
 
-● **YYJSON_WRITE_NEWLINE_AT_END**<br/>
+### **YYJSON_WRITE_NEWLINE_AT_END**
 Adds a newline character `\n` at the end of the JSON.
 This can be helpful for text editors or NDJSON.
 
-● **YYJSON_WRITE_FP_TO_FLOAT**<br/>
+### **YYJSON_WRITE_FP_TO_FLOAT**
 Write floating-point numbers using single-precision (float).
 This casts `double` to `float` before serialization.
 This will produce shorter output, but may lose some precision.
 This flag is ignored if `YYJSON_WRITE_FP_TO_FIXED(prec)` is also used.
 
-● **YYJSON_WRITE_FP_TO_FIXED(prec)**<br/>
+### **YYJSON_WRITE_FP_TO_FIXED(prec)**
 Write floating-point number using fixed-point notation.
 This is similar to ECMAScript `Number.prototype.toFixed(prec)`,
 but with trailing zeros removed. The `prec` ranges from 1 to 15.
@@ -1451,7 +1456,7 @@ There are 3 flags that can be used to adjust the number parsing strategy:
 
 - `YYJSON_READ_ALLOW_INF_AND_NAN`: read nan/inf number or literal as `double` (non-standard).
 - `YYJSON_READ_NUMBER_AS_RAW`: read all numbers as raw strings without parsing.
-- `YYJSON_READ_BIGBER_AS_RAW`: read big numbers (overflow or infinity) as raw strings without parsing.
+- `YYJSON_READ_BIGNUM_AS_RAW`: read big numbers (overflow or infinity) as raw strings without parsing.
 
 See the `Reader flag` section for more details.
 
