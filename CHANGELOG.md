@@ -4,19 +4,22 @@ All notable changes to this project will be documented in this file.
 
 ## Unreleased
 #### Added
+- Add `YYJSON_READ_ALLOW_BOM` flag to allow UTF-8 BOM.
 - Add `YYJSON_WRITE_FP_TO_FLOAT` flag to write real numbers using single-precison.
 - Add `YYJSON_WRITE_FP_TO_FIXED(prec)` flag to write real numbers using fix-point notation.
 - Add `set_fp_to_float()` and `set_fp_to_fixed()` functions to control the output format of a specific number.
 - Add `set_str_noesc()` function to skip escaping for a specific string during writing.
-- Add `YYJSON_READ_ALLOW_BOM` flag to allow UTF-8 BOM.
+- Add `yyjson_incr_read()`, `yyjson_incr_new()`, `yyjson_incr_free()` functions for incremental DOM reading.
 
 #### Changed
-- Rewrite the floating-point number to string functions using faster algorithm.
+- Rewrite the floating-point number to string functions with a new fast path.
 
 #### Fixed
 - Fix some warnings when directly including yyjson.c: #177
 - Fix missing indent for `YYJSON_TYPE_RAW` in prettify function: #178
 - Fix bug in `yyjson_mut_arr_iter_remove()`: #194
+- Fix clang 19 documentation warnings.
+- Fix cmake 4 and cmake 3.5 warnings.
 
 
 ## 0.10.0 (2024-07-09)

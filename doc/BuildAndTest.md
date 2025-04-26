@@ -37,7 +37,7 @@ If the version is out of date, please [create an issue or pull request](https://
 Clone the repository and create build directory:
 ```shell
 git clone https://github.com/ibireme/yyjson.git
-mkdir build; cd build
+cmake -E make_directory build; cd build
 ```
 
 Build static library:
@@ -52,7 +52,7 @@ cmake .. -DBUILD_SHARED_LIBS=ON
 cmake --build .
 ```
 
-Supported CMake options:
+Supported CMake options (default OFF):
 
 - `-DYYJSON_BUILD_TESTS=ON` Build all tests.
 - `-DYYJSON_BUILD_FUZZER=ON` Build fuzzer with LibFuzzing.
@@ -66,6 +66,7 @@ Supported CMake options:
 
 - `-DYYJSON_DISABLE_READER=ON` Disable JSON reader if you don't need it.
 - `-DYYJSON_DISABLE_WRITER=ON` Disable JSON writer if you don't need it.
+- `-DYYJSON_DISABLE_INCR_READER=ON` Disable incremental reader if you don't need it.
 - `-DYYJSON_DISABLE_UTILS=ON` Disable JSON Pointer, JSON Patch and JSON Merge Patch.
 - `-DYYJSON_DISABLE_FAST_FP_CONV=ON` Disable builtin fast floating-pointer conversion.
 - `-DYYJSON_DISABLE_NON_STANDARD=ON` Disable non-standard JSON support at compile-time.
@@ -111,7 +112,7 @@ target_link_libraries(your_target PRIVATE yyjson)
 ## Use CMake to generate project
 If you want to build or debug yyjson with another compiler or IDE, try these commands:
 ```shell
-mkdir build; cd build
+cmake -E make_directory build; cd build
 
 # Clang for Linux/Unix:
 cmake .. -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
@@ -146,7 +147,7 @@ it's best to use the version specified in `doc/Doxyfile.in`.
 
 To build the documentation:
 ```shell
-mkdir build; cd build
+cmake -E make_directory build; cd build
 cmake .. -DYYJSON_BUILD_DOC=ON
 cmake --build .
 ```
@@ -161,7 +162,7 @@ https://ibireme.github.io/yyjson/doc/doxygen/html/
 
 Build and run all tests:
 ```shell
-mkdir build; cd build
+cmake -E make_directory build; cd build
 cmake .. -DYYJSON_BUILD_TESTS=ON
 cmake --build .
 ctest --output-on-failure
@@ -169,7 +170,7 @@ ctest --output-on-failure
 
 Build and run tests with [valgrind](https://valgrind.org/) memory checker, (make sure you have `valgrind` installed before proceeding):
 ```shell
-mkdir build; cd build
+cmake -E make_directory build; cd build
 cmake .. -DYYJSON_BUILD_TESTS=ON -DYYJSON_ENABLE_VALGRIND=ON
 cmake --build .
 ctest --output-on-failure
@@ -177,7 +178,7 @@ ctest --output-on-failure
 
 Build and run tests with sanitizer (compiler should be `gcc` or `clang`):
 ```shell
-mkdir build; cd build
+cmake -E make_directory build; cd build
 cmake .. -DYYJSON_BUILD_TESTS=ON -DYYJSON_ENABLE_SANITIZE=ON
 cmake --build .
 ctest --output-on-failure
@@ -185,7 +186,7 @@ ctest --output-on-failure
 
 Build and run code coverage with `gcc`:
 ```shell
-mkdir build; cd build
+cmake -E make_directory build; cd build
 cmake .. -DCMAKE_BUILD_TYPE=Debug -DYYJSON_BUILD_TESTS=ON -DYYJSON_ENABLE_COVERAGE=ON
 cmake --build . --config Debug
 ctest --output-on-failure
@@ -196,7 +197,7 @@ genhtml cov.info -o ./cov_report
 
 Build and run code coverage with `clang`:
 ```shell
-mkdir build; cd build
+cmake -E make_directory build; cd build
 cmake .. -DCMAKE_BUILD_TYPE=Debug -DYYJSON_BUILD_TESTS=ON -DYYJSON_ENABLE_COVERAGE=ON -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
 cmake --build . --config Debug
 
@@ -211,7 +212,7 @@ llvm-cov show $ctest_files -instr-profile=coverage.profdata -format=html > cover
 
 Build and run fuzz test with [LibFuzzer](https://llvm.org/docs/LibFuzzer.html) (compiler should be `LLVM Clang`, while `Apple Clang` or `gcc` are not supported):
 ```shell
-mkdir build; cd build
+cmake -E make_directory build; cd build
 cmake .. -DYYJSON_BUILD_FUZZER=ON -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
 cmake --build .
 ./fuzzer -dict=fuzzer.dict ./corpus
@@ -219,104 +220,71 @@ cmake --build .
 
 
 # Compile-time Options
-This library provides various compile-time options that can be defined as 1 to disable specific features during compilation.
+This library provides some compile-time options that can be defined as 1 to disable specific features during compilation.
 For example, to disable the JSON writer:
 ```shell
+cmake -E make_directory build; cd build
 cmake .. -DYYJSON_DISABLE_WRITER=ON
 gcc -DYYJSON_DISABLE_WRITER=1 ...
 ```
 
 ## YYJSON_DISABLE_READER
-Define this as 1 to disable the JSON reader.<br/>
-This will disable these functions at compile-time:
-```c
-yyjson_read_opts()
-yyjson_read_file()
-yyjson_read()
- ```
-This will reduce the binary size by about 60%.<br/>
-It is recommended when JSON parsing is not required.
+Define as 1 to disable JSON reader at compile-time.<br/>
+This disables functions with `read` in their name.<br/>
+Reduces binary size by about 60%.<br/>
+It is recommended when JSON parsing is not required.<br/>
 
 ## YYJSON_DISABLE_WRITER
-Define this as 1 to disable JSON writer.<br/>
-This will disable these functions at compile-time:
-```c
-yyjson_write()
-yyjson_write_file()
-yyjson_write_opts()
-yyjson_val_write()
-yyjson_val_write_file()
-yyjson_val_write_opts()
-yyjson_mut_write()
-yyjson_mut_write_file()
-yyjson_mut_write_opts()
-yyjson_mut_val_write()
-yyjson_mut_val_write_file()
-yyjson_mut_val_write_opts()
-```
-This will reduce the binary size by about 30%.<br/>
-It is recommended when JSON serialization is not required.
+Define as 1 to disable JSON writer at compile-time.<br/>
+This disables functions with `write` in their name.<br/>
+Reduces binary size by about 30%.<br/>
+It is recommended when JSON serialization is not required.<br/>
+
+## YYJSON_DISABLE_INCR_READER
+Define as 1 to disable JSON incremental reader at compile-time.<br/>
+This disables functions with `incr` in their name.<br/>
+It is recommended when JSON incremental reader is not required.<br/>
 
 ## YYJSON_DISABLE_UTILS
- Define this as 1 to disable JSON Pointer, JSON Patch and JSON Merge Patch supports.
- 
- This will disable these functions at compile-time:
- ```c
- yyjson_ptr_xxx()
- yyjson_mut_ptr_xxx()
- yyjson_doc_ptr_xxx()
- yyjson_mut_doc_ptr_xxx()
- yyjson_patch()
- yyjson_mut_patch()
- yyjson_merge_patch()
- yyjson_mut_merge_patch()
- ```
-It is recommended when these functions are not required.
+Define as 1 to disable JSON Pointer, JSON Patch and JSON Merge Patch supports.<br/>
+This disables functions with `ptr` or `patch` in their name.<br/>
+It is recommended when these functions are not required.<br/>
 
 ## YYJSON_DISABLE_FAST_FP_CONV
-Define this as 1 to disable the fast floating-point number conversion in yyjson,
- and use libc's `strtod/snprintf` instead.<br/>
-This will reduce binary size by about 30%, but significantly slows down the floating-point read/write speed.<br/>
-It is recommended when dealing with JSON that contains a minimal number of floating-point numbers.
+Define as 1 to disable the fast floating-point number conversion in yyjson.<br/>
+Libc's `strtod/snprintf` will be used instead.<br/>
+This reduces binary size by about 30%, but significantly slows down the floating-point read/write speed.<br/>
+It is recommended when processing JSON with few floating-point numbers.<br/>
 
 ## YYJSON_DISABLE_NON_STANDARD
-Define this as 1 to disable non-standard JSON support at compile-time:
+Define as 1 to disable non-standard JSON features support at compile-time:
+- YYJSON_READ_ALLOW_INF_AND_NAN
+- YYJSON_READ_ALLOW_COMMENTS
+- YYJSON_READ_ALLOW_TRAILING_COMMAS
+- YYJSON_READ_ALLOW_INVALID_UNICODE
+- YYJSON_READ_ALLOW_BOM
+- YYJSON_WRITE_ALLOW_INF_AND_NAN
+- YYJSON_WRITE_ALLOW_INVALID_UNICODE
 
-- Reading and writing inf/nan literal, such as `NaN`, `-Infinity`.
-- Single line and multiple line comments.
-- Single trailing comma at the end of an object or array.
-- Invalid unicode in string value.
-
-This will also invalidate these run-time options:
-```c
-YYJSON_READ_ALLOW_INF_AND_NAN
-YYJSON_READ_ALLOW_COMMENTS
-YYJSON_READ_ALLOW_TRAILING_COMMAS
-YYJSON_READ_ALLOW_INVALID_UNICODE
-YYJSON_WRITE_ALLOW_INF_AND_NAN
-YYJSON_WRITE_ALLOW_INVALID_UNICODE
-```
-
-This will reduce binary size by about 10%, and slightly improves performance.<br/>
+This reduces binary size by about 10%, and slightly improves performance.<br/>
 It is recommended when not dealing with non-standard JSON.
 
 ## YYJSON_DISABLE_UTF8_VALIDATION
-Define as 1 to disable UTF-8 validation at compile time.
+Define as 1 to disable UTF-8 validation at compile-time.
 
-If all input strings are guaranteed to be valid UTF-8 encoding 
-(for example, some language's String object has already validated the encoding), 
-using this flag can avoid redundant UTF-8 validation in yyjson.
+Use this if all input strings are guaranteed to be valid UTF-8
+(e.g. language-level String types are already validated).
 
-This flag can speed up the reading and writing speed of non-ASCII encoded strings by about 3% to 7%.
+Disabling UTF-8 validation improves performance for non-ASCII strings by about
+3% to 7%.
 
-Note: If this flag is used while passing in illegal UTF-8 strings, the following errors may occur:
-
-- Escaped characters are ignored when parsing JSON strings.
-- Ending quotes are ignored when parsing JSON strings, causing the string to be concatenated to the next value.
-- When accessing `yyjson_mut_val` for serialization, the string ending is accessed out of bounds, causing a segmentation fault.
+Note: If this flag is enabled while passing illegal UTF-8 strings, the following errors may occur:
+- Escaped characters may be ignored when parsing JSON strings.
+- Ending quotes may be ignored when parsing JSON strings, causing the string to merge with the next value.
+- When serializing with `yyjson_mut_val`, the string's end may be accessed out of bounds, potentially causing a segmentation fault.
 
 ## YYJSON_EXPORTS
-Define this as 1 to export symbols when building the library as a Windows DLL.
+Define as 1 to export symbols when building the library as a Windows DLL.
 
 ## YYJSON_IMPORTS
-Define this as 1 to import symbols when using the library as a Windows DLL.
+Define as 1 to import symbols when using the library as a Windows DLL.

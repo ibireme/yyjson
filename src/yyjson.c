@@ -250,20 +250,21 @@ uint32_t yyjson_version(void) {
 /*
  This macro controls how yyjson handles unaligned memory accesses.
 
- By default, yyjson uses `memcpy()` for memory copying. This takes advantage of
- the compiler's automatic optimizations to generate unaligned memory access
- instructions when the target architecture supports it.
+ By default, yyjson uses `memcpy()` for memory copying. This allows the compiler
+ to optimize the code and emit unaligned memory access instructions when
+ supported by the target architecture.
 
- However, for some older compilers or architectures where `memcpy()` isn't
- optimized well and may generate unnecessary function calls, consider defining
- this macro as 1. In such cases, yyjson switches to manual byte-by-byte access,
- potentially improving performance. An example of the generated assembly code on
- the ARM platform can be found here: https://godbolt.org/z/334jjhxPT
+ However, on some older compilers or architectures where `memcpy()` is not
+ well-optimized and may result in unnecessary function calls, defining this
+ macro as 1 may help. In such cases, yyjson switches to manual byte-by-byte
+ access, which can potentially improve performance.
 
- As this flag has already been enabled for some common architectures in the
- following code, users typically don't need to manually specify it. If users are
- unsure about it, please review the generated assembly code or perform actual
- benchmark to make an informed decision.
+ An example of the generated assembly code for ARM can be found here:
+ https://godbolt.org/z/334jjhxPT
+ 
+ This flag is already enabled for common architectures in the following code,
+ so manual configuration is usually unnecessary. If unsure, you can check the
+ generated assembly or run benchmarks to make an informed decision.
  */
 #ifndef YYJSON_DISABLE_UNALIGNED_MEMORY_ACCESS
 #   if defined(__ia64) || defined(_IA64) || defined(__IA64__) ||  \
@@ -321,6 +322,9 @@ uint32_t yyjson_version(void) {
 #ifndef YYJSON_DISABLE_WRITER
 #define YYJSON_DISABLE_WRITER 0
 #endif
+#ifndef YYJSON_DISABLE_INCR_READER
+#define YYJSON_DISABLE_INCR_READER 0
+#endif
 #ifndef YYJSON_DISABLE_UTILS
 #define YYJSON_DISABLE_UTILS 0
 #endif
@@ -332,9 +336,6 @@ uint32_t yyjson_version(void) {
 #endif
 #ifndef YYJSON_DISABLE_UTF8_VALIDATION
 #define YYJSON_DISABLE_UTF8_VALIDATION 0
-#endif
-#ifndef YYJSON_DISABLE_INCREMENTAL
-#define YYJSON_DISABLE_INCREMENTAL 0
 #endif
 
 
@@ -2105,7 +2106,7 @@ static_inline yyjson_mut_val *ptr_mut_arr_get(yyjson_mut_val *arr,
     if (last) *last = (idx == num || idx == USIZE_MAX);
     if (unlikely(idx >= num)) return NULL;
     while (idx-- > 0) val = val->next;
-    *pre = val;
+    if (pre) *pre = val;
     return val->next;
 }
 
@@ -2129,7 +2130,7 @@ static_inline yyjson_mut_val *ptr_mut_obj_get(yyjson_mut_val *obj,
     for (; num > 0; num--, pre_key = key) {
         key = pre_key->next->next;
         if (ptr_token_eq(key, token, len, esc)) {
-            *pre = pre_key;
+            if (pre) *pre = pre_key;
             return key->next;
         }
     }
@@ -5479,7 +5480,7 @@ static_inline bool read_string(u8 **ptr,
     u16 hi, lo;
     u32 uni, tmp;
 
-#if !YYJSON_DISABLE_INCREMENTAL
+#if !YYJSON_DISABLE_INCR_READER
     if (unlikely(cont != NULL && cont[0] != NULL)) {
         /* Resume incremental parsing. */
         src = cont[0];
@@ -5541,7 +5542,7 @@ skip_ascii_end:
         val->uni.str = (const char *)cur;
         *src = '\0';
         *end = src + 1;
-#if !YYJSON_DISABLE_INCREMENTAL
+#if !YYJSON_DISABLE_INCR_READER
         if (unlikely(cont != NULL)) {
             cont[0] = cont[1] = NULL;
         }
@@ -5656,7 +5657,7 @@ copy_escape:
         val->uni.str = (const char *)cur;
         *dst = '\0';
         *end = src + 1;
-#if !YYJSON_DISABLE_INCREMENTAL
+#if !YYJSON_DISABLE_INCR_READER
         if (unlikely(cont != NULL)) {
             cont[0] = cont[1] = NULL;
         }
@@ -6982,7 +6983,7 @@ yyjson_doc *yyjson_read_opts(char *dat,
 #undef return_err
 }
 
-#if !YYJSON_DISABLE_INCREMENTAL
+#if !YYJSON_DISABLE_INCR_READER
 
 yyjson_incr_state *yyjson_incr_new(char *buf, size_t buf_len,
                                    yyjson_read_flag flg,

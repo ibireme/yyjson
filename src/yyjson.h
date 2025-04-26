@@ -49,130 +49,102 @@
  *============================================================================*/
 
 /*
- Define as 1 to disable JSON reader if JSON parsing is not required.
-
- This will disable these functions at compile-time:
-    - yyjson_read()
-    - yyjson_read_opts()
-    - yyjson_read_file()
-    - yyjson_read_number()
-    - yyjson_mut_read_number()
-
- This will reduce the binary size by about 60%.
+ Define as 1 to disable JSON reader at compile-time.
+ This disables functions with "read" in their name.
+ Reduces binary size by about 60%.
  */
 #ifndef YYJSON_DISABLE_READER
 #endif
 
 /*
- Define as 1 to disable JSON writer if JSON serialization is not required.
-
- This will disable these functions at compile-time:
-    - yyjson_write()
-    - yyjson_write_file()
-    - yyjson_write_opts()
-    - yyjson_val_write()
-    - yyjson_val_write_file()
-    - yyjson_val_write_opts()
-    - yyjson_mut_write()
-    - yyjson_mut_write_file()
-    - yyjson_mut_write_opts()
-    - yyjson_mut_val_write()
-    - yyjson_mut_val_write_file()
-    - yyjson_mut_val_write_opts()
-
- This will reduce the binary size by about 30%.
+ Define as 1 to disable JSON writer at compile-time.
+ This disables functions with "write" in their name.
+ Reduces binary size by about 30%.
  */
 #ifndef YYJSON_DISABLE_WRITER
 #endif
 
 /*
- Define as 1 to disable JSON Pointer, JSON Patch and JSON Merge Patch supports.
+ Define as 1 to disable JSON incremental reader at compile-time.
+ This disables functions with "incr" in their name.
+ */
+#ifndef YYJSON_DISABLE_INCR_READER
+#endif
 
- This will disable these functions at compile-time:
-    - yyjson_ptr_xxx()
-    - yyjson_mut_ptr_xxx()
-    - yyjson_doc_ptr_xxx()
-    - yyjson_mut_doc_ptr_xxx()
-    - yyjson_patch()
-    - yyjson_mut_patch()
-    - yyjson_merge_patch()
-    - yyjson_mut_merge_patch()
+/*
+ Define as 1 to disable JSON Pointer, JSON Patch and JSON Merge Patch supports.
+ This disables functions with "ptr" or "patch" in their name.
  */
 #ifndef YYJSON_DISABLE_UTILS
 #endif
 
 /*
- Define as 1 to disable the fast floating-point number conversion in yyjson,
- and use libc's `strtod/snprintf` instead.
+ Define as 1 to disable the fast floating-point number conversion in yyjson.
+ Libc's `strtod/snprintf` will be used instead.
 
- This will reduce the binary size by about 30%, but significantly slow down the
+ This reduces binary size by about 30%, but significantly slows down the
  floating-point read/write speed.
  */
 #ifndef YYJSON_DISABLE_FAST_FP_CONV
 #endif
 
 /*
- Define as 1 to disable non-standard JSON support at compile-time:
-    - Reading and writing inf/nan literal, such as `NaN`, `-Infinity`.
-    - Single line and multiple line comments.
-    - Single trailing comma at the end of an object or array.
-    - Invalid unicode in string value.
+ Define as 1 to disable non-standard JSON features support at compile-time:
+ - YYJSON_READ_ALLOW_INF_AND_NAN
+ - YYJSON_READ_ALLOW_COMMENTS
+ - YYJSON_READ_ALLOW_TRAILING_COMMAS
+ - YYJSON_READ_ALLOW_INVALID_UNICODE
+ - YYJSON_READ_ALLOW_BOM
+ - YYJSON_WRITE_ALLOW_INF_AND_NAN
+ - YYJSON_WRITE_ALLOW_INVALID_UNICODE
 
- This will also invalidate these run-time options:
-    - YYJSON_READ_ALLOW_INF_AND_NAN
-    - YYJSON_READ_ALLOW_COMMENTS
-    - YYJSON_READ_ALLOW_TRAILING_COMMAS
-    - YYJSON_READ_ALLOW_INVALID_UNICODE
-    - YYJSON_WRITE_ALLOW_INF_AND_NAN
-    - YYJSON_WRITE_ALLOW_INVALID_UNICODE
-
- This will reduce the binary size by about 10%, and speed up the reading and
- writing speed by about 2% to 6%.
+ This reduces binary size by about 10%, and slightly improves performance.
  */
 #ifndef YYJSON_DISABLE_NON_STANDARD
 #endif
 
 /*
- Define as 1 to disable UTF-8 validation at compile time.
+ Define as 1 to disable UTF-8 validation at compile-time.
 
- If all input strings are guaranteed to be valid UTF-8 encoding (for example,
- some language's String object has already validated the encoding), using this
- flag can avoid redundant UTF-8 validation in yyjson.
+ Use this if all input strings are guaranteed to be valid UTF-8
+ (e.g. language-level String types are already validated).
 
- This flag can speed up the reading and writing speed of non-ASCII encoded
- strings by about 3% to 7%.
+ Disabling UTF-8 validation improves performance for non-ASCII strings by about
+ 3% to 7%.
 
- Note: If this flag is used while passing in illegal UTF-8 strings, the
- following errors may occur:
+ Note: If this flag is enabled while passing illegal UTF-8 strings,
+ the following errors may occur:
  - Escaped characters may be ignored when parsing JSON strings.
- - Ending quotes may be ignored when parsing JSON strings, causing the string
-   to be concatenated to the next value.
- - When accessing `yyjson_mut_val` for serialization, the string ending may be
-   accessed out of bounds, causing a segmentation fault.
+ - Ending quotes may be ignored when parsing JSON strings, causing the
+   string to merge with the next value.
+ - When serializing with `yyjson_mut_val`, the string's end may be accessed
+   out of bounds, potentially causing a segmentation fault.
  */
 #ifndef YYJSON_DISABLE_UTF8_VALIDATION
 #endif
 
 /*
- Define as 1 to indicate that the target architecture does not support unaligned
- memory access. Please refer to the comments in the C file for details.
+ Define as 1 to improve performance on architectures that do not support
+ unaligned memory access.
+
+ Normally, this does not need to be set manually. See the C file for details.
  */
 #ifndef YYJSON_DISABLE_UNALIGNED_MEMORY_ACCESS
 #endif
 
-/* Define as 1 to export symbols when building this library as Windows DLL. */
+/* Define as 1 to export symbols when building this library as a Windows DLL. */
 #ifndef YYJSON_EXPORTS
 #endif
 
-/* Define as 1 to import symbols when using this library as Windows DLL. */
+/* Define as 1 to import symbols when using this library as a Windows DLL. */
 #ifndef YYJSON_IMPORTS
 #endif
 
-/* Define as 1 to include <stdint.h> for compiler which doesn't support C99. */
+/* Define as 1 to include <stdint.h> for compilers without C99 support. */
 #ifndef YYJSON_HAS_STDINT_H
 #endif
 
-/* Define as 1 to include <stdbool.h> for compiler which doesn't support C99. */
+/* Define as 1 to include <stdbool.h> for compilers without C99 support. */
 #ifndef YYJSON_HAS_STDBOOL_H
 #endif
 
@@ -508,7 +480,7 @@ extern "C" {
 #   pragma clang diagnostic ignored "-Wunused-parameter"
 #elif defined(__GNUC__)
 #   if (__GNUC__ > 4) || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
-#   pragma GCC diagnostic push
+#       pragma GCC diagnostic push
 #   endif
 #   pragma GCC diagnostic ignored "-Wunused-function"
 #   pragma GCC diagnostic ignored "-Wunused-parameter"
@@ -976,7 +948,7 @@ yyjson_api_inline yyjson_doc *yyjson_read(const char *dat,
 
 
 
-#if !defined(YYJSON_DISABLE_INCREMENTAL) || !YYJSON_DISABLE_INCREMENTAL
+#if !defined(YYJSON_DISABLE_INCR_READER) || !YYJSON_DISABLE_INCR_READER
 
 /**
  Initialize state for incremental read.
@@ -1027,7 +999,7 @@ yyjson_api yyjson_doc *yyjson_incr_read(yyjson_incr_state *state, size_t len,
 /** Release the incremental read state and free the memory. */
 yyjson_api void yyjson_incr_free(yyjson_incr_state *state);
 
-#endif /* YYJSON_DISABLE_INCREMENTAL */
+#endif /* YYJSON_DISABLE_INCR_READER */
 
 /**
  Returns the size of maximum memory usage to read a JSON data.
@@ -3611,8 +3583,8 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_obj_iter_getn(
  @b Example
  @code
     size_t idx, max;
-    yyjson_val *key, *val;
-    yyjson_obj_foreach(obj, idx, max, key, val) {
+    yyjson_mut_val *key, *val;
+    yyjson_mut_obj_foreach(obj, idx, max, key, val) {
         your_func(key, val);
     }
  @endcode
@@ -8184,7 +8156,7 @@ yyjson_api_inline yyjson_mut_val *unsafe_yyjson_mut_get_pointer(
 #   pragma clang diagnostic pop
 #elif defined(__GNUC__)
 #   if (__GNUC__ > 4) || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
-#   pragma GCC diagnostic pop
+#       pragma GCC diagnostic pop
 #   endif
 #elif defined(_MSC_VER)
 #   pragma warning(pop)
