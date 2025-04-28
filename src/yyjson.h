@@ -843,8 +843,7 @@ typedef struct yyjson_read_err {
     size_t pos;
 } yyjson_read_err;
 
-/** Opaque state for incremental JSON reader. */
-typedef struct yyjson_incr_state yyjson_incr_state;
+
 
 #if !defined(YYJSON_DISABLE_READER) || !YYJSON_DISABLE_READER
 
@@ -949,6 +948,9 @@ yyjson_api_inline yyjson_doc *yyjson_read(const char *dat,
 
 
 #if !defined(YYJSON_DISABLE_INCR_READER) || !YYJSON_DISABLE_INCR_READER
+
+/** Opaque state for incremental JSON reader. */
+typedef struct yyjson_incr_state yyjson_incr_state;
 
 /**
  Initialize state for incremental read.
