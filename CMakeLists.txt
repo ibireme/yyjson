@@ -30,6 +30,7 @@ option(YYJSON_ENABLE_VALGRIND "Enable valgrind memory checker for tests" OFF)
 option(YYJSON_ENABLE_SANITIZE "Enable sanitizer for tests" OFF)
 option(YYJSON_ENABLE_FASTMATH "Enable fast-math for tests" OFF)
 option(YYJSON_FORCE_32_BIT "Force 32-bit for tests" OFF)
+option(YYJSON_INSTALL "Install this library" ON)
 
 
 
@@ -148,9 +149,10 @@ check_include_file(stdbool.h YYJSON_HAS_STDBOOL_H)
 
 if(BUILD_SHARED_LIBS)
     if(WIN32)
-        target_compile_definitions(yyjson PUBLIC
-            $<BUILD_INTERFACE:YYJSON_EXPORTS>
-            $<INSTALL_INTERFACE:YYJSON_IMPORTS>)
+        target_compile_definitions(yyjson PUBLIC $<BUILD_INTERFACE:YYJSON_EXPORTS>)
+        if (YYJSON_INSTALL)
+            target_compile_definitions(yyjson PUBLIC $<INSTALL_INTERFACE:YYJSON_IMPORTS>)
+        endif()
     endif()
 endif()
 
@@ -158,22 +160,24 @@ endif()
 
 # ------------------------------------------------------------------------------
 # Install
-include(GNUInstallDirs)
+if (YYJSON_INSTALL)
+    include(GNUInstallDirs)
 
-install(TARGETS yyjson
-        EXPORT yyjson-targets
-        ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
-        LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
-        RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
-        INCLUDES DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}")
-install(EXPORT yyjson-targets
-        FILE yyjson-config.cmake
-        NAMESPACE yyjson::
-        DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/yyjson")
-install(FILES src/yyjson.h DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}")
+    install(TARGETS yyjson
+            EXPORT yyjson-targets
+            ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+            LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+            RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
+            INCLUDES DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}")
+    install(EXPORT yyjson-targets
+            FILE yyjson-config.cmake
+            NAMESPACE yyjson::
+            DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/yyjson")
+    install(FILES src/yyjson.h DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}")
 
-configure_file(yyjson.pc.in ${CMAKE_BINARY_DIR}/yyjson.pc @ONLY)
-install(FILES ${CMAKE_BINARY_DIR}/yyjson.pc DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)
+    configure_file(yyjson.pc.in ${CMAKE_BINARY_DIR}/yyjson.pc @ONLY)
+    install(FILES ${CMAKE_BINARY_DIR}/yyjson.pc DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)
+endif()
 
 
 # ------------------------------------------------------------------------------
