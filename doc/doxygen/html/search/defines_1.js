@@ -51,5 +51,9 @@ var searchData=
   ['yyjson_5fversion_5fmajor_48',['YYJSON_VERSION_MAJOR',['../yyjson_8h.html#a78cf6dd1700f2cd7d7f256b4c2339d8b',1,'yyjson.h']]],
   ['yyjson_5fversion_5fminor_49',['YYJSON_VERSION_MINOR',['../yyjson_8h.html#a4c03e94b391df0f2b019c8df6c6e70f1',1,'yyjson.h']]],
   ['yyjson_5fversion_5fpatch_50',['YYJSON_VERSION_PATCH',['../yyjson_8h.html#aa6d66fc870aac34589593a0bf6561647',1,'yyjson.h']]],
-  ['yyjson_5fversion_5fstring_51',['YYJSON_VERSION_STRING',['../yyjson_8h.html#a7b766ff66469615aab5bed9f760aab07',1,'yyjson.h']]]
+  ['yyjson_5fversion_5fstring_51',['YYJSON_VERSION_STRING',['../yyjson_8h.html#a7b766ff66469615aab5bed9f760aab07',1,'yyjson.h']]],
+  ['yyjson_5fwrite_5ffp_5fflag_5fbits_52',['YYJSON_WRITE_FP_FLAG_BITS',['../yyjson_8h.html#a88948a21da1cda94c1e96e9f2c694d90',1,'yyjson.h']]],
+  ['yyjson_5fwrite_5ffp_5fprec_5fbits_53',['YYJSON_WRITE_FP_PREC_BITS',['../yyjson_8h.html#ae661cccbf7206ef595909458768f11fd',1,'yyjson.h']]],
+  ['yyjson_5fwrite_5ffp_5fto_5ffixed_54',['YYJSON_WRITE_FP_TO_FIXED',['../yyjson_8h.html#aa6456ada04bdbe304c1f3fb14e309ac6',1,'yyjson.h']]],
+  ['yyjson_5fwrite_5ffp_5fto_5ffloat_55',['YYJSON_WRITE_FP_TO_FLOAT',['../yyjson_8h.html#ab1d81ddd4cc7bd198d537a7b6cd17ad3',1,'yyjson.h']]]
 ];

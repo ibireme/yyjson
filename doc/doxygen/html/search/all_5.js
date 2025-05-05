@@ -1,4 +1,5 @@
 var searchData=
 [
-  ['free_0',['free',['../structyyjson__alc.html#a2c770ff93f0f331bd60076eecd93661e',1,'yyjson_alc']]]
+  ['5_200_202022_2005_2025_0',['0.5.0 (2022-05-25)',['../md__c_h_a_n_g_e_l_o_g.html#autotoc_md050-2022-05-25',1,'']]],
+  ['5_201_202022_2006_2017_1',['0.5.1 (2022-06-17)',['../md__c_h_a_n_g_e_l_o_g.html#autotoc_md051-2022-06-17',1,'']]]
 ];

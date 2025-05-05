@@ -1,6 +1,6 @@
 var annotated_dup =
 [
-    [ "yyjson_alc", "structyyjson__alc.html", "structyyjson__alc" ],
+    [ "yyjson_alc", "yyjson_8h.html#structyyjson__alc", "yyjson_8h_structyyjson__alc" ],
     [ "yyjson_arr_iter", "yyjson_8h.html#structyyjson__arr__iter", "yyjson_8h_structyyjson__arr__iter" ],
     [ "yyjson_doc", "yyjson_8h.html#structyyjson__doc", "yyjson_8h_structyyjson__doc" ],
     [ "yyjson_mut_arr_iter", "yyjson_8h.html#structyyjson__mut__arr__iter", "yyjson_8h_structyyjson__mut__arr__iter" ],

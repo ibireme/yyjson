@@ -2,7 +2,7 @@
 All notable changes to this project will be documented in this file.
 
 
-## Unreleased
+## 0.11.0 (2025-05-05)
 #### Added
 - Add `YYJSON_READ_ALLOW_BOM` flag to allow UTF-8 BOM.
 - Add `YYJSON_WRITE_FP_TO_FLOAT` flag to write real numbers using single-precison.

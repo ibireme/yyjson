@@ -1,5 +1,7 @@
 var searchData=
 [
-  ['val_5fpool_0',['val_pool',['../yyjson_8h.html#a5607c9ba393206ad94ecd90fbeb59017',1,'yyjson_mut_doc']]],
-  ['val_5fread_1',['val_read',['../yyjson_8h.html#ac12f7aed42260b8d2ede0fded3f72167',1,'yyjson_doc']]]
+  ['ec2_20amd_20epyc_207r32_20gcc_209_203_0',['AWS EC2 (AMD EPYC 7R32, gcc 9.3)',['../index.html#aws-ec2-amd-epyc-7r32-gcc-93',1,'']]],
+  ['encoding_1',['Character Encoding',['../api.html#character-encoding',1,'']]],
+  ['epyc_207r32_20gcc_209_203_2',['AWS EC2 (AMD EPYC 7R32, gcc 9.3)',['../index.html#aws-ec2-amd-epyc-7r32-gcc-93',1,'']]],
+  ['error_20handling_3',['Reader error handling',['../api.html#reader-error-handling',1,'']]]
 ];

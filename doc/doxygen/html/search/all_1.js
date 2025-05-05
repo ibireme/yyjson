@@ -1,6 +1,12 @@
 var searchData=
 [
-  ['alc_0',['alc',['../yyjson_8h.html#ab1a7e03f48bb31760030fbdab7d6597b',1,'yyjson_doc::alc()'],['../yyjson_8h.html#a1b6f74828e64779d450ffd0cbe61f08f',1,'yyjson_mut_doc::alc()']]],
-  ['api_1',['API',['../md_doc__a_p_i.html',1,'']]],
-  ['arr_2',['arr',['../yyjson_8h.html#ad58dcd5f514d5f3c71412ec86af9e2d0',1,'yyjson_mut_arr_iter']]]
+  ['1_200_202020_2010_2026_0',['0.1.0 (2020-10-26)',['../md__c_h_a_n_g_e_l_o_g.html#autotoc_md010-2020-10-26',1,'']]],
+  ['1_202022_2006_2017_1',['0.5.1 (2022-06-17)',['../md__c_h_a_n_g_e_l_o_g.html#autotoc_md051-2022-06-17',1,'']]],
+  ['10_200_202024_2007_2009_2',['0.10.0 (2024-07-09)',['../md__c_h_a_n_g_e_l_o_g.html#autotoc_md0100-2024-07-09',1,'']]],
+  ['10_2026_3',['0.1.0 (2020-10-26)',['../md__c_h_a_n_g_e_l_o_g.html#autotoc_md010-2020-10-26',1,'']]],
+  ['11_200_202025_2005_2005_4',['0.11.0 (2025-05-05)',['../md__c_h_a_n_g_e_l_o_g.html#autotoc_md0110-2025-05-05',1,'']]],
+  ['12_5',['12',['../md__c_h_a_n_g_e_l_o_g.html#autotoc_md020-2020-12-12',1,'0.2.0 (2020-12-12)'],['../md__c_h_a_n_g_e_l_o_g.html#autotoc_md040-2021-12-12',1,'0.4.0 (2021-12-12)'],['../md__c_h_a_n_g_e_l_o_g.html#autotoc_md060-2022-12-12',1,'0.6.0 (2022-12-12)'],['../index.html#iphone-apple-a14-clang-12',1,'iPhone (Apple A14, clang 12)']]],
+  ['12_2012_6',['12 12',['../md__c_h_a_n_g_e_l_o_g.html#autotoc_md020-2020-12-12',1,'0.2.0 (2020-12-12)'],['../md__c_h_a_n_g_e_l_o_g.html#autotoc_md040-2021-12-12',1,'0.4.0 (2021-12-12)'],['../md__c_h_a_n_g_e_l_o_g.html#autotoc_md060-2022-12-12',1,'0.6.0 (2022-12-12)']]],
+  ['13_7',['0.8.0 (2023-09-13)',['../md__c_h_a_n_g_e_l_o_g.html#autotoc_md080-2023-09-13',1,'']]],
+  ['17_8',['0.5.1 (2022-06-17)',['../md__c_h_a_n_g_e_l_o_g.html#autotoc_md051-2022-06-17',1,'']]]
 ];

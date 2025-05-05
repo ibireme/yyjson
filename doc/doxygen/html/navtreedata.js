@@ -25,110 +25,140 @@
 var NAVTREE =
 [
   [ "yyjson", "index.html", [
-    [ "Introduction", "index.html", [
-      [ "Features", "index.html#autotoc_md1", null ],
-      [ "Limitations", "index.html#autotoc_md2", null ],
-      [ "Performance", "index.html#autotoc_md3", null ],
-      [ "Sample Code", "index.html#autotoc_md7", null ],
-      [ "Documentation", "index.html#autotoc_md12", null ],
-      [ "Packaging status", "index.html#autotoc_md13", null ],
-      [ "Built With yyjson", "index.html#autotoc_md14", null ],
-      [ "TODO for v1.0", "index.html#autotoc_md15", null ],
-      [ "License", "index.html#autotoc_md16", null ]
+    [ "Introduction", "index.html", "index" ],
+    [ "Building and testing", "building-and-testing.html", [
+      [ "Source code", "building-and-testing.html#source-code", null ],
+      [ "Package manager", "building-and-testing.html#package-manager", [
+        [ "Use vcpkg", "building-and-testing.html#use-vcpkg", null ]
+      ] ],
+      [ "CMake", "building-and-testing.html#cmake", [
+        [ "Use CMake to build the library", "building-and-testing.html#use-cmake-to-build-the-library", null ],
+        [ "Use CMake as a dependency", "building-and-testing.html#use-cmake-as-a-dependency", null ],
+        [ "Use CMake to generate project", "building-and-testing.html#use-cmake-to-generate-project", null ],
+        [ "Use CMake to generate documentation", "building-and-testing.html#use-cmake-to-generate-documentation", null ],
+        [ "Testing With CMake and CTest", "building-and-testing.html#testing-with-cmake-and-ctest", null ]
+      ] ],
+      [ "Compile-time Options", "building-and-testing.html#compile-time-options", [
+        [ "YYJSON_DISABLE_READER", "building-and-testing.html#yyjson_disable_reader", null ],
+        [ "YYJSON_DISABLE_WRITER", "building-and-testing.html#yyjson_disable_writer", null ],
+        [ "YYJSON_DISABLE_INCR_READER", "building-and-testing.html#yyjson_disable_incr_reader", null ],
+        [ "YYJSON_DISABLE_UTILS", "building-and-testing.html#yyjson_disable_utils", null ],
+        [ "YYJSON_DISABLE_FAST_FP_CONV", "building-and-testing.html#yyjson_disable_fast_fp_conv", null ],
+        [ "YYJSON_DISABLE_NON_STANDARD", "building-and-testing.html#yyjson_disable_non_standard", null ],
+        [ "YYJSON_DISABLE_UTF8_VALIDATION", "building-and-testing.html#yyjson_disable_utf8_validation", null ],
+        [ "YYJSON_EXPORTS", "building-and-testing.html#yyjson_exports", null ],
+        [ "YYJSON_IMPORTS", "building-and-testing.html#yyjson_imports", null ]
+      ] ]
     ] ],
-    [ "Building and testing", "md_doc__build_and_test.html", [
-      [ "Source code", "md_doc__build_and_test.html#autotoc_md17", null ],
-      [ "Package manager", "md_doc__build_and_test.html#autotoc_md18", [
-        [ "Use vcpkg", "md_doc__build_and_test.html#autotoc_md19", null ]
+    [ "API", "api.html", [
+      [ "API Design", "api.html#api-design", [
+        [ "API prefix", "api.html#api-prefix", null ],
+        [ "API for immutable/mutable data", "api.html#api-for-immutablemutable-data", null ],
+        [ "API for string", "api.html#api-for-string", null ]
       ] ],
-      [ "CMake", "md_doc__build_and_test.html#autotoc_md20", [
-        [ "Use CMake to build a library", "md_doc__build_and_test.html#autotoc_md21", null ],
-        [ "Use CMake as a dependency", "md_doc__build_and_test.html#autotoc_md22", null ],
-        [ "Use CMake to generate project", "md_doc__build_and_test.html#autotoc_md23", null ],
-        [ "Use CMake to generate documentation", "md_doc__build_and_test.html#autotoc_md24", null ],
-        [ "Testing With CMake and CTest", "md_doc__build_and_test.html#autotoc_md25", null ]
+      [ "Reading JSON", "api.html#reading-json", [
+        [ "Read JSON from string", "api.html#read-json-from-string", null ],
+        [ "Read JSON from file", "api.html#read-json-from-file", null ],
+        [ "Read JSON from file pointer", "api.html#read-json-from-file-pointer", null ],
+        [ "Read JSON with options", "api.html#read-json-with-options", null ],
+        [ "Read JSON incrementally", "api.html#read-json-incrementally", [
+          [ "Create the state for incremental reading", "api.html#create-the-state-for-incremental-reading", null ],
+          [ "Perform incremental read", "api.html#perform-incremental-read", null ],
+          [ "Free the state used for incremental reading", "api.html#free-the-state-used-for-incremental-reading", null ],
+          [ "Sample code", "api.html#sample-code-1", null ]
+        ] ],
+        [ "Reader error handling", "api.html#reader-error-handling", null ],
+        [ "Reader flag", "api.html#reader-flag", [
+          [ "YYJSON_READ_NOFLAG = 0", "api.html#yyjson_read_noflag--0", null ],
+          [ "YYJSON_READ_INSITU", "api.html#yyjson_read_insitu", null ],
+          [ "YYJSON_READ_STOP_WHEN_DONE", "api.html#yyjson_read_stop_when_done", null ],
+          [ "YYJSON_READ_ALLOW_TRAILING_COMMAS", "api.html#yyjson_read_allow_trailing_commas", null ],
+          [ "YYJSON_READ_ALLOW_COMMENTS", "api.html#yyjson_read_allow_comments", null ],
+          [ "YYJSON_READ_ALLOW_INF_AND_NAN", "api.html#yyjson_read_allow_inf_and_nan", null ],
+          [ "YYJSON_READ_NUMBER_AS_RAW", "api.html#yyjson_read_number_as_raw", null ],
+          [ "YYJSON_READ_BIGNUM_AS_RAW", "api.html#yyjson_read_bignum_as_raw", null ],
+          [ "YYJSON_READ_ALLOW_INVALID_UNICODE", "api.html#yyjson_read_allow_invalid_unicode", null ],
+          [ "YYJSON_READ_ALLOW_BOM", "api.html#yyjson_read_allow_bom", null ]
+        ] ]
       ] ],
-      [ "Compile-time Options", "md_doc__build_and_test.html#autotoc_md26", null ]
+      [ "Writing JSON", "api.html#writing-json", [
+        [ "Write JSON to string", "api.html#write-json-to-string", null ],
+        [ "Write JSON to file", "api.html#write-json-to-file", null ],
+        [ "Write JSON to file pointer", "api.html#write-json-to-file-pointer", null ],
+        [ "Write JSON with options", "api.html#write-json-with-options", null ],
+        [ "Writer flag", "api.html#writer-flag", [
+          [ "YYJSON_WRITE_NOFLAG = 0", "api.html#yyjson_write_noflag--0", null ],
+          [ "YYJSON_WRITE_PRETTY", "api.html#yyjson_write_pretty", null ],
+          [ "YYJSON_WRITE_PRETTY_TWO_SPACES", "api.html#yyjson_write_pretty_two_spaces", null ],
+          [ "YYJSON_WRITE_ESCAPE_UNICODE", "api.html#yyjson_write_escape_unicode", null ],
+          [ "YYJSON_WRITE_ESCAPE_SLASHES", "api.html#yyjson_write_escape_slashes", null ],
+          [ "YYJSON_WRITE_ALLOW_INF_AND_NAN", "api.html#yyjson_write_allow_inf_and_nan", null ],
+          [ "YYJSON_WRITE_INF_AND_NAN_AS_NULL", "api.html#yyjson_write_inf_and_nan_as_null", null ],
+          [ "YYJSON_WRITE_ALLOW_INVALID_UNICODE", "api.html#yyjson_write_allow_invalid_unicode", null ],
+          [ "YYJSON_WRITE_NEWLINE_AT_END", "api.html#yyjson_write_newline_at_end", null ],
+          [ "YYJSON_WRITE_FP_TO_FLOAT", "api.html#yyjson_write_fp_to_float", null ],
+          [ "YYJSON_WRITE_FP_TO_FIXED(prec)", "api.html#yyjson_write_fp_to_fixedprec", null ]
+        ] ]
+      ] ],
+      [ "Accessing JSON Document", "api.html#accessing-json-document", [
+        [ "JSON Document", "api.html#json-document", null ],
+        [ "JSON Value", "api.html#json-value", null ],
+        [ "JSON Array", "api.html#json-array", null ],
+        [ "JSON Array Iterator", "api.html#json-array-iterator", null ],
+        [ "JSON Object", "api.html#json-object", null ],
+        [ "JSON Object Iterator", "api.html#json-object-iterator", null ]
+      ] ],
+      [ "Creating JSON Document", "api.html#creating-json-document", [
+        [ "Mutable Document", "api.html#mutable-document", null ],
+        [ "JSON Value Creation", "api.html#json-value-creation", null ],
+        [ "JSON Array Creation", "api.html#json-array-creation", null ],
+        [ "JSON Array Modification", "api.html#json-array-modification", null ],
+        [ "JSON Object Creation", "api.html#json-object-creation", null ],
+        [ "JSON Object Modification", "api.html#json-object-modification", null ]
+      ] ],
+      [ "JSON Pointer and Patch", "api.html#json-pointer-and-patch", [
+        [ "JSON Pointer", "api.html#json-pointer", null ],
+        [ "JSON Patch", "api.html#json-patch", null ],
+        [ "JSON Merge Patch", "api.html#json-merge-patch", null ]
+      ] ],
+      [ "Number Processing", "api.html#number-processing", [
+        [ "Number reader", "api.html#number-reader", null ],
+        [ "Number writer", "api.html#number-writer", null ]
+      ] ],
+      [ "Text Processing", "api.html#text-processing", [
+        [ "Character Encoding", "api.html#character-encoding", null ],
+        [ "NUL Character", "api.html#nul-character", null ]
+      ] ],
+      [ "Memory Allocator", "api.html#memory-allocator", [
+        [ "Single allocator for multiple JSON", "api.html#single-allocator-for-multiple-json", null ],
+        [ "Stack memory allocator", "api.html#stack-memory-allocator", null ],
+        [ "Use a third-party allocator library", "api.html#use-a-third-party-allocator-library", null ]
+      ] ],
+      [ "Stack Memory Usage", "api.html#stack-memory-usage", null ],
+      [ "Null Check", "api.html#null-check", null ],
+      [ "Thread Safety", "api.html#thread-safety", null ],
+      [ "Locale Independence", "api.html#locale-independence", null ]
     ] ],
-    [ "API", "md_doc__a_p_i.html", [
-      [ "API Design", "md_doc__a_p_i.html#autotoc_md27", [
-        [ "API prefix", "md_doc__a_p_i.html#autotoc_md28", null ],
-        [ "API for immutable/mutable data", "md_doc__a_p_i.html#autotoc_md29", null ],
-        [ "API for string", "md_doc__a_p_i.html#autotoc_md30", null ]
-      ] ],
-      [ "Reading JSON", "md_doc__a_p_i.html#autotoc_md32", [
-        [ "Read JSON from string", "md_doc__a_p_i.html#autotoc_md33", null ],
-        [ "Read JSON from file", "md_doc__a_p_i.html#autotoc_md34", null ],
-        [ "Read JSON from file pointer", "md_doc__a_p_i.html#autotoc_md35", null ],
-        [ "Read JSON with options", "md_doc__a_p_i.html#autotoc_md36", null ],
-        [ "Reader error handling", "md_doc__a_p_i.html#autotoc_md37", null ],
-        [ "Reader flag", "md_doc__a_p_i.html#autotoc_md38", null ]
-      ] ],
-      [ "Writing JSON", "md_doc__a_p_i.html#autotoc_md40", [
-        [ "Write JSON to string", "md_doc__a_p_i.html#autotoc_md41", null ],
-        [ "Write JSON to file", "md_doc__a_p_i.html#autotoc_md42", null ],
-        [ "Write JSON to file pointer", "md_doc__a_p_i.html#autotoc_md43", null ],
-        [ "Write JSON with options", "md_doc__a_p_i.html#autotoc_md44", null ],
-        [ "Writer flag", "md_doc__a_p_i.html#autotoc_md45", null ]
-      ] ],
-      [ "Accessing JSON Document", "md_doc__a_p_i.html#autotoc_md47", [
-        [ "JSON Document", "md_doc__a_p_i.html#autotoc_md48", null ],
-        [ "JSON Value", "md_doc__a_p_i.html#autotoc_md49", null ],
-        [ "JSON Array", "md_doc__a_p_i.html#autotoc_md50", null ],
-        [ "JSON Array Iterator", "md_doc__a_p_i.html#autotoc_md51", null ],
-        [ "JSON Object", "md_doc__a_p_i.html#autotoc_md52", null ],
-        [ "JSON Object Iterator", "md_doc__a_p_i.html#autotoc_md53", null ]
-      ] ],
-      [ "Creating JSON Document", "md_doc__a_p_i.html#autotoc_md55", [
-        [ "Mutable Document", "md_doc__a_p_i.html#autotoc_md56", null ],
-        [ "JSON Value Creation", "md_doc__a_p_i.html#autotoc_md57", null ],
-        [ "JSON Array Creation", "md_doc__a_p_i.html#autotoc_md58", null ],
-        [ "JSON Array Modification", "md_doc__a_p_i.html#autotoc_md59", null ],
-        [ "JSON Object Creation", "md_doc__a_p_i.html#autotoc_md60", null ],
-        [ "JSON Object Modification", "md_doc__a_p_i.html#autotoc_md61", null ]
-      ] ],
-      [ "JSON Pointer and Patch", "md_doc__a_p_i.html#autotoc_md63", [
-        [ "JSON Pointer", "md_doc__a_p_i.html#autotoc_md64", null ],
-        [ "JSON Patch", "md_doc__a_p_i.html#autotoc_md65", null ],
-        [ "JSON Merge Patch", "md_doc__a_p_i.html#autotoc_md66", null ]
-      ] ],
-      [ "Number Processing", "md_doc__a_p_i.html#autotoc_md68", [
-        [ "Number reader", "md_doc__a_p_i.html#autotoc_md69", null ],
-        [ "Number writer", "md_doc__a_p_i.html#autotoc_md70", null ]
-      ] ],
-      [ "Text Processing", "md_doc__a_p_i.html#autotoc_md71", [
-        [ "Character Encoding", "md_doc__a_p_i.html#autotoc_md72", null ],
-        [ "NUL Character", "md_doc__a_p_i.html#autotoc_md73", null ]
-      ] ],
-      [ "Memory Allocator", "md_doc__a_p_i.html#autotoc_md74", [
-        [ "Single allocator for multiple JSON", "md_doc__a_p_i.html#autotoc_md75", null ],
-        [ "Stack memory allocator", "md_doc__a_p_i.html#autotoc_md76", null ],
-        [ "Use a third-party allocator library", "md_doc__a_p_i.html#autotoc_md77", null ]
-      ] ],
-      [ "Stack Memory Usage", "md_doc__a_p_i.html#autotoc_md78", null ],
-      [ "Null Check", "md_doc__a_p_i.html#autotoc_md79", null ],
-      [ "Thread Safety", "md_doc__a_p_i.html#autotoc_md80", null ],
-      [ "Locale Independence", "md_doc__a_p_i.html#autotoc_md81", null ]
-    ] ],
-    [ "Data Structures", "md_doc__data_structure.html", [
-      [ "Immutable Value", "md_doc__data_structure.html#autotoc_md83", null ],
-      [ "Immutable Document", "md_doc__data_structure.html#autotoc_md84", null ],
-      [ "Mutable Value", "md_doc__data_structure.html#autotoc_md86", null ],
-      [ "Mutable Document", "md_doc__data_structure.html#autotoc_md87", null ],
-      [ "Memory Management", "md_doc__data_structure.html#autotoc_md89", null ]
+    [ "Data Structures", "data-structures.html", [
+      [ "Immutable Value", "data-structures.html#immutable-value", null ],
+      [ "Immutable Document", "data-structures.html#immutable-document", null ],
+      [ "Mutable Value", "data-structures.html#mutable-value", null ],
+      [ "Mutable Document", "data-structures.html#mutable-document-1", null ],
+      [ "Memory Management", "data-structures.html#memory-management", null ]
     ] ],
     [ "Changelog", "md__c_h_a_n_g_e_l_o_g.html", [
-      [ "0.10.0 (2024-07-09)", "md__c_h_a_n_g_e_l_o_g.html#autotoc_md91", null ],
-      [ "0.9.0 (2024-04-08)", "md__c_h_a_n_g_e_l_o_g.html#autotoc_md95", null ],
-      [ "0.8.0 (2023-09-13)", "md__c_h_a_n_g_e_l_o_g.html#autotoc_md99", null ],
-      [ "0.7.0 (2023-05-25)", "md__c_h_a_n_g_e_l_o_g.html#autotoc_md103", null ],
-      [ "0.6.0 (2022-12-12)", "md__c_h_a_n_g_e_l_o_g.html#autotoc_md107", null ],
-      [ "0.5.1 (2022-06-17)", "md__c_h_a_n_g_e_l_o_g.html#autotoc_md110", null ],
-      [ "0.5.0 (2022-05-25)", "md__c_h_a_n_g_e_l_o_g.html#autotoc_md112", null ],
-      [ "0.4.0 (2021-12-12)", "md__c_h_a_n_g_e_l_o_g.html#autotoc_md116", null ],
-      [ "0.3.0 (2021-05-25)", "md__c_h_a_n_g_e_l_o_g.html#autotoc_md120", null ],
-      [ "0.2.0 (2020-12-12)", "md__c_h_a_n_g_e_l_o_g.html#autotoc_md124", null ],
-      [ "0.1.0 (2020-10-26)", "md__c_h_a_n_g_e_l_o_g.html#autotoc_md129", null ]
+      [ "0.11.0 (2025-05-05)", "md__c_h_a_n_g_e_l_o_g.html#autotoc_md0110-2025-05-05", null ],
+      [ "0.10.0 (2024-07-09)", "md__c_h_a_n_g_e_l_o_g.html#autotoc_md0100-2024-07-09", null ],
+      [ "0.9.0 (2024-04-08)", "md__c_h_a_n_g_e_l_o_g.html#autotoc_md090-2024-04-08", null ],
+      [ "0.8.0 (2023-09-13)", "md__c_h_a_n_g_e_l_o_g.html#autotoc_md080-2023-09-13", null ],
+      [ "0.7.0 (2023-05-25)", "md__c_h_a_n_g_e_l_o_g.html#autotoc_md070-2023-05-25", null ],
+      [ "0.6.0 (2022-12-12)", "md__c_h_a_n_g_e_l_o_g.html#autotoc_md060-2022-12-12", null ],
+      [ "0.5.1 (2022-06-17)", "md__c_h_a_n_g_e_l_o_g.html#autotoc_md051-2022-06-17", null ],
+      [ "0.5.0 (2022-05-25)", "md__c_h_a_n_g_e_l_o_g.html#autotoc_md050-2022-05-25", null ],
+      [ "0.4.0 (2021-12-12)", "md__c_h_a_n_g_e_l_o_g.html#autotoc_md040-2021-12-12", null ],
+      [ "0.3.0 (2021-05-25)", "md__c_h_a_n_g_e_l_o_g.html#autotoc_md030-2021-05-25", null ],
+      [ "0.2.0 (2020-12-12)", "md__c_h_a_n_g_e_l_o_g.html#autotoc_md020-2020-12-12", null ],
+      [ "0.1.0 (2020-10-26)", "md__c_h_a_n_g_e_l_o_g.html#autotoc_md010-2020-10-26", null ]
     ] ],
     [ "Deprecated List", "deprecated.html", null ],
     [ "Files", "files.html", [
@@ -155,9 +185,9 @@ var NAVTREE =
 var NAVTREEINDEX =
 [
 "annotated.html",
-"yyjson_8h.html#a41f9c6e4641f813a7a94f12ea79b34ce",
-"yyjson_8h.html#acd2884309c99b42f916fffd50c018c59"
+"yyjson_8h.html#a2d26305e46b3a7f72619232805fa10c6",
+"yyjson_8h.html#aaf5c505b42eeb64e7a0ac17e3d7d3847"
 ];
 
-var SYNCONMSG = 'click to disable panel synchronisation';
-var SYNCOFFMSG = 'click to enable panel synchronisation';
+var SYNCONMSG = 'click to disable panel synchronization';
+var SYNCOFFMSG = 'click to enable panel synchronization';

@@ -1,6 +1,6 @@
 var searchData=
 [
-  ['yyjson_5falc_0',['yyjson_alc',['../structyyjson__alc.html',1,'']]],
+  ['yyjson_5falc_0',['yyjson_alc',['../yyjson_8h.html#structyyjson__alc',1,'']]],
   ['yyjson_5farr_5fiter_1',['yyjson_arr_iter',['../yyjson_8h.html#structyyjson__arr__iter',1,'']]],
   ['yyjson_5fdoc_2',['yyjson_doc',['../yyjson_8h.html#structyyjson__doc',1,'']]],
   ['yyjson_5fmut_5farr_5fiter_3',['yyjson_mut_arr_iter',['../yyjson_8h.html#structyyjson__mut__arr__iter',1,'']]],
