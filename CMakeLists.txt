@@ -30,7 +30,7 @@ option(YYJSON_ENABLE_VALGRIND "Enable valgrind memory checker for tests" OFF)
 option(YYJSON_ENABLE_SANITIZE "Enable sanitizer for tests" OFF)
 option(YYJSON_ENABLE_FASTMATH "Enable fast-math for tests" OFF)
 option(YYJSON_FORCE_32_BIT "Force 32-bit for tests" OFF)
-option(YYJSON_INSTALL "Install this library" ON)
+option(YYJSON_INSTALL "Generate installation target" ON)
 
 
 
@@ -81,7 +81,7 @@ set_target_properties(yyjson PROPERTIES VERSION ${PROJECT_VERSION} SOVERSION ${Y
 
 
 # ------------------------------------------------------------------------------
-# Project Config
+# Project Configuration
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 # Enable C++ for tests
@@ -147,6 +147,11 @@ include(CheckIncludeFile)
 check_include_file(stdint.h YYJSON_HAS_STDINT_H)
 check_include_file(stdbool.h YYJSON_HAS_STDBOOL_H)
 
+
+
+# ------------------------------------------------------------------------------
+# Build & Install
+
 if(BUILD_SHARED_LIBS)
     if(WIN32)
         target_compile_definitions(yyjson PUBLIC $<BUILD_INTERFACE:YYJSON_EXPORTS>)
@@ -156,10 +161,6 @@ if(BUILD_SHARED_LIBS)
     endif()
 endif()
 
-
-
-# ------------------------------------------------------------------------------
-# Install
 if (YYJSON_INSTALL)
     include(GNUInstallDirs)
 
@@ -178,6 +179,7 @@ if (YYJSON_INSTALL)
     configure_file(yyjson.pc.in ${CMAKE_BINARY_DIR}/yyjson.pc @ONLY)
     install(FILES ${CMAKE_BINARY_DIR}/yyjson.pc DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)
 endif()
+
 
 
 # ------------------------------------------------------------------------------
