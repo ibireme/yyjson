@@ -114,7 +114,7 @@ static void test_read_file(const char *path, flag_type type, expect_type expect)
     free(buf);
     free(dat);
 
-#if !YYJSON_DISABLE_INCREMENTAL
+#if !YYJSON_DISABLE_INCR_READER
     // test incremental read
     // extend input length in chunks of one byte at a time
     const size_t chunk_len = 1;
@@ -125,7 +125,7 @@ static void test_read_file(const char *path, flag_type type, expect_type expect)
 
     yyjson_incr_state *state = NULL;
 restart_incr_read:
-    state = yyjson_incr_new(dat, len, flag, NULL);
+    state = yyjson_incr_new((char *)dat, len, flag, NULL);
     yy_assert(state != NULL);
     while (read_len < len || len == 0) {
         read_len += chunk_len;
@@ -149,13 +149,13 @@ restart_incr_read:
     }
     if (doc) { // test write again
 #if !YYJSON_DISABLE_WRITER
-        usize len;
+        usize out_len;
         char *ret;
-        ret = yyjson_write(doc, YYJSON_WRITE_ALLOW_INF_AND_NAN, &len);
-        yy_assert(ret && len);
+        ret = yyjson_write(doc, YYJSON_WRITE_ALLOW_INF_AND_NAN, &out_len);
+        yy_assert(ret && out_len);
         free(ret);
-        ret = yyjson_write(doc, YYJSON_WRITE_PRETTY | YYJSON_WRITE_ALLOW_INF_AND_NAN, &len);
-        yy_assert(ret && len);
+        ret = yyjson_write(doc, YYJSON_WRITE_PRETTY | YYJSON_WRITE_ALLOW_INF_AND_NAN, &out_len);
+        yy_assert(ret && out_len);
         free(ret);
 #endif
     }
@@ -179,7 +179,7 @@ restart_incr_read:
 #endif
 }
 
-#if !YYJSON_DISABLE_INCREMENTAL
+#if !YYJSON_DISABLE_INCR_READER
 static yyjson_doc *test_incr_read_insitu(char *dat, usize len, usize chunk_len, flag_type type) {
 #if YYJSON_DISABLE_UTF8_VALIDATION
     if (!yy_str_is_utf8(dat, len)) return NULL;
@@ -407,13 +407,46 @@ static void test_json_encoding(void) {
     yy_dir_free(names);
 }
 
-#if !YYJSON_DISABLE_INCREMENTAL
+#if !YYJSON_DISABLE_INCR_READER
+
+/** Returns an allocated minified JSON string representation of an object with
+    obj_len keys. The values are arrays of length arr_len. The elements in the
+    arrays are strings, booleans, nulls, numbers, empty arrays and empty
+    objects. The returned string is padded with four null bytes. */
+static char *create_json(usize obj_len, usize arr_len) {
+    yy_buf buf;
+    char *values[] = {"12.5", "45", "\"hello\"", "false",
+                      "null", "{}", "[]", "\"\\u066Dhey\\\"\\/\""};
+    usize i, j;
+    if (!yy_buf_init(&buf, 1024)) return NULL;
+    if (!yy_buf_append(&buf, (u8 *)"{", 1)) goto error;
+    for (i = 0; i < obj_len; i++) {
+        char key[32];
+        if (i > 0 && !yy_buf_append(&buf, (u8 *)",", 1)) goto error;
+        sprintf(key, "\"key%zu\":[", i);
+        if (!yy_buf_append(&buf, (u8 *)key, strlen(key))) goto error;
+        for (j = 0; j < arr_len; j++) {
+            char *tmp;
+            if (j > 0 && !yy_buf_append(&buf, (u8 *)",", 1)) goto error;
+            tmp = values[(i + j) % (sizeof(values) / sizeof(char *))];
+            if (!yy_buf_append(&buf, (u8 *)tmp, strlen(tmp))) goto error;
+        }
+        if (!yy_buf_append(&buf, (u8 *)"]", 1)) goto error;
+    }
+    if (!yy_buf_append(&buf, (u8 *)"}", 1)) goto error;
+    if (!yy_buf_append(&buf, (u8 *)"\0\0\0\0", 4)) goto error;
+    return (char *)buf.hdr;
+
+error:
+    yy_buf_release(&buf);
+    return NULL;
+}
 
 // yyjson incremental with insitu
 static void test_json_incremental(void) {
-    u8 *dat = yy_create_json(3, 10);
+    char *dat = create_json(3, 10);
     usize len = strlen(dat);
-    u8 *dat_dup = yy_str_copy(dat);
+    char *dat_dup = yy_str_copy(dat);
     yyjson_doc *doc = test_incr_read_insitu(dat, len, 1, FLAG_NONE);
     yy_assertf(doc != NULL, "incremental read should pass but fail\n");
 
@@ -441,6 +474,8 @@ static void test_json_incremental(void) {
     free(dat_dup);
 }
 
+#else
+static void test_json_incremental() {}
 #endif
 
 yy_test_case(test_json_reader) {
@@ -449,9 +484,7 @@ yy_test_case(test_json_reader) {
     test_json_parsing();
     test_json_transform();
     test_json_encoding();
-#if !YYJSON_DISABLE_INCREMENTAL
     test_json_incremental();
-#endif
 }
 
 #else

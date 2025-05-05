@@ -38,18 +38,21 @@ option(YYJSON_INSTALL "Install this library" ON)
 # Compilation options, see yyjson.h for more explanation
 option(YYJSON_DISABLE_READER "Disable JSON reader" OFF)
 option(YYJSON_DISABLE_WRITER "Disable JSON writer" OFF)
+option(YYJSON_DISABLE_INCR_READER "Disable incremental reader" OFF)
 option(YYJSON_DISABLE_UTILS "Disable JSON Pointer, JSON Patch, JSON Merge Patch" OFF)
 option(YYJSON_DISABLE_FAST_FP_CONV "Disable custom floating-point number conversion" OFF)
 option(YYJSON_DISABLE_NON_STANDARD "Disable non-standard JSON support" OFF)
 option(YYJSON_DISABLE_UTF8_VALIDATION "Disable UTF-8 validation" OFF)
 option(YYJSON_DISABLE_UNALIGNED_MEMORY_ACCESS "Disable unaligned memory access explicit" OFF)
-option(YYJSON_DISABLE_INCREMENTAL "Disable incremental parsing" OFF)
 
 if(YYJSON_DISABLE_READER)
     add_definitions(-DYYJSON_DISABLE_READER)
 endif()
 if(YYJSON_DISABLE_WRITER)
     add_definitions(-DYYJSON_DISABLE_WRITER)
+endif()
+if(YYJSON_DISABLE_INCR_READER)
+    add_definitions(-DYYJSON_DISABLE_INCR_READER)
 endif()
 if(YYJSON_DISABLE_UTILS)
     add_definitions(-DYYJSON_DISABLE_UTILS)
@@ -65,9 +68,6 @@ if(YYJSON_DISABLE_UTF8_VALIDATION)
 endif()
 if(YYJSON_DISABLE_UNALIGNED_MEMORY_ACCESS)
     add_definitions(-DYYJSON_DISABLE_UNALIGNED_MEMORY_ACCESS)
-endif()
-if(YYJSON_DISABLE_INCREMENTAL)
-    add_definitions(-DYYJSON_DISABLE_INCREMENTAL)
 endif()
 
 
@@ -193,6 +193,16 @@ if(YYJSON_BUILD_TESTS)
         set(CMAKE_XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY "")
         set(YYJSON_TEST_DATA ${CMAKE_CURRENT_SOURCE_DIR}/test/data)
         
+        # CMake 4.0+ requires CMAKE_OSX_SYSROOT to be set manually
+        if(NOT CMAKE_OSX_SYSROOT OR CMAKE_OSX_SYSROOT STREQUAL "")
+            execute_process(
+                COMMAND xcrun --sdk macosx --show-sdk-path
+                OUTPUT_VARIABLE MACOSX_SYSROOT
+                OUTPUT_STRIP_TRAILING_WHITESPACE
+            )
+            set(CMAKE_OSX_SYSROOT "${MACOSX_SYSROOT}")
+        endif()
+
         # Add all test cases to XCTest: c files prefixed with 'test_'
         file(GLOB YYJSON_TEST_SOURCE
             "test/test_*.c"

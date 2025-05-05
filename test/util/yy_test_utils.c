@@ -766,44 +766,6 @@ char *yy_dat_copy_line(yy_dat *dat, usize *len) {
 
 
 /*==============================================================================
- * JSON generator
- *============================================================================*/
-
-// Generates a JSON string representing nested arrays and objects.
-// For roundtrip equality, use writer flags
-// YYJSON_WRITE_ESCAPE_UNICODE | YYJSON_WRITE_ESCAPE_SLASHES
-char *yy_create_json(usize obj_len, usize arr_len) {
-    yy_buf buf;
-    char *values[] = {"12.3", "45", "\"hello\"", "false",
-                      "null", "{}", "[]", "\"\\u066Dhey\\\"\\/\""};
-    usize i, j;
-    if (!yy_buf_init(&buf, 1024)) return NULL;
-    if (!yy_buf_append(&buf, "{", 1)) goto error;
-    for (i = 0; i < obj_len; i++) {
-        char key[32];
-        if (i > 0 && !yy_buf_append(&buf, ",", 1)) goto error;
-        sprintf(key, "\"key%zu\":[", i);
-        if (!yy_buf_append(&buf, key, strlen(key))) goto error;
-        for (j = 0; j < arr_len; j++) {
-            char *tmp;
-            if (j > 0 && !yy_buf_append(&buf, ",", 1)) goto error;
-            tmp = values[(i + j) % (sizeof(values) / sizeof(char *))];
-            if (!yy_buf_append(&buf, tmp, strlen(tmp))) goto error;
-        }
-        if (!yy_buf_append(&buf, "]", 1)) goto error;
-    }
-    if (!yy_buf_append(&buf, "}", 1)) goto error;
-    if (!yy_buf_append(&buf, "\0\0\0\0", 4)) goto error;
-    return buf.hdr;
-
-error:
-    yy_buf_release(&buf);
-    return NULL;
-}
-
-
-
-/*==============================================================================
  * Time Utils
  *============================================================================*/
 

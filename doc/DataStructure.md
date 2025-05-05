@@ -92,4 +92,4 @@ A JSON document (`yyjson_doc`, `yyjson_mut_doc`) is responsible for managing the
 A JSON value (`yyjson_val`, `yyjson_mut_val`) has the same lifetime as its document. The memory is managed by its
  document and and cannot be freed independently.
 
-For more information, refer to the [API documentation](./API.md).
+For more information, refer to the API documentation.
