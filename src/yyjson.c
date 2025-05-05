@@ -1239,7 +1239,7 @@ static void *dyn_malloc(void *ctx_ptr, usize size) {
     /* assert(size != 0) */
     const yyjson_alc def = YYJSON_DEFAULT_ALC;
     dyn_ctx *ctx = (dyn_ctx *)ctx_ptr;
-    dyn_chunk *chunk, *prev, *next;
+    dyn_chunk *chunk, *prev;
     if (unlikely(!dyn_size_align(&size))) return NULL;
 
     /* freelist is empty, create new chunk */
@@ -1278,8 +1278,7 @@ static void *dyn_realloc(void *ctx_ptr, void *ptr,
     /* assert(ptr != NULL && size != 0 && old_size < size) */
     const yyjson_alc def = YYJSON_DEFAULT_ALC;
     dyn_ctx *ctx = (dyn_ctx *)ctx_ptr;
-    dyn_chunk *prev, *next, *new_chunk;
-    dyn_chunk *chunk = (dyn_chunk *)ptr - 1;
+    dyn_chunk *new_chunk, *chunk = (dyn_chunk *)ptr - 1;
     if (unlikely(!dyn_size_align(&size))) return NULL;
     if (chunk->size >= size) return ptr;
 
@@ -4182,7 +4181,8 @@ static_noinline bool is_truncated_end(u8 *hdr, u8 *cur, u8 *end,
     if (code == YYJSON_READ_ERROR_UNEXPECTED_CHARACTER &&
         has_read_flag(ALLOW_BOM)) {
         /* truncated UTF-8 BOM */
-        if (cur == hdr && is_truncated_str(cur, end, "\xEF\xBB\xBF", true)) {
+        usize len = (usize)(end - cur);
+        if (cur == hdr && len < 3 && !memcmp(hdr, "\xEF\xBB\xBF", len)) {
             return true;
         }
     }
@@ -7469,6 +7469,8 @@ fail_garbage:           return_err(cur, UNEXPECTED_CONTENT, MSG_GARBAGE);
 #undef val_incr
 #undef return_err
 #undef return_err_inv_param
+#undef save_incr_state
+#undef check_maybe_truncated_number
 }
 
 #endif /* YYJSON_DISABLE_INCR_READER */

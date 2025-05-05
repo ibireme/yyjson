@@ -13,6 +13,8 @@ All notable changes to this project will be documented in this file.
 
 #### Changed
 - Rewrite the floating-point number to string functions with a new fast path.
+- When comments are allowed, return `UNEXPECTED_END` instead of `INVALID_COMMENT` for unclosed comments.
+- Truncated escape sequences now report the error position at the sequence start rather than the end.
 
 #### Fixed
 - Fix some warnings when directly including yyjson.c: #177

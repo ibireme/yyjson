@@ -408,18 +408,6 @@ char *yy_dat_copy_line(yy_dat *dat, usize *len);
 
 
 /*==============================================================================
- * JSON generator
- *============================================================================*/
-
-/** Returns an allocated minified JSON string representation of an object with
-    obj_len keys. The values are arrays of length arr_len. The elements in the
-    arrays are strings, booleans, nulls, numbers, empty arrays and empty
-    objects. The returned string is padded with four null bytes. */
-char *yy_create_json(usize obj_len, usize arr_len);
-
-
-
-/*==============================================================================
  * Time Utils
  *============================================================================*/
 

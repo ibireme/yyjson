@@ -963,6 +963,7 @@ typedef struct yyjson_incr_state yyjson_incr_state;
  @param buf The JSON data, null-terminator is not required.
     If this parameter is NULL, the function will fail and return NULL.
  @param buf_len The length of the JSON data in `buf`.
+    If use `YYJSON_READ_INSITU`, `buf_len` should not include the padding size.
  @param flg The JSON read options.
     Multiple options can be combined with `|` operator.
  @param alc The memory allocator used by JSON reader.
