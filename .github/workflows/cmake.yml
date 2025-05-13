@@ -120,6 +120,8 @@ jobs:
           - no_reader
           - no_writer
           - no_utf8
+          - no_incr
+          - no_unalign
 
     steps:
     - uses: actions/checkout@v4
@@ -145,6 +147,12 @@ jobs:
         fi
         if [ "${{matrix.opt}}" == "no_utf8" ]; then
           BUILD_OPTIONS="${BUILD_OPTIONS} -DYYJSON_DISABLE_UTF8_VALIDATION=ON"
+        fi
+        if [ "${{matrix.opt}}" == "no_incr" ]; then
+          BUILD_OPTIONS="${BUILD_OPTIONS} -DYYJSON_DISABLE_INCR_READER=ON"
+        fi
+        if [ "${{matrix.opt}}" == "no_unalign" ]; then
+          BUILD_OPTIONS="${BUILD_OPTIONS} -DYYJSON_DISABLE_UNALIGNED_MEMORY_ACCESS=ON"
         fi
         cmake -E make_directory ${{runner.workspace}}/build
         cd ${{runner.workspace}}/build
