@@ -147,6 +147,7 @@ var NAVTREE =
       [ "Memory Management", "data-structures.html#memory-management", null ]
     ] ],
     [ "Changelog", "md__c_h_a_n_g_e_l_o_g.html", [
+      [ "0.11.1 (2025-05-14)", "md__c_h_a_n_g_e_l_o_g.html#autotoc_md0111-2025-05-14", null ],
       [ "0.11.0 (2025-05-05)", "md__c_h_a_n_g_e_l_o_g.html#autotoc_md0110-2025-05-05", null ],
       [ "0.10.0 (2024-07-09)", "md__c_h_a_n_g_e_l_o_g.html#autotoc_md0100-2024-07-09", null ],
       [ "0.9.0 (2024-04-08)", "md__c_h_a_n_g_e_l_o_g.html#autotoc_md090-2024-04-08", null ],
@@ -185,8 +186,8 @@ var NAVTREE =
 var NAVTREEINDEX =
 [
 "annotated.html",
-"yyjson_8h.html#a2d26305e46b3a7f72619232805fa10c6",
-"yyjson_8h.html#aaf5c505b42eeb64e7a0ac17e3d7d3847"
+"yyjson_8h.html#a2d0864410efdd15e4591fecc0b4c082c",
+"yyjson_8h.html#aaed218041aa262337e179d487f4c770c"
 ];
 
 var SYNCONMSG = 'click to disable panel synchronization';

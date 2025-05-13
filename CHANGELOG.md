@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 
 ## 0.11.1 (2025-05-14)
 #### Fixed
-- Fix redefinition error when unaligned access is disallowed (no impact if your build was already successful).
+- Fix errors when unaligned access is disallowed (no impact if your build was already successful).
 
 
 ## 0.11.0 (2025-05-05)

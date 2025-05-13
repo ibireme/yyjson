@@ -1,5 +1,6 @@
 var NAVTREEINDEX2 =
 {
+"yyjson_8h.html#aaed218041aa262337e179d487f4c770c":[6,0,0,0,139],
 "yyjson_8h.html#aaf5c505b42eeb64e7a0ac17e3d7d3847":[6,0,0,0,6,1],
 "yyjson_8h.html#ab07c81d726e44806b918481becf7f6d3":[6,0,0,0,304],
 "yyjson_8h.html#ab0a5c5a568b7f2c0a6301149f0f6aa84":[6,0,0,0,223],

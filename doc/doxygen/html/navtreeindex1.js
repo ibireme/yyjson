@@ -1,5 +1,6 @@
 var NAVTREEINDEX1 =
 {
+"yyjson_8h.html#a2d0864410efdd15e4591fecc0b4c082c":[6,0,0,0,396],
 "yyjson_8h.html#a2d26305e46b3a7f72619232805fa10c6":[6,0,0,0,410],
 "yyjson_8h.html#a2d82bd0dc78358326b03e28b9acc19e4":[6,0,0,0,101],
 "yyjson_8h.html#a2e3dedcd83d286602101018024f21c52":[6,0,0,0,124],
@@ -248,6 +249,5 @@ var NAVTREEINDEX1 =
 "yyjson_8h.html#aad6de220fa487e31bd1bd2c2cccd9bff":[6,0,0,0,216],
 "yyjson_8h.html#aadb5f3196fe14e75914ed34d6e700076":[6,0,0,0,197],
 "yyjson_8h.html#aae70fe76dfae0e8aa93d0226ec8510d9":[6,0,0,0,279],
-"yyjson_8h.html#aae763338f1c11ad9da6be1cf522daf6e":[6,0,0,0,156],
-"yyjson_8h.html#aaed218041aa262337e179d487f4c770c":[6,0,0,0,139]
+"yyjson_8h.html#aae763338f1c11ad9da6be1cf522daf6e":[6,0,0,0,156]
 };
