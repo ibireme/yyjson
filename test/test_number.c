@@ -1270,6 +1270,98 @@ static void test_write_flags(void) {
         yy_assert(yyjson_mut_is_real(&val));
         yy_assert((val.tag >> 32) == 0);
     }
+    
+    /// write number
+    {
+        char *int_buf = malloc(21);
+        char *flt_buf = malloc(40);
+        char *str, *end;
+        
+        yyjson_val val = { 0 };
+        yyjson_mut_val mval = { 0 };
+        
+        /// input check
+        yyjson_set_int(&val, 0);
+        yyjson_mut_set_int(&mval, 0);
+        end = yyjson_write_number(NULL, int_buf);
+        yy_assert(!end);
+        end = yyjson_mut_write_number(NULL, int_buf);
+        yy_assert(!end);
+        end = yyjson_write_number(&val, NULL);
+        yy_assert(!end);
+        end = yyjson_mut_write_number(&mval, NULL);
+        yy_assert(!end);
+        
+        /// type check
+        yyjson_set_null(&val);
+        yyjson_mut_set_null(&mval);
+        end = yyjson_write_number(&val, int_buf);
+        yy_assert(!end);
+        end = yyjson_mut_write_number(&mval, int_buf);
+        yy_assert(!end);
+        
+        /// uint
+        memset(&val, 0, sizeof(val));
+        yyjson_set_uint(&val, UINT64_MAX);
+        str = yyjson_val_write(&val, 0, NULL);
+        end = yyjson_write_number(&val, int_buf);
+        yy_assert(!strcmp(str, int_buf));
+        yy_assert((usize)(end - int_buf) == strlen(str));
+        free(str);
+        
+        /// sint
+        memset(&val, 0, sizeof(val));
+        yyjson_set_sint(&val, INT64_MAX);
+        str = yyjson_val_write(&val, 0, NULL);
+        end = yyjson_write_number(&val, int_buf);
+        yy_assert(!strcmp(str, int_buf));
+        yy_assert((usize)(end - int_buf) == strlen(str));
+        free(str);
+        
+        /// float
+        memset(&val, 0, sizeof(val));
+        yyjson_set_float(&val, 1.23456789);
+        str = yyjson_val_write(&val, 0, NULL);
+        end = yyjson_write_number(&val, flt_buf);
+        yy_assert(!strcmp(str, flt_buf));
+        yy_assert((usize)(end - flt_buf) == strlen(str));
+        free(str);
+        
+        /// double
+        memset(&val, 0, sizeof(val));
+        yyjson_set_double(&val, 1.23456789);
+        str = yyjson_val_write(&val, 0, NULL);
+        end = yyjson_write_number(&val, flt_buf);
+        yy_assert(!strcmp(str, flt_buf));
+        yy_assert((usize)(end - flt_buf) == strlen(str));
+        free(str);
+        
+        /// fixed
+        memset(&val, 0, sizeof(val));
+        yyjson_set_double(&val, 1.23456789);
+        yyjson_set_fp_to_fixed(&val, 2);
+        str = yyjson_val_write(&val, 0, NULL);
+        end = yyjson_write_number(&val, flt_buf);
+        yy_assert(!strcmp(str, flt_buf));
+        yy_assert((usize)(end - flt_buf) == strlen(str));
+        free(str);
+        
+        /// inf
+        memset(&val, 0, sizeof(val));
+        yyjson_set_double(&val, INFINITY);
+        str = yyjson_val_write(&val, YYJSON_WRITE_ALLOW_INF_AND_NAN, NULL);
+        end = yyjson_write_number(&val, flt_buf);
+        if (str) {
+            yy_assert(!strcmp(str, flt_buf));
+            yy_assert((usize)(end - flt_buf) == strlen(str));
+        } else {
+            yy_assert(!end);
+        }
+        free(str);
+        
+        free(int_buf);
+        free(flt_buf);
+    }
 }
 
 

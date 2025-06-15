@@ -1088,27 +1088,7 @@ yyjson_api const char *yyjson_read_number(const char *dat,
                                           const yyjson_alc *alc,
                                           yyjson_read_err *err);
 
-/**
- Read a JSON number.
-
- This function is thread-safe when data is not modified by other threads.
-
- @param dat The JSON data (UTF-8 without BOM), null-terminator is required.
-    If this parameter is NULL, the function will fail and return NULL.
- @param val The output value where result is stored.
-    If this parameter is NULL, the function will fail and return NULL.
-    The value will hold either UINT or SINT or REAL number;
- @param flg The JSON read options.
-    Multiple options can be combined with `|` operator. 0 means no options.
-    Supports `YYJSON_READ_NUMBER_AS_RAW` and `YYJSON_READ_ALLOW_INF_AND_NAN`.
- @param alc The memory allocator used for long number.
-    It is only used when the built-in floating point reader is disabled.
-    Pass NULL to use the libc's default allocator.
- @param err A pointer to receive error information.
-    Pass NULL if you don't need error information.
- @return If successful, a pointer to the character after the last character
-    used in the conversion, NULL if an error occurs.
- */
+/** Same as `yyjson_read_number()`. */
 yyjson_api_inline const char *yyjson_mut_read_number(const char *dat,
                                                      yyjson_mut_val *val,
                                                      yyjson_read_flag flg,
@@ -1641,6 +1621,34 @@ yyjson_api_inline char *yyjson_mut_val_write(const yyjson_mut_val *val,
                                              yyjson_write_flag flg,
                                              size_t *len) {
     return yyjson_mut_val_write_opts(val, flg, NULL, len, NULL);
+}
+
+/**
+ Write a JSON number.
+
+ @param val A JSON number value to be converted to a string.
+    If this parameter is invalid, the function will fail and return NULL.
+ @param buf A buffer to store the resulting null-terminated string.
+    If this parameter is NULL, the function will fail and return NULL.
+    For integer values, the buffer must be at least 21 bytes.
+    For floating-point values, the buffer must be at least 40 bytes.
+ @return On success, returns a pointer to the character after the last
+    written character. On failure, returns NULL.
+ @note
+    - This function is thread-safe and does not allocate memory
+        (when `YYJSON_DISABLE_FAST_FP_CONV` is not defined).
+    - This function will fail and return NULL only in the following cases:
+        1) `val` or `buf` is NULL;
+        2) `val` is not a number type;
+        3) `val` is `inf` or `nan`, and non-standard JSON is explicitly disabled
+            via the `YYJSON_DISABLE_NON_STANDARD` flag.
+ */
+yyjson_api char *yyjson_write_number(const yyjson_val *val, char *buf);
+
+/** Same as `yyjson_write_number()`. */
+yyjson_api_inline char *yyjson_mut_write_number(const yyjson_mut_val *val,
+                                                char *buf) {
+    return yyjson_write_number((const yyjson_val *)val, buf);
 }
 
 #endif /* YYJSON_DISABLE_WRITER */

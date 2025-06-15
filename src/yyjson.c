@@ -8938,6 +8938,46 @@ static_inline u8 *write_num(u8 *cur, yyjson_val *val, yyjson_write_flag flg) {
     }
 }
 
+char *yyjson_write_number(const yyjson_val *val, char *buf) {
+    if (unlikely(!val || !buf)) return NULL;
+    switch (val->tag & YYJSON_TAG_MASK) {
+        case YYJSON_TYPE_NUM | YYJSON_SUBTYPE_UINT: {
+            buf = (char *)write_u64(val->uni.u64, (u8 *)buf);
+            *buf = '\0';
+            return buf;
+        }
+        case YYJSON_TYPE_NUM | YYJSON_SUBTYPE_SINT: {
+            u64 pos = val->uni.u64;
+            u64 neg = ~pos + 1;
+            usize sign = ((i64)pos < 0);
+            *buf = '-';
+            buf = (char *)write_u64(sign ? neg : pos, (u8 *)buf + sign);
+            *buf = '\0';
+            return buf;
+        }
+        case YYJSON_TYPE_NUM | YYJSON_SUBTYPE_REAL: {
+            u64 raw = val->uni.u64;
+            u32 fmt = (u32)(val->tag >> 32);
+            u32 flg = YYJSON_WRITE_ALLOW_INF_AND_NAN;
+            if (likely(!(fmt >> (32 - YYJSON_WRITE_FP_FLAG_BITS)))) {
+                buf = (char *)write_f64_raw((u8 *)buf, raw, flg);
+            } else if (fmt >> (32 - YYJSON_WRITE_FP_PREC_BITS)) {
+                u32 prec = fmt >> (32 - YYJSON_WRITE_FP_PREC_BITS);
+                buf = (char *)write_f64_raw_fixed((u8 *)buf, raw, flg, prec);
+            } else {
+                if (fmt & YYJSON_WRITE_FP_TO_FLOAT) {
+                    buf = (char *)write_f32_raw((u8 *)buf, raw, flg);
+                } else {
+                    buf = (char *)write_f64_raw((u8 *)buf, raw, flg);
+                }
+            }
+            if (buf) *buf = '\0';
+            return buf;
+        }
+        default: return NULL;
+    }
+}
+
 
 
 /*==============================================================================

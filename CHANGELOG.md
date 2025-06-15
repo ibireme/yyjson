@@ -3,6 +3,11 @@ All notable changes to this project will be documented in this file.
 
 
 
+## Unreleased
+#### Added
+- Add `yyjson_write_number()` and `yyjson_mut_write_number()` functions to write a number value to a string buffer.
+
+
 ## 0.11.1 (2025-05-14)
 #### Fixed
 - Fix errors when unaligned access is disallowed (no impact if your build was already successful).
