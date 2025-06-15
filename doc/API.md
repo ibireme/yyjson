@@ -100,7 +100,7 @@ yyjson_doc_free(doc);
 
 ## Read JSON from file
 
-The `path` is JSON file path.<br/>
+The `path` is JSON file path. This should be a null-terminated string using the system's native encoding.<br/>
 The `flg` is reader flag, pass 0 if you don't need it, see `reader flag` for details.<br/>
 The `alc` is memory allocator, pass NULL if you don't need it, see `memory allocator` for details.<br/>
 The `err` is a pointer to receive error message, pass NULL if you don't need it.<br/>
@@ -483,7 +483,7 @@ free(json);
 ```
 
 ## Write JSON to file
-The `path` is output JSON file path, If the path is invalid, you will get an error. If the file is not empty, the content will be discarded.<br/>
+The `path` is output JSON file path. This should be a null-terminated string using the system's native encoding. If the path is invalid, you will get an error. If the file is not empty, the content will be discarded. <br/>
 The `doc/val` is JSON document or root value, if you pass NULL, you will get an error.<br/>
 The `flg` is writer flag, pass 0 if you don't need it, see `writer flag` for details.<br/>
 The `alc` is memory allocator, pass NULL if you don't need it, see `memory allocator` for details.<br/>
@@ -1484,6 +1484,22 @@ See the `Writer flag` section for more details.
 There are also some helper functions to control the output format of individual values:
 - `yyjson_set_fp_to_float(yyjson_val *val, bool fpt)` and `yyjson_mut_set_fp_to_float(yyjson_mut_val *val, bool flt)` write this real number with `float` or `double` precision.
 - `yyjson_set_fp_to_fixed(yyjson_val *val, int prec)` and `yyjson_mut_set_fp_to_fixed(yyjson_mut_val *val, int prec)` write this real number using fixed-point notation, the prec should be in the range of 1 to 15.
+
+## Number conversion function
+
+There are also two utility functions provide direct access to the library's internal number conversion logic.  
+They are intended for standalone use and typically do not allocate memory.
+```c
+// parse a number from strin
+const char *yyjson_read_number(const char *dat,
+                               yyjson_val *val,
+                               yyjson_read_flag flg,
+                               const yyjson_alc *alc,
+                               yyjson_read_err *err);
+// write a number to string
+char *yyjson_write_number(const yyjson_val *val, char *buf);
+```
+
 
 
 # Text Processing

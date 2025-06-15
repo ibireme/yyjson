@@ -884,6 +884,7 @@ yyjson_api yyjson_doc *yyjson_read_opts(char *dat,
  2. The `alc` is thread-safe or NULL.
 
  @param path The JSON file's path.
+    This should be a null-terminated string using the system's native encoding.
     If this path is NULL or invalid, the function will fail and return NULL.
  @param flg The JSON read options.
     Multiple options can be combined with `|` operator. 0 means no options.
@@ -1247,6 +1248,7 @@ yyjson_api char *yyjson_write_opts(const yyjson_doc *doc,
  2. The `alc` is thread-safe or NULL.
 
  @param path The JSON file's path.
+    This should be a null-terminated string using the system's native encoding.
     If this path is NULL or invalid, the function will fail and return false.
     If this file is not empty, the content will be discarded.
  @param doc The JSON document.
@@ -1350,6 +1352,7 @@ yyjson_api char *yyjson_mut_write_opts(const yyjson_mut_doc *doc,
  3. The `alc` is thread-safe or NULL.
 
  @param path The JSON file's path.
+    This should be a null-terminated string using the system's native encoding.
     If this path is NULL or invalid, the function will fail and return false.
     If this file is not empty, the content will be discarded.
  @param doc The mutable JSON document.
@@ -1456,6 +1459,7 @@ yyjson_api char *yyjson_val_write_opts(const yyjson_val *val,
  2. The `alc` is thread-safe or NULL.
 
  @param path The JSON file's path.
+    This should be a null-terminated string using the system's native encoding.
     If this path is NULL or invalid, the function will fail and return false.
     If this file is not empty, the content will be discarded.
  @param val The JSON root value.
@@ -1557,6 +1561,7 @@ yyjson_api char *yyjson_mut_val_write_opts(const yyjson_mut_val *val,
  3. The `alc` is thread-safe or NULL.
 
  @param path The JSON file's path.
+    This should be a null-terminated string using the system's native encoding.
     If this path is NULL or invalid, the function will fail and return false.
     If this file is not empty, the content will be discarded.
  @param val The mutable JSON root value.
