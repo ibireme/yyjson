@@ -13,9 +13,6 @@
 #include <string.h>
 #include <math.h>
 
-#include <gmp.h>
-#include <mpfr.h>
-
 typedef float       f32;
 typedef double      f64;
 typedef int8_t      i8;
@@ -30,82 +27,170 @@ typedef size_t      usize;
 
 /*----------------------------------------------------------------------------*/
 
-void make_pow10_sig_table(void) {
-    static const int DEF_PREC = 5000;
-    static const int BUF_LEN = 2000;
-    char buf[BUF_LEN];
-    
-    mpfr_t sigMax, sigMin, half;
-    mpfr_t pow10, pow2, div, sub;
-    mpfr_inits2(DEF_PREC, sigMax, sigMin, half, NULL);
-    mpfr_inits2(DEF_PREC, pow10, pow2, div, sub, NULL);
-    
-    mpfr_set_ui(sigMax, 0xFFFFFFFFFFFFFFFFULL, MPFR_RNDN);
-    mpfr_set_ui(sigMin, 0x8000000000000000ULL, MPFR_RNDN);
-    mpfr_set_d(half, 0.5, MPFR_RNDN);
-    
-    int e10min = -343, e10max = 324, e10step = 1;
-    
-    printf("#define POW10_SIG_TABLE_MIN_EXP %d\n", e10min);
-    printf("#define POW10_SIG_TABLE_MAX_EXP %d\n", e10max);
-    printf("#define POW10_SIG_TABLE_MIN_EXACT_EXP %d\n", 0);
-    printf("#define POW10_SIG_TABLE_MAX_EXACT_EXP %d\n", 55);
-    printf("static const u64 pow10_sig_table[] = {\n");
-    
-    for (int e10 = e10min; e10 <= e10max; e10 += e10step) {
-        mpfr_set_d(pow10, 10, MPFR_RNDN);
-        mpfr_pow_si(pow10, pow10, e10, MPFR_RNDN); // pow10 = 10^e10
-        
-        // 10^e10 = 2^e2
-        // e2 = floor(log2(pow(10, e10)))
-        // e2 = floor(log2(10) * e10)
-        int e2 = (int)floor(log2(10) * e10) - 64 + 1;
-        mpfr_set_d(pow2, 2, MPFR_RNDN);
-        mpfr_pow_si(pow2, pow2, e2, MPFR_RNDN); // pow2 = 2^e2
-        mpfr_div(div, pow10, pow2, MPFR_RNDN); // div = pow10 / pow2;
-        if (mpfr_cmp(div, sigMin) < 0 || mpfr_cmp(div, sigMax) > 0) {
-            printf("err!\n"); // make sure the highest bit is 1 (normalized)
-        }
-        
-        mpfr_set_d(pow2, 2, MPFR_RNDN);
-        mpfr_pow_si(pow2, pow2, e2, MPFR_RNDN); // pow2 = 2^e2
-        mpfr_div(div, pow10, pow2, MPFR_RNDN); // div = pow10 / pow2;
-        
-        mpfr_snprintf(buf, BUF_LEN, "%.1000Rg", div);
-        u64 val = strtoull(buf, NULL, 0);
-        mpfr_sub_ui(sub, div, val, MPFR_RNDN); // sub = div - (uint64_t)div
-        int cmp = mpfr_cmp(sub, half);
-        if (cmp == 0) printf("err!\n"); // avoid round to even
-        if (cmp > 0 && val == UINT64_MAX) printf("err!\n"); // avoid round up overflow
-        
-        printf("    ");
-        printf("U64(0x%.8X, 0x%.8X),", (u32)(val >> 32), (u32)val);
-        
-        mpfr_set_d(pow2, 2, MPFR_RNDN);
-        mpfr_pow_si(pow2, pow2, 64, MPFR_RNDN); // pow2 = 2^64
-        mpfr_mul(sub, sub, pow2, MPFR_RNDN); // sub *= 2^64
-        
-        mpfr_snprintf(buf, BUF_LEN, "%.1000Rg", sub);
-        u64 val2 = strtoull(buf, NULL, 0);
-        mpfr_sub_ui(sub, sub, val2, MPFR_RNDN); // sub -= (uint64_t)sub
-        int cmp2 = mpfr_cmp(sub, half);
-        if (cmp2 == 0) printf("err!\n"); // avoid round to even
-        if ((cmp > 0) && (val2 < ((u64)1) << 63)) printf("err!\n"); // avoid round up overflow
-        bool is_exact = mpfr_cmp_ui(sub, 0) == 0;
-        
-        printf(" ");
-        printf("U64(0x%.8X, 0x%.8X)", (u32)(val2 >> 32), (u32)val2);
-        printf("%c", e10 < e10max ? ',' : ' ');
-        printf(" /* %s 10^%d */", is_exact ? "==" : "~=", e10);
-        printf("\n");
-    }
-    
-    printf("};\n");
-    printf("\n");
-    
-    mpfr_clears(sigMax, sigMin, half, NULL);
-    mpfr_clears(pow10, pow2, div, sub, NULL);
-}
+//Generate fp table with C (gmp/mpfr):
+//#include <gmp.h>
+//#include <mpfr.h>
+//void make_pow10_sig_table(void) {
+//    static const int DEF_PREC = 5000;
+//    static const int BUF_LEN = 2000;
+//    char buf[BUF_LEN];
+//    
+//    mpfr_t sigMax, sigMin, half;
+//    mpfr_t pow10, pow2, div, sub;
+//    mpfr_inits2(DEF_PREC, sigMax, sigMin, half, NULL);
+//    mpfr_inits2(DEF_PREC, pow10, pow2, div, sub, NULL);
+//    
+//    mpfr_set_ui(sigMax, 0xFFFFFFFFFFFFFFFFULL, MPFR_RNDN);
+//    mpfr_set_ui(sigMin, 0x8000000000000000ULL, MPFR_RNDN);
+//    mpfr_set_d(half, 0.5, MPFR_RNDN);
+//    
+//    int e10min = -343, e10max = 324, e10step = 1;
+//    
+//    printf("#define POW10_SIG_TABLE_MIN_EXP %d\n", e10min);
+//    printf("#define POW10_SIG_TABLE_MAX_EXP %d\n", e10max);
+//    printf("#define POW10_SIG_TABLE_MIN_EXACT_EXP %d\n", 0);
+//    printf("#define POW10_SIG_TABLE_MAX_EXACT_EXP %d\n", 55);
+//    printf("static const u64 pow10_sig_table[] = {\n");
+//    
+//    for (int e10 = e10min; e10 <= e10max; e10 += e10step) {
+//        mpfr_set_d(pow10, 10, MPFR_RNDN);
+//        mpfr_pow_si(pow10, pow10, e10, MPFR_RNDN); // pow10 = 10^e10
+//        
+//        // 10^e10 = 2^e2
+//        // e2 = floor(log2(pow(10, e10)))
+//        // e2 = floor(log2(10) * e10)
+//        int e2 = (int)floor(log2(10) * e10) - 64 + 1;
+//        mpfr_set_d(pow2, 2, MPFR_RNDN);
+//        mpfr_pow_si(pow2, pow2, e2, MPFR_RNDN); // pow2 = 2^e2
+//        mpfr_div(div, pow10, pow2, MPFR_RNDN); // div = pow10 / pow2;
+//        if (mpfr_cmp(div, sigMin) < 0 || mpfr_cmp(div, sigMax) > 0) {
+//            printf("err!\n"); // make sure the highest bit is 1 (normalized)
+//        }
+//        
+//        mpfr_set_d(pow2, 2, MPFR_RNDN);
+//        mpfr_pow_si(pow2, pow2, e2, MPFR_RNDN); // pow2 = 2^e2
+//        mpfr_div(div, pow10, pow2, MPFR_RNDN); // div = pow10 / pow2;
+//        
+//        mpfr_snprintf(buf, BUF_LEN, "%.1000Rg", div);
+//        u64 val = strtoull(buf, NULL, 0);
+//        mpfr_sub_ui(sub, div, val, MPFR_RNDN); // sub = div - (uint64_t)div
+//        int cmp = mpfr_cmp(sub, half);
+//        if (cmp == 0) printf("err!\n"); // avoid round to even
+//        if (cmp > 0 && val == UINT64_MAX) printf("err!\n"); // avoid round up overflow
+//        
+//        printf("    ");
+//        printf("U64(0x%.8X, 0x%.8X),", (u32)(val >> 32), (u32)val);
+//        
+//        mpfr_set_d(pow2, 2, MPFR_RNDN);
+//        mpfr_pow_si(pow2, pow2, 64, MPFR_RNDN); // pow2 = 2^64
+//        mpfr_mul(sub, sub, pow2, MPFR_RNDN); // sub *= 2^64
+//        
+//        mpfr_snprintf(buf, BUF_LEN, "%.1000Rg", sub);
+//        u64 val2 = strtoull(buf, NULL, 0);
+//        mpfr_sub_ui(sub, sub, val2, MPFR_RNDN); // sub -= (uint64_t)sub
+//        int cmp2 = mpfr_cmp(sub, half);
+//        if (cmp2 == 0) printf("err!\n"); // avoid round to even
+//        if ((cmp > 0) && (val2 < ((u64)1) << 63)) printf("err!\n"); // avoid round up overflow
+//        bool is_exact = mpfr_cmp_ui(sub, 0) == 0;
+//        
+//        printf(" ");
+//        printf("U64(0x%.8X, 0x%.8X)", (u32)(val2 >> 32), (u32)val2);
+//        printf("%c", e10 < e10max ? ',' : ' ');
+//        printf(" /* %s 10^%d */", is_exact ? "==" : "~=", e10);
+//        printf("\n");
+//    }
+//    
+//    printf("};\n");
+//    printf("\n");
+//    
+//    mpfr_clears(sigMax, sigMin, half, NULL);
+//    mpfr_clears(pow10, pow2, div, sub, NULL);
+//}
+
+
+
+//Generate fp table with Python:
+//import decimal
+//from decimal import Decimal
+//
+//POW10_SIG_TABLE_MIN_EXP = -343
+//POW10_SIG_TABLE_MAX_EXP =  324
+//POW10_SIG_TABLE_MIN_EXACT_EXP = 0
+//POW10_SIG_TABLE_MAX_EXACT_EXP = 55
+//
+//
+//def calc_pow10_u128(p: int) -> int:
+//    """
+//    Calculate the power of 10 and return the high 128 bits of the result.
+//    """
+//    
+//    # Calculate 10^p with high precision
+//    decimal.getcontext().prec = 5000
+//    sig = Decimal(10) ** p
+//
+//    # Normalize the sig to range [0.5,1)
+//    while sig < 1:
+//        sig *= 2
+//    while sig >= 1:
+//        sig /= 2
+//
+//    # Calculate the highest 128 bits of the sig
+//    all = sig * (2 ** 128)
+//    top = int(all)
+//    return top
+//
+//
+//def is_pow10_u128_exact(p: int) -> bool:
+//    """
+//    Check if calc_pow10_u128(p) is exact value.
+//    """
+//    
+//    # Calculate 10^p with high precision
+//    decimal.getcontext().prec = 5000
+//    sig = Decimal(10) ** p
+//
+//    # Normalize the sig to range [0.5,1)
+//    while sig < 1:
+//        sig *= 2
+//    while sig >= 1:
+//        sig /= 2
+//
+//    # Calculate the highest 128 bits of the sig
+//    all = sig * (2 ** 128)
+//    top = int(all)
+//    return top == all
+//
+//
+//def print_pow10_u128_table():
+//    """
+//    Print the power of 10 table for yy_strtod() and yy_dtoa().
+//    """
+//    print(f"#define POW10_SIG_TABLE_MIN_EXP {POW10_SIG_TABLE_MIN_EXP}")
+//    print(f"#define POW10_SIG_TABLE_MAX_EXP {POW10_SIG_TABLE_MAX_EXP}")
+//    print(f"#define POW10_SIG_TABLE_MIN_EXACT_EXP {POW10_SIG_TABLE_MIN_EXACT_EXP}")
+//    print(f"#define POW10_SIG_TABLE_MAX_EXACT_EXP {POW10_SIG_TABLE_MAX_EXACT_EXP}")
+//    print("static const u64 pow10_sig_table[] = {")
+//    for p in range(POW10_SIG_TABLE_MIN_EXP, POW10_SIG_TABLE_MAX_EXP + 1):
+//        is_exact = is_pow10_u128_exact(p)
+//        assert is_exact == (p in range(POW10_SIG_TABLE_MIN_EXACT_EXP, POW10_SIG_TABLE_MAX_EXACT_EXP + 1))
+//
+//        c = calc_pow10_u128(p)
+//        s = f"{c:X}"
+//        line = f"    U64(0x{s[0:8]}, 0x{s[8:16]}), U64(0x{s[16:24]}, 0x{s[24:32]})"
+//        if is_exact:
+//            line += f", /* == 10^{p} */"
+//        elif p == POW10_SIG_TABLE_MAX_EXP:
+//            line += f"  /* ~= 10^{p} */"
+//        else:
+//            line += f", /* ~= 10^{p} */"
+//        print(line)
+//    print("};")
+//
+//
+//if __name__ == "__main__":
+//    print_pow10_u128_table()
+
+
 
 /*----------------------------------------------------------------------------*/
 
@@ -471,7 +556,6 @@ static void make_esc_single_char_table(void) {
 }
 
 int main(void) {
-    make_pow10_sig_table();
     make_dec_trailing_zero_table();
     make_char_table();
     make_digit_table();
