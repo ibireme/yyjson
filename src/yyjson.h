@@ -779,6 +779,57 @@ static const yyjson_read_flag YYJSON_READ_ALLOW_BOM             = 1 << 8;
 
 
 
+/* -----Unimplemented----- */
+
+/** Allow extended number formats (non-standard):
+    - Hexadecimal numbers, such as `0x7B`.
+    - Numbers with leading or trailing decimal point, such as `.123`, `123.`.
+    - Numbers with a leading plus sign, such as `+123`. */
+static const yyjson_read_flag YYJSON_READ_ALLOW_EXT_NUMBER          = 1 << 9;
+
+/** Allow extended escape sequences in strings (non-standard):
+    - Additional escapes: `\a`, `\e`, `\v`, `\'`, `\?`, `\0`-`\9`.
+    - Hex escapes: `\xNN`, such as `\x7B`.
+    - Line continuation: backslash followed by line terminator sequences.
+    - Unknown escape: if backslash is followed by an unsupported character,
+      the backslash will be removed and the character will be kept as-is.
+ */
+static const yyjson_read_flag YYJSON_READ_ALLOW_EXT_ESCAPE          = 1 << 10;
+
+/** Allow extended whitespace characters (non-standard):
+    - Vertical tab `\v` and form feed `\f`.
+    - Line separator `\u2028` and paragraph separator `\u2029`.
+    - Non-breaking space `\xA0`.
+    - Byte order mark: `\uFEFF`.
+    - Other Unicode characters in the Zs (Separator, space) category. */
+static const yyjson_read_flag YYJSON_READ_ALLOW_EXT_WHITESPACE      = 1 << 11;
+
+/** Allow strings enclosed in single quotes (non-standard),
+    such as `'abc'`. */
+static const yyjson_read_flag YYJSON_READ_ALLOW_SINGLE_QUOTED_STR   = 1 << 12;
+
+/** Allow object keys without quotes (non-standard),
+    such as `{a:1,b:2}`. */
+static const yyjson_read_flag YYJSON_READ_ALLOW_UNQUOTED_KEY        = 1 << 13;
+
+/** Allow JSON5 format, see: https://json5.org and https://spec.json5.org
+ 
+    This flag supports all JSON5 features with some additional extensions:
+    - Accepts more escape sequences than JSON5 (e.g. `\a`, `\e`).
+    - Unquoted keys are and not limited to ECMAScript IdentifierName.
+    - The `Inf`, `Infinity` and `NaN` literals are case-insensitive. */
+static const yyjson_read_flag YYJSON_READ_JSON5 =
+    YYJSON_READ_ALLOW_COMMENTS |
+    YYJSON_READ_ALLOW_TRAILING_COMMAS |
+    YYJSON_READ_ALLOW_INF_AND_NAN |
+    YYJSON_READ_ALLOW_EXT_NUMBER |
+    YYJSON_READ_ALLOW_EXT_ESCAPE |
+    YYJSON_READ_ALLOW_EXT_WHITESPACE |
+    YYJSON_READ_ALLOW_SINGLE_QUOTED_STR |
+    YYJSON_READ_ALLOW_UNQUOTED_KEY;
+
+
+
 /** Result code for JSON reader. */
 typedef uint32_t yyjson_read_code;
 
