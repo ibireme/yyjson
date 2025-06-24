@@ -819,14 +819,14 @@ static const yyjson_read_flag YYJSON_READ_ALLOW_UNQUOTED_KEY        = 1 << 13;
     - Unquoted keys are and not limited to ECMAScript IdentifierName.
     - The `Inf`, `Infinity` and `NaN` literals are case-insensitive. */
 static const yyjson_read_flag YYJSON_READ_JSON5 =
-    YYJSON_READ_ALLOW_COMMENTS |
-    YYJSON_READ_ALLOW_TRAILING_COMMAS |
-    YYJSON_READ_ALLOW_INF_AND_NAN |
-    YYJSON_READ_ALLOW_EXT_NUMBER |
-    YYJSON_READ_ALLOW_EXT_ESCAPE |
-    YYJSON_READ_ALLOW_EXT_WHITESPACE |
-    YYJSON_READ_ALLOW_SINGLE_QUOTED_STR |
-    YYJSON_READ_ALLOW_UNQUOTED_KEY;
+    (1 << 2)  | /* YYJSON_READ_ALLOW_TRAILING_COMMAS */
+    (1 << 3)  | /* YYJSON_READ_ALLOW_COMMENTS */
+    (1 << 4)  | /* YYJSON_READ_ALLOW_INF_AND_NAN */
+    (1 << 9)  | /* YYJSON_READ_ALLOW_EXT_NUMBER */
+    (1 << 10) | /* YYJSON_READ_ALLOW_EXT_ESCAPE */
+    (1 << 11) | /* YYJSON_READ_ALLOW_EXT_WHITESPACE */
+    (1 << 12) | /* YYJSON_READ_ALLOW_SINGLE_QUOTED_STR */
+    (1 << 13);  /* YYJSON_READ_ALLOW_UNQUOTED_KEY */
 
 
 
