@@ -32,7 +32,7 @@
 
 
 /*==============================================================================
- * Header Files
+ * MARK: - Header Files
  *============================================================================*/
 
 #include <stdio.h>
@@ -45,7 +45,7 @@
 
 
 /*==============================================================================
- * Compile-time Options
+ * MARK: - Compile-time Options
  *============================================================================*/
 
 /*
@@ -89,14 +89,8 @@
 #endif
 
 /*
- Define as 1 to disable non-standard JSON features support at compile-time:
- - YYJSON_READ_ALLOW_INF_AND_NAN
- - YYJSON_READ_ALLOW_COMMENTS
- - YYJSON_READ_ALLOW_TRAILING_COMMAS
- - YYJSON_READ_ALLOW_INVALID_UNICODE
- - YYJSON_READ_ALLOW_BOM
- - YYJSON_WRITE_ALLOW_INF_AND_NAN
- - YYJSON_WRITE_ALLOW_INVALID_UNICODE
+ Define as 1 to disable non-standard JSON features support at compile-time,
+ such as YYJSON_READ_ALLOW_XXX and YYJSON_WRITE_ALLOW_XXX.
 
  This reduces binary size by about 10%, and slightly improves performance.
  */
@@ -151,7 +145,7 @@
 
 
 /*==============================================================================
- * Compiler Macros
+ * MARK: - Compiler Macros
  *============================================================================*/
 
 /** compiler version (MSVC) */
@@ -465,7 +459,7 @@
 
 
 /*==============================================================================
- * Compile Hint Begin
+ * MARK: - Compile Hint Begin
  *============================================================================*/
 
 /* extern "C" begin */
@@ -492,7 +486,7 @@ extern "C" {
 
 
 /*==============================================================================
- * Version
+ * MARK: - Version
  *============================================================================*/
 
 /** The major version of yyjson. */
@@ -516,7 +510,7 @@ yyjson_api uint32_t yyjson_version(void);
 
 
 /*==============================================================================
- * JSON Types
+ * MARK: - JSON Types
  *============================================================================*/
 
 /** Type of a JSON value (3 bit). */
@@ -578,7 +572,7 @@ typedef uint8_t yyjson_subtype;
 
 
 /*==============================================================================
- * Allocator
+ * MARK: - Allocator
  *============================================================================*/
 
 /**
@@ -662,7 +656,7 @@ yyjson_api void yyjson_alc_dyn_free(yyjson_alc *alc);
 
 
 /*==============================================================================
- * Text Locating
+ * MARK: - Text Locating
  *============================================================================*/
 
 /**
@@ -686,7 +680,7 @@ yyjson_api bool yyjson_locate_pos(const char *str, size_t len, size_t pos,
 
 
 /*==============================================================================
- * JSON Structure
+ * MARK: - JSON Structure
  *============================================================================*/
 
 /**
@@ -720,7 +714,7 @@ typedef struct yyjson_mut_val yyjson_mut_val;
 
 
 /*==============================================================================
- * JSON Reader API
+ * MARK: - JSON Reader API
  *============================================================================*/
 
 /** Run-time options for JSON reader. */
@@ -1103,7 +1097,7 @@ yyjson_api_inline const char *yyjson_mut_read_number(const char *dat,
 
 
 /*==============================================================================
- * JSON Writer API
+ * MARK: - JSON Writer API
  *============================================================================*/
 
 /** Run-time options for JSON writer. */
@@ -1211,7 +1205,7 @@ typedef struct yyjson_write_err {
 #if !defined(YYJSON_DISABLE_WRITER) || !YYJSON_DISABLE_WRITER
 
 /*==============================================================================
- * JSON Document Writer API
+ * MARK: - JSON Document Writer API
  *============================================================================*/
 
 /**
@@ -1422,7 +1416,7 @@ yyjson_api_inline char *yyjson_mut_write(const yyjson_mut_doc *doc,
 
 
 /*==============================================================================
- * JSON Value Writer API
+ * MARK: - JSON Value Writer API
  *============================================================================*/
 
 /**
@@ -1661,7 +1655,7 @@ yyjson_api_inline char *yyjson_mut_write_number(const yyjson_mut_val *val,
 
 
 /*==============================================================================
- * JSON Document API
+ * MARK: - JSON Document API
  *============================================================================*/
 
 /** Returns the root value of this JSON document.
@@ -1686,7 +1680,7 @@ yyjson_api_inline void yyjson_doc_free(yyjson_doc *doc);
 
 
 /*==============================================================================
- * JSON Value Type API
+ * MARK: - JSON Value Type API
  *============================================================================*/
 
 /** Returns whether the JSON value is raw.
@@ -1748,7 +1742,7 @@ yyjson_api_inline bool yyjson_is_ctn(yyjson_val *val);
 
 
 /*==============================================================================
- * JSON Value Content API
+ * MARK: - JSON Value Content API
  *============================================================================*/
 
 /** Returns the JSON value's type.
@@ -1901,7 +1895,7 @@ yyjson_api_inline bool yyjson_set_str_noesc(yyjson_val *val, bool noesc);
 
 
 /*==============================================================================
- * JSON Array API
+ * MARK: - JSON Array API
  *============================================================================*/
 
 /** Returns the number of elements in this array.
@@ -1927,7 +1921,7 @@ yyjson_api_inline yyjson_val *yyjson_arr_get_last(yyjson_val *arr);
 
 
 /*==============================================================================
- * JSON Array Iterator API
+ * MARK: - JSON Array Iterator API
  *============================================================================*/
 
 /**
@@ -2009,7 +2003,7 @@ yyjson_api_inline yyjson_val *yyjson_arr_iter_next(yyjson_arr_iter *iter);
 
 
 /*==============================================================================
- * JSON Object API
+ * MARK: - JSON Object API
  *============================================================================*/
 
 /** Returns the number of key-value pairs in this object.
@@ -2039,7 +2033,7 @@ yyjson_api_inline yyjson_val *yyjson_obj_getn(yyjson_val *obj, const char *key,
 
 
 /*==============================================================================
- * JSON Object Iterator API
+ * MARK: - JSON Object Iterator API
  *============================================================================*/
 
 /**
@@ -2182,7 +2176,7 @@ yyjson_api_inline yyjson_val *yyjson_obj_iter_getn(yyjson_obj_iter *iter,
 
 
 /*==============================================================================
- * Mutable JSON Document API
+ * MARK: - Mutable JSON Document API
  *============================================================================*/
 
 /** Returns the root value of this JSON document.
@@ -2286,7 +2280,7 @@ yyjson_api yyjson_doc *yyjson_mut_val_imut_copy(yyjson_mut_val *val,
 
 
 /*==============================================================================
- * Mutable JSON Value Type API
+ * MARK: - Mutable JSON Value Type API
  *============================================================================*/
 
 /** Returns whether the JSON value is raw.
@@ -2348,7 +2342,7 @@ yyjson_api_inline bool yyjson_mut_is_ctn(yyjson_mut_val *val);
 
 
 /*==============================================================================
- * Mutable JSON Value Content API
+ * MARK: - Mutable JSON Value Content API
  *============================================================================*/
 
 /** Returns the JSON value's type.
@@ -2517,7 +2511,7 @@ yyjson_api_inline bool yyjson_mut_set_obj(yyjson_mut_val *val);
 
 
 /*==============================================================================
- * Mutable JSON Value Creation API
+ * MARK: - Mutable JSON Value Creation API
  *============================================================================*/
 
 /** Creates and returns a raw value, returns NULL on error.
@@ -2618,7 +2612,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_strncpy(yyjson_mut_doc *doc,
 
 
 /*==============================================================================
- * Mutable JSON Array API
+ * MARK: - Mutable JSON Array API
  *============================================================================*/
 
 /** Returns the number of elements in this array.
@@ -2642,7 +2636,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_get_last(yyjson_mut_val *arr);
 
 
 /*==============================================================================
- * Mutable JSON Array Iterator API
+ * MARK: - Mutable JSON Array Iterator API
  *============================================================================*/
 
 /**
@@ -2744,7 +2738,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_iter_remove(
 
 
 /*==============================================================================
- * Mutable JSON Array Creation API
+ * MARK: - Mutable JSON Array Creation API
  *============================================================================*/
 
 /**
@@ -3105,7 +3099,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_with_strncpy(
 
 
 /*==============================================================================
- * Mutable JSON Array Modification API
+ * MARK: - Mutable JSON Array Modification API
  *============================================================================*/
 
 /**
@@ -3218,7 +3212,7 @@ yyjson_api_inline bool yyjson_mut_arr_rotate(yyjson_mut_val *arr,
 
 
 /*==============================================================================
- * Mutable JSON Array Modification Convenience API
+ * MARK: - Mutable JSON Array Modification Convenience API
  *============================================================================*/
 
 /**
@@ -3424,7 +3418,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_add_obj(yyjson_mut_doc *doc,
 
 
 /*==============================================================================
- * Mutable JSON Object API
+ * MARK: - Mutable JSON Object API
  *============================================================================*/
 
 /** Returns the number of key-value pairs in this object.
@@ -3456,7 +3450,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_obj_getn(yyjson_mut_val *obj,
 
 
 /*==============================================================================
- * Mutable JSON Object Iterator API
+ * MARK: - Mutable JSON Object Iterator API
  *============================================================================*/
 
 /**
@@ -3618,7 +3612,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_obj_iter_getn(
 
 
 /*==============================================================================
- * Mutable JSON Object Creation API
+ * MARK: - Mutable JSON Object Creation API
  *============================================================================*/
 
 /** Creates and returns a mutable object, returns NULL on error. */
@@ -3665,7 +3659,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_obj_with_kv(yyjson_mut_doc *doc,
 
 
 /*==============================================================================
- * Mutable JSON Object Modification API
+ * MARK: - Mutable JSON Object Modification API
  *============================================================================*/
 
 /**
@@ -3775,7 +3769,7 @@ yyjson_api_inline bool yyjson_mut_obj_rotate(yyjson_mut_val *obj,
 
 
 /*==============================================================================
- * Mutable JSON Object Modification Convenience API
+ * MARK: - Mutable JSON Object Modification Convenience API
  *============================================================================*/
 
 /** Adds a `null` value at the end of the object.
@@ -4015,7 +4009,7 @@ yyjson_api_inline bool yyjson_mut_obj_rename_keyn(yyjson_mut_doc *doc,
 #if !defined(YYJSON_DISABLE_UTILS) || !YYJSON_DISABLE_UTILS
 
 /*==============================================================================
- * JSON Pointer API (RFC 6901)
+ * MARK: - JSON Pointer API (RFC 6901)
  * https://tools.ietf.org/html/rfc6901
  *============================================================================*/
 
@@ -4600,7 +4594,7 @@ yyjson_api_inline bool yyjson_ptr_ctx_remove(yyjson_ptr_ctx *ctx);
 
 
 /*==============================================================================
- * JSON Patch API (RFC 6902)
+ * MARK: - JSON Patch API (RFC 6902)
  * https://tools.ietf.org/html/rfc6902
  *============================================================================*/
 
@@ -4668,7 +4662,7 @@ yyjson_api yyjson_mut_val *yyjson_mut_patch(yyjson_mut_doc *doc,
 
 
 /*==============================================================================
- * JSON Merge-Patch API (RFC 7386)
+ * MARK: - JSON Merge-Patch API (RFC 7386)
  * https://tools.ietf.org/html/rfc7386
  *============================================================================*/
 
@@ -4701,7 +4695,7 @@ yyjson_api yyjson_mut_val *yyjson_mut_merge_patch(yyjson_mut_doc *doc,
 
 
 /*==============================================================================
- * JSON Structure (Implementation)
+ * MARK: - JSON Structure (Implementation)
  *============================================================================*/
 
 /** Payload of a JSON value (8 bytes). */
@@ -4738,7 +4732,7 @@ struct yyjson_doc {
 
 
 /*==============================================================================
- * Unsafe JSON Value API (Implementation)
+ * MARK: - Unsafe JSON Value API (Implementation)
  *============================================================================*/
 
 /*
@@ -5067,7 +5061,7 @@ yyjson_api_inline void unsafe_yyjson_set_obj(void *val, size_t size) {
 
 
 /*==============================================================================
- * JSON Document API (Implementation)
+ * MARK: - JSON Document API (Implementation)
  *============================================================================*/
 
 yyjson_api_inline yyjson_val *yyjson_doc_get_root(yyjson_doc *doc) {
@@ -5094,7 +5088,7 @@ yyjson_api_inline void yyjson_doc_free(yyjson_doc *doc) {
 
 
 /*==============================================================================
- * JSON Value Type API (Implementation)
+ * MARK: - JSON Value Type API (Implementation)
  *============================================================================*/
 
 yyjson_api_inline bool yyjson_is_raw(yyjson_val *val) {
@@ -5156,7 +5150,7 @@ yyjson_api_inline bool yyjson_is_ctn(yyjson_val *val) {
 
 
 /*==============================================================================
- * JSON Value Content API (Implementation)
+ * MARK: - JSON Value Content API (Implementation)
  *============================================================================*/
 
 yyjson_api_inline yyjson_type yyjson_get_type(yyjson_val *val) {
@@ -5339,7 +5333,7 @@ yyjson_api_inline bool yyjson_set_str_noesc(yyjson_val *val, bool noesc) {
 
 
 /*==============================================================================
- * JSON Array API (Implementation)
+ * MARK: - JSON Array API (Implementation)
  *============================================================================*/
 
 yyjson_api_inline size_t yyjson_arr_size(yyjson_val *arr) {
@@ -5389,7 +5383,7 @@ yyjson_api_inline yyjson_val *yyjson_arr_get_last(yyjson_val *arr) {
 
 
 /*==============================================================================
- * JSON Array Iterator API (Implementation)
+ * MARK: - JSON Array Iterator API (Implementation)
  *============================================================================*/
 
 yyjson_api_inline bool yyjson_arr_iter_init(yyjson_val *arr,
@@ -5428,7 +5422,7 @@ yyjson_api_inline yyjson_val *yyjson_arr_iter_next(yyjson_arr_iter *iter) {
 
 
 /*==============================================================================
- * JSON Object API (Implementation)
+ * MARK: - JSON Object API (Implementation)
  *============================================================================*/
 
 yyjson_api_inline size_t yyjson_obj_size(yyjson_val *obj) {
@@ -5457,7 +5451,7 @@ yyjson_api_inline yyjson_val *yyjson_obj_getn(yyjson_val *obj,
 
 
 /*==============================================================================
- * JSON Object Iterator API (Implementation)
+ * MARK: - JSON Object Iterator API (Implementation)
  *============================================================================*/
 
 yyjson_api_inline bool yyjson_obj_iter_init(yyjson_val *obj,
@@ -5534,7 +5528,7 @@ yyjson_api_inline yyjson_val *yyjson_obj_iter_getn(yyjson_obj_iter *iter,
 
 
 /*==============================================================================
- * Mutable JSON Structure (Implementation)
+ * MARK: - Mutable JSON Structure (Implementation)
  *============================================================================*/
 
 /**
@@ -5650,7 +5644,7 @@ yyjson_api_inline yyjson_mut_val *unsafe_yyjson_mut_val(yyjson_mut_doc *doc,
 
 
 /*==============================================================================
- * Mutable JSON Document API (Implementation)
+ * MARK: - Mutable JSON Document API (Implementation)
  *============================================================================*/
 
 yyjson_api_inline yyjson_mut_val *yyjson_mut_doc_get_root(yyjson_mut_doc *doc) {
@@ -5665,7 +5659,7 @@ yyjson_api_inline void yyjson_mut_doc_set_root(yyjson_mut_doc *doc,
 
 
 /*==============================================================================
- * Mutable JSON Value Type API (Implementation)
+ * MARK: - Mutable JSON Value Type API (Implementation)
  *============================================================================*/
 
 yyjson_api_inline bool yyjson_mut_is_raw(yyjson_mut_val *val) {
@@ -5727,7 +5721,7 @@ yyjson_api_inline bool yyjson_mut_is_ctn(yyjson_mut_val *val) {
 
 
 /*==============================================================================
- * Mutable JSON Value Content API (Implementation)
+ * MARK: - Mutable JSON Value Content API (Implementation)
  *============================================================================*/
 
 yyjson_api_inline yyjson_type yyjson_mut_get_type(yyjson_mut_val *val) {
@@ -5906,7 +5900,7 @@ yyjson_api_inline bool yyjson_mut_set_obj(yyjson_mut_val *val) {
 
 
 /*==============================================================================
- * Mutable JSON Value Creation API (Implementation)
+ * MARK: - Mutable JSON Value Creation API (Implementation)
  *============================================================================*/
 
 #define yyjson_mut_val_one(func) \
@@ -6047,7 +6041,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_strncpy(yyjson_mut_doc *doc,
 
 
 /*==============================================================================
- * Mutable JSON Array API (Implementation)
+ * MARK: - Mutable JSON Array API (Implementation)
  *============================================================================*/
 
 yyjson_api_inline size_t yyjson_mut_arr_size(yyjson_mut_val *arr) {
@@ -6083,7 +6077,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_get_last(
 
 
 /*==============================================================================
- * Mutable JSON Array Iterator API (Implementation)
+ * MARK: - Mutable JSON Array Iterator API (Implementation)
  *============================================================================*/
 
 yyjson_api_inline bool yyjson_mut_arr_iter_init(yyjson_mut_val *arr,
@@ -6143,7 +6137,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_iter_remove(
 
 
 /*==============================================================================
- * Mutable JSON Array Creation API (Implementation)
+ * MARK: - Mutable JSON Array Creation API (Implementation)
  *============================================================================*/
 
 yyjson_api_inline yyjson_mut_val *yyjson_mut_arr(yyjson_mut_doc *doc) {
@@ -6323,7 +6317,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_with_strncpy(
 
 
 /*==============================================================================
- * Mutable JSON Array Modification API (Implementation)
+ * MARK: - Mutable JSON Array Modification API (Implementation)
  *============================================================================*/
 
 yyjson_api_inline bool yyjson_mut_arr_insert(yyjson_mut_val *arr,
@@ -6533,7 +6527,7 @@ yyjson_api_inline bool yyjson_mut_arr_rotate(yyjson_mut_val *arr,
 
 
 /*==============================================================================
- * Mutable JSON Array Modification Convenience API (Implementation)
+ * MARK: - Mutable JSON Array Modification Convenience API (Implementation)
  *============================================================================*/
 
 yyjson_api_inline bool yyjson_mut_arr_add_val(yyjson_mut_val *arr,
@@ -6699,7 +6693,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_add_obj(yyjson_mut_doc *doc,
 
 
 /*==============================================================================
- * Mutable JSON Object API (Implementation)
+ * MARK: - Mutable JSON Object API (Implementation)
  *============================================================================*/
 
 yyjson_api_inline size_t yyjson_mut_obj_size(yyjson_mut_val *obj) {
@@ -6728,7 +6722,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_obj_getn(yyjson_mut_val *obj,
 
 
 /*==============================================================================
- * Mutable JSON Object Iterator API (Implementation)
+ * MARK: - Mutable JSON Object Iterator API (Implementation)
  *============================================================================*/
 
 yyjson_api_inline bool yyjson_mut_obj_iter_init(yyjson_mut_val *obj,
@@ -6819,7 +6813,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_obj_iter_getn(
 
 
 /*==============================================================================
- * Mutable JSON Object Creation API (Implementation)
+ * MARK: - Mutable JSON Object Creation API (Implementation)
  *============================================================================*/
 
 yyjson_api_inline yyjson_mut_val *yyjson_mut_obj(yyjson_mut_doc *doc) {
@@ -6899,7 +6893,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_obj_with_kv(yyjson_mut_doc *doc,
 
 
 /*==============================================================================
- * Mutable JSON Object Modification API (Implementation)
+ * MARK: - Mutable JSON Object Modification API (Implementation)
  *============================================================================*/
 
 yyjson_api_inline void unsafe_yyjson_mut_obj_add(yyjson_mut_val *obj,
@@ -7092,7 +7086,7 @@ yyjson_api_inline bool yyjson_mut_obj_rotate(yyjson_mut_val *obj,
 
 
 /*==============================================================================
- * Mutable JSON Object Modification Convenience API (Implementation)
+ * MARK: - Mutable JSON Object Modification Convenience API (Implementation)
  *============================================================================*/
 
 #define yyjson_mut_obj_add_func(func) \
@@ -7319,7 +7313,7 @@ yyjson_api_inline bool yyjson_mut_obj_rename_keyn(yyjson_mut_doc *doc,
 #if !defined(YYJSON_DISABLE_UTILS) || !YYJSON_DISABLE_UTILS
 
 /*==============================================================================
- * JSON Pointer API (Implementation)
+ * MARK: - JSON Pointer API (Implementation)
  *============================================================================*/
 
 #define yyjson_ptr_set_err(_code, _msg) do { \
@@ -7978,7 +7972,7 @@ yyjson_api_inline bool yyjson_ptr_ctx_remove(yyjson_ptr_ctx *ctx) {
 
 
 /*==============================================================================
- * JSON Value at Pointer API (Implementation)
+ * MARK: - JSON Value at Pointer API (Implementation)
  *============================================================================*/
 
 /**
@@ -8081,7 +8075,7 @@ yyjson_api_inline bool yyjson_ptr_get_str(
 
 
 /*==============================================================================
- * Deprecated
+ * MARK: - Deprecated
  *============================================================================*/
 
 /** @deprecated renamed to `yyjson_doc_ptr_get` */
@@ -8165,7 +8159,7 @@ yyjson_api_inline yyjson_mut_val *unsafe_yyjson_mut_get_pointer(
 
 
 /*==============================================================================
- * Compiler Hint End
+ * MARK: - Compiler Hint End
  *============================================================================*/
 
 #if defined(__clang__)
