@@ -728,7 +728,7 @@ typedef uint32_t yyjson_read_flag;
     - Report error if double number is infinity.
     - Report error if string contains invalid UTF-8 character or BOM.
     - Report error on trailing commas, comments, inf and nan literals. */
-static const yyjson_read_flag YYJSON_READ_NOFLAG                = 0;
+static const yyjson_read_flag YYJSON_READ_NOFLAG                    = 0;
 
 /** Read the input data in-situ.
     This option allows the reader to modify and use input data to store string
@@ -736,27 +736,27 @@ static const yyjson_read_flag YYJSON_READ_NOFLAG                = 0;
     The caller should hold the input data before free the document.
     The input data must be padded by at least `YYJSON_PADDING_SIZE` bytes.
     For example: `[1,2]` should be `[1,2]\0\0\0\0`, input length should be 5. */
-static const yyjson_read_flag YYJSON_READ_INSITU                = 1 << 0;
+static const yyjson_read_flag YYJSON_READ_INSITU                    = 1 << 0;
 
 /** Stop when done instead of issuing an error if there's additional content
     after a JSON document. This option may be used to parse small pieces of JSON
     in larger data, such as `NDJSON`. */
-static const yyjson_read_flag YYJSON_READ_STOP_WHEN_DONE        = 1 << 1;
+static const yyjson_read_flag YYJSON_READ_STOP_WHEN_DONE            = 1 << 1;
 
 /** Allow single trailing comma at the end of an object or array,
     such as `[1,2,3,]`, `{"a":1,"b":2,}` (non-standard). */
-static const yyjson_read_flag YYJSON_READ_ALLOW_TRAILING_COMMAS = 1 << 2;
+static const yyjson_read_flag YYJSON_READ_ALLOW_TRAILING_COMMAS     = 1 << 2;
 
 /** Allow C-style single line and multiple line comments (non-standard). */
-static const yyjson_read_flag YYJSON_READ_ALLOW_COMMENTS        = 1 << 3;
+static const yyjson_read_flag YYJSON_READ_ALLOW_COMMENTS            = 1 << 3;
 
 /** Allow inf/nan number and literal, case-insensitive,
     such as 1e999, NaN, inf, -Infinity (non-standard). */
-static const yyjson_read_flag YYJSON_READ_ALLOW_INF_AND_NAN     = 1 << 4;
+static const yyjson_read_flag YYJSON_READ_ALLOW_INF_AND_NAN         = 1 << 4;
 
 /** Read all numbers as raw strings (value with `YYJSON_TYPE_RAW` type),
     inf/nan literal is also read as raw with `ALLOW_INF_AND_NAN` flag. */
-static const yyjson_read_flag YYJSON_READ_NUMBER_AS_RAW         = 1 << 5;
+static const yyjson_read_flag YYJSON_READ_NUMBER_AS_RAW             = 1 << 5;
 
 /** Allow reading invalid unicode when parsing string values (non-standard).
     Invalid characters will be allowed to appear in the string values, but
@@ -766,16 +766,16 @@ static const yyjson_read_flag YYJSON_READ_NUMBER_AS_RAW         = 1 << 5;
     @warning Strings in JSON values may contain incorrect encoding when this
     option is used, you need to handle these strings carefully to avoid security
     risks. */
-static const yyjson_read_flag YYJSON_READ_ALLOW_INVALID_UNICODE = 1 << 6;
+static const yyjson_read_flag YYJSON_READ_ALLOW_INVALID_UNICODE     = 1 << 6;
 
 /** Read big numbers as raw strings. These big numbers include integers that
     cannot be represented by `int64_t` and `uint64_t`, and floating-point
     numbers that cannot be represented by finite `double`.
     The flag will be overridden by `YYJSON_READ_NUMBER_AS_RAW` flag. */
-static const yyjson_read_flag YYJSON_READ_BIGNUM_AS_RAW         = 1 << 7;
+static const yyjson_read_flag YYJSON_READ_BIGNUM_AS_RAW             = 1 << 7;
 
 /** Allow UTF-8 BOM and skip it before parsing if any (non-standard). */
-static const yyjson_read_flag YYJSON_READ_ALLOW_BOM             = 1 << 8;
+static const yyjson_read_flag YYJSON_READ_ALLOW_BOM                 = 1 << 8;
 
 
 
@@ -813,7 +813,7 @@ static const yyjson_read_flag YYJSON_READ_ALLOW_SINGLE_QUOTED_STR   = 1 << 12;
 static const yyjson_read_flag YYJSON_READ_ALLOW_UNQUOTED_KEY        = 1 << 13;
 
 /** Allow JSON5 format, see: https://json5.org and https://spec.json5.org
- 
+
     This flag supports all JSON5 features with some additional extensions:
     - Accepts more escape sequences than JSON5 (e.g. `\a`, `\e`).
     - Unquoted keys are and not limited to ECMAScript IdentifierName.
