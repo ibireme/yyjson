@@ -423,7 +423,12 @@ static_inline bool read_flag_eq(yyjson_read_flag flg, yyjson_read_flag chk) {
         chk == YYJSON_READ_ALLOW_COMMENTS ||
         chk == YYJSON_READ_ALLOW_TRAILING_COMMAS ||
         chk == YYJSON_READ_ALLOW_INVALID_UNICODE ||
-        chk == YYJSON_READ_ALLOW_BOM)
+        chk == YYJSON_READ_ALLOW_BOM ||
+        chk == YYJSON_READ_ALLOW_EXT_NUMBER ||
+        chk == YYJSON_READ_ALLOW_EXT_ESCAPE ||
+        chk == YYJSON_READ_ALLOW_EXT_WHITESPACE ||
+        chk == YYJSON_READ_ALLOW_SINGLE_QUOTED_STR ||
+        chk == YYJSON_READ_ALLOW_UNQUOTED_KEY)
         return false;
 #endif
     return (flg & chk) != 0;

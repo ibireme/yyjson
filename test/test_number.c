@@ -671,7 +671,7 @@ static void test_num_read(num_info info, yyjson_read_flag flg) {
     bool flg_inf_nan = (flg & YYJSON_READ_ALLOW_INF_AND_NAN) != 0;
     bool flg_ext     = (flg & YYJSON_READ_ALLOW_EXT_NUMBER) != 0;
     
-    if (info.type == NUM_TYPE_FAIL || (info.ext && !flg_ext)) {
+    if (info.type == NUM_TYPE_FAIL || (info.ext && (!flg_ext || !non_std))) {
         /// not a valid number
         expect(val == NULL);
         

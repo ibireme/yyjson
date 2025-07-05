@@ -832,14 +832,14 @@ yy_test_case(test_string) {
     validate_ext_read((string_val){"abc" "\\\n\r" "def", 9},
                       (string_val){NULL, 0});
     
-    validate_ext_read((string_val){"abc" "\\\u2028" "def", 10},
+    validate_ext_read((string_val){"abc" "\\\xE2\x80\xA8" "def", 10}, // U+2028
                       (string_val){"abc" "" "def", 6});
     
-    validate_ext_read((string_val){"abc" "\\\u2029" "def", 10},
+    validate_ext_read((string_val){"abc" "\\\xE2\x80\xA9" "def", 10}, // U+2029
                       (string_val){"abc" "" "def", 6});
     
-    validate_ext_read((string_val){"abc" "\\\u202F" "def", 10},
-                      (string_val){"abc" "\u202F" "def", 9});
+    validate_ext_read((string_val){"abc" "\\\xE2\x80\xAF" "def", 10}, // U+202F
+                      (string_val){"abc" "\xE2\x80\xAF" "def", 9});
     
 #endif
 }
