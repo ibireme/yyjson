@@ -788,12 +788,12 @@ static const yyjson_read_flag YYJSON_READ_ALLOW_BOM                 = 1 << 8;
 static const yyjson_read_flag YYJSON_READ_ALLOW_EXT_NUMBER          = 1 << 9;
 
 /** Allow extended escape sequences in strings (non-standard):
-    - Additional escapes: `\a`, `\e`, `\v`, `\'`, `\?`, `\0`-`\9`.
+    - Additional escapes: `\a`, `\e`, `\v`, `\'`, `\?`, `\0`.
     - Hex escapes: `\xNN`, such as `\x7B`.
     - Line continuation: backslash followed by line terminator sequences.
     - Unknown escape: if backslash is followed by an unsupported character,
-      the backslash will be removed and the character will be kept as-is.
- */
+        the backslash will be removed and the character will be kept as-is.
+        However, `\1`-`\9` will still trigger an error. */
 static const yyjson_read_flag YYJSON_READ_ALLOW_EXT_ESCAPE          = 1 << 10;
 
 /** Allow extended whitespace characters (non-standard):

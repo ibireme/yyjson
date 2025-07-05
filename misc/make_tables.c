@@ -250,10 +250,12 @@ static void make_char_table(void) {
     table['\n'] |= CHAR_TYPE_SPACE;
     table['\r'] |= CHAR_TYPE_SPACE;
 
-    table['-'] |= CHAR_TYPE_NUMBER;
     for (int i = 0; i <= 9; i++) {
         table[i + '0'] |= CHAR_TYPE_NUMBER;
     }
+    table['-'] |= CHAR_TYPE_NUMBER;
+    table['+'] |= CHAR_TYPE_NUMBER; // Extended Number Format
+    table['.'] |= CHAR_TYPE_NUMBER; // Extended Number Format
     
     table['"'] |= CHAR_TYPE_ESC_ASCII;
     table['\\'] |= CHAR_TYPE_ESC_ASCII;

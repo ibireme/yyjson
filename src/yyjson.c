@@ -461,14 +461,14 @@ static_inline bool write_flag_eq(yyjson_write_flag flg, yyjson_write_flag chk) {
 #undef  USIZE_SAFE_DIG
 #define USIZE_SAFE_DIG  (sizeof(usize) == 8 ? U64_SAFE_DIG : U32_SAFE_DIG)
 
-/* Inf raw value (positive) */
-#define F64_RAW_INF U64(0x7FF00000, 0x00000000)
+/* Inf bits (positive) */
+#define F64_BITS_INF U64(0x7FF00000, 0x00000000)
 
-/* NaN raw value (quiet NaN, no payload, no sign) */
+/* NaN bits (quiet NaN, no payload, no sign) */
 #if defined(__hppa__) || (defined(__mips__) && !defined(__mips_nan2008))
-#define F64_RAW_NAN U64(0x7FF7FFFF, 0xFFFFFFFF)
+#define F64_BITS_NAN U64(0x7FF7FFFF, 0xFFFFFFFF)
 #else
-#define F64_RAW_NAN U64(0x7FF80000, 0x00000000)
+#define F64_BITS_NAN U64(0x7FF80000, 0x00000000)
 #endif
 
 /* maximum significant digits count in decimal when reading double number */
@@ -726,53 +726,53 @@ static_inline u32 byte_load_4(const void *src) {
  * The `memcpy` is used to avoid violating the strict aliasing rule.
  *============================================================================*/
 
-/** Convert raw binary to double. */
-static_inline f64 f64_from_raw(u64 u) {
+/** Convert bits to double. */
+static_inline f64 f64_from_bits(u64 u) {
     f64 f;
     memcpy(&f, &u, sizeof(u));
     return f;
 }
 
-/** Convert raw binary to float. */
-static_inline f32 f32_from_raw(u32 u) {
+/** Convert bits to float. */
+static_inline f32 f32_from_bits(u32 u) {
     f32 f;
     memcpy(&f, &u, sizeof(u));
     return f;
 }
 
-/** Convert double to raw binary. */
-static_inline u64 f64_to_raw(f64 f) {
+/** Convert double to bits. */
+static_inline u64 f64_to_bits(f64 f) {
     u64 u;
     memcpy(&u, &f, sizeof(u));
     return u;
 }
 
-/** Convert double to raw binary. */
-static_inline u32 f32_to_raw(f32 f) {
+/** Convert double to bits. */
+static_inline u32 f32_to_bits(f32 f) {
     u32 u;
     memcpy(&u, &f, sizeof(u));
     return u;
 }
 
-/** Get raw 'infinity' with sign. */
-static_inline u64 f64_raw_get_inf(bool sign) {
+/** Get 'infinity' bits with sign. */
+static_inline u64 f64_bits_inf(bool sign) {
 #if YYJSON_HAS_IEEE_754
-    return F64_RAW_INF | ((u64)sign << 63);
+    return F64_BITS_INF | ((u64)sign << 63);
 #elif defined(INFINITY)
-    return f64_to_raw(sign ? -INFINITY : INFINITY);
+    return f64_to_bits(sign ? -INFINITY : INFINITY);
 #else
-    return f64_to_raw(sign ? -HUGE_VAL : HUGE_VAL);
+    return f64_to_bits(sign ? -HUGE_VAL : HUGE_VAL);
 #endif
 }
 
-/** Get raw 'nan' with sign. */
-static_inline u64 f64_raw_get_nan(bool sign) {
+/** Get 'nan' bits with sign. */
+static_inline u64 f64_bits_nan(bool sign) {
 #if YYJSON_HAS_IEEE_754
-    return F64_RAW_NAN | ((u64)sign << 63);
+    return F64_BITS_NAN | ((u64)sign << 63);
 #elif defined(NAN)
-    return f64_to_raw(sign ? (f64)-NAN : (f64)NAN);
+    return f64_to_bits(sign ? (f64)-NAN : (f64)NAN);
 #else
-    return f64_to_raw((sign ? -0.0 : 0.0) / 0.0);
+    return f64_to_bits((sign ? -0.0 : 0.0) / 0.0);
 #endif
 }
 
@@ -2674,7 +2674,7 @@ static const char_type char_table[256] = {
     0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04,
     0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04,
     0x01, 0x00, 0x04, 0x00, 0x00, 0x00, 0x00, 0x00,
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0x00, 0x20,
+    0x00, 0x00, 0x00, 0x02, 0x00, 0x02, 0x02, 0x20,
     0x82, 0x82, 0x82, 0x82, 0x82, 0x82, 0x82, 0x82,
     0x82, 0x82, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
     0x00, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x00,
@@ -2718,7 +2718,7 @@ static_inline bool char_is_space_or_comment(u8 c) {
     return char_is_type(c, (char_type)(CHAR_TYPE_SPACE | CHAR_TYPE_COMMENT));
 }
 
-/** Match a JSON number: '-', [0-9]. */
+/** Match a JSON number: '-', [0-9], ('+', '.' for extended number format). */
 static_inline bool char_is_num(u8 c) {
     return char_is_type(c, (char_type)CHAR_TYPE_NUMBER);
 }
@@ -2880,7 +2880,6 @@ static const u8 hex_conv_table[256] = {
 /**
  Scans an escaped character sequence as a UTF-16 code unit (branchless).
  e.g. "\\u005C" should pass "005C" as `cur`.
-
  This requires the string has 4-byte zero padding.
  */
 static_inline bool read_hex_u16(const u8 *cur, u16 *val) {
@@ -2893,6 +2892,14 @@ static_inline bool read_hex_u16(const u8 *cur, u16 *val) {
     t1 = (u16)((c1 << 8) | c3);
     *val = (u16)((t0 << 4) | t1);
     return ((t0 | t1) & (u16)0xF0F0) == 0;
+}
+
+static_inline bool read_hex_u8(const u8 *cur, u8 *val) {
+    u8 c0, c1;
+    c0 = hex_conv_table[cur[0]];
+    c1 = hex_conv_table[cur[1]];
+    *val = (u8)((c0 << 4) | c1);
+    return ((c0 | c1) & 0xF0) == 0;
 }
 
 
@@ -2967,7 +2974,7 @@ static_inline bool read_inf(bool sign, u8 **ptr, u8 **pre,
             val->uni.str = (const char *)hdr;
         } else {
             val->tag = YYJSON_TYPE_NUM | YYJSON_SUBTYPE_REAL;
-            val->uni.u64 = f64_raw_get_inf(sign);
+            val->uni.u64 = f64_bits_inf(sign);
         }
         return true;
     }
@@ -2993,7 +3000,7 @@ static_inline bool read_nan(bool sign, u8 **ptr, u8 **pre,
             val->uni.str = (const char *)hdr;
         } else {
             val->tag = YYJSON_TYPE_NUM | YYJSON_SUBTYPE_REAL;
-            val->uni.u64 = f64_raw_get_nan(sign);
+            val->uni.u64 = f64_bits_nan(sign);
         }
         return true;
     }
@@ -3035,7 +3042,16 @@ static_noinline bool read_num_raw(u8 **ptr, u8 **pre, yyjson_read_flag flg,
     cur += (*cur == '-');
 
     /* read first digit, check leading zero */
-    if (unlikely(!digi_is_digit(*cur))) {
+    while (unlikely(!digi_is_digit(*cur))) {
+        if (has_read_flag(ALLOW_EXT_NUMBER)) {
+            if (*cur == '+' && cur == hdr) { /* leading `+` sign */
+                cur++;
+                continue;
+            }
+            if (*cur == '.' && digi_is_digit(cur[1])) { /* e.g. '.123' */
+                goto read_double;
+            }
+        }
         if (has_read_flag(ALLOW_INF_AND_NAN)) {
             if (read_inf_or_nan(*hdr == '-', &cur, pre, flg, val)) return_raw();
         }
@@ -3048,17 +3064,29 @@ static_noinline bool read_num_raw(u8 **ptr, u8 **pre, yyjson_read_flag flg,
         if (unlikely(digi_is_digit(*cur))) {
             return_err(cur - 1, "number with leading zero is not allowed");
         }
-        if (!digi_is_fp(*cur)) return_raw();
+        if (!digi_is_fp(*cur)) {
+            if (has_read_flag(ALLOW_EXT_NUMBER) &&
+                (*cur == 'x' || *cur == 'X')) { /* hex integer */
+                if (!char_is_hex(*++cur)) return_err(cur, "invalid hex number");
+                while(char_is_hex(*cur)) cur++;
+            }
+            return_raw();
+        }
     } else {
         while (digi_is_digit(*cur)) cur++;
         if (!digi_is_fp(*cur)) return_raw();
     }
 
+read_double:
     /* read fraction part */
     if (*cur == '.') {
         cur++;
-        if (!digi_is_digit(*cur++)) {
-            return_err(cur, "no digit after decimal point");
+        if (!digi_is_digit(*cur)) {
+            if (has_read_flag(ALLOW_EXT_NUMBER)) {
+                if (!digi_is_exp(*cur)) return_raw();
+            } else {
+                return_err(cur, "no digit after decimal point");
+            }
         }
         while (digi_is_digit(*cur)) cur++;
     }
@@ -3076,6 +3104,56 @@ static_noinline bool read_num_raw(u8 **ptr, u8 **pre, yyjson_read_flag flg,
 
 #undef return_err
 #undef return_raw
+}
+
+/** Read a hex number. */
+static_noinline bool read_num_hex(u8 **ptr, u8 **pre, yyjson_read_flag flg,
+                                  yyjson_val *val, const char **msg) {
+    u8 *hdr = *ptr;
+    u8 *cur = *ptr;
+    u8 **end = ptr;
+    u64 sig = 0, i = 0;
+    bool sign;
+
+    /* skip sign and '0x' */
+    sign = (*cur == '-');
+    cur += (*cur == '-' || *cur == '+') + 2;
+
+    /* read hex */
+    for(; i < 16; i++) {
+        u8 c = hex_conv_table[cur[i]];
+        if (c == 0xF0) break;
+        sig <<= 4;
+        sig |= c;
+    }
+
+    /* check error */
+    if (unlikely(i == 0)) {
+        *msg = "invalid hex number";
+        return false;
+    }
+
+    /* check overflow */
+    if (unlikely(i == 16)) {
+        if (char_is_hex(cur[16]) || (sign && sig > ((u64)1 << 63))) {
+            if (!has_read_flag(BIGNUM_AS_RAW)) {
+                *msg = "hex number overflow";
+                return false;
+            }
+            cur += 16;
+            while (char_is_hex(*cur)) cur++;
+            if (*pre) **pre = '\0';
+            val->tag = ((u64)(cur - hdr) << YYJSON_TAG_BIT) | YYJSON_TYPE_RAW;
+            val->uni.str = (const char *)hdr;
+            *pre = cur; *end = cur;
+            return true;
+        }
+    }
+
+    val->tag = YYJSON_TYPE_NUM | (u64)((u8)sign << 3);
+    val->uni.u64 = (u64)(sign ? (u64)(~(sig) + 1) : (u64)(sig));
+    *end = cur + i;
+    return true;
 }
 
 /**
@@ -3519,7 +3597,7 @@ static_inline u64 diy_fp_to_ieee_raw(diy_fp fp) {
 
     if (unlikely(exp >= F64_MAX_BIN_EXP)) {
         /* overflow */
-        return F64_RAW_INF;
+        return F64_BITS_INF;
     } else if (likely(exp >= F64_MIN_BIN_EXP - 1)) {
         /* normal */
         exp += F64_EXP_BIAS;
@@ -3594,7 +3672,7 @@ static_inline bool read_num(u8 **ptr, u8 **pre, yyjson_read_flag flg,
 
 #define return_inf() do { \
     if (has_read_flag(BIGNUM_AS_RAW)) return_raw(); \
-    if (has_read_flag(ALLOW_INF_AND_NAN)) return_f64_bin(F64_RAW_INF); \
+    if (has_read_flag(ALLOW_INF_AND_NAN)) return_f64_bin(F64_BITS_INF); \
     else return_err(hdr, "number is infinity when parsed as double"); \
 } while (false)
 
@@ -3632,21 +3710,44 @@ static_inline bool read_num(u8 **ptr, u8 **pre, yyjson_read_flag flg,
     cur += sign;
 
     /* begin with a leading zero or non-digit */
-    if (unlikely(!digi_is_nonzero(*cur))) { /* 0 or non-digit char */
+    while (unlikely(!digi_is_nonzero(*cur))) { /* 0 or non-digit char */
         if (unlikely(*cur != '0')) { /* non-digit char */
+            if (has_read_flag(ALLOW_EXT_NUMBER)) {
+                if (*cur == '+' && cur == hdr) { /* leading `+` sign */
+                    cur++;
+                    continue;
+                }
+                if (*cur == '.' && char_is_num(cur[1])) { /* no integer part */
+                    dot_pos = cur--;  /* e.g. '.123' */
+                    goto digi_frac_1;
+                }
+            }
             if (has_read_flag(ALLOW_INF_AND_NAN)) {
                 if (read_inf_or_nan(sign, &cur, pre, flg, val)) {
                     *end = cur;
                     return true;
                 }
             }
-            return_err(cur, "no digit after minus sign");
+            return_err(cur, "no digit after sign");
         }
         /* begin with 0 */
-        if (likely(!digi_is_digit_or_fp(*++cur))) return_0();
+        if (likely(!digi_is_digit_or_fp(*++cur))) {
+            if (has_read_flag(ALLOW_EXT_NUMBER) &&
+                (*cur == 'x' || *cur == 'X')) { /* hex integer */
+                return read_num_hex(ptr, pre, flg, val, msg);
+            }
+            return_0();
+        }
         if (likely(*cur == '.')) {
             dot_pos = cur++;
             if (unlikely(!digi_is_digit(*cur))) {
+                if (has_read_flag(ALLOW_EXT_NUMBER)) {
+                    if (digi_is_exp(*cur)) {
+                        goto digi_exp_more;
+                    } else {
+                        return_f64_bin(0);
+                    }
+                }
                 return_err(cur, "no digit after decimal point");
             }
             while (unlikely(*cur == '0')) cur++;
@@ -3762,7 +3863,10 @@ digi_intg_more:
 
     if (*cur == '.') {
         dot_pos = cur++;
-        if (!digi_is_digit(*cur)) {
+        if (unlikely(!digi_is_digit(*cur))) {
+            if (has_read_flag(ALLOW_EXT_NUMBER)) {
+                goto digi_frac_end;
+            }
             return_err(cur, "no digit after decimal point");
         }
     }
@@ -3779,8 +3883,10 @@ digi_frac_more:
         }
         dot_pos = cur;
         if (*cur == '.') {
-            if (!digi_is_digit(*++cur)) {
-                return_err(cur, "no digit after decimal point");
+            if (unlikely(!digi_is_digit(*++cur))) {
+                if (!has_read_flag(ALLOW_EXT_NUMBER)) {
+                    return_err(cur, "no digit after decimal point");
+                }
             }
             while (digi_is_digit(*cur)) cur++;
         }
@@ -3804,7 +3910,9 @@ digi_frac_more:
     /* fraction part end */
 digi_frac_end:
     if (unlikely(dot_pos + 1 == cur)) {
-        return_err(cur, "no digit after decimal point");
+        if (!has_read_flag(ALLOW_EXT_NUMBER)) {
+            return_err(cur, "no digit after decimal point");
+        }
     }
     sig_end = cur;
     exp_sig = -(i64)((u64)(cur - dot_pos) - 1);
@@ -4104,7 +4212,7 @@ digi_finish:
 
         /* get IEEE double raw value */
         raw = diy_fp_to_ieee_raw(fp);
-        if (unlikely(raw == F64_RAW_INF)) return_inf();
+        if (unlikely(raw == F64_BITS_INF)) return_inf();
         if (likely(precision_bits <= half_way - fp_err ||
                    precision_bits >= half_way + fp_err)) {
             return_f64_bin(raw); /* number is accurate */
@@ -4146,7 +4254,7 @@ digi_finish:
             raw += (raw & 1);
         }
 
-        if (unlikely(raw == F64_RAW_INF)) return_inf();
+        if (unlikely(raw == F64_BITS_INF)) return_inf();
         return_f64_bin(raw);
     }
 
@@ -4203,7 +4311,7 @@ static_inline bool read_num(u8 **ptr, u8 **pre, yyjson_read_flag flg,
 
 #define return_inf() do { \
     if (has_read_flag(BIGNUM_AS_RAW)) return_raw(); \
-    if (has_read_flag(ALLOW_INF_AND_NAN)) return_f64_bin(F64_RAW_INF); \
+    if (has_read_flag(ALLOW_INF_AND_NAN)) return_f64_bin(F64_BITS_INF); \
     else return_err(hdr, "number is infinity when parsed as double"); \
 } while (false)
 
@@ -4232,7 +4340,17 @@ static_inline bool read_num(u8 **ptr, u8 **pre, yyjson_read_flag flg,
     sig = (u8)(*cur - '0');
 
     /* read first digit, check leading zero */
-    if (unlikely(!digi_is_digit(*cur))) {
+    while (unlikely(!digi_is_digit(*cur))) {
+        if (has_read_flag(ALLOW_EXT_NUMBER)) {
+            if (*cur == '+' && cur == hdr) { /* leading `+` sign */
+                cur++;
+                sig = (u8)(*cur - '0');
+                continue;
+            }
+            if (*cur == '.' && char_is_num(cur[1])) { /* no integer part */
+                goto read_double; /* e.g. '.123' */
+            }
+        }
         if (has_read_flag(ALLOW_INF_AND_NAN)) {
             if (read_inf_or_nan(sign, &cur, pre, flg, val)) {
                 *end = cur;
@@ -4246,7 +4364,13 @@ static_inline bool read_num(u8 **ptr, u8 **pre, yyjson_read_flag flg,
         if (unlikely(digi_is_digit(*cur))) {
             return_err(cur - 1, "number with leading zero is not allowed");
         }
-        if (!digi_is_fp(*cur)) return_0();
+        if (!digi_is_fp(*cur)) {
+            if (has_read_flag(ALLOW_EXT_NUMBER) &&
+                (*cur == 'x' || *cur == 'X')) { /* hex integer */
+                return read_num_hex(ptr, pre, flg, val, msg);
+            }
+            return_0();
+        }
         goto read_double;
     }
 
@@ -4291,15 +4415,20 @@ read_double:
     if (!digi_is_fp(*cur) && has_read_flag(BIGNUM_AS_RAW)) {
         return_raw(); /* it's a large integer */
     }
-    if (*cur == '.') {
+    while (*cur == '.') {
         /* skip fraction part */
         dot = cur;
         cur++;
         if (!digi_is_digit(*cur)) {
-            return_err(cur, "no digit after decimal point");
+            if (has_read_flag(ALLOW_EXT_NUMBER)) {
+                break;
+            } else {
+                return_err(cur, "no digit after decimal point");
+            }
         }
         cur++;
         while (digi_is_digit(*cur)) cur++;
+        break;
     }
     if (digi_is_exp(*cur)) {
         /* skip exponent part */
@@ -4365,14 +4494,14 @@ read_double:
  Read a JSON string.
  @param ptr The head pointer of string before '"' prefix (inout).
  @param lst JSON last position.
- @param inv Allow invalid unicode.
+ @param flg JSON read flag;
  @param val The string value to be written.
  @param msg The error message pointer.
  @param con Continuation for incremental parsing.
  @return Whether success.
  */
-static_inline bool read_str(u8 **ptr, u8 *lst, bool inv, yyjson_val *val,
-                            const char **msg, u8 **con) {
+static_inline bool read_str(u8 **ptr, u8 *lst, yyjson_read_flag flg,
+                            yyjson_val *val, const char **msg, u8 **con) {
     /*
      Each unicode code point is encoded as 1 to 4 bytes in UTF-8 encoding,
      we use 4-byte mask and pattern value to validate UTF-8 byte sequence,
@@ -4615,8 +4744,8 @@ skip_utf8:
         }
 #endif
         if (unlikely(pos == src)) {
-            if (!inv) return_err(src, "invalid UTF-8 encoding in string");
-            ++src;
+            if (has_read_flag(ALLOW_INVALID_UNICODE)) ++src;
+            else return_err(src, "invalid UTF-8 encoding in string");
         }
         goto skip_ascii;
     }
@@ -4674,7 +4803,52 @@ copy_escape:
                     src += 6;
                 }
                 break;
-            default: return_err(src - 1, "invalid escaped sequence in string");
+            default: {
+                if (has_read_flag(ALLOW_EXT_ESCAPE)) {
+                    /* read extended escape (non-standard) */
+                    switch (*src) {
+                        case '\'': *dst++ = '\''; src++; break;
+                        case 'a':  *dst++ = '\a'; src++; break;
+                        case 'v':  *dst++ = '\v'; src++; break;
+                        case '?':  *dst++ = '\?'; src++; break;
+                        case 'e':  *dst++ = 0x1B; src++; break;
+                        case '0':
+                            if (!digi_is_digit(src[1])) {
+                                *dst++ = '\0'; src++; break;
+                            }
+                            return_err(src - 1, "octal escape is not allowed");
+                        case '1': case '2': case '3': case '4':
+                        case '5': case '6': case '7': case '8': case '9':
+                            return_err(src - 1, "invalid number escape");
+                        case 'x': case 'X': {
+                            u8 c;
+                            if (read_hex_u8(src + 1, &c)) {
+                                src += 3;
+                                if (c <= 0x7F) { /* 1-byte ASCII */
+                                    *dst++ = c;
+                                } else { /* 2-byte UTF-8 */
+                                    *dst++ = (u8)(0xC0 | (c >> 6));
+                                    *dst++ = (u8)(0x80 | (c & 0x3F));
+                                }
+                                break;
+                            }
+                            return_err(src - 1, "invalid hex escape");
+                        }
+                        case '\n': src++; break;
+                        case '\r': src++; src += (*src == '\n'); break;
+                        case 0xE2: /* Line terminator: U+2028, U+2029 */
+                            if ((src[1] == 0x80 && src[2] == 0xA8) ||
+                                (src[1] == 0x80 && src[2] == 0xA9)) {
+                                src += 3;
+                            }
+                            break;
+                        default:
+                            break; /* skip */
+                    }
+                } else {
+                    return_err(src - 1, "invalid escaped sequence in string");
+                }
+            }
         }
     } else if (likely(*src == '"')) {
         val->tag = ((u64)(dst - cur) << YYJSON_TAG_BIT) | YYJSON_TYPE_STR;
@@ -4684,7 +4858,9 @@ copy_escape:
         if (con) con[0] = con[1] = NULL;
         return true;
     } else {
-        if (!inv) return_err(src, "unexpected control character in string");
+        if (!has_read_flag(ALLOW_INVALID_UNICODE)) {
+            return_err(src, "unexpected control character in string");
+        }
         if (src >= lst) return_err(src, "unclosed string");
         *dst++ = *src++;
     }
@@ -4859,7 +5035,9 @@ copy_utf8:
         }
 #endif
         if (unlikely(pos == src)) {
-            if (!inv) return_err(src, MSG_ERR_UTF8);
+            if (!has_read_flag(ALLOW_INVALID_UNICODE)) {
+                return_err(src, MSG_ERR_UTF8);
+            }
             goto copy_ascii_stop_1;
         }
         goto copy_ascii;
@@ -4911,7 +5089,6 @@ static_noinline yyjson_doc *read_root_single(u8 *hdr, u8 *cur, u8 *end,
     const char *msg; /* error message */
 
     bool raw; /* read number as raw */
-    bool inv; /* allow invalid unicode */
     u8 *raw_end; /* raw end for null-terminator */
     u8 **pre; /* previous raw end pointer */
 
@@ -4923,7 +5100,6 @@ static_noinline yyjson_doc *read_root_single(u8 *hdr, u8 *cur, u8 *end,
     if (unlikely(!val_hdr)) goto fail_alloc;
     val = val_hdr + hdr_len;
     raw = has_read_flag(NUMBER_AS_RAW) || has_read_flag(BIGNUM_AS_RAW);
-    inv = has_read_flag(ALLOW_INVALID_UNICODE) != 0;
     raw_end = NULL;
     pre = raw ? &raw_end : NULL;
 
@@ -4932,7 +5108,7 @@ static_noinline yyjson_doc *read_root_single(u8 *hdr, u8 *cur, u8 *end,
         goto fail_number;
     }
     if (*cur == '"') {
-        if (likely(read_str(&cur, end, inv, val, &msg, NULL))) goto doc_end;
+        if (likely(read_str(&cur, end, flg, val, &msg, NULL))) goto doc_end;
         goto fail_string;
     }
     if (*cur == 't') {
@@ -5044,7 +5220,6 @@ static_inline yyjson_doc *read_root_minify(u8 *hdr, u8 *cur, u8 *end,
     const char *msg; /* error message */
 
     bool raw; /* read number as raw */
-    bool inv; /* allow invalid unicode */
     u8 *raw_end; /* raw end for null-terminator */
     u8 **pre; /* previous raw end pointer */
 
@@ -5062,7 +5237,6 @@ static_inline yyjson_doc *read_root_minify(u8 *hdr, u8 *cur, u8 *end,
     ctn = val;
     ctn_len = 0;
     raw = has_read_flag(NUMBER_AS_RAW) || has_read_flag(BIGNUM_AS_RAW);
-    inv = has_read_flag(ALLOW_INVALID_UNICODE) != 0;
     raw_end = NULL;
     pre = raw ? &raw_end : NULL;
 
@@ -5108,7 +5282,7 @@ arr_val_begin:
     if (*cur == '"') {
         val_incr();
         ctn_len++;
-        if (likely(read_str(&cur, end, inv, val, &msg, NULL))) goto arr_val_end;
+        if (likely(read_str(&cur, end, flg, val, &msg, NULL))) goto arr_val_end;
         goto fail_string;
     }
     if (*cur == 't') {
@@ -5208,7 +5382,7 @@ obj_key_begin:
     if (likely(*cur == '"')) {
         val_incr();
         ctn_len++;
-        if (likely(read_str(&cur, end, inv, val, &msg, NULL))) goto obj_key_end;
+        if (likely(read_str(&cur, end, flg, val, &msg, NULL))) goto obj_key_end;
         goto fail_string;
     }
     if (likely(*cur == '}')) {
@@ -5247,7 +5421,7 @@ obj_val_begin:
     if (*cur == '"') {
         val++;
         ctn_len++;
-        if (likely(read_str(&cur, end, inv, val, &msg, NULL))) goto obj_val_end;
+        if (likely(read_str(&cur, end, flg, val, &msg, NULL))) goto obj_val_end;
         goto fail_string;
     }
     if (char_is_num(*cur)) {
@@ -5430,7 +5604,6 @@ static_inline yyjson_doc *read_root_pretty(u8 *hdr, u8 *cur, u8 *end,
     const char *msg; /* error message */
 
     bool raw; /* read number as raw */
-    bool inv; /* allow invalid unicode */
     u8 *raw_end; /* raw end for null-terminator */
     u8 **pre; /* previous raw end pointer */
 
@@ -5448,7 +5621,6 @@ static_inline yyjson_doc *read_root_pretty(u8 *hdr, u8 *cur, u8 *end,
     ctn = val;
     ctn_len = 0;
     raw = has_read_flag(NUMBER_AS_RAW) || has_read_flag(BIGNUM_AS_RAW);
-    inv = has_read_flag(ALLOW_INVALID_UNICODE) != 0;
     raw_end = NULL;
     pre = raw ? &raw_end : NULL;
 
@@ -5509,7 +5681,7 @@ arr_val_begin:
     if (*cur == '"') {
         val_incr();
         ctn_len++;
-        if (likely(read_str(&cur, end, inv, val, &msg, NULL))) goto arr_val_end;
+        if (likely(read_str(&cur, end, flg, val, &msg, NULL))) goto arr_val_end;
         goto fail_string;
     }
     if (*cur == 't') {
@@ -5626,7 +5798,7 @@ obj_key_begin:
     if (likely(*cur == '"')) {
         val_incr();
         ctn_len++;
-        if (likely(read_str(&cur, end, inv, val, &msg, NULL))) goto obj_key_end;
+        if (likely(read_str(&cur, end, flg, val, &msg, NULL))) goto obj_key_end;
         goto fail_string;
     }
     if (likely(*cur == '}')) {
@@ -5669,7 +5841,7 @@ obj_val_begin:
     if (*cur == '"') {
         val++;
         ctn_len++;
-        if (likely(read_str(&cur, end, inv, val, &msg, NULL))) goto obj_val_end;
+        if (likely(read_str(&cur, end, flg, val, &msg, NULL))) goto obj_val_end;
         goto fail_string;
     }
     if (char_is_num(*cur)) {
@@ -6250,7 +6422,6 @@ yyjson_doc *yyjson_incr_read(yyjson_incr_state *state, size_t len,
     const char *msg; /* error message */
 
     bool raw; /* read number as raw */
-    bool inv; /* allow invalid unicode */
     u8 *raw_end; /* raw end for null-terminator */
     u8 **pre; /* previous raw end pointer */
     u8 **con = NULL; /* for incremental string parsing */
@@ -6286,7 +6457,6 @@ yyjson_doc *yyjson_incr_read(yyjson_incr_state *state, size_t len,
 
     alc_max = USIZE_MAX / sizeof(yyjson_val);
     raw = has_read_flag(NUMBER_AS_RAW) || has_read_flag(BIGNUM_AS_RAW);
-    inv = has_read_flag(ALLOW_INVALID_UNICODE) != 0;
     raw_end = NULL;
     pre = raw ? &raw_end : NULL;
 
@@ -6373,7 +6543,7 @@ doc_begin:
         goto fail_number;
     }
     if (*cur == '"') {
-        if (likely(read_str(&cur, end, inv, val, &msg, con))) goto doc_end;
+        if (likely(read_str(&cur, end, flg, val, &msg, con))) goto doc_end;
         goto fail_string;
     }
     if (*cur == 't') {
@@ -6438,7 +6608,7 @@ arr_val_continue:
     if (*cur == '"') {
         val_incr();
         ctn_len++;
-        if (likely(read_str(&cur, end, inv, val, &msg, con))) goto arr_val_end;
+        if (likely(read_str(&cur, end, flg, val, &msg, con))) goto arr_val_end;
         goto fail_string;
     }
     if (*cur == 't') {
@@ -6546,7 +6716,7 @@ obj_key_continue:
     if (likely(*cur == '"')) {
         val_incr();
         ctn_len++;
-        if (likely(read_str(&cur, end, inv, val, &msg, con))) goto obj_key_end;
+        if (likely(read_str(&cur, end, flg, val, &msg, con))) goto obj_key_end;
         goto fail_string;
     }
     if (likely(*cur == '}')) {
@@ -6588,7 +6758,7 @@ obj_val_continue:
     if (*cur == '"') {
         val++;
         ctn_len++;
-        if (likely(read_str(&cur, end, inv, val, &msg, con))) goto obj_val_end;
+        if (likely(read_str(&cur, end, flg, val, &msg, con))) goto obj_val_end;
         goto fail_string;
     }
     if (char_is_num(*cur)) {
@@ -7474,7 +7644,7 @@ static_noinline u8 *write_f32_raw(u8 *buf, u64 raw_f64,
     bool sign;
 
     /* cast double to float */
-    raw = f32_to_raw(f64_to_f32(f64_from_raw(raw_f64)));
+    raw = f32_to_bits(f64_to_f32(f64_from_bits(raw_f64)));
 
     /* decode raw bytes from IEEE-754 double format. */
     sign = (bool)(raw >> (F32_BITS - 1));
@@ -7948,7 +8118,7 @@ static_noinline u8 *write_f64_raw(u8 *buf, u64 raw, yyjson_write_flag flg) {
 #else
     int dig = F64_DEC_DIG;
 #endif
-    f64 val = f64_from_raw(raw);
+    f64 val = f64_from_bits(raw);
     int len = snprintf_num(buf, FP_BUF_LEN, "%.*g", dig, val);
     return write_fp_reformat(buf, len, flg, false);
 }
@@ -7960,7 +8130,7 @@ static_noinline u8 *write_f32_raw(u8 *buf, u64 raw, yyjson_write_flag flg) {
 #else
     int dig = F32_DEC_DIG;
 #endif
-    f64 val = (f64)f64_to_f32(f64_from_raw(raw));
+    f64 val = (f64)f64_to_f32(f64_from_bits(raw));
     int len = snprintf_num(buf, FP_BUF_LEN, "%.*g", dig, val);
     return write_fp_reformat(buf, len, flg, false);
 }
@@ -7968,7 +8138,7 @@ static_noinline u8 *write_f32_raw(u8 *buf, u64 raw, yyjson_write_flag flg) {
 /** Write a double number (requires 40 bytes buffer). */
 static_noinline u8 *write_f64_raw_fixed(u8 *buf, u64 raw,
                                         yyjson_write_flag flg, u32 prec) {
-    f64 val = (f64)f64_from_raw(raw);
+    f64 val = (f64)f64_from_bits(raw);
     if (-1e21 < val && val < 1e21) {
         int len = snprintf_num(buf, FP_BUF_LEN, "%.*f", (int)prec, val);
         return write_fp_reformat(buf, len, flg, true);

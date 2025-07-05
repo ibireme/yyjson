@@ -64,6 +64,13 @@ static void validate_str_read(string_val *src,
 #endif
 }
 
+/// `src` should be decoded as `dst` with `ALLOW_EXT_ESCAPE`.
+static void validate_ext_read(string_val src,
+                              string_val dst) {
+    validate_str_read(&src, &dst, YYJSON_READ_ALLOW_EXT_ESCAPE);
+    validate_str_read(&src, NULL, 0);
+}
+
 static void validate_roundtrip(char *str, usize len, yyjson_write_flag flg) {
 #if !YYJSON_DISABLE_READER && !YYJSON_DISABLE_WRITER
     
@@ -759,4 +766,80 @@ yy_test_case(test_string) {
         });
     }
     
+    
+    // extended escape
+#if !YYJSON_DISABLE_NON_STANDARD
+    validate_ext_read((string_val){"abc" "\\a" "def", 8},
+                      (string_val){"abc" "\x07" "def", 7});
+    
+    validate_ext_read((string_val){"abc" "\\e" "def", 8},
+                      (string_val){"abc" "\x1B" "def", 7});
+    
+    validate_ext_read((string_val){"abc" "\\v" "def", 8},
+                      (string_val){"abc" "\x0B" "def", 7});
+    
+    validate_ext_read((string_val){"abc" "\\'" "def", 8},
+                      (string_val){"abc" "'" "def", 7});
+    
+    validate_ext_read((string_val){"abc" "\\?" "def", 8},
+                      (string_val){"abc" "?" "def", 7});
+    
+    validate_ext_read((string_val){"abc" "\\0" "def", 8},
+                      (string_val){"abc" "\x00" "def", 7});
+    
+    validate_ext_read((string_val){"abc" "\\012" "def", 10},
+                      (string_val){NULL, 0});
+    
+    validate_ext_read((string_val){"abc" "\\1" "def", 8},
+                      (string_val){NULL, 0});
+    
+    validate_ext_read((string_val){"abc" "\\9" "def", 8},
+                      (string_val){NULL, 0});
+    
+    validate_ext_read((string_val){"abc" "\\P" "def", 8},
+                      (string_val){"abc" "P" "def", 7});
+    
+    validate_ext_read((string_val){"abc" "\\xAM" "def", 10},
+                      (string_val){NULL, 0});
+    
+    validate_ext_read((string_val){"abc" "\\x00" "def", 10},
+                      (string_val){"abc" "\x00" "def", 7});
+    
+    validate_ext_read((string_val){"abc" "\\x01" "def", 10},
+                      (string_val){"abc" "\x01" "def", 7});
+    
+    validate_ext_read((string_val){"abc" "\\x7F" "def", 10},
+                      (string_val){"abc" "\x7F" "def", 7});
+    
+    validate_ext_read((string_val){"abc" "\\x80" "def", 10},
+                      (string_val){"abc" "\xC2\x80" "def", 8});
+    
+    validate_ext_read((string_val){"abc" "\\xFF" "def", 10},
+                      (string_val){"abc" "\xC3\xBF" "def", 8});
+    
+    validate_ext_read((string_val){"abc" "\\xfF" "def", 10},
+                      (string_val){"abc" "\xC3\xBF" "def", 8});
+    
+    validate_ext_read((string_val){"abc" "\\\n" "def", 8},
+                      (string_val){"abc" "" "def", 6});
+    
+    validate_ext_read((string_val){"abc" "\\\r" "def", 8},
+                      (string_val){"abc" "" "def", 6});
+    
+    validate_ext_read((string_val){"abc" "\\\r\n" "def", 9},
+                      (string_val){"abc" "" "def", 6});
+    
+    validate_ext_read((string_val){"abc" "\\\n\r" "def", 9},
+                      (string_val){NULL, 0});
+    
+    validate_ext_read((string_val){"abc" "\\\u2028" "def", 10},
+                      (string_val){"abc" "" "def", 6});
+    
+    validate_ext_read((string_val){"abc" "\\\u2029" "def", 10},
+                      (string_val){"abc" "" "def", 6});
+    
+    validate_ext_read((string_val){"abc" "\\\u202F" "def", 10},
+                      (string_val){"abc" "\u202F" "def", 9});
+    
+#endif
 }
