@@ -432,7 +432,7 @@ static_inline bool write_flag_eq(yyjson_write_flag flg, yyjson_write_flag chk) {
 #define MSG_FWRITE      "failed to write file"
 #define MSG_FCLOSE      "failed to close file"
 #define MSG_MALLOC      "failed to allocate memory"
-#define MSG_CHAT_T      "invalid literal, expected 'true'"
+#define MSG_CHAR_T      "invalid literal, expected 'true'"
 #define MSG_CHAR_F      "invalid literal, expected 'false'"
 #define MSG_CHAR_N      "invalid literal, expected 'null'"
 #define MSG_CHAR        "unexpected character, expected a JSON value"
@@ -1011,20 +1011,20 @@ static_inline bool hex_load_2(const u8 *src, u8 *dst) {
 
 #if !YYJSON_DISABLE_FAST_FP_CONV
 
-/** Maximum exact pow10 exponent for double value. */
-#define F64_POW10_EXP_MAX_EXACT 22
+/** Maximum pow10 exponent that can be represented exactly as a float64. */
+#define F64_POW10_MAX_EXACT_EXP 22
 
 /** Cached pow10 table. */
-static const f64 f64_pow10_table[] = {
+static const f64 f64_pow10_table[F64_POW10_MAX_EXACT_EXP + 1] = {
     1e0, 1e1, 1e2, 1e3, 1e4, 1e5, 1e6, 1e7, 1e8, 1e9, 1e10, 1e11, 1e12,
     1e13, 1e14, 1e15, 1e16, 1e17, 1e18, 1e19, 1e20, 1e21, 1e22
 };
 
-/** Maximum exponent of exact pow10 */
-#define U64_POW10_MAX_EXP 19
+/** Maximum pow10 exponent that can be represented exactly as a uint64. */
+#define U64_POW10_MAX_EXACT_EXP 19
 
 /** Table: [ 10^0, ..., 10^19 ] (generate with misc/make_tables.c) */
-static const u64 u64_pow10_table[U64_POW10_MAX_EXP + 1] = {
+static const u64 u64_pow10_table[U64_POW10_MAX_EXACT_EXP + 1] = {
     U64(0x00000000, 0x00000001), U64(0x00000000, 0x0000000A),
     U64(0x00000000, 0x00000064), U64(0x00000000, 0x000003E8),
     U64(0x00000000, 0x00002710), U64(0x00000000, 0x000186A0),
@@ -3451,8 +3451,8 @@ static_inline void bigint_mul_pow2(bigint *big, u32 exp) {
  @param exp An exponent integer (cannot be 0).
  */
 static_inline void bigint_mul_pow10(bigint *big, i32 exp) {
-    for (; exp >= U64_POW10_MAX_EXP; exp -= U64_POW10_MAX_EXP) {
-        bigint_mul_u64(big, u64_pow10_table[U64_POW10_MAX_EXP]);
+    for (; exp >= U64_POW10_MAX_EXACT_EXP; exp -= U64_POW10_MAX_EXACT_EXP) {
+        bigint_mul_u64(big, u64_pow10_table[U64_POW10_MAX_EXACT_EXP]);
     }
     if (exp) {
         bigint_mul_u64(big, u64_pow10_table[exp]);
@@ -3958,8 +3958,8 @@ digi_finish:
      */
 #if YYJSON_DOUBLE_MATH_CORRECT
     if (sig < ((u64)1 << 53) &&
-        exp >= -F64_POW10_EXP_MAX_EXACT &&
-        exp <= +F64_POW10_EXP_MAX_EXACT) {
+        exp >= -F64_POW10_MAX_EXACT_EXP &&
+        exp <= +F64_POW10_MAX_EXACT_EXP) {
         f64 dbl = (f64)sig;
         if (exp < 0) {
             dbl /= f64_pow10_table[-exp];
@@ -5135,7 +5135,7 @@ doc_end:
 fail_string:        return_err(cur, INVALID_STRING, msg);
 fail_number:        return_err(cur, INVALID_NUMBER, msg);
 fail_alloc:         return_err(cur, MEMORY_ALLOCATION, MSG_MALLOC);
-fail_literal_true:  return_err(cur, LITERAL, MSG_CHAT_T);
+fail_literal_true:  return_err(cur, LITERAL, MSG_CHAR_T);
 fail_literal_false: return_err(cur, LITERAL, MSG_CHAR_F);
 fail_literal_null:  return_err(cur, LITERAL, MSG_CHAR_N);
 fail_character:     return_err(cur, UNEXPECTED_CHARACTER, MSG_CHAR);
@@ -5514,7 +5514,7 @@ fail_string:            return_err(cur, INVALID_STRING, msg);
 fail_number:            return_err(cur, INVALID_NUMBER, msg);
 fail_alloc:             return_err(cur, MEMORY_ALLOCATION, MSG_MALLOC);
 fail_trailing_comma:    return_err(cur, JSON_STRUCTURE, MSG_COMMA);
-fail_literal_true:      return_err(cur, LITERAL, MSG_CHAT_T);
+fail_literal_true:      return_err(cur, LITERAL, MSG_CHAR_T);
 fail_literal_false:     return_err(cur, LITERAL, MSG_CHAR_F);
 fail_literal_null:      return_err(cur, LITERAL, MSG_CHAR_N);
 fail_character_val:     return_err(cur, UNEXPECTED_CHARACTER, MSG_CHAR);
@@ -5939,7 +5939,7 @@ fail_string:            return_err(cur, INVALID_STRING, msg);
 fail_number:            return_err(cur, INVALID_NUMBER, msg);
 fail_alloc:             return_err(cur, MEMORY_ALLOCATION, MSG_MALLOC);
 fail_trailing_comma:    return_err(cur, JSON_STRUCTURE, MSG_COMMA);
-fail_literal_true:      return_err(cur, LITERAL, MSG_CHAT_T);
+fail_literal_true:      return_err(cur, LITERAL, MSG_CHAR_T);
 fail_literal_false:     return_err(cur, LITERAL, MSG_CHAR_F);
 fail_literal_null:      return_err(cur, LITERAL, MSG_CHAR_N);
 fail_character_val:     return_err(cur, UNEXPECTED_CHARACTER, MSG_CHAR);
@@ -6883,7 +6883,7 @@ fail_string:            return_err(cur, INVALID_STRING, msg);
 fail_number:            return_err(cur, INVALID_NUMBER, msg);
 fail_alloc:             return_err(cur, MEMORY_ALLOCATION, MSG_MALLOC);
 fail_trailing_comma:    return_err(cur, JSON_STRUCTURE, MSG_COMMA);
-fail_literal_true:      return_err(cur, LITERAL, MSG_CHAT_T);
+fail_literal_true:      return_err(cur, LITERAL, MSG_CHAR_T);
 fail_literal_false:     return_err(cur, LITERAL, MSG_CHAR_F);
 fail_literal_null:      return_err(cur, LITERAL, MSG_CHAR_N);
 fail_character_val:     return_err(cur, UNEXPECTED_CHARACTER, MSG_CHAR);
