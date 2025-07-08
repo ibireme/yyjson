@@ -4759,13 +4759,13 @@ struct yyjson_doc {
 yyjson_api_inline bool unsafe_yyjson_is_str_noesc(const char *str, size_t len) {
 #if YYJSON_HAS_CONSTANT_P && \
     (!YYJSON_IS_REAL_GCC || yyjson_gcc_available(4, 4, 0))
-    if (yyjson_constant_p(len) && len <= 32) {
+    if (yyjson_constant_p(len) & (len <= 32)) {
         /*
          Same as the following loop:
 
          for (size_t i = 0; i < len; i++) {
              char c = str[i];
-             if (c < ' ' || c > '~' || c == '"' || c == '\\') return false;
+             if ((c < ' ') | (c > '~') | (c == '"') | (c == '\\')) return false;
          }
 
          GCC evaluates it at compile time only if the string length is within 17
@@ -4780,7 +4780,7 @@ yyjson_api_inline bool unsafe_yyjson_is_str_noesc(const char *str, size_t len) {
 #       define yyjson_check_char_noesc(i) \
             if (i < len) { \
                 char c = str[i]; \
-                if (c < ' ' || c > '~' || c == '"' || c == '\\') return false; }
+                if ((c < ' ') | (c > '~') | (c == '"') | (c == '\\')) return false; }
         yyjson_repeat32_incr(yyjson_check_char_noesc)
 #       undef yyjson_repeat32_incr
 #       undef yyjson_check_char_noesc
@@ -5225,7 +5225,7 @@ yyjson_api_inline size_t yyjson_get_len(yyjson_val *val) {
 }
 
 yyjson_api_inline bool yyjson_equals_str(yyjson_val *val, const char *str) {
-    if (yyjson_likely(val && str)) {
+    if (yyjson_likely((val != NULL) & (str != NULL))) {
         return unsafe_yyjson_is_str(val) &&
                unsafe_yyjson_equals_str(val, str);
     }
@@ -5234,7 +5234,7 @@ yyjson_api_inline bool yyjson_equals_str(yyjson_val *val, const char *str) {
 
 yyjson_api_inline bool yyjson_equals_strn(yyjson_val *val, const char *str,
                                           size_t len) {
-    if (yyjson_likely(val && str)) {
+    if (yyjson_likely((val != NULL) & (str != NULL))) {
         return unsafe_yyjson_is_str(val) &&
                unsafe_yyjson_equals_strn(val, str, len);
     }
@@ -5244,7 +5244,7 @@ yyjson_api_inline bool yyjson_equals_strn(yyjson_val *val, const char *str,
 yyjson_api bool unsafe_yyjson_equals(yyjson_val *lhs, yyjson_val *rhs);
 
 yyjson_api_inline bool yyjson_equals(yyjson_val *lhs, yyjson_val *rhs) {
-    if (yyjson_unlikely(!lhs || !rhs)) return false;
+    if (yyjson_unlikely(!lhs | !rhs)) return false;
     return unsafe_yyjson_equals(lhs, rhs);
 }
 
@@ -5394,7 +5394,7 @@ yyjson_api_inline yyjson_val *yyjson_arr_get_last(yyjson_val *arr) {
 
 yyjson_api_inline bool yyjson_arr_iter_init(yyjson_val *arr,
                                             yyjson_arr_iter *iter) {
-    if (yyjson_likely(yyjson_is_arr(arr) && iter)) {
+    if (yyjson_likely(yyjson_is_arr(arr) & iter)) {
         iter->idx = 0;
         iter->max = unsafe_yyjson_get_len(arr);
         iter->cur = unsafe_yyjson_get_first(arr);
@@ -5443,7 +5443,7 @@ yyjson_api_inline yyjson_val *yyjson_obj_get(yyjson_val *obj,
 yyjson_api_inline yyjson_val *yyjson_obj_getn(yyjson_val *obj,
                                               const char *_key,
                                               size_t key_len) {
-    if (yyjson_likely(yyjson_is_obj(obj) && _key)) {
+    if (yyjson_likely(yyjson_is_obj(obj) & (_key != NULL))) {
         size_t len = unsafe_yyjson_get_len(obj);
         yyjson_val *key = unsafe_yyjson_get_first(obj);
         while (len-- > 0) {
@@ -5462,7 +5462,7 @@ yyjson_api_inline yyjson_val *yyjson_obj_getn(yyjson_val *obj,
 
 yyjson_api_inline bool yyjson_obj_iter_init(yyjson_val *obj,
                                             yyjson_obj_iter *iter) {
-    if (yyjson_likely(yyjson_is_obj(obj) && iter)) {
+    if (yyjson_likely(yyjson_is_obj(obj) & (iter != NULL))) {
         iter->idx = 0;
         iter->max = unsafe_yyjson_get_len(obj);
         iter->cur = unsafe_yyjson_get_first(obj);
@@ -5521,7 +5521,7 @@ yyjson_api_inline yyjson_val *yyjson_obj_iter_getn(yyjson_obj_iter *iter,
                 return cur + 1;
             }
             cur = next;
-            if (idx == iter->max && iter->idx < iter->max) {
+            if ((idx == iter->max) & (iter->idx < iter->max)) {
                 idx = 0;
                 max = iter->idx;
                 cur = unsafe_yyjson_get_first(iter->obj);
@@ -5797,13 +5797,13 @@ yyjson_api bool unsafe_yyjson_mut_equals(yyjson_mut_val *lhs,
 
 yyjson_api_inline bool yyjson_mut_equals(yyjson_mut_val *lhs,
                                          yyjson_mut_val *rhs) {
-    if (yyjson_unlikely(!lhs || !rhs)) return false;
+    if (yyjson_unlikely(!lhs | !rhs)) return false;
     return unsafe_yyjson_mut_equals(lhs, rhs);
 }
 
 yyjson_api_inline bool yyjson_mut_set_raw(yyjson_mut_val *val,
                                           const char *raw, size_t len) {
-    if (yyjson_unlikely(!val || !raw)) return false;
+    if (yyjson_unlikely(!val | !raw)) return false;
     unsafe_yyjson_set_raw(val, raw, len);
     return true;
 }
@@ -5872,14 +5872,14 @@ yyjson_api_inline bool yyjson_mut_set_fp_to_float(yyjson_mut_val *val,
 
 yyjson_api_inline bool yyjson_mut_set_str(yyjson_mut_val *val,
                                           const char *str) {
-    if (yyjson_unlikely(!val || !str)) return false;
+    if (yyjson_unlikely(!val | !str)) return false;
     unsafe_yyjson_set_str(val, str);
     return true;
 }
 
 yyjson_api_inline bool yyjson_mut_set_strn(yyjson_mut_val *val,
                                            const char *str, size_t len) {
-    if (yyjson_unlikely(!val || !str)) return false;
+    if (yyjson_unlikely(!val | !str)) return false;
     unsafe_yyjson_set_strn(val, str, len);
     return true;
 }
@@ -5920,7 +5920,7 @@ yyjson_api_inline bool yyjson_mut_set_obj(yyjson_mut_val *val) {
     return NULL
 
 #define yyjson_mut_val_one_str(func) \
-    if (yyjson_likely(doc && str)) { \
+    if (yyjson_likely((doc != NULL) & (str != NULL))) { \
         yyjson_mut_val *val = unsafe_yyjson_mut_val(doc, 1); \
         if (yyjson_likely(val)) { \
             func \
@@ -6088,7 +6088,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_get_last(
 
 yyjson_api_inline bool yyjson_mut_arr_iter_init(yyjson_mut_val *arr,
                                                 yyjson_mut_arr_iter *iter) {
-    if (yyjson_likely(yyjson_mut_is_arr(arr) && iter)) {
+    if (yyjson_likely(yyjson_mut_is_arr(arr) & iter)) {
         iter->idx = 0;
         iter->max = unsafe_yyjson_get_len(arr);
         iter->cur = iter->max ? (yyjson_mut_val *)arr->uni.ptr : NULL;
@@ -6125,7 +6125,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_iter_next(
 
 yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_iter_remove(
     yyjson_mut_arr_iter *iter) {
-    if (yyjson_likely(iter && 0 < iter->idx && iter->idx <= iter->max)) {
+    if (yyjson_likely(iter && ((0 < iter->idx) & (iter->idx <= iter->max)))) {
         yyjson_mut_val *prev = iter->pre;
         yyjson_mut_val *cur = iter->cur;
         yyjson_mut_val *next = cur->next;
@@ -6158,8 +6158,8 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_arr(yyjson_mut_doc *doc) {
 }
 
 #define yyjson_mut_arr_with_func(func) \
-    if (yyjson_likely(doc && ((0 < count && count < \
-        (~(size_t)0) / sizeof(yyjson_mut_val) && vals) || count == 0))) { \
+    if (yyjson_likely((doc != NULL) & (((0 < count) & \
+       (count < (~(size_t)0) / sizeof(yyjson_mut_val)) & (vals != NULL)) | (count == 0)))) { \
         yyjson_mut_val *arr = unsafe_yyjson_mut_val(doc, 1 + count); \
         if (yyjson_likely(arr)) { \
             arr->tag = ((uint64_t)count << YYJSON_TAG_BIT) | YYJSON_TYPE_ARR; \
@@ -6282,7 +6282,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_with_str(
 
 yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_with_strn(
     yyjson_mut_doc *doc, const char **vals, const size_t *lens, size_t count) {
-    if (yyjson_unlikely(count > 0 && !lens)) return NULL;
+    if (yyjson_unlikely((count > 0) & !lens)) return NULL;
     yyjson_mut_arr_with_func({
         if (yyjson_unlikely(!vals[i])) return NULL;
         unsafe_yyjson_set_strn(val, vals[i], lens[i]);
@@ -6307,7 +6307,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_with_strncpy(
     yyjson_mut_doc *doc, const char **vals, const size_t *lens, size_t count) {
     size_t len;
     const char *str, *new_str;
-    if (yyjson_unlikely(count > 0 && !lens)) return NULL;
+    if (yyjson_unlikely((count > 0) & !lens)) return NULL;
     yyjson_mut_arr_with_func({
         str = vals[i];
         if (yyjson_unlikely(!str)) return NULL;
@@ -6326,9 +6326,10 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_with_strncpy(
  * Mutable JSON Array Modification API (Implementation)
  *============================================================================*/
 
+//TODO refactor: check opposite condition and return false. proceed in the other case.
 yyjson_api_inline bool yyjson_mut_arr_insert(yyjson_mut_val *arr,
                                              yyjson_mut_val *val, size_t idx) {
-    if (yyjson_likely(yyjson_mut_is_arr(arr) && val)) {
+    if (yyjson_likely(yyjson_mut_is_arr(arr) & (val != NULL))) {
         size_t len = unsafe_yyjson_get_len(arr);
         if (yyjson_likely(idx <= len)) {
             unsafe_yyjson_set_len(arr, len + 1);
@@ -6357,9 +6358,10 @@ yyjson_api_inline bool yyjson_mut_arr_insert(yyjson_mut_val *arr,
     return false;
 }
 
+//TODO refactor: check opposite condition and return false. proceed in the other case.
 yyjson_api_inline bool yyjson_mut_arr_append(yyjson_mut_val *arr,
                                              yyjson_mut_val *val) {
-    if (yyjson_likely(yyjson_mut_is_arr(arr) && val)) {
+    if (yyjson_likely(yyjson_mut_is_arr(arr) & (val != NULL))) {
         size_t len = unsafe_yyjson_get_len(arr);
         unsafe_yyjson_set_len(arr, len + 1);
         if (len == 0) {
@@ -6376,9 +6378,10 @@ yyjson_api_inline bool yyjson_mut_arr_append(yyjson_mut_val *arr,
     return false;
 }
 
+//TODO refactor: check opposite condition and return false. proceed in the other case.
 yyjson_api_inline bool yyjson_mut_arr_prepend(yyjson_mut_val *arr,
                                               yyjson_mut_val *val) {
-    if (yyjson_likely(yyjson_mut_is_arr(arr) && val)) {
+    if (yyjson_likely(yyjson_mut_is_arr(arr) & (val != NULL))) {
         size_t len = unsafe_yyjson_get_len(arr);
         unsafe_yyjson_set_len(arr, len + 1);
         if (len == 0) {
@@ -6395,6 +6398,7 @@ yyjson_api_inline bool yyjson_mut_arr_prepend(yyjson_mut_val *arr,
     return false;
 }
 
+//TODO refactor: check opposite condition and return NULL. proceed in the other case.
 yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_replace(yyjson_mut_val *arr,
                                                          size_t idx,
                                                          yyjson_mut_val *val) {
@@ -6423,6 +6427,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_replace(yyjson_mut_val *arr,
     return NULL;
 }
 
+//TODO refactor: check opposite condition and return NULL. proceed in the other case.
 yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_remove(yyjson_mut_val *arr,
                                                         size_t idx) {
     if (yyjson_likely(yyjson_mut_is_arr(arr))) {
@@ -6447,6 +6452,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_remove(yyjson_mut_val *arr,
     return NULL;
 }
 
+//TODO refactor: check opposite condition and return NULL. proceed in the other case.
 yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_remove_first(
     yyjson_mut_val *arr) {
     if (yyjson_likely(yyjson_mut_is_arr(arr))) {
@@ -6466,6 +6472,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_remove_first(
     return NULL;
 }
 
+//TODO refactor: check opposite condition and return NULL. proceed in the other case.
 yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_remove_last(
     yyjson_mut_val *arr) {
     if (yyjson_likely(yyjson_mut_is_arr(arr))) {
@@ -6488,6 +6495,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_remove_last(
     return NULL;
 }
 
+//TODO refactor: check opposite condition and return false. proceed in the other case.
 yyjson_api_inline bool yyjson_mut_arr_remove_range(yyjson_mut_val *arr,
                                                    size_t _idx, size_t _len) {
     if (yyjson_likely(yyjson_mut_is_arr(arr))) {
@@ -6510,6 +6518,7 @@ yyjson_api_inline bool yyjson_mut_arr_remove_range(yyjson_mut_val *arr,
     return false;
 }
 
+//TODO refactor: check opposite condition and return false. proceed in the other case.
 yyjson_api_inline bool yyjson_mut_arr_clear(yyjson_mut_val *arr) {
     if (yyjson_likely(yyjson_mut_is_arr(arr))) {
         unsafe_yyjson_set_len(arr, 0);
@@ -6518,10 +6527,11 @@ yyjson_api_inline bool yyjson_mut_arr_clear(yyjson_mut_val *arr) {
     return false;
 }
 
+//TODO refactor: check opposite condition and return false. proceed in the other case.
 yyjson_api_inline bool yyjson_mut_arr_rotate(yyjson_mut_val *arr,
                                              size_t idx) {
-    if (yyjson_likely(yyjson_mut_is_arr(arr) &&
-                      unsafe_yyjson_get_len(arr) > idx)) {
+    if (yyjson_likely(yyjson_mut_is_arr(arr) &
+                      (unsafe_yyjson_get_len(arr) > idx))) {
         yyjson_mut_val *val = (yyjson_mut_val *)arr->uni.ptr;
         while (idx-- > 0) val = val->next;
         arr->uni.ptr = (void *)val;
@@ -6541,155 +6551,171 @@ yyjson_api_inline bool yyjson_mut_arr_add_val(yyjson_mut_val *arr,
     return yyjson_mut_arr_append(arr, val);
 }
 
+//TODO: refactor. check opposite condition and return false. proceed in the other case.
 yyjson_api_inline bool yyjson_mut_arr_add_null(yyjson_mut_doc *doc,
                                                yyjson_mut_val *arr) {
-    if (yyjson_likely(doc && yyjson_mut_is_arr(arr))) {
+    if (yyjson_likely((doc != NULL) & yyjson_mut_is_arr(arr))) {
         yyjson_mut_val *val = yyjson_mut_null(doc);
         return yyjson_mut_arr_append(arr, val);
     }
     return false;
 }
 
+//TODO: refactor. check opposite condition and return false. proceed in the other case.
 yyjson_api_inline bool yyjson_mut_arr_add_true(yyjson_mut_doc *doc,
                                                yyjson_mut_val *arr) {
-    if (yyjson_likely(doc && yyjson_mut_is_arr(arr))) {
+    if (yyjson_likely((doc != NULL) & yyjson_mut_is_arr(arr))) {
         yyjson_mut_val *val = yyjson_mut_true(doc);
         return yyjson_mut_arr_append(arr, val);
     }
     return false;
 }
 
+//TODO: refactor. check opposite condition and return false. proceed in the other case.
 yyjson_api_inline bool yyjson_mut_arr_add_false(yyjson_mut_doc *doc,
                                                 yyjson_mut_val *arr) {
-    if (yyjson_likely(doc && yyjson_mut_is_arr(arr))) {
+    if (yyjson_likely((doc != NULL) & yyjson_mut_is_arr(arr))) {
         yyjson_mut_val *val = yyjson_mut_false(doc);
         return yyjson_mut_arr_append(arr, val);
     }
     return false;
 }
 
+//TODO: refactor. check opposite condition and return false. proceed in the other case.
 yyjson_api_inline bool yyjson_mut_arr_add_bool(yyjson_mut_doc *doc,
                                                yyjson_mut_val *arr,
                                                bool _val) {
-    if (yyjson_likely(doc && yyjson_mut_is_arr(arr))) {
+    if (yyjson_likely((doc != NULL) & yyjson_mut_is_arr(arr))) {
         yyjson_mut_val *val = yyjson_mut_bool(doc, _val);
         return yyjson_mut_arr_append(arr, val);
     }
     return false;
 }
 
+//TODO: refactor. check opposite condition and return false. proceed in the other case.
 yyjson_api_inline bool yyjson_mut_arr_add_uint(yyjson_mut_doc *doc,
                                                yyjson_mut_val *arr,
                                                uint64_t num) {
-    if (yyjson_likely(doc && yyjson_mut_is_arr(arr))) {
+    if (yyjson_likely((doc != NULL) & yyjson_mut_is_arr(arr))) {
         yyjson_mut_val *val = yyjson_mut_uint(doc, num);
         return yyjson_mut_arr_append(arr, val);
     }
     return false;
 }
 
+//TODO: refactor. check opposite condition and return false. proceed in the other case.
 yyjson_api_inline bool yyjson_mut_arr_add_sint(yyjson_mut_doc *doc,
                                                yyjson_mut_val *arr,
                                                int64_t num) {
-    if (yyjson_likely(doc && yyjson_mut_is_arr(arr))) {
+    if (yyjson_likely((doc != NULL) & yyjson_mut_is_arr(arr))) {
         yyjson_mut_val *val = yyjson_mut_sint(doc, num);
         return yyjson_mut_arr_append(arr, val);
     }
     return false;
 }
 
+//TODO: refactor. check opposite condition and return false. proceed in the other case.
 yyjson_api_inline bool yyjson_mut_arr_add_int(yyjson_mut_doc *doc,
                                               yyjson_mut_val *arr,
                                               int64_t num) {
-    if (yyjson_likely(doc && yyjson_mut_is_arr(arr))) {
+    if (yyjson_likely((doc != NULL) & yyjson_mut_is_arr(arr))) {
         yyjson_mut_val *val = yyjson_mut_sint(doc, num);
         return yyjson_mut_arr_append(arr, val);
     }
     return false;
 }
 
+//TODO: refactor. check opposite condition and return false. proceed in the other case.
 yyjson_api_inline bool yyjson_mut_arr_add_float(yyjson_mut_doc *doc,
                                                 yyjson_mut_val *arr,
                                                 float num) {
-    if (yyjson_likely(doc && yyjson_mut_is_arr(arr))) {
+    if (yyjson_likely((doc != NULL) & yyjson_mut_is_arr(arr))) {
         yyjson_mut_val *val = yyjson_mut_float(doc, num);
         return yyjson_mut_arr_append(arr, val);
     }
     return false;
 }
 
+//TODO: refactor. check opposite condition and return false. proceed in the other case.
 yyjson_api_inline bool yyjson_mut_arr_add_double(yyjson_mut_doc *doc,
                                                  yyjson_mut_val *arr,
                                                  double num) {
-    if (yyjson_likely(doc && yyjson_mut_is_arr(arr))) {
+    if (yyjson_likely((doc != NULL) & yyjson_mut_is_arr(arr))) {
         yyjson_mut_val *val = yyjson_mut_double(doc, num);
         return yyjson_mut_arr_append(arr, val);
     }
     return false;
 }
 
+//TODO: refactor. check opposite condition and return false. proceed in the other case.
 yyjson_api_inline bool yyjson_mut_arr_add_real(yyjson_mut_doc *doc,
                                                yyjson_mut_val *arr,
                                                double num) {
-    if (yyjson_likely(doc && yyjson_mut_is_arr(arr))) {
+    if (yyjson_likely((doc != NULL) & yyjson_mut_is_arr(arr))) {
         yyjson_mut_val *val = yyjson_mut_real(doc, num);
         return yyjson_mut_arr_append(arr, val);
     }
     return false;
 }
 
+//TODO: refactor. check opposite condition and return false. proceed in the other case.
 yyjson_api_inline bool yyjson_mut_arr_add_str(yyjson_mut_doc *doc,
                                               yyjson_mut_val *arr,
                                               const char *str) {
-    if (yyjson_likely(doc && yyjson_mut_is_arr(arr))) {
+    if (yyjson_likely((doc != NULL) & yyjson_mut_is_arr(arr))) {
         yyjson_mut_val *val = yyjson_mut_str(doc, str);
         return yyjson_mut_arr_append(arr, val);
     }
     return false;
 }
 
+//TODO: refactor. check opposite condition and return false. proceed in the other case.
 yyjson_api_inline bool yyjson_mut_arr_add_strn(yyjson_mut_doc *doc,
                                                yyjson_mut_val *arr,
                                                const char *str, size_t len) {
-    if (yyjson_likely(doc && yyjson_mut_is_arr(arr))) {
+    if (yyjson_likely((doc != NULL) & yyjson_mut_is_arr(arr))) {
         yyjson_mut_val *val = yyjson_mut_strn(doc, str, len);
         return yyjson_mut_arr_append(arr, val);
     }
     return false;
 }
 
+//TODO: refactor. check opposite condition and return false. proceed in the other case.
 yyjson_api_inline bool yyjson_mut_arr_add_strcpy(yyjson_mut_doc *doc,
                                                  yyjson_mut_val *arr,
                                                  const char *str) {
-    if (yyjson_likely(doc && yyjson_mut_is_arr(arr))) {
+    if (yyjson_likely((doc != NULL) & yyjson_mut_is_arr(arr))) {
         yyjson_mut_val *val = yyjson_mut_strcpy(doc, str);
         return yyjson_mut_arr_append(arr, val);
     }
     return false;
 }
 
+//TODO: refactor. check opposite condition and return false. proceed in the other case.
 yyjson_api_inline bool yyjson_mut_arr_add_strncpy(yyjson_mut_doc *doc,
                                                   yyjson_mut_val *arr,
                                                   const char *str, size_t len) {
-    if (yyjson_likely(doc && yyjson_mut_is_arr(arr))) {
+    if (yyjson_likely((doc != NULL) & yyjson_mut_is_arr(arr))) {
         yyjson_mut_val *val = yyjson_mut_strncpy(doc, str, len);
         return yyjson_mut_arr_append(arr, val);
     }
     return false;
 }
 
+//TODO: refactor. check opposite condition and return false. proceed in the other case.
 yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_add_arr(yyjson_mut_doc *doc,
                                                          yyjson_mut_val *arr) {
-    if (yyjson_likely(doc && yyjson_mut_is_arr(arr))) {
+    if (yyjson_likely((doc != NULL) & yyjson_mut_is_arr(arr))) {
         yyjson_mut_val *val = yyjson_mut_arr(doc);
         return yyjson_mut_arr_append(arr, val) ? val : NULL;
     }
     return NULL;
 }
 
+//TODO: refactor. check opposite condition and return false. proceed in the other case.
 yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_add_obj(yyjson_mut_doc *doc,
                                                          yyjson_mut_val *arr) {
-    if (yyjson_likely(doc && yyjson_mut_is_arr(arr))) {
+    if (yyjson_likely((doc != NULL) & yyjson_mut_is_arr(arr))) {
         yyjson_mut_val *val = yyjson_mut_obj(doc);
         return yyjson_mut_arr_append(arr, val) ? val : NULL;
     }
@@ -6715,7 +6741,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_obj_getn(yyjson_mut_val *obj,
                                                       const char *_key,
                                                       size_t key_len) {
     size_t len = yyjson_mut_obj_size(obj);
-    if (yyjson_likely(len && _key)) {
+    if (yyjson_likely(len & (_key != NULL))) {
         yyjson_mut_val *key = ((yyjson_mut_val *)obj->uni.ptr)->next->next;
         while (len-- > 0) {
             if (unsafe_yyjson_equals_strn(key, _key, key_len)) return key->next;
@@ -6733,7 +6759,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_obj_getn(yyjson_mut_val *obj,
 
 yyjson_api_inline bool yyjson_mut_obj_iter_init(yyjson_mut_val *obj,
                                                 yyjson_mut_obj_iter *iter) {
-    if (yyjson_likely(yyjson_mut_is_obj(obj) && iter)) {
+    if (yyjson_likely(yyjson_mut_is_obj(obj) & (iter != NULL))) {
         iter->idx = 0;
         iter->max = unsafe_yyjson_get_len(obj);
         iter->cur = iter->max ? (yyjson_mut_val *)obj->uni.ptr : NULL;
@@ -6756,6 +6782,7 @@ yyjson_api_inline bool yyjson_mut_obj_iter_has_next(yyjson_mut_obj_iter *iter) {
     return iter ? iter->idx < iter->max : false;
 }
 
+//TODO: refactor. check opposite condition and return NULL. proceed in the other case.
 yyjson_api_inline yyjson_mut_val *yyjson_mut_obj_iter_next(
     yyjson_mut_obj_iter *iter) {
     if (iter && iter->idx < iter->max) {
@@ -6773,9 +6800,10 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_obj_iter_get_val(
     return key ? key->next : NULL;
 }
 
+//TODO: refactor. check opposite condition and return false. proceed in the other case.
 yyjson_api_inline yyjson_mut_val *yyjson_mut_obj_iter_remove(
     yyjson_mut_obj_iter *iter) {
-    if (yyjson_likely(iter && 0 < iter->idx && iter->idx <= iter->max)) {
+    if (yyjson_likely(iter && ((0 < iter->idx) & (iter->idx <= iter->max)))) {
         yyjson_mut_val *prev = iter->pre;
         yyjson_mut_val *cur = iter->cur;
         yyjson_mut_val *next = cur->next->next;
@@ -6797,7 +6825,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_obj_iter_get(
 
 yyjson_api_inline yyjson_mut_val *yyjson_mut_obj_iter_getn(
     yyjson_mut_obj_iter *iter, const char *key, size_t key_len) {
-    if (iter && key) {
+    if ((iter != NULL) & (key != NULL)) {
         size_t idx = 0;
         size_t max = iter->max;
         yyjson_mut_val *pre, *cur = iter->cur;
@@ -6837,7 +6865,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_obj_with_str(yyjson_mut_doc *doc,
                                                           const char **keys,
                                                           const char **vals,
                                                           size_t count) {
-    if (yyjson_likely(doc && ((count > 0 && keys && vals) || (count == 0)))) {
+    if (yyjson_likely((doc != NULL) & (((count > 0) & (keys != NULL) & (vals != NULL)) | (count == 0)))) {
         yyjson_mut_val *obj = unsafe_yyjson_mut_val(doc, 1 + count * 2);
         if (yyjson_likely(obj)) {
             obj->tag = ((uint64_t)count << YYJSON_TAG_BIT) | YYJSON_TYPE_OBJ;
@@ -6867,7 +6895,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_obj_with_str(yyjson_mut_doc *doc,
 yyjson_api_inline yyjson_mut_val *yyjson_mut_obj_with_kv(yyjson_mut_doc *doc,
                                                          const char **pairs,
                                                          size_t count) {
-    if (yyjson_likely(doc && ((count > 0 && pairs) || (count == 0)))) {
+    if (yyjson_likely((doc != NULL) & (((count > 0) & (pairs != NULL)) | (count == 0)))) {
         yyjson_mut_val *obj = unsafe_yyjson_mut_val(doc, 1 + count * 2);
         if (yyjson_likely(obj)) {
             obj->tag = ((uint64_t)count << YYJSON_TAG_BIT) | YYJSON_TYPE_OBJ;
@@ -6979,8 +7007,8 @@ yyjson_api_inline void unsafe_yyjson_mut_obj_rotate(yyjson_mut_val *obj,
 yyjson_api_inline bool yyjson_mut_obj_add(yyjson_mut_val *obj,
                                           yyjson_mut_val *key,
                                           yyjson_mut_val *val) {
-    if (yyjson_likely(yyjson_mut_is_obj(obj) &&
-                      yyjson_mut_is_str(key) && val)) {
+    if (yyjson_likely(yyjson_mut_is_obj(obj) &
+                      yyjson_mut_is_str(key) & (val != NULL))) {
         unsafe_yyjson_mut_obj_add(obj, key, val, unsafe_yyjson_get_len(obj));
         return true;
     }
@@ -6994,13 +7022,13 @@ yyjson_api_inline bool yyjson_mut_obj_put(yyjson_mut_val *obj,
     size_t key_len;
     yyjson_mut_obj_iter iter;
     yyjson_mut_val *cur_key;
-    if (yyjson_unlikely(!yyjson_mut_is_obj(obj) ||
+    if (yyjson_unlikely(!yyjson_mut_is_obj(obj) |
                         !yyjson_mut_is_str(key))) return false;
     key_len = unsafe_yyjson_get_len(key);
     yyjson_mut_obj_iter_init(obj, &iter);
     while ((cur_key = yyjson_mut_obj_iter_next(&iter)) != 0) {
         if (unsafe_yyjson_equals_strn(cur_key, key->uni.str, key_len)) {
-            if (!replaced && val) {
+            if (!replaced & (val != NULL)) {
                 replaced = true;
                 val->next = cur_key->next->next;
                 cur_key->next = val;
@@ -7009,7 +7037,7 @@ yyjson_api_inline bool yyjson_mut_obj_put(yyjson_mut_val *obj,
             }
         }
     }
-    if (!replaced && val) unsafe_yyjson_mut_obj_add(obj, key, val, iter.max);
+    if (!replaced & (val != NULL)) unsafe_yyjson_mut_obj_add(obj, key, val, iter.max);
     return true;
 }
 
@@ -7017,8 +7045,8 @@ yyjson_api_inline bool yyjson_mut_obj_insert(yyjson_mut_val *obj,
                                              yyjson_mut_val *key,
                                              yyjson_mut_val *val,
                                              size_t idx) {
-    if (yyjson_likely(yyjson_mut_is_obj(obj) &&
-                      yyjson_mut_is_str(key) && val)) {
+    if (yyjson_likely(yyjson_mut_is_obj(obj) &
+                      yyjson_mut_is_str(key) & (val != NULL))) {
         size_t len = unsafe_yyjson_get_len(obj);
         if (yyjson_likely(len >= idx)) {
             if (len > idx) {
@@ -7037,7 +7065,7 @@ yyjson_api_inline bool yyjson_mut_obj_insert(yyjson_mut_val *obj,
 
 yyjson_api_inline yyjson_mut_val *yyjson_mut_obj_remove(yyjson_mut_val *obj,
     yyjson_mut_val *key) {
-    if (yyjson_likely(yyjson_mut_is_obj(obj) && yyjson_mut_is_str(key))) {
+    if (yyjson_likely(yyjson_mut_is_obj(obj) & yyjson_mut_is_str(key))) {
         return unsafe_yyjson_mut_obj_remove(obj, key->uni.str,
                                             unsafe_yyjson_get_len(key));
     }
@@ -7046,7 +7074,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_obj_remove(yyjson_mut_val *obj,
 
 yyjson_api_inline yyjson_mut_val *yyjson_mut_obj_remove_key(
     yyjson_mut_val *obj, const char *key) {
-    if (yyjson_likely(yyjson_mut_is_obj(obj) && key)) {
+    if (yyjson_likely(yyjson_mut_is_obj(obj) & (key != NULL))) {
         size_t key_len = strlen(key);
         return unsafe_yyjson_mut_obj_remove(obj, key, key_len);
     }
@@ -7055,7 +7083,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_obj_remove_key(
 
 yyjson_api_inline yyjson_mut_val *yyjson_mut_obj_remove_keyn(
     yyjson_mut_val *obj, const char *key, size_t key_len) {
-    if (yyjson_likely(yyjson_mut_is_obj(obj) && key)) {
+    if (yyjson_likely(yyjson_mut_is_obj(obj) & (key != NULL))) {
         return unsafe_yyjson_mut_obj_remove(obj, key, key_len);
     }
     return NULL;
@@ -7072,8 +7100,8 @@ yyjson_api_inline bool yyjson_mut_obj_clear(yyjson_mut_val *obj) {
 yyjson_api_inline bool yyjson_mut_obj_replace(yyjson_mut_val *obj,
                                               yyjson_mut_val *key,
                                               yyjson_mut_val *val) {
-    if (yyjson_likely(yyjson_mut_is_obj(obj) &&
-                      yyjson_mut_is_str(key) && val)) {
+    if (yyjson_likely(yyjson_mut_is_obj(obj) &
+                      yyjson_mut_is_str(key) & (val != NULL))) {
         return unsafe_yyjson_mut_obj_replace(obj, key, val);
     }
     return false;
@@ -7081,8 +7109,8 @@ yyjson_api_inline bool yyjson_mut_obj_replace(yyjson_mut_val *obj,
 
 yyjson_api_inline bool yyjson_mut_obj_rotate(yyjson_mut_val *obj,
                                              size_t idx) {
-    if (yyjson_likely(yyjson_mut_is_obj(obj) &&
-                      unsafe_yyjson_get_len(obj) > idx)) {
+    if (yyjson_likely(yyjson_mut_is_obj(obj) &
+                      (unsafe_yyjson_get_len(obj) > idx))) {
         unsafe_yyjson_mut_obj_rotate(obj, idx);
         return true;
     }
@@ -7096,7 +7124,7 @@ yyjson_api_inline bool yyjson_mut_obj_rotate(yyjson_mut_val *obj,
  *============================================================================*/
 
 #define yyjson_mut_obj_add_func(func) \
-    if (yyjson_likely(doc && yyjson_mut_is_obj(obj) && _key)) { \
+    if (yyjson_likely((doc != NULL) & yyjson_mut_is_obj(obj) & (_key != NULL))) { \
         yyjson_mut_val *key = unsafe_yyjson_mut_val(doc, 2); \
         if (yyjson_likely(key)) { \
             size_t len = unsafe_yyjson_get_len(obj); \
@@ -7264,9 +7292,10 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_obj_remove_str(yyjson_mut_val *obj,
     return yyjson_mut_obj_remove_strn(obj, key, key ? strlen(key) : 0);
 }
 
+//TODO: refactor. check opposite condition and return NULL. proceed in the other case.
 yyjson_api_inline yyjson_mut_val *yyjson_mut_obj_remove_strn(
     yyjson_mut_val *obj, const char *_key, size_t _len) {
-    if (yyjson_likely(yyjson_mut_is_obj(obj) && _key)) {
+    if (yyjson_likely(yyjson_mut_is_obj(obj) & (_key != NULL))) {
         yyjson_mut_val *key;
         yyjson_mut_obj_iter iter;
         yyjson_mut_val *val_removed = NULL;
@@ -7286,7 +7315,7 @@ yyjson_api_inline bool yyjson_mut_obj_rename_key(yyjson_mut_doc *doc,
                                                  yyjson_mut_val *obj,
                                                  const char *key,
                                                  const char *new_key) {
-    if (!key || !new_key) return false;
+    if (!key | !new_key) return false;
     return yyjson_mut_obj_rename_keyn(doc, obj, key, strlen(key),
                                       new_key, strlen(new_key));
 }
@@ -7300,7 +7329,7 @@ yyjson_api_inline bool yyjson_mut_obj_rename_keyn(yyjson_mut_doc *doc,
     char *cpy_key = NULL;
     yyjson_mut_val *old_key;
     yyjson_mut_obj_iter iter;
-    if (!doc || !obj || !key || !new_key) return false;
+    if (!doc | !obj | !key | !new_key) return false;
     yyjson_mut_obj_iter_init(obj, &iter);
     while ((old_key = yyjson_mut_obj_iter_next(&iter))) {
         if (unsafe_yyjson_equals_strn((void *)old_key, key, len)) {
@@ -7378,7 +7407,7 @@ yyjson_api_inline yyjson_val *yyjson_doc_ptr_getx(yyjson_doc *doc,
                                                   const char *ptr, size_t len,
                                                   yyjson_ptr_err *err) {
     yyjson_ptr_set_err(NONE, NULL);
-    if (yyjson_unlikely(!doc || !ptr)) {
+    if (yyjson_unlikely(!doc | !ptr)) {
         yyjson_ptr_set_err(PARAMETER, "input parameter is NULL");
         return NULL;
     }
@@ -7411,7 +7440,7 @@ yyjson_api_inline yyjson_val *yyjson_ptr_getx(yyjson_val *val,
                                               const char *ptr, size_t len,
                                               yyjson_ptr_err *err) {
     yyjson_ptr_set_err(NONE, NULL);
-    if (yyjson_unlikely(!val || !ptr)) {
+    if (yyjson_unlikely(!val | !ptr)) {
         yyjson_ptr_set_err(PARAMETER, "input parameter is NULL");
         return NULL;
     }
@@ -7445,7 +7474,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_doc_ptr_getx(yyjson_mut_doc *doc,
     yyjson_ptr_set_err(NONE, NULL);
     if (ctx) memset(ctx, 0, sizeof(*ctx));
 
-    if (yyjson_unlikely(!doc || !ptr)) {
+    if (yyjson_unlikely(!doc | !ptr)) {
         yyjson_ptr_set_err(PARAMETER, "input parameter is NULL");
         return NULL;
     }
@@ -7483,7 +7512,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_ptr_getx(yyjson_mut_val *val,
     yyjson_ptr_set_err(NONE, NULL);
     if (ctx) memset(ctx, 0, sizeof(*ctx));
 
-    if (yyjson_unlikely(!val || !ptr)) {
+    if (yyjson_unlikely(!val | !ptr)) {
         yyjson_ptr_set_err(PARAMETER, "input parameter is NULL");
         return NULL;
     }
@@ -7520,7 +7549,7 @@ yyjson_api_inline bool yyjson_mut_doc_ptr_addx(yyjson_mut_doc *doc,
     yyjson_ptr_set_err(NONE, NULL);
     if (ctx) memset(ctx, 0, sizeof(*ctx));
 
-    if (yyjson_unlikely(!doc || !ptr || !new_val)) {
+    if (yyjson_unlikely(!doc | !ptr | !new_val)) {
         yyjson_ptr_set_err(PARAMETER, "input parameter is NULL");
         return false;
     }
@@ -7583,7 +7612,7 @@ yyjson_api_inline bool yyjson_mut_ptr_addx(yyjson_mut_val *val,
     yyjson_ptr_set_err(NONE, NULL);
     if (ctx) memset(ctx, 0, sizeof(*ctx));
 
-    if (yyjson_unlikely(!val || !ptr || !new_val || !doc)) {
+    if (yyjson_unlikely(!val | !ptr | !new_val | !doc)) {
         yyjson_ptr_set_err(PARAMETER, "input parameter is NULL");
         return false;
     }
@@ -7621,7 +7650,7 @@ yyjson_api_inline bool yyjson_mut_doc_ptr_setx(yyjson_mut_doc *doc,
     yyjson_ptr_set_err(NONE, NULL);
     if (ctx) memset(ctx, 0, sizeof(*ctx));
 
-    if (yyjson_unlikely(!doc || !ptr)) {
+    if (yyjson_unlikely(!doc | !ptr)) {
         yyjson_ptr_set_err(PARAMETER, "input parameter is NULL");
         return false;
     }
@@ -7641,7 +7670,7 @@ yyjson_api_inline bool yyjson_mut_doc_ptr_setx(yyjson_mut_doc *doc,
         }
         return !!unsafe_yyjson_mut_ptr_removex(doc->root, ptr, len, ctx, err);
     }
-    if (yyjson_unlikely(!doc->root && !create_parent)) {
+    if (yyjson_unlikely(!doc->root & !create_parent)) {
         yyjson_ptr_set_err(NULL_ROOT, "document's root is NULL");
         return false;
     }
@@ -7687,7 +7716,7 @@ yyjson_api_inline bool yyjson_mut_ptr_setx(yyjson_mut_val *val,
     yyjson_ptr_set_err(NONE, NULL);
     if (ctx) memset(ctx, 0, sizeof(*ctx));
 
-    if (yyjson_unlikely(!val || !ptr || !doc)) {
+    if (yyjson_unlikely(!val | !ptr | !doc)) {
         yyjson_ptr_set_err(PARAMETER, "input parameter is NULL");
         return false;
     }
@@ -7724,7 +7753,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_doc_ptr_replacex(
     yyjson_ptr_set_err(NONE, NULL);
     if (ctx) memset(ctx, 0, sizeof(*ctx));
 
-    if (yyjson_unlikely(!doc || !ptr || !new_val)) {
+    if (yyjson_unlikely(!doc | !ptr | !new_val)) {
         yyjson_ptr_set_err(PARAMETER, "input parameter is NULL");
         return NULL;
     }
@@ -7768,7 +7797,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_ptr_replacex(
     yyjson_ptr_set_err(NONE, NULL);
     if (ctx) memset(ctx, 0, sizeof(*ctx));
 
-    if (yyjson_unlikely(!val || !ptr || !new_val)) {
+    if (yyjson_unlikely(!val | !ptr | !new_val)) {
         yyjson_ptr_set_err(PARAMETER, "input parameter is NULL");
         return NULL;
     }
@@ -7801,7 +7830,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_doc_ptr_removex(
     yyjson_ptr_set_err(NONE, NULL);
     if (ctx) memset(ctx, 0, sizeof(*ctx));
 
-    if (yyjson_unlikely(!doc || !ptr)) {
+    if (yyjson_unlikely(!doc | !ptr)) {
         yyjson_ptr_set_err(PARAMETER, "input parameter is NULL");
         return NULL;
     }
@@ -7842,7 +7871,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_ptr_removex(yyjson_mut_val *val,
     yyjson_ptr_set_err(NONE, NULL);
     if (ctx) memset(ctx, 0, sizeof(*ctx));
 
-    if (yyjson_unlikely(!val || !ptr)) {
+    if (yyjson_unlikely(!val | !ptr)) {
         yyjson_ptr_set_err(PARAMETER, "input parameter is NULL");
         return NULL;
     }
@@ -7861,7 +7890,7 @@ yyjson_api_inline bool yyjson_ptr_ctx_append(yyjson_ptr_ctx *ctx,
                                              yyjson_mut_val *key,
                                              yyjson_mut_val *val) {
     yyjson_mut_val *ctn, *pre_key, *pre_val, *cur_key, *cur_val;
-    if (!ctx || !ctx->ctn || !val) return false;
+    if (!ctx || (!ctx->ctn | !val)) return false;
     ctn = ctx->ctn;
 
     if (yyjson_mut_is_obj(ctn)) {
@@ -7914,7 +7943,7 @@ yyjson_api_inline bool yyjson_ptr_ctx_append(yyjson_ptr_ctx *ctx,
 yyjson_api_inline bool yyjson_ptr_ctx_replace(yyjson_ptr_ctx *ctx,
                                               yyjson_mut_val *val) {
     yyjson_mut_val *ctn, *pre_key, *cur_key, *pre_val, *cur_val;
-    if (!ctx || !ctx->ctn || !ctx->pre || !val) return false;
+    if (!ctx || (!ctx->ctn | !ctx->pre | !val)) return false;
     ctn = ctx->ctn;
     if (yyjson_mut_is_obj(ctn)) {
         pre_key = ctx->pre;
@@ -7946,7 +7975,7 @@ yyjson_api_inline bool yyjson_ptr_ctx_replace(yyjson_ptr_ctx *ctx,
 yyjson_api_inline bool yyjson_ptr_ctx_remove(yyjson_ptr_ctx *ctx) {
     yyjson_mut_val *ctn, *pre_key, *pre_val, *cur_key, *cur_val;
     size_t len;
-    if (!ctx || !ctx->ctn || !ctx->pre) return false;
+    if (!ctx || (!ctx->ctn | !ctx->pre)) return false;
     ctn = ctx->ctn;
     if (yyjson_mut_is_obj(ctn)) {
         pre_key = ctx->pre;
@@ -7988,7 +8017,7 @@ yyjson_api_inline bool yyjson_ptr_ctx_remove(yyjson_ptr_ctx *ctx) {
 yyjson_api_inline bool yyjson_ptr_get_bool(
     yyjson_val *root, const char *ptr, bool *value) {
     yyjson_val *val = yyjson_ptr_get(root, ptr);
-    if (value && yyjson_is_bool(val)) {
+    if ((value != NULL) & yyjson_is_bool(val)) {
         *value = unsafe_yyjson_get_bool(val);
         return true;
     } else {
@@ -8000,13 +8029,14 @@ yyjson_api_inline bool yyjson_ptr_get_bool(
  Set provided `value` if the JSON Pointer (RFC 6901) exists and is an integer
  that fits in `uint64_t`. Returns true if successful, otherwise false.
  */
+//TODO: refactor. check opposite condition and return false. proceed otherwise.
 yyjson_api_inline bool yyjson_ptr_get_uint(
     yyjson_val *root, const char *ptr, uint64_t *value) {
     yyjson_val *val = yyjson_ptr_get(root, ptr);
-    if (value && val) {
+    if ((value != NULL) & (val != NULL)) {
         uint64_t ret = val->uni.u64;
-        if (unsafe_yyjson_is_uint(val) ||
-            (unsafe_yyjson_is_sint(val) && !(ret >> 63))) {
+        if (unsafe_yyjson_is_uint(val) |
+            (unsafe_yyjson_is_sint(val) & !(ret >> 63))) {
             *value = ret;
             return true;
         }
@@ -8018,10 +8048,11 @@ yyjson_api_inline bool yyjson_ptr_get_uint(
  Set provided `value` if the JSON Pointer (RFC 6901) exists and is an integer
  that fits in `int64_t`. Returns true if successful, otherwise false.
  */
+//TODO: refactor. check opposite condition and return false. proceed otherwise.
 yyjson_api_inline bool yyjson_ptr_get_sint(
     yyjson_val *root, const char *ptr, int64_t *value) {
     yyjson_val *val = yyjson_ptr_get(root, ptr);
-    if (value && val) {
+    if ((value != NULL) & (val != NULL)l) {
         int64_t ret = val->uni.i64;
         if (unsafe_yyjson_is_sint(val) ||
             (unsafe_yyjson_is_uint(val) && ret >= 0)) {
@@ -8039,7 +8070,7 @@ yyjson_api_inline bool yyjson_ptr_get_sint(
 yyjson_api_inline bool yyjson_ptr_get_real(
     yyjson_val *root, const char *ptr, double *value) {
     yyjson_val *val = yyjson_ptr_get(root, ptr);
-    if (value && yyjson_is_real(val)) {
+    if ((value != NULL) & yyjson_is_real(val)) {
         *value = unsafe_yyjson_get_real(val);
         return true;
     } else {
@@ -8055,7 +8086,7 @@ yyjson_api_inline bool yyjson_ptr_get_real(
 yyjson_api_inline bool yyjson_ptr_get_num(
     yyjson_val *root, const char *ptr, double *value) {
     yyjson_val *val = yyjson_ptr_get(root, ptr);
-    if (value && yyjson_is_num(val)) {
+    if ((value != NULL) & yyjson_is_num(val)) {
         *value = unsafe_yyjson_get_num(val);
         return true;
     } else {
@@ -8070,7 +8101,7 @@ yyjson_api_inline bool yyjson_ptr_get_num(
 yyjson_api_inline bool yyjson_ptr_get_str(
     yyjson_val *root, const char *ptr, const char **value) {
     yyjson_val *val = yyjson_ptr_get(root, ptr);
-    if (value && yyjson_is_str(val)) {
+    if ((value != NULL) & yyjson_is_str(val)) {
         *value = unsafe_yyjson_get_str(val);
         return true;
     } else {
