@@ -1111,7 +1111,7 @@ static void pool_free(void *ctx_ptr, void *ptr) {
     else ctx->free_list = cur;
     cur->next = next;
 
-    if ((next != NULL) & (((u8 *)cur + cur->size) == (u8 *)next)) {
+    if (next && ((u8 *)cur + cur->size) == (u8 *)next) {
         /* merge cur to higher chunk */
         cur->size += next->size;
         cur->next = next->next;
@@ -1143,7 +1143,7 @@ static void *pool_realloc(void *ctx_ptr, void *ptr,
         next = next->next;
     }
 
-    if (((u8 *)cur + cur->size == (u8 *)next) & (cur->size + next->size >= size)) {
+    if ((u8 *)cur + cur->size == (u8 *)next && cur->size + next->size >= size) {
         /* merge to higher chunk if they are contiguous */
         usize free_size = cur->size + next->size - size;
         if (free_size > sizeof(pool_chunk) * 2) {
@@ -1883,7 +1883,7 @@ static_inline bool is_utf32_bom(const u8 *hdr) {
              (hdr[2] == 0x00) & (hdr[3] == 0x00)));
 }
 
-//TODO: branchless possibilities
+/*TODO: branchless possibilities*/
 bool yyjson_locate_pos(const char *str, size_t len, size_t pos,
                        size_t *line, size_t *col, size_t *chr) {
     usize line_sum = 0, line_pos = 0, chr_sum = 0;
@@ -1942,8 +1942,8 @@ static_inline const char *ptr_next_token(const char **ptr, const char *end,
     const char *hdr = *ptr + 1;
     const char *cur = hdr;
     /* skip unescaped characters */
-    while ((cur < end) & (*cur != '/') & (*cur != '~')) cur++;
-    if (likely((cur == end) | (*cur != '~'))) {
+    while (cur < end && ((*cur != '/') & (*cur != '~'))) cur++;
+    if (likely(cur == end || *cur != '~')) {
         /* no escaped characters, return */
         *ptr = cur;
         *len = (usize)(cur - hdr);
@@ -1952,9 +1952,9 @@ static_inline const char *ptr_next_token(const char **ptr, const char *end,
     } else {
         /* handle escaped characters */
         usize esc_num = 0;
-        while ((cur < end) & (*cur != '/')) {
+        while (cur < end && *cur != '/') {
             if (*cur++ == '~') {
-                if ((cur == end) | ((*cur != '0') & (*cur != '1'))) {
+                if (cur == end || ((*cur != '0') & (*cur != '1'))) {
                     *ptr = cur - 1;
                     return NULL;
                 }
@@ -1989,7 +1989,7 @@ static_inline bool ptr_token_to_idx(const char *cur, usize len, usize *idx) {
         *idx = USIZE_MAX;
         return true;
     }
-    for (; (cur < end) & ((add = (usize)((u8)*cur - (u8)'0')) <= 9); cur++) {
+    for (; cur < end && ((add = (usize)((u8)*cur - (u8)'0')) <= 9); cur++) {
         num = num * 10 + add;
     }
     if (unlikely((num == 0) | (cur < end))) return false;
@@ -2032,7 +2032,7 @@ static_inline bool ptr_token_eq(void *key,
  @param esc   number of escaped characters in this token
  @return value at index, or NULL if token is not index or index is out of range
  */
-//TODO: merge the 3 conditions together
+/*TODO: merge the 3 conditions together*/
 static_inline yyjson_val *ptr_arr_get(yyjson_val *arr, const char *token,
                                       usize len, usize esc) {
     yyjson_val *val = unsafe_yyjson_get_first(arr);
@@ -2209,7 +2209,7 @@ yyjson_mut_val *unsafe_yyjson_mut_ptr_getx(
         if (unlikely(!token)) return_err_syntax(NULL, ptr - hdr);
         ctn = val;
         type = unsafe_yyjson_get_type(val);
-        if (type == YYJSON_TYPE_OBJ) { //TODO: switch instead of if?
+        if (type == YYJSON_TYPE_OBJ) { /*TODO: switch instead of if?*/
             val = ptr_mut_obj_get(val, token, len, esc, &pre);
         } else if (type == YYJSON_TYPE_ARR) {
             val = ptr_mut_arr_get(val, token, len, esc, &pre, &idx_is_last);
@@ -2284,7 +2284,7 @@ bool unsafe_yyjson_mut_ptr_putx(
         /* container is object, create parent nodes */
         while (ptr != end) { /* not last token */
             key = ptr_new_key(token, token_len, esc, doc);
-            if (!key) return_err_alloc(false); //TODO: merge these two if checks
+            if (!key) return_err_alloc(false); /*TODO: merge these two if checks*/
             val = yyjson_mut_obj(doc);
             if (!val) return_err_alloc(false);
 
@@ -2318,7 +2318,7 @@ bool unsafe_yyjson_mut_ptr_putx(
         } else {
             /* replace exist value */
             key = pre->next->next;
-            if (ctx) ctx->pre = pre; //TODO: remove redudant if
+            if (ctx) ctx->pre = pre; /*TODO: remove redudant if*/
             if (ctx) ctx->old = val;
             yyjson_mut_obj_put(ctn, key, new_val);
         }
@@ -2351,7 +2351,7 @@ bool unsafe_yyjson_mut_ptr_putx(
                 ctn->uni.ptr = new_val;
                 pre = new_val;
             }
-            if (ctx) ctx->pre = pre; //TODO: remove redudant if
+            if (ctx) ctx->pre = pre; /*TODO: remove redudant if*/
             if (ctx) ctx->old = val;
         }
     }
@@ -2430,7 +2430,7 @@ typedef enum patch_op {
     PATCH_OP_NONE       /* invalid */
 } patch_op;
 
-//TODO: optimize
+/*TODO: optimize*/
 static patch_op patch_op_get(yyjson_val *op) {
     const char *str = op->uni.str;
     switch (unsafe_yyjson_get_len(op)) {
@@ -2872,7 +2872,7 @@ yyjson_mut_val *yyjson_mut_merge_patch(yyjson_mut_doc *doc,
 /** Normalized significant 128 bits of pow10, no rounded up (size: 10.4KB).
     This lookup table is used by both the double number reader and writer.
     (generate with misc/make_tables.c) */
-//TODO align this to cacheline size?
+/*TODO align this to cacheline size?*/
 static const u64 pow10_sig_table[] = {
     U64(0xBF29DCAB, 0xA82FDEAE), U64(0x7432EE87, 0x3880FC33), /* ~= 10^-343 */
     U64(0xEEF453D6, 0x923BD65A), U64(0x113FAA29, 0x06A13B3F), /* ~= 10^-342 */
@@ -3602,7 +3602,7 @@ static const char_type CHAR_TYPE_LINE_END   = 1 << 6;
 static const char_type CHAR_TYPE_HEX        = 1 << 7;
 
 /** Character type table (generate with misc/make_tables.c) */
-//TODO align this to cacheline size?
+/*TODO align this to cacheline size?*/
 static const char_type char_table[256] = {
     0x44, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04,
     0x04, 0x05, 0x45, 0x04, 0x04, 0x45, 0x04, 0x04,
@@ -3707,7 +3707,7 @@ static const digi_type DIGI_TYPE_DOT        = 1 << 4;
 static const digi_type DIGI_TYPE_EXP        = 1 << 5;
 
 /** Digit type table (generate with misc/make_tables.c) */
-//TODO align this to cacheline size?
+/*TODO align this to cacheline size?*/
 static const digi_type digi_table[256] = {
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -3778,7 +3778,7 @@ static_inline bool digi_is_digit_or_fp(u8 d) {
  an invalid hex character will mapped to [0xF0].
  (generate with misc/make_tables.c)
  */
-//TODO align this to cacheline size?
+/*TODO align this to cacheline size?*/
 static const u8 hex_conv_table[256] = {
     0xF0, 0xF0, 0xF0, 0xF0, 0xF0, 0xF0, 0xF0, 0xF0,
     0xF0, 0xF0, 0xF0, 0xF0, 0xF0, 0xF0, 0xF0, 0xF0,
@@ -3873,19 +3873,19 @@ static_inline bool read_null(u8 **ptr, yyjson_val *val) {
 }
 
 /** Read 'Inf' or 'Infinity' literal (ignoring case). */
-//TODO refactor. branch pullution.
+/*TODO refactor. branch pullution.*/
 static_inline bool read_inf(bool sign, u8 **ptr, u8 **pre,
                             yyjson_read_flag flg, yyjson_val *val) {
     u8 *hdr = *ptr - sign;
     u8 *cur = *ptr;
     u8 **end = ptr;
-    if ((to_upper(cur[0]) == 'I') & 
-        (to_upper(cur[1]) == 'N') & 
+    if ((to_upper(cur[0]) == 'I') && 
+        (to_upper(cur[1]) == 'N') && 
         (to_upper(cur[2]) == 'F')) {
       if (to_upper(cur[3]) == 'I') {
-          if ((to_upper(cur[4]) == 'N') & 
-              (to_upper(cur[5]) == 'I') & 
-              (to_upper(cur[6]) == 'T') & 
+          if ((to_upper(cur[4]) == 'N') && 
+              (to_upper(cur[5]) == 'I') && 
+              (to_upper(cur[6]) == 'T') && 
               (to_upper(cur[7]) == 'Y')) {
               cur += 8;
             } else {
@@ -3918,8 +3918,8 @@ static_inline bool read_nan(bool sign, u8 **ptr, u8 **pre,
     u8 *hdr = *ptr - sign;
     u8 *cur = *ptr;
     u8 **end = ptr;
-    if (to_upper(cur[0]) == 'N' & 
-        to_upper(cur[1]) == 'A' & 
+    if (to_upper(cur[0]) == 'N' && 
+        to_upper(cur[1]) == 'A' && 
         to_upper(cur[2]) == 'N') {
         cur += 3;
         *end = cur;
@@ -3939,7 +3939,7 @@ static_inline bool read_nan(bool sign, u8 **ptr, u8 **pre,
 }
 
 /** Read 'Inf', 'Infinity' or 'NaN' literal (ignoring case). */
-//TODO merge if conditions. can be completely branchless
+/*TODO merge if conditions. can be completely branchless */
 static_inline bool read_inf_or_nan(bool sign, u8 **ptr, u8 **pre,
                                    yyjson_read_flag flg, yyjson_val *val) {
     if (read_inf(sign, ptr, pre, flg, val)) return true;
@@ -4141,10 +4141,9 @@ static_noinline bool is_truncated_end(u8 *hdr, u8 *cur, u8 *end,
                 if (++cur >= end) return true;
                 if (*cur != 'u') return false;
                 if (++cur >= end) return true;
-                if (*cur != 'd' && *cur != 'D') return false;
+                if (to_upper(*cur) != 'D') return false;
                 if (++cur >= end) return true;
-                if ((to_upper(*cur) < 'C') | (to_upper(*cur) < 'F')) {
-                    return false;
+                if ((to_upper(*cur) < 'C') | (to_upper(*cur) > 'F')) return false;
                 if (++cur >= end) return true;
                 if (!char_is_hex(*cur)) return false;
                 return true;
@@ -4226,7 +4225,7 @@ static_noinline bool is_truncated_end(u8 *hdr, u8 *cur, u8 *end,
 #define U64_POW10_MAX_EXP 19
 
 /** Table: [ 10^0, ..., 10^19 ] (generate with misc/make_tables.c) */
-//TODO align as cacheline size?
+/*TODO align as cacheline size?*/
 static const u64 u64_pow10_table[U64_POW10_MAX_EXP + 1] = {
     U64(0x00000000, 0x00000001), U64(0x00000000, 0x0000000A),
     U64(0x00000000, 0x00000064), U64(0x00000000, 0x000003E8),
@@ -4335,7 +4334,7 @@ static_inline void bigint_mul_pow10(bigint *big, i32 exp) {
  Compare two bigint.
  @return -1 if 'a < b', +1 if 'a > b', 0 if 'a == b'.
  */
-//TODO can probably be optimized
+/*TODO can probably be optimized*/
 static_inline i32 bigint_cmp(bigint *a, bigint *b) {
     u32 idx = a->used;
     if (a->used < b->used) return -1;
@@ -4368,7 +4367,7 @@ static_noinline void bigint_set_buf(bigint *big, u64 sig, i32 *exp,
         bigint_set_u64(big, sig);
         return;
 
-    } else { //TODO: this else makes no sense
+    } else { /*TODO: this else makes no sense*/
         /* some digits were cut, read them from 'sig_cut' to 'sig_end' */
         u8 *hdr = sig_cut;
         u8 *cur = hdr;
@@ -4533,7 +4532,7 @@ static_inline bool read_num(u8 **ptr, u8 **pre, yyjson_read_flag flg,
     *end = cur; return true; \
 } while (false)
 
-//TODO useless else?
+/*TODO useless else?*/
 #define return_inf() do { \
     if (has_read_flag(BIGNUM_AS_RAW)) return_raw(); \
     if (has_read_flag(ALLOW_INF_AND_NAN)) return_f64_bin(F64_RAW_INF); \
@@ -4684,7 +4683,7 @@ digi_intg_more:
             /* this number is an integer consisting of 20 digits */
             num = (u64)(*cur - '0');
             if ((sig < (U64_MAX / 10)) |
-                (sig == (U64_MAX / 10) & (num <= (U64_MAX % 10)))) {
+                ((sig == (U64_MAX / 10)) & (num <= (U64_MAX % 10)))) {
                 sig = num + sig * 10;
                 cur++;
                 /* convert to double if overflow */
@@ -5015,7 +5014,7 @@ digi_finish:
 
         /* effective significand */
         order_of_magnitude = DIY_SIG_BITS + fp.exp;
-        //TODO: can probably be merged into one expression
+        /*TODO: can probably be merged into one expression*/
         if (likely(order_of_magnitude >= EXP_SUBNORMAL + F64_SIG_FULL_BITS)) {
             effective_significand_size = F64_SIG_FULL_BITS;
         } else if (order_of_magnitude <= EXP_SUBNORMAL) {
@@ -5144,7 +5143,7 @@ static_inline bool read_num(u8 **ptr, u8 **pre, yyjson_read_flag flg,
     *end = cur; return true; \
 } while (false)
 
-//TODO useless else?
+/*TODO useless else?*/
 #define return_inf() do { \
     if (has_read_flag(BIGNUM_AS_RAW)) return_raw(); \
     if (has_read_flag(ALLOW_INF_AND_NAN)) return_f64_bin(F64_RAW_INF); \
@@ -5427,19 +5426,19 @@ static_inline bool read_str(u8 **ptr, u8 *lst, bool inv, yyjson_val *val,
 )
 
 #define is_valid_seq_2(uni) ( \
-    ((uni & b2_mask) == b2_patt) & \
+    ((uni & b2_mask) == b2_patt) && \
     ((uni & b2_requ)) \
 )
 
 #define is_valid_seq_3(uni) ( \
-    ((uni & b3_mask) == b3_patt) & \
-    ((tmp = (uni & b3_requ))) & \
+    ((uni & b3_mask) == b3_patt) && \
+    ((tmp = (uni & b3_requ))) && \
     ((tmp != b3_erro)) \
 )
 
 #define is_valid_seq_4(uni) ( \
-    ((uni & b4_mask) == b4_patt) & \
-    ((tmp = (uni & b4_requ))) & \
+    ((uni & b4_mask) == b4_patt) && \
+    ((tmp = (uni & b4_requ))) && \
     (((tmp & b4_err0) == 0) | ((tmp & b4_err1) == 0)) \
 )
 
@@ -6087,7 +6086,7 @@ arr_val_begin:
         while (char_is_space(*++cur));
         goto arr_val_begin;
     }
-    if (has_read_flag(ALLOW_INF_AND_NAN) &&
+    if (has_read_flag(ALLOW_INF_AND_NAN) &
         ((to_upper(*cur) == 'I') | (*cur == 'N'))) {
         val_incr();
         ctn_len++;
@@ -6233,7 +6232,7 @@ obj_val_begin:
         while (char_is_space(*++cur));
         goto obj_val_begin;
     }
-    if (has_read_flag(ALLOW_INF_AND_NAN) &&
+    if (has_read_flag(ALLOW_INF_AND_NAN) &
         ((to_upper(*cur) == 'I') | (*cur == 'N'))) {
         val++;
         ctn_len++;
@@ -6488,8 +6487,8 @@ arr_val_begin:
         while (char_is_space(*++cur));
         goto arr_val_begin;
     }
-    if (has_read_flag(ALLOW_INF_AND_NAN) &&
-        ((to_upper(*cur) == 'I') | (*cur == 'N')) {
+    if (has_read_flag(ALLOW_INF_AND_NAN) &
+        ((to_upper(*cur) == 'I') | (*cur == 'N'))) {
         val_incr();
         ctn_len++;
         if (read_inf_or_nan(false, &cur, pre, flg, val)) goto arr_val_end;
@@ -6655,8 +6654,8 @@ obj_val_begin:
         while (char_is_space(*++cur));
         goto obj_val_begin;
     }
-    if (has_read_flag(ALLOW_INF_AND_NAN) &&
-        ((to_upper(*cur) == 'I') | (*cur == 'N')) {
+    if (has_read_flag(ALLOW_INF_AND_NAN) &
+        ((to_upper(*cur) == 'I') | (*cur == 'N'))) {
         val++;
         ctn_len++;
         if (read_inf_or_nan(false, &cur, pre, flg, val)) goto obj_val_end;
@@ -6817,7 +6816,7 @@ yyjson_doc *yyjson_read_opts(char *dat, usize len,
 
     /* read json document */
     if (likely(char_is_container(*cur))) {
-        if (char_is_space(cur[1]) & char_is_space(cur[2])) {
+        if (char_is_space(cur[1]) && char_is_space(cur[2])) {
             doc = read_root_pretty(hdr, cur, end, alc, flg, err);
         } else {
             doc = read_root_minify(hdr, cur, end, alc, flg, err);
@@ -7563,7 +7562,7 @@ yyjson_doc *yyjson_read_fp(FILE *file,
         /* reset to original position, may fail */
         if (fseek(file, file_pos, SEEK_SET) != 0) file_size = 0;
         /* get file size from current postion to end */
-        if (file_size > 0) file_size -= file_pos; //TODO easy branchless
+        if (file_size > 0) file_size -= file_pos; /*TODO easy branchless */
     }
 
     /* read file */
@@ -7721,7 +7720,7 @@ const char *yyjson_read_number(const char *dat,
 
 /** Digit table from 00 to 99. */
 yyjson_align(2)
-//TODO align as cacheline size?
+/*TODO align as cacheline size?*/
 static const char digit_table[200] = {
     '0', '0', '0', '1', '0', '2', '0', '3', '0', '4',
     '0', '5', '0', '6', '0', '7', '0', '8', '0', '9',
@@ -7885,7 +7884,7 @@ static_inline u8 *write_u64(u64 val, u8 *buf) {
 
 /** Trailing zero count table for number 0 to 99.
     (generate with misc/make_tables.c) */
-//TODO align to cacheline size?
+/*TODO align to cacheline size?*/
 static const u8 dec_trailing_zero_table[] = {
     2, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     1, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -8094,7 +8093,7 @@ typedef struct {
 
 /** Generated with llvm, see https://github.com/llvm/llvm-project/
     blob/main/llvm/lib/Support/DivisionByConstantInfo.cpp */
-//TODO align to cacheline size?
+/*TODO align to cacheline size?*/
 static const div_pow10_magic div_pow10_table[] = {
     { U64(0x00000000, 0x00000001), U64(0x00000000, 0x00000000), 0,  0  },
     { U64(0x00000000, 0x0000000A), U64(0xCCCCCCCC, 0xCCCCCCCD), 0,  3  },
@@ -9019,7 +9018,7 @@ typedef u8 char_enc_type;
 
 /** Character encode type table: don't escape unicode, don't escape '/'.
     (generate with misc/make_tables.c) */
-//TODO align to cacheline size?
+/*TODO align to cacheline size?*/
 static const char_enc_type enc_table_cpy[256] = {
     3, 3, 3, 3, 3, 3, 3, 3, 2, 2, 2, 3, 2, 2, 3, 3,
     3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
@@ -9041,7 +9040,7 @@ static const char_enc_type enc_table_cpy[256] = {
 
 /** Character encode type table: don't escape unicode, escape '/'.
     (generate with misc/make_tables.c) */
-//TODO align to cacheline size?
+/*TODO align to cacheline size?*/
 static const char_enc_type enc_table_cpy_slash[256] = {
     3, 3, 3, 3, 3, 3, 3, 3, 2, 2, 2, 3, 2, 2, 3, 3,
     3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
@@ -9063,7 +9062,7 @@ static const char_enc_type enc_table_cpy_slash[256] = {
 
 /** Character encode type table: escape unicode, don't escape '/'.
     (generate with misc/make_tables.c) */
-//TODO align to cacheline size?
+/*TODO align to cacheline size?*/
 static const char_enc_type enc_table_esc[256] = {
     3, 3, 3, 3, 3, 3, 3, 3, 2, 2, 2, 3, 2, 2, 3, 3,
     3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
@@ -9085,7 +9084,7 @@ static const char_enc_type enc_table_esc[256] = {
 
 /** Character encode type table: escape unicode, escape '/'.
     (generate with misc/make_tables.c) */
-//TODO align to cacheline size?
+/*TODO align to cacheline size?*/
 static const char_enc_type enc_table_esc_slash[256] = {
     3, 3, 3, 3, 3, 3, 3, 3, 2, 2, 2, 3, 2, 2, 3, 3,
     3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
@@ -9108,7 +9107,7 @@ static const char_enc_type enc_table_esc_slash[256] = {
 /** Escaped hex character table: ["00" "01" "02" ... "FD" "FE" "FF"].
     (generate with misc/make_tables.c) */
 yyjson_align(2)
-//TODO align to cacheline size?
+/*TODO align to cacheline size?*/
 static const u8 esc_hex_char_table[512] = {
     '0', '0', '0', '1', '0', '2', '0', '3',
     '0', '4', '0', '5', '0', '6', '0', '7',
@@ -9178,7 +9177,7 @@ static const u8 esc_hex_char_table[512] = {
 
 /** Escaped single character table. (generate with misc/make_tables.c) */
 yyjson_align(2)
-//TODO align to cacheline size?
+/*TODO align to cacheline size?*/
 static const u8 esc_single_char_table[512] = {
     ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ',
     ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ',
@@ -9375,13 +9374,13 @@ static_inline u8 *write_str(u8 *cur, bool esc, bool inv,
 
 #define is_valid_seq_3(uni) ( \
     ((uni & b3_mask) == b3_patt) & \
-    ((tmp = (uni & b3_requ))) & \
+    ((tmp = (uni & b3_requ))) && \
     ((tmp != b3_erro)) \
 )
 
 #define is_valid_seq_4(uni) ( \
     ((uni & b4_mask) == b4_patt) & \
-    ((tmp = (uni & b4_requ))) & \
+    ((tmp = (uni & b4_requ))) && \
     (((tmp & b4_err0) == 0) | ((tmp & b4_err1) == 0)) \
 )
 

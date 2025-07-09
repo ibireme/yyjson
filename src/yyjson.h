@@ -5394,7 +5394,7 @@ yyjson_api_inline yyjson_val *yyjson_arr_get_last(yyjson_val *arr) {
 
 yyjson_api_inline bool yyjson_arr_iter_init(yyjson_val *arr,
                                             yyjson_arr_iter *iter) {
-    if (yyjson_likely(yyjson_is_arr(arr) & iter)) {
+    if (yyjson_likely(yyjson_is_arr(arr) & (iter != NULL))) {
         iter->idx = 0;
         iter->max = unsafe_yyjson_get_len(arr);
         iter->cur = unsafe_yyjson_get_first(arr);
@@ -6088,7 +6088,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_get_last(
 
 yyjson_api_inline bool yyjson_mut_arr_iter_init(yyjson_mut_val *arr,
                                                 yyjson_mut_arr_iter *iter) {
-    if (yyjson_likely(yyjson_mut_is_arr(arr) & iter)) {
+    if (yyjson_likely(yyjson_mut_is_arr(arr) & (iter != NULL))) {
         iter->idx = 0;
         iter->max = unsafe_yyjson_get_len(arr);
         iter->cur = iter->max ? (yyjson_mut_val *)arr->uni.ptr : NULL;
@@ -6326,7 +6326,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_with_strncpy(
  * Mutable JSON Array Modification API (Implementation)
  *============================================================================*/
 
-//TODO refactor: check opposite condition and return false. proceed in the other case.
+/*TODO refactor: check opposite condition and return false. proceed in the other case.*/
 yyjson_api_inline bool yyjson_mut_arr_insert(yyjson_mut_val *arr,
                                              yyjson_mut_val *val, size_t idx) {
     if (yyjson_likely(yyjson_mut_is_arr(arr) & (val != NULL))) {
@@ -6358,7 +6358,7 @@ yyjson_api_inline bool yyjson_mut_arr_insert(yyjson_mut_val *arr,
     return false;
 }
 
-//TODO refactor: check opposite condition and return false. proceed in the other case.
+/*TODO refactor: check opposite condition and return false. proceed in the other case.*/
 yyjson_api_inline bool yyjson_mut_arr_append(yyjson_mut_val *arr,
                                              yyjson_mut_val *val) {
     if (yyjson_likely(yyjson_mut_is_arr(arr) & (val != NULL))) {
@@ -6378,7 +6378,7 @@ yyjson_api_inline bool yyjson_mut_arr_append(yyjson_mut_val *arr,
     return false;
 }
 
-//TODO refactor: check opposite condition and return false. proceed in the other case.
+/*TODO refactor: check opposite condition and return false. proceed in the other case.*/
 yyjson_api_inline bool yyjson_mut_arr_prepend(yyjson_mut_val *arr,
                                               yyjson_mut_val *val) {
     if (yyjson_likely(yyjson_mut_is_arr(arr) & (val != NULL))) {
@@ -6398,7 +6398,7 @@ yyjson_api_inline bool yyjson_mut_arr_prepend(yyjson_mut_val *arr,
     return false;
 }
 
-//TODO refactor: check opposite condition and return NULL. proceed in the other case.
+/*TODO refactor: check opposite condition and return NULL. proceed in the other case.*/
 yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_replace(yyjson_mut_val *arr,
                                                          size_t idx,
                                                          yyjson_mut_val *val) {
@@ -6427,7 +6427,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_replace(yyjson_mut_val *arr,
     return NULL;
 }
 
-//TODO refactor: check opposite condition and return NULL. proceed in the other case.
+/*TODO refactor: check opposite condition and return NULL. proceed in the other case.*/
 yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_remove(yyjson_mut_val *arr,
                                                         size_t idx) {
     if (yyjson_likely(yyjson_mut_is_arr(arr))) {
@@ -6452,7 +6452,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_remove(yyjson_mut_val *arr,
     return NULL;
 }
 
-//TODO refactor: check opposite condition and return NULL. proceed in the other case.
+/*TODO refactor: check opposite condition and return NULL. proceed in the other case.*/
 yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_remove_first(
     yyjson_mut_val *arr) {
     if (yyjson_likely(yyjson_mut_is_arr(arr))) {
@@ -6472,7 +6472,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_remove_first(
     return NULL;
 }
 
-//TODO refactor: check opposite condition and return NULL. proceed in the other case.
+/*TODO refactor: check opposite condition and return NULL. proceed in the other case.*/
 yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_remove_last(
     yyjson_mut_val *arr) {
     if (yyjson_likely(yyjson_mut_is_arr(arr))) {
@@ -6495,7 +6495,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_remove_last(
     return NULL;
 }
 
-//TODO refactor: check opposite condition and return false. proceed in the other case.
+/*TODO refactor: check opposite condition and return false. proceed in the other case.*/
 yyjson_api_inline bool yyjson_mut_arr_remove_range(yyjson_mut_val *arr,
                                                    size_t _idx, size_t _len) {
     if (yyjson_likely(yyjson_mut_is_arr(arr))) {
@@ -6518,7 +6518,7 @@ yyjson_api_inline bool yyjson_mut_arr_remove_range(yyjson_mut_val *arr,
     return false;
 }
 
-//TODO refactor: check opposite condition and return false. proceed in the other case.
+/*TODO refactor: check opposite condition and return false. proceed in the other case.*/
 yyjson_api_inline bool yyjson_mut_arr_clear(yyjson_mut_val *arr) {
     if (yyjson_likely(yyjson_mut_is_arr(arr))) {
         unsafe_yyjson_set_len(arr, 0);
@@ -6527,7 +6527,7 @@ yyjson_api_inline bool yyjson_mut_arr_clear(yyjson_mut_val *arr) {
     return false;
 }
 
-//TODO refactor: check opposite condition and return false. proceed in the other case.
+/*TODO refactor: check opposite condition and return false. proceed in the other case.*/
 yyjson_api_inline bool yyjson_mut_arr_rotate(yyjson_mut_val *arr,
                                              size_t idx) {
     if (yyjson_likely(yyjson_mut_is_arr(arr) &
@@ -6551,7 +6551,7 @@ yyjson_api_inline bool yyjson_mut_arr_add_val(yyjson_mut_val *arr,
     return yyjson_mut_arr_append(arr, val);
 }
 
-//TODO: refactor. check opposite condition and return false. proceed in the other case.
+/*TODO: refactor. check opposite condition and return false. proceed in the other case.*/
 yyjson_api_inline bool yyjson_mut_arr_add_null(yyjson_mut_doc *doc,
                                                yyjson_mut_val *arr) {
     if (yyjson_likely((doc != NULL) & yyjson_mut_is_arr(arr))) {
@@ -6561,7 +6561,7 @@ yyjson_api_inline bool yyjson_mut_arr_add_null(yyjson_mut_doc *doc,
     return false;
 }
 
-//TODO: refactor. check opposite condition and return false. proceed in the other case.
+/*TODO: refactor. check opposite condition and return false. proceed in the other case.*/
 yyjson_api_inline bool yyjson_mut_arr_add_true(yyjson_mut_doc *doc,
                                                yyjson_mut_val *arr) {
     if (yyjson_likely((doc != NULL) & yyjson_mut_is_arr(arr))) {
@@ -6571,7 +6571,7 @@ yyjson_api_inline bool yyjson_mut_arr_add_true(yyjson_mut_doc *doc,
     return false;
 }
 
-//TODO: refactor. check opposite condition and return false. proceed in the other case.
+/*TODO: refactor. check opposite condition and return false. proceed in the other case.*/
 yyjson_api_inline bool yyjson_mut_arr_add_false(yyjson_mut_doc *doc,
                                                 yyjson_mut_val *arr) {
     if (yyjson_likely((doc != NULL) & yyjson_mut_is_arr(arr))) {
@@ -6581,7 +6581,7 @@ yyjson_api_inline bool yyjson_mut_arr_add_false(yyjson_mut_doc *doc,
     return false;
 }
 
-//TODO: refactor. check opposite condition and return false. proceed in the other case.
+/*TODO: refactor. check opposite condition and return false. proceed in the other case.*/
 yyjson_api_inline bool yyjson_mut_arr_add_bool(yyjson_mut_doc *doc,
                                                yyjson_mut_val *arr,
                                                bool _val) {
@@ -6592,7 +6592,7 @@ yyjson_api_inline bool yyjson_mut_arr_add_bool(yyjson_mut_doc *doc,
     return false;
 }
 
-//TODO: refactor. check opposite condition and return false. proceed in the other case.
+/*TODO: refactor. check opposite condition and return false. proceed in the other case.*/
 yyjson_api_inline bool yyjson_mut_arr_add_uint(yyjson_mut_doc *doc,
                                                yyjson_mut_val *arr,
                                                uint64_t num) {
@@ -6603,7 +6603,7 @@ yyjson_api_inline bool yyjson_mut_arr_add_uint(yyjson_mut_doc *doc,
     return false;
 }
 
-//TODO: refactor. check opposite condition and return false. proceed in the other case.
+/*TODO: refactor. check opposite condition and return false. proceed in the other case.*/
 yyjson_api_inline bool yyjson_mut_arr_add_sint(yyjson_mut_doc *doc,
                                                yyjson_mut_val *arr,
                                                int64_t num) {
@@ -6614,7 +6614,7 @@ yyjson_api_inline bool yyjson_mut_arr_add_sint(yyjson_mut_doc *doc,
     return false;
 }
 
-//TODO: refactor. check opposite condition and return false. proceed in the other case.
+/*TODO: refactor. check opposite condition and return false. proceed in the other case.*/
 yyjson_api_inline bool yyjson_mut_arr_add_int(yyjson_mut_doc *doc,
                                               yyjson_mut_val *arr,
                                               int64_t num) {
@@ -6625,7 +6625,7 @@ yyjson_api_inline bool yyjson_mut_arr_add_int(yyjson_mut_doc *doc,
     return false;
 }
 
-//TODO: refactor. check opposite condition and return false. proceed in the other case.
+/*TODO: refactor. check opposite condition and return false. proceed in the other case.*/
 yyjson_api_inline bool yyjson_mut_arr_add_float(yyjson_mut_doc *doc,
                                                 yyjson_mut_val *arr,
                                                 float num) {
@@ -6636,7 +6636,7 @@ yyjson_api_inline bool yyjson_mut_arr_add_float(yyjson_mut_doc *doc,
     return false;
 }
 
-//TODO: refactor. check opposite condition and return false. proceed in the other case.
+/*TODO: refactor. check opposite condition and return false. proceed in the other case.*/
 yyjson_api_inline bool yyjson_mut_arr_add_double(yyjson_mut_doc *doc,
                                                  yyjson_mut_val *arr,
                                                  double num) {
@@ -6647,7 +6647,7 @@ yyjson_api_inline bool yyjson_mut_arr_add_double(yyjson_mut_doc *doc,
     return false;
 }
 
-//TODO: refactor. check opposite condition and return false. proceed in the other case.
+/*TODO: refactor. check opposite condition and return false. proceed in the other case.*/
 yyjson_api_inline bool yyjson_mut_arr_add_real(yyjson_mut_doc *doc,
                                                yyjson_mut_val *arr,
                                                double num) {
@@ -6658,7 +6658,7 @@ yyjson_api_inline bool yyjson_mut_arr_add_real(yyjson_mut_doc *doc,
     return false;
 }
 
-//TODO: refactor. check opposite condition and return false. proceed in the other case.
+/*TODO: refactor. check opposite condition and return false. proceed in the other case.*/
 yyjson_api_inline bool yyjson_mut_arr_add_str(yyjson_mut_doc *doc,
                                               yyjson_mut_val *arr,
                                               const char *str) {
@@ -6669,7 +6669,7 @@ yyjson_api_inline bool yyjson_mut_arr_add_str(yyjson_mut_doc *doc,
     return false;
 }
 
-//TODO: refactor. check opposite condition and return false. proceed in the other case.
+/*TODO: refactor. check opposite condition and return false. proceed in the other case.*/
 yyjson_api_inline bool yyjson_mut_arr_add_strn(yyjson_mut_doc *doc,
                                                yyjson_mut_val *arr,
                                                const char *str, size_t len) {
@@ -6680,7 +6680,7 @@ yyjson_api_inline bool yyjson_mut_arr_add_strn(yyjson_mut_doc *doc,
     return false;
 }
 
-//TODO: refactor. check opposite condition and return false. proceed in the other case.
+/*TODO: refactor. check opposite condition and return false. proceed in the other case.*/
 yyjson_api_inline bool yyjson_mut_arr_add_strcpy(yyjson_mut_doc *doc,
                                                  yyjson_mut_val *arr,
                                                  const char *str) {
@@ -6691,7 +6691,7 @@ yyjson_api_inline bool yyjson_mut_arr_add_strcpy(yyjson_mut_doc *doc,
     return false;
 }
 
-//TODO: refactor. check opposite condition and return false. proceed in the other case.
+/*TODO: refactor. check opposite condition and return false. proceed in the other case.*/
 yyjson_api_inline bool yyjson_mut_arr_add_strncpy(yyjson_mut_doc *doc,
                                                   yyjson_mut_val *arr,
                                                   const char *str, size_t len) {
@@ -6702,7 +6702,7 @@ yyjson_api_inline bool yyjson_mut_arr_add_strncpy(yyjson_mut_doc *doc,
     return false;
 }
 
-//TODO: refactor. check opposite condition and return false. proceed in the other case.
+/*TODO: refactor. check opposite condition and return false. proceed in the other case.*/
 yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_add_arr(yyjson_mut_doc *doc,
                                                          yyjson_mut_val *arr) {
     if (yyjson_likely((doc != NULL) & yyjson_mut_is_arr(arr))) {
@@ -6712,7 +6712,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_add_arr(yyjson_mut_doc *doc,
     return NULL;
 }
 
-//TODO: refactor. check opposite condition and return false. proceed in the other case.
+/*TODO: refactor. check opposite condition and return false. proceed in the other case.*/
 yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_add_obj(yyjson_mut_doc *doc,
                                                          yyjson_mut_val *arr) {
     if (yyjson_likely((doc != NULL) & yyjson_mut_is_arr(arr))) {
@@ -6782,7 +6782,7 @@ yyjson_api_inline bool yyjson_mut_obj_iter_has_next(yyjson_mut_obj_iter *iter) {
     return iter ? iter->idx < iter->max : false;
 }
 
-//TODO: refactor. check opposite condition and return NULL. proceed in the other case.
+/*TODO: refactor. check opposite condition and return NULL. proceed in the other case. */
 yyjson_api_inline yyjson_mut_val *yyjson_mut_obj_iter_next(
     yyjson_mut_obj_iter *iter) {
     if (iter && iter->idx < iter->max) {
@@ -6800,7 +6800,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_obj_iter_get_val(
     return key ? key->next : NULL;
 }
 
-//TODO: refactor. check opposite condition and return false. proceed in the other case.
+/*TODO: refactor. check opposite condition and return false. proceed in the other case. */
 yyjson_api_inline yyjson_mut_val *yyjson_mut_obj_iter_remove(
     yyjson_mut_obj_iter *iter) {
     if (yyjson_likely(iter && ((0 < iter->idx) & (iter->idx <= iter->max)))) {
@@ -7292,7 +7292,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_obj_remove_str(yyjson_mut_val *obj,
     return yyjson_mut_obj_remove_strn(obj, key, key ? strlen(key) : 0);
 }
 
-//TODO: refactor. check opposite condition and return NULL. proceed in the other case.
+/*TODO: refactor. check opposite condition and return NULL. proceed in the other case. */
 yyjson_api_inline yyjson_mut_val *yyjson_mut_obj_remove_strn(
     yyjson_mut_val *obj, const char *_key, size_t _len) {
     if (yyjson_likely(yyjson_mut_is_obj(obj) & (_key != NULL))) {
@@ -8029,7 +8029,7 @@ yyjson_api_inline bool yyjson_ptr_get_bool(
  Set provided `value` if the JSON Pointer (RFC 6901) exists and is an integer
  that fits in `uint64_t`. Returns true if successful, otherwise false.
  */
-//TODO: refactor. check opposite condition and return false. proceed otherwise.
+/*TODO: refactor. check opposite condition and return false. proceed otherwise.*/
 yyjson_api_inline bool yyjson_ptr_get_uint(
     yyjson_val *root, const char *ptr, uint64_t *value) {
     yyjson_val *val = yyjson_ptr_get(root, ptr);
@@ -8048,11 +8048,11 @@ yyjson_api_inline bool yyjson_ptr_get_uint(
  Set provided `value` if the JSON Pointer (RFC 6901) exists and is an integer
  that fits in `int64_t`. Returns true if successful, otherwise false.
  */
-//TODO: refactor. check opposite condition and return false. proceed otherwise.
+/*TODO: refactor. check opposite condition and return false. proceed otherwise.*/
 yyjson_api_inline bool yyjson_ptr_get_sint(
     yyjson_val *root, const char *ptr, int64_t *value) {
     yyjson_val *val = yyjson_ptr_get(root, ptr);
-    if ((value != NULL) & (val != NULL)l) {
+    if ((value != NULL) & (val != NULL)) {
         int64_t ret = val->uni.i64;
         if (unsafe_yyjson_is_sint(val) ||
             (unsafe_yyjson_is_uint(val) && ret >= 0)) {
