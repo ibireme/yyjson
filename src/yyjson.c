@@ -8740,7 +8740,7 @@ static_noinline u8 *write_f64_raw_fixed(u8 *buf, u64 raw, yyjson_write_flag flg,
                     /* update exp and sig length */
                     exp_dec += sig_len_cut;
                     sig_len -= sig_len_cut;
-                    sig_len += (sig_len >= 0) &
+                    sig_len += (sig_len >= 0) &&
                                (sig_dec >= div_pow10_table[sig_len].p10);
                 }
                 if (sig_len <= 0) {
