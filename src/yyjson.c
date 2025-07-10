@@ -4457,6 +4457,7 @@ static_inline u64 diy_fp_to_ieee_raw(diy_fp fp) {
     exp += F64_BITS - F64_SIG_FULL_BITS;
     exp += F64_SIG_BITS;
 
+    /* TODO: these elses make no sense */
     if (unlikely(exp >= F64_MAX_BIN_EXP)) {
         /* overflow */
         return F64_RAW_INF;
@@ -9368,20 +9369,20 @@ static_inline u8 *write_str(u8 *cur, bool esc, bool inv,
 #endif
 
 #define is_valid_seq_2(uni) ( \
-    ((uni & b2_mask) == b2_patt) & \
+    ((uni & b2_mask) == b2_patt) && \
     ((uni & b2_requ)) \
 )
 
 #define is_valid_seq_3(uni) ( \
-    ((uni & b3_mask) == b3_patt) & \
+    ((uni & b3_mask) == b3_patt) && \
     ((tmp = (uni & b3_requ))) && \
     ((tmp != b3_erro)) \
 )
 
 #define is_valid_seq_4(uni) ( \
-    ((uni & b4_mask) == b4_patt) & \
+    ((uni & b4_mask) == b4_patt) && \
     ((tmp = (uni & b4_requ))) && \
-    (((tmp & b4_err0) == 0) | ((tmp & b4_err1) == 0)) \
+    (((tmp & b4_err0) == 0) || ((tmp & b4_err1) == 0)) \
 )
 
     /* The replacement character U+FFFD, used to indicate invalid character. */

@@ -4756,6 +4756,7 @@ struct yyjson_doc {
  @param str The C string.
  @param len The returnd value from strlen(str).
  */
+/* TODO: refactor. check negative condition first */
 yyjson_api_inline bool unsafe_yyjson_is_str_noesc(const char *str, size_t len) {
 #if YYJSON_HAS_CONSTANT_P && \
     (!YYJSON_IS_REAL_GCC || yyjson_gcc_available(4, 4, 0))
@@ -5224,6 +5225,7 @@ yyjson_api_inline size_t yyjson_get_len(yyjson_val *val) {
     return val ? unsafe_yyjson_get_len(val) : 0;
 }
 
+/* TODO: refactor. check negative condition first */
 yyjson_api_inline bool yyjson_equals_str(yyjson_val *val, const char *str) {
     if (yyjson_likely((val != NULL) & (str != NULL))) {
         return unsafe_yyjson_is_str(val) &&
@@ -5232,6 +5234,7 @@ yyjson_api_inline bool yyjson_equals_str(yyjson_val *val, const char *str) {
     return false;
 }
 
+/* TODO: refactor. check negative condition first */
 yyjson_api_inline bool yyjson_equals_strn(yyjson_val *val, const char *str,
                                           size_t len) {
     if (yyjson_likely((val != NULL) & (str != NULL))) {
@@ -5346,6 +5349,7 @@ yyjson_api_inline size_t yyjson_arr_size(yyjson_val *arr) {
     return yyjson_is_arr(arr) ? unsafe_yyjson_get_len(arr) : 0;
 }
 
+/* TODO: refactor. check negative condition first */
 yyjson_api_inline yyjson_val *yyjson_arr_get(yyjson_val *arr, size_t idx) {
     if (yyjson_likely(yyjson_is_arr(arr))) {
         if (yyjson_likely(unsafe_yyjson_get_len(arr) > idx)) {
@@ -5361,6 +5365,7 @@ yyjson_api_inline yyjson_val *yyjson_arr_get(yyjson_val *arr, size_t idx) {
     return NULL;
 }
 
+/* TODO: refactor. check negative condition first */
 yyjson_api_inline yyjson_val *yyjson_arr_get_first(yyjson_val *arr) {
     if (yyjson_likely(yyjson_is_arr(arr))) {
         if (yyjson_likely(unsafe_yyjson_get_len(arr) > 0)) {
@@ -5370,6 +5375,7 @@ yyjson_api_inline yyjson_val *yyjson_arr_get_first(yyjson_val *arr) {
     return NULL;
 }
 
+/* TODO: refactor. check negative condition first */
 yyjson_api_inline yyjson_val *yyjson_arr_get_last(yyjson_val *arr) {
     if (yyjson_likely(yyjson_is_arr(arr))) {
         size_t len = unsafe_yyjson_get_len(arr);
@@ -5414,6 +5420,7 @@ yyjson_api_inline bool yyjson_arr_iter_has_next(yyjson_arr_iter *iter) {
     return iter ? iter->idx < iter->max : false;
 }
 
+/* TODO: refactor. check negative condition first */
 yyjson_api_inline yyjson_val *yyjson_arr_iter_next(yyjson_arr_iter *iter) {
     yyjson_val *val;
     if (iter && iter->idx < iter->max) {
@@ -5440,6 +5447,7 @@ yyjson_api_inline yyjson_val *yyjson_obj_get(yyjson_val *obj,
     return yyjson_obj_getn(obj, key, key ? strlen(key) : 0);
 }
 
+/* TODO: refactor. check negative condition first */
 yyjson_api_inline yyjson_val *yyjson_obj_getn(yyjson_val *obj,
                                               const char *_key,
                                               size_t key_len) {
@@ -5483,6 +5491,7 @@ yyjson_api_inline bool yyjson_obj_iter_has_next(yyjson_obj_iter *iter) {
     return iter ? iter->idx < iter->max : false;
 }
 
+/* TODO: refactor. check negative condition first */
 yyjson_api_inline yyjson_val *yyjson_obj_iter_next(yyjson_obj_iter *iter) {
     if (iter && iter->idx < iter->max) {
         yyjson_val *key = iter->cur;
@@ -5502,10 +5511,11 @@ yyjson_api_inline yyjson_val *yyjson_obj_iter_get(yyjson_obj_iter *iter,
     return yyjson_obj_iter_getn(iter, key, key ? strlen(key) : 0);
 }
 
+/* TODO: refactor. check negative condition first */
 yyjson_api_inline yyjson_val *yyjson_obj_iter_getn(yyjson_obj_iter *iter,
                                                    const char *key,
                                                    size_t key_len) {
-    if (iter && key) {
+    if ((iter != NULL) & (key != NULL)) {
         size_t idx = iter->idx;
         size_t max = iter->max;
         yyjson_val *cur = iter->cur;
@@ -6054,6 +6064,7 @@ yyjson_api_inline size_t yyjson_mut_arr_size(yyjson_mut_val *arr) {
     return yyjson_mut_is_arr(arr) ? unsafe_yyjson_get_len(arr) : 0;
 }
 
+/* TODO: refactor. check negative condition first */
 yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_get(yyjson_mut_val *arr,
                                                      size_t idx) {
     if (yyjson_likely(idx < yyjson_mut_arr_size(arr))) {
@@ -6064,6 +6075,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_get(yyjson_mut_val *arr,
     return NULL;
 }
 
+/* TODO: refactor. check negative condition first */
 yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_get_first(
     yyjson_mut_val *arr) {
     if (yyjson_likely(yyjson_mut_arr_size(arr) > 0)) {
@@ -6072,6 +6084,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_get_first(
     return NULL;
 }
 
+/* TODO: refactor. check negative condition first */
 yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_get_last(
     yyjson_mut_val *arr) {
     if (yyjson_likely(yyjson_mut_arr_size(arr) > 0)) {
@@ -6111,6 +6124,7 @@ yyjson_api_inline bool yyjson_mut_arr_iter_has_next(yyjson_mut_arr_iter *iter) {
     return iter ? iter->idx < iter->max : false;
 }
 
+/* TODO: refactor. check negative condition first */
 yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_iter_next(
     yyjson_mut_arr_iter *iter) {
     if (iter && iter->idx < iter->max) {
@@ -6123,6 +6137,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_iter_next(
     return NULL;
 }
 
+/* TODO: refactor. check negative condition first */
 yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_iter_remove(
     yyjson_mut_arr_iter *iter) {
     if (yyjson_likely(iter && ((0 < iter->idx) & (iter->idx <= iter->max)))) {
@@ -6157,6 +6172,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_arr(yyjson_mut_doc *doc) {
     return NULL;
 }
 
+/* TODO: refactor. check negative condition first */
 #define yyjson_mut_arr_with_func(func) \
     if (yyjson_likely((doc != NULL) & (((0 < count) & \
        (count < (~(size_t)0) / sizeof(yyjson_mut_val)) & (vals != NULL)) | (count == 0)))) { \
@@ -6850,6 +6866,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_obj_iter_getn(
  * Mutable JSON Object Creation API (Implementation)
  *============================================================================*/
 
+/* TODO: refactor. check negative condition first */
 yyjson_api_inline yyjson_mut_val *yyjson_mut_obj(yyjson_mut_doc *doc) {
     if (yyjson_likely(doc)) {
         yyjson_mut_val *val = unsafe_yyjson_mut_val(doc, 1);
@@ -6861,6 +6878,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_obj(yyjson_mut_doc *doc) {
     return NULL;
 }
 
+/* TODO: refactor. check negative condition first */
 yyjson_api_inline yyjson_mut_val *yyjson_mut_obj_with_str(yyjson_mut_doc *doc,
                                                           const char **keys,
                                                           const char **vals,
@@ -6892,6 +6910,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_obj_with_str(yyjson_mut_doc *doc,
     return NULL;
 }
 
+/* TODO: refactor. check negative condition first */
 yyjson_api_inline yyjson_mut_val *yyjson_mut_obj_with_kv(yyjson_mut_doc *doc,
                                                          const char **pairs,
                                                          size_t count) {
@@ -6947,6 +6966,7 @@ yyjson_api_inline void unsafe_yyjson_mut_obj_add(yyjson_mut_val *obj,
     unsafe_yyjson_set_len(obj, len + 1);
 }
 
+/* TODO: refactor. check negative condition first */
 yyjson_api_inline yyjson_mut_val *unsafe_yyjson_mut_obj_remove(
     yyjson_mut_val *obj, const char *key, size_t key_len) {
     size_t obj_len = unsafe_yyjson_get_len(obj);
@@ -6970,11 +6990,12 @@ yyjson_api_inline yyjson_mut_val *unsafe_yyjson_mut_obj_remove(
         }
         unsafe_yyjson_set_len(obj, obj_len);
         return removed_item;
-    } else {
+    } else { /* TODO: useless else here */
         return NULL;
     }
 }
 
+/* TODO: refactor. check negative condition first */
 yyjson_api_inline bool unsafe_yyjson_mut_obj_replace(yyjson_mut_val *obj,
                                                      yyjson_mut_val *key,
                                                      yyjson_mut_val *val) {
@@ -7041,6 +7062,7 @@ yyjson_api_inline bool yyjson_mut_obj_put(yyjson_mut_val *obj,
     return true;
 }
 
+/* TODO: refactor. check negative condition first */
 yyjson_api_inline bool yyjson_mut_obj_insert(yyjson_mut_val *obj,
                                              yyjson_mut_val *key,
                                              yyjson_mut_val *val,
@@ -7063,6 +7085,7 @@ yyjson_api_inline bool yyjson_mut_obj_insert(yyjson_mut_val *obj,
     return false;
 }
 
+/* TODO: refactor. check negative condition first */
 yyjson_api_inline yyjson_mut_val *yyjson_mut_obj_remove(yyjson_mut_val *obj,
     yyjson_mut_val *key) {
     if (yyjson_likely(yyjson_mut_is_obj(obj) & yyjson_mut_is_str(key))) {
@@ -7072,6 +7095,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_obj_remove(yyjson_mut_val *obj,
     return NULL;
 }
 
+/* TODO: refactor. check negative condition first */
 yyjson_api_inline yyjson_mut_val *yyjson_mut_obj_remove_key(
     yyjson_mut_val *obj, const char *key) {
     if (yyjson_likely(yyjson_mut_is_obj(obj) & (key != NULL))) {
@@ -7081,6 +7105,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_obj_remove_key(
     return NULL;
 }
 
+/* TODO: refactor. check negative condition first */
 yyjson_api_inline yyjson_mut_val *yyjson_mut_obj_remove_keyn(
     yyjson_mut_val *obj, const char *key, size_t key_len) {
     if (yyjson_likely(yyjson_mut_is_obj(obj) & (key != NULL))) {
@@ -7089,6 +7114,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_obj_remove_keyn(
     return NULL;
 }
 
+/* TODO: refactor. check negative condition first */
 yyjson_api_inline bool yyjson_mut_obj_clear(yyjson_mut_val *obj) {
     if (yyjson_likely(yyjson_mut_is_obj(obj))) {
         unsafe_yyjson_set_len(obj, 0);
@@ -7097,6 +7123,7 @@ yyjson_api_inline bool yyjson_mut_obj_clear(yyjson_mut_val *obj) {
     return false;
 }
 
+/* TODO: refactor. check negative condition first */
 yyjson_api_inline bool yyjson_mut_obj_replace(yyjson_mut_val *obj,
                                               yyjson_mut_val *key,
                                               yyjson_mut_val *val) {
@@ -7107,6 +7134,7 @@ yyjson_api_inline bool yyjson_mut_obj_replace(yyjson_mut_val *obj,
     return false;
 }
 
+/* TODO: refactor. check negative condition first */
 yyjson_api_inline bool yyjson_mut_obj_rotate(yyjson_mut_val *obj,
                                              size_t idx) {
     if (yyjson_likely(yyjson_mut_is_obj(obj) &
@@ -7123,6 +7151,7 @@ yyjson_api_inline bool yyjson_mut_obj_rotate(yyjson_mut_val *obj,
  * Mutable JSON Object Modification Convenience API (Implementation)
  *============================================================================*/
 
+/* TODO: refactor. check negative condition first */
 #define yyjson_mut_obj_add_func(func) \
     if (yyjson_likely((doc != NULL) & yyjson_mut_is_obj(obj) & (_key != NULL))) { \
         yyjson_mut_val *key = unsafe_yyjson_mut_val(doc, 2); \
