@@ -6741,7 +6741,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_obj_getn(yyjson_mut_val *obj,
                                                       const char *_key,
                                                       size_t key_len) {
     size_t len = yyjson_mut_obj_size(obj);
-    if (yyjson_likely(len & (_key != NULL))) {
+    if (yyjson_likely((len != 0) & (_key != NULL))) {
         yyjson_mut_val *key = ((yyjson_mut_val *)obj->uni.ptr)->next->next;
         while (len-- > 0) {
             if (unsafe_yyjson_equals_strn(key, _key, key_len)) return key->next;
