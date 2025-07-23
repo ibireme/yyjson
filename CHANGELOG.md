@@ -6,6 +6,7 @@ All notable changes to this project will be documented in this file.
 ## Unreleased
 #### Added
 - Add `yyjson_write_number()` and `yyjson_mut_write_number()` functions to write a number value to a string buffer.
+- Add `YYJSON_READ_ALLOW_EXT_ESCAPE` option to allow extended escape sequences defined in JSON5 spec and ESC used for ANSI escape code (non-standard).
 
 
 ## 0.11.1 (2025-05-14)

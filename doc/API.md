@@ -433,6 +433,8 @@ This flag permits invalid characters to appear in the string values, but it stil
 ### **YYJSON_READ_ALLOW_BOM**
 Allow UTF-8 BOM and skip it before parsing if any (non-standard).
 
+### **YYJSON_READ_ALLOW_EXT_ESCAPE**
+Allow extended escape sequences defined in JSON5 spec and ESC used for ANSI escape code (non-standard).
 
 ---------------
 # Writing JSON

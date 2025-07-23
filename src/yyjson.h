@@ -95,6 +95,7 @@
  - YYJSON_READ_ALLOW_TRAILING_COMMAS
  - YYJSON_READ_ALLOW_INVALID_UNICODE
  - YYJSON_READ_ALLOW_BOM
+ - YYJSON_READ_ALLOW_EXT_ESCAPE
  - YYJSON_WRITE_ALLOW_INF_AND_NAN
  - YYJSON_WRITE_ALLOW_INVALID_UNICODE
 
@@ -782,6 +783,9 @@ static const yyjson_read_flag YYJSON_READ_BIGNUM_AS_RAW         = 1 << 7;
 
 /** Allow UTF-8 BOM and skip it before parsing if any (non-standard). */
 static const yyjson_read_flag YYJSON_READ_ALLOW_BOM             = 1 << 8;
+
+/** Allow extended escapes defined in JSON5 spec and ESC for ANSI escape code (non-standard) */
+static const yyjson_read_flag YYJSON_READ_ALLOW_EXT_ESCAPE      = 1 << 9;
 
 
 

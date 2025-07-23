@@ -18,6 +18,7 @@ typedef struct {
     string_val esc_uni;     // json string escape unicode
     string_val esc_all;     // json string escape unicode and slashes
     bool invalid_unicode;   // flag `ALLOW_INVALID_UNICODE`
+    bool ext_escapes;       // flag `ALLOW_EXT_ESCAPE`
 } string_set;
 
 /// `src` should be decoded as `dst` with flag.
@@ -25,21 +26,21 @@ static void validate_str_read(string_val *src,
                               string_val *dst,
                               yyjson_read_flag flg) {
 #if !YYJSON_DISABLE_READER
-    
+
 #if YYJSON_DISABLE_UTF8_VALIDATION
     if (src->str && !yy_str_is_utf8(src->str, src->len)) return;
 #endif
-    
+
     string_val empty = { NULL, 0 };
     if (!src || !src->str) return;
     if (!dst) dst = &empty;
-    
+
     usize buf_len = src->len + 2;
     char *buf = malloc(buf_len);
     buf[0] = '"';
     memcpy(buf + 1, src->str, src->len);
     buf[buf_len - 1] = '"';
-    
+
     yyjson_doc *doc = yyjson_read(buf, buf_len, flg);
     if (dst->str) {
         yy_assertf(doc,
@@ -60,17 +61,17 @@ static void validate_str_read(string_val *src,
     }
     free(buf);
     yyjson_doc_free(doc);
-    
+
 #endif
 }
 
 static void validate_roundtrip(char *str, usize len, yyjson_write_flag flg) {
 #if !YYJSON_DISABLE_READER && !YYJSON_DISABLE_WRITER
-    
+
 #if YYJSON_DISABLE_UTF8_VALIDATION
     if (str && !yy_str_is_utf8(str, len)) return;
 #endif
-    
+
     yyjson_doc *doc = yyjson_read(str, len, YYJSON_READ_ALLOW_INVALID_UNICODE);
     usize ret_len = 0;
     char *ret = yyjson_write(doc, flg, &ret_len);
@@ -79,17 +80,17 @@ static void validate_roundtrip(char *str, usize len, yyjson_write_flag flg) {
     yy_assert(memcmp(ret, str, len) == 0);
     free(ret);
     yyjson_doc_free(doc);
-    
+
     doc = yyjson_read(str, len, 0);
     ret = yyjson_write(doc, flg, NULL);
     if (ret) free(ret);
     yyjson_doc_free(doc);
-    
+
     doc = yyjson_read(str, len, YYJSON_READ_ALLOW_INVALID_UNICODE);
     ret = yyjson_write(doc, 0, NULL);
     if (ret) free(ret);
     yyjson_doc_free(doc);
-    
+
     doc = yyjson_read(str, len, YYJSON_READ_ALLOW_INVALID_UNICODE);
     ret = yyjson_write(doc, YYJSON_WRITE_PRETTY, NULL);
     if (ret) free(ret);
@@ -103,22 +104,22 @@ static void validate_str_write(string_val *src,
                                string_val *dst,
                                yyjson_write_flag flg) {
 #if !YYJSON_DISABLE_WRITER
-    
+
 #if YYJSON_DISABLE_UTF8_VALIDATION
     if (src->str && !yy_str_is_utf8(src->str, src->len)) return;
 #endif
-    
+
     string_val empty = { NULL, 0 };
     if (!src || !src->str) return;
     if (!dst) dst = &empty;
-    
+
     char *buf = src->len ? malloc(src->len) : (char *)1;
     memcpy(buf, src->str, src->len);
-    
+
     yyjson_mut_doc *doc = yyjson_mut_doc_new(NULL);
     yyjson_mut_val *val = yyjson_mut_strn(doc, buf, src->len);
     yyjson_mut_doc_set_root(doc, val);
-    
+
     // single value
     usize ret_len = 0;
     char *ret = yyjson_mut_write_opts(doc, flg, NULL, &ret_len, NULL);
@@ -136,7 +137,7 @@ static void validate_str_write(string_val *src,
                    "input string should be rejected by writer, but accepted: \"%s\"\n",
                    src->str);
     }
-    
+
     // string in array (minify)
     yyjson_mut_val *arr = yyjson_mut_arr(doc);
     yyjson_mut_arr_append(arr, val);
@@ -156,7 +157,7 @@ static void validate_str_write(string_val *src,
                    "input string should be rejected by writer, but accepted: \"%s\"\n",
                    src->str);
     }
-    
+
     // string in array (pretty)
     ret = yyjson_mut_write_opts(doc, flg | YYJSON_WRITE_PRETTY, NULL, &ret_len, NULL);
     if (dst->str) {
@@ -173,8 +174,8 @@ static void validate_str_write(string_val *src,
                    "input string should be rejected by writer, but accepted: \"%s\"\n",
                    src->str);
     }
-    
-    
+
+
     yyjson_mut_doc_free(doc);
     if (src->len) free(buf);
 #endif
@@ -186,9 +187,11 @@ static void validate_str_write(string_val *src,
 ///     esc_uni -> str
 ///     esc_all -> str
 static void validate_read(string_set set) {
-    yyjson_read_flag flg = YYJSON_READ_ALLOW_INVALID_UNICODE;
-    
-    if (set.invalid_unicode) {
+    yyjson_read_flag flg =
+        (set.invalid_unicode ? YYJSON_READ_ALLOW_INVALID_UNICODE : 0) |
+        (set.ext_escapes ? YYJSON_READ_ALLOW_EXT_ESCAPE : 0);
+
+    if (flg) {
         validate_str_read(&set.esc_non, NULL, 0);
         validate_str_read(&set.esc_sla, NULL, 0);
 #if YYJSON_DISABLE_NON_STANDARD
@@ -205,7 +208,7 @@ static void validate_read(string_set set) {
         validate_str_read(&set.esc_sla, &set.str, 0);
         validate_str_read(&set.esc_uni, &set.str, 0);
         validate_str_read(&set.esc_all, &set.str, 0);
-        
+
         validate_str_read(&set.esc_non, &set.str, flg);
         validate_str_read(&set.esc_sla, &set.str, flg);
         validate_str_read(&set.esc_uni, &set.str, flg);
@@ -224,7 +227,7 @@ static void validate_write(string_set set) {
     yyjson_write_flag flg_uni = YYJSON_WRITE_ESCAPE_UNICODE;
     yyjson_write_flag flg_all = YYJSON_WRITE_ESCAPE_UNICODE | YYJSON_WRITE_ESCAPE_SLASHES;
     yyjson_write_flag flg_inv = YYJSON_WRITE_ALLOW_INVALID_UNICODE;
-    
+
     if (set.invalid_unicode) {
         validate_str_write(&set.str, NULL, flg_non);
         validate_str_write(&set.str, NULL, flg_sla);
@@ -246,7 +249,7 @@ static void validate_write(string_set set) {
         validate_str_write(&set.str, &set.esc_sla, flg_sla);
         validate_str_write(&set.str, &set.esc_uni, flg_uni);
         validate_str_write(&set.str, &set.esc_all, flg_all);
-        
+
         validate_str_write(&set.str, &set.esc_non, flg_non | flg_inv);
         validate_str_write(&set.str, &set.esc_sla, flg_sla | flg_inv);
         validate_str_write(&set.str, &set.esc_uni, flg_uni | flg_inv);
@@ -260,7 +263,7 @@ static void validate_read_write(string_set set) {
 }
 
 yy_test_case(test_string) {
-    
+
     validate_read_write((string_set) {
         { "", 0 },
         { "", 0 },
@@ -268,7 +271,7 @@ yy_test_case(test_string) {
         { "", 0 },
         { "", 0 },
     });
-    
+
     validate_read_write((string_set) {
         { "a", 1 },
         { "a", 1 },
@@ -276,7 +279,7 @@ yy_test_case(test_string) {
         { "a", 1 },
         { "a", 1 },
     });
-    
+
     validate_read_write((string_set) {
         { "abc", 3 },
         { "abc", 3 },
@@ -284,7 +287,7 @@ yy_test_case(test_string) {
         { "abc", 3 },
         { "abc", 3 },
     });
-    
+
     validate_read_write((string_set) {
         { "\0", 1 },
         { "\\u0000", 6, },
@@ -292,7 +295,7 @@ yy_test_case(test_string) {
         { "\\u0000", 6, },
         { "\\u0000", 6, },
     });
-    
+
     validate_read_write((string_set) {
         { "abc\0", 4 },
         { "abc\\u0000", 9 },
@@ -300,7 +303,7 @@ yy_test_case(test_string) {
         { "abc\\u0000", 9 },
         { "abc\\u0000", 9 },
     });
-    
+
     validate_read_write((string_set) {
         { "\0abc", 4 },
         { "\\u0000abc", 9 },
@@ -308,7 +311,7 @@ yy_test_case(test_string) {
         { "\\u0000abc", 9 },
         { "\\u0000abc", 9 },
     });
-    
+
     validate_read_write((string_set) {
         { "abc\0def", 7 },
         { "abc\\u0000def", 12 },
@@ -316,7 +319,7 @@ yy_test_case(test_string) {
         { "abc\\u0000def", 12 },
         { "abc\\u0000def", 12 },
     });
-    
+
     validate_read_write((string_set) {
         { "a\\b", 3 },
         { "a\\\\b", 4 },
@@ -324,7 +327,7 @@ yy_test_case(test_string) {
         { "a\\\\b", 4 },
         { "a\\\\b", 4 },
     });
-    
+
     validate_read_write((string_set) {
         { "a/b", 3 },
         { "a/b", 3 },
@@ -332,7 +335,7 @@ yy_test_case(test_string) {
         { "a/b", 3 },
         { "a\\/b", 4 },
     });
-    
+
     validate_read((string_set) {
         { "abc\x20\x7F", 5 },
         { "abc\x20\x7F", 5 },
@@ -340,7 +343,7 @@ yy_test_case(test_string) {
         { "abc\x20\x7F", 5 },
         { "abc\x20\x7F", 5 },
     });
-    
+
     validate_read_write((string_set) {
         { "\"\\/\b\f\n\r\t", 8 },
         { "\\\"\\\\/\\b\\f\\n\\r\\t", 15 },
@@ -348,7 +351,7 @@ yy_test_case(test_string) {
         { "\\\"\\\\/\\b\\f\\n\\r\\t", 15 },
         { "\\\"\\\\\\/\\b\\f\\n\\r\\t", 16 },
     });
-    
+
     validate_read_write((string_set) {
         { "Alizée", 7 },
         { "Alizée", 7 },
@@ -356,7 +359,7 @@ yy_test_case(test_string) {
         { "Aliz\\u00E9e", 11 },
         { "Aliz\\u00E9e", 11 },
     });
-    
+
     validate_read_write((string_set) {
         { "Hello世界", 11 },
         { "Hello世界", 11 },
@@ -364,7 +367,7 @@ yy_test_case(test_string) {
         { "Hello\\u4E16\\u754C", 17 },
         { "Hello\\u4E16\\u754C", 17 },
     });
-    
+
     validate_read((string_set) {
         { "Hello世界", 11 },
         { "Hello世界", 11 },
@@ -372,7 +375,7 @@ yy_test_case(test_string) {
         { "Hello\\u4e16\\u754c", 17 },
         { "Hello\\u4e16\\u754c", 17 },
     });
-    
+
     validate_read_write((string_set) {
         { "Emoji😊", 9 },
         { "Emoji😊", 9 },
@@ -380,7 +383,7 @@ yy_test_case(test_string) {
         { "Emoji\\uD83D\\uDE0A", 17 },
         { "Emoji\\uD83D\\uDE0A", 17 },
     });
-    
+
     validate_read_write((string_set) {
         { "🐱\t🐶", 9 },
         { "🐱\\t🐶", 10 },
@@ -388,7 +391,7 @@ yy_test_case(test_string) {
         { "\\uD83D\\uDC31\\t\\uD83D\\uDC36", 26 },
         { "\\uD83D\\uDC31\\t\\uD83D\\uDC36", 26 },
     });
-    
+
     validate_read_write((string_set) {
         { "Check✅©\t2020®яблоко////แอปเปิ้ล\\\\リンゴ|تفاحة|蘋果|사과|", 97 },
         { "Check✅©\\t2020®яблоко////แอปเปิ้ล\\\\\\\\リンゴ|تفاحة|蘋果|사과|", 100 },
@@ -396,8 +399,8 @@ yy_test_case(test_string) {
         { "Check\\u2705\\u00A9\\t2020\\u00AE\\u044F\\u0431\\u043B\\u043E\\u043A\\u043E////\\u0E41\\u0E2D\\u0E1B\\u0E40\\u0E1B\\u0E34\\u0E49\\u0E25\\\\\\\\\\u30EA\\u30F3\\u30B4|\\u062A\\u0641\\u0627\\u062D\\u0629|\\u860B\\u679C|\\uC0AC\\uACFC|\\uF8FF", 203 },
         { "Check\\u2705\\u00A9\\t2020\\u00AE\\u044F\\u0431\\u043B\\u043E\\u043A\\u043E\\/\\/\\/\\/\\u0E41\\u0E2D\\u0E1B\\u0E40\\u0E1B\\u0E34\\u0E49\\u0E25\\\\\\\\\\u30EA\\u30F3\\u30B4|\\u062A\\u0641\\u0627\\u062D\\u0629|\\u860B\\u679C|\\uC0AC\\uACFC|\\uF8FF", 207 },
     });
-    
-    
+
+
     // string with different length
     char rand_str[65] = { 0 };
     for (int i = 0; i < 64; i++) {
@@ -429,8 +432,8 @@ yy_test_case(test_string) {
             { buf2, len + 2 },
         });
     }
-    
-    
+
+
     // 1 byte invalid UTF-8
     for (int len = 0; len <= 6; len++) {
         validate_write((string_set) {
@@ -466,8 +469,8 @@ yy_test_case(test_string) {
             true
         });
     }
-    
-    
+
+
     // 2 byte invalid UTF-8
     for (int len = 0; len <= 6; len++) {
         validate_write((string_set) {
@@ -519,8 +522,8 @@ yy_test_case(test_string) {
             true
         });
     }
-    
-    
+
+
     // 3 byte invalid UTF-8
     for (int len = 0; len <= 6; len++) {
         validate_write((string_set) {
@@ -556,8 +559,8 @@ yy_test_case(test_string) {
             true
         });
     }
-    
-    
+
+
     // 4 byte invalid UTF-8
     for (int len = 0; len <= 6; len++) {
         validate_write((string_set) {
@@ -593,8 +596,8 @@ yy_test_case(test_string) {
             true
         });
     }
-    
-    
+
+
     // special case
     validate_read((string_set) {
         { "qwerty\0", 7 },
@@ -644,8 +647,8 @@ yy_test_case(test_string) {
         { NULL, 0 },
         true
     });
-    
-    
+
+
     // invalid escape
     validate_read((string_set) {
         { NULL, 0 },
@@ -703,8 +706,173 @@ yy_test_case(test_string) {
         { NULL, 0 },
         { "\\x1234", 6 },
     });
-    
-    
+
+
+    // extended escape
+    validate_read((string_set) {
+        { NULL, 0 },
+        { "\\T", 2 },
+        { NULL, 0 },
+        { NULL, 0 },
+        { NULL, 0 },
+        false,
+        true
+    });
+    validate_read((string_set) {
+        { NULL, 0 },
+        { "\\U00E9", 2 },
+        { NULL, 0 },
+        { NULL, 0 },
+        { NULL, 0 },
+        false,
+        true
+    });
+    validate_read((string_set) {
+        { NULL, 0 },
+        { "\\a", 2 },
+        { NULL, 0 },
+        { NULL, 0 },
+        { NULL, 0 },
+        false,
+        true
+    });
+    validate_read((string_set) {
+        { "\033", 1 },
+        { "\\e", 2 },
+        { NULL, 0 },
+        { NULL, 0 },
+        { NULL, 0 },
+        false,
+        true
+    });
+    validate_read((string_set) {
+        { "\v", 1 },
+        { "\\v", 2 },
+        { NULL, 0 },
+        { NULL, 0 },
+        { NULL, 0 },
+        false,
+        true
+    });
+    validate_read((string_set) {
+        { "'", 1 },
+        { "\\'", 2 },
+        { NULL, 0 },
+        { NULL, 0 },
+        { NULL, 0 },
+        false,
+        true
+    });
+    validate_read((string_set) {
+        { NULL, 0 },
+        { "\\?", 2 },
+        { NULL, 0 },
+        { NULL, 0 },
+        { NULL, 0 },
+        false,
+        true
+    });
+    validate_read((string_set) {
+        { "\0" "00", 3 },
+        { "\\000", 4 },
+        { NULL, 0 },
+        { NULL, 0 },
+        { NULL, 0 },
+        false,
+        true
+    });
+    validate_read((string_set) {
+        { NULL, 0 },
+        { "\\101", 4 },
+        { NULL, 0 },
+        { NULL, 0 },
+        { NULL, 0 },
+        false,
+        true
+    });
+    validate_read((string_set) {
+        { "\0", 1 },
+        { "\\x00", 4 },
+        { NULL, 0 },
+        { NULL, 0 },
+        { NULL, 0 },
+        false,
+        true
+    });
+    validate_read((string_set) {
+        { "\x41", 1 },
+        { "\\x41", 4 },
+        { NULL, 0 },
+        { NULL, 0 },
+        { NULL, 0 },
+        false,
+        true
+    });
+    validate_read((string_set) {
+        { NULL, 0 },
+        { "\\U1234", 6 },
+        { NULL, 0 },
+        { NULL, 0 },
+        { NULL, 0 },
+        false,
+        true
+    });
+    validate_read((string_set) {
+        { NULL, 0 },
+        { "\\u123Z", 6 },
+        { NULL, 0 },
+        { NULL, 0 },
+        { NULL, 0 },
+        false,
+        true
+    });
+    validate_read((string_set) {
+        { "\x12" "34", 3 },
+        { "\\x1234", 6 },
+        { NULL, 0 },
+        { NULL, 0 },
+        { NULL, 0 },
+        false,
+        true
+    });
+    validate_read((string_set) {
+        { "\x12\x34!", 3 },
+        { "\\x12\\x34!", 9 },
+        { NULL, 0 },
+        { NULL, 0 },
+        { NULL, 0 },
+        false,
+        true
+    });
+    validate_read((string_set) {
+        { NULL, 0 },
+        { "\\x1", 3 },
+        { NULL, 0 },
+        { NULL, 0 },
+        { NULL, 0 },
+        false,
+        true
+    });
+    validate_read((string_set) {
+        { NULL, 0 },
+        { "\\x0x", 4 },
+        { NULL, 0 },
+        { NULL, 0 },
+        { NULL, 0 },
+        false,
+        true
+    });
+    validate_read((string_set) {
+        { NULL, 0 },
+        { "\\X41", 4 },
+        { NULL, 0 },
+        { NULL, 0 },
+        { NULL, 0 },
+        false,
+        true
+    });
+
+
     // invalid high surrogate
     validate_read((string_set) {
         { NULL, 0 },
@@ -714,8 +882,8 @@ yy_test_case(test_string) {
         { NULL, 0 },
         { "\\uDE0A\\u0000", 12 },
     });
-    
-    
+
+
     // no matched low surrogate
     validate_read((string_set) {
         { NULL, 0 },
@@ -733,8 +901,8 @@ yy_test_case(test_string) {
         { NULL, 0 },
         { "\\uD83DAAAA", 10 },
     });
-    
-    
+
+
     // invalid low surrogate
     validate_read((string_set) {
         { NULL, 0 },
@@ -744,8 +912,8 @@ yy_test_case(test_string) {
         { NULL, 0 },
         { "\\uD83D\\uD83D", 12 },
     });
-    
-    
+
+
     // truncated escape sequence
     for (int len = 1; len < 12; len++) {
         if (len == 6) continue;
@@ -758,5 +926,5 @@ yy_test_case(test_string) {
             { str, len },
         });
     }
-    
+
 }
