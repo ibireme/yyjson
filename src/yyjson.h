@@ -1773,7 +1773,7 @@ yyjson_api_inline const char *yyjson_get_type_desc(yyjson_val *val);
 yyjson_api_inline const char *yyjson_get_raw(yyjson_val *val);
 
 /** Returns the content if the value is bool.
-    Returns NULL if `val` is NULL or type is not bool. */
+    Returns false if `val` is NULL or type is not bool. */
 yyjson_api_inline bool yyjson_get_bool(yyjson_val *val);
 
 /** Returns the content and cast to uint64_t.
