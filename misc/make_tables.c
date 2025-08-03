@@ -223,72 +223,33 @@ static void make_dec_trailing_zero_table(void) {
 
 /*----------------------------------------------------------------------------*/
 
-/** Character type */
-typedef u8 char_type;
-/** Whitespace character: ' ', '\\t', '\\n', '\\r'. */
-static const char_type CHAR_TYPE_SPACE      = 1 << 0;
-/** Number character: '-', [0-9]. */
-static const char_type CHAR_TYPE_NUMBER     = 1 << 1;
-/** JSON Escaped character: '"', '\', [0x00-0x1F]. */
-static const char_type CHAR_TYPE_ESC_ASCII  = 1 << 2;
-/** Non-ASCII character: [0x80-0xFF]. */
-static const char_type CHAR_TYPE_NON_ASCII  = 1 << 3;
-/** JSON container character: '{', '['. */
-static const char_type CHAR_TYPE_CONTAINER  = 1 << 4;
-/** Comment character: '/'. */
-static const char_type CHAR_TYPE_COMMENT    = 1 << 5;
-/** Line end character: '\\n', '\\r', '\0'. */
-static const char_type CHAR_TYPE_LINE_END   = 1 << 6;
-/** Hex character: [0-9a-fA-F]. */
-static const char_type CHAR_TYPE_HEX        = 1 << 7;
+/* char_table1 */
+#define CHAR_TYPE_ASCII     (1 << 0) /* Except: ["\], [0x00-0x1F, 0x80-0xFF] */
+#define CHAR_TYPE_ASCII_SQ  (1 << 1) /* Except: ['\], [0x00-0x1F, 0x80-0xFF] */
+#define CHAR_TYPE_SPACE     (1 << 2) /* Whitespace: [ \t\n\r] */
+#define CHAR_TYPE_SPACE_EXT (1 << 3) /* Whitespace: [ \t\n\r\v\f], JSON5 */
+#define CHAR_TYPE_NUM       (1 << 4) /* Number: [.-+0-9] */
+#define CHAR_TYPE_COMMENT   (1 << 5) /* Comment: [/] */
 
-static void make_char_table(void) {
-    u8 table[256] = {0};
-    
-    table[' '] |= CHAR_TYPE_SPACE;
-    table['\t'] |= CHAR_TYPE_SPACE;
-    table['\n'] |= CHAR_TYPE_SPACE;
-    table['\r'] |= CHAR_TYPE_SPACE;
+/* char_table2 */
+#define CHAR_TYPE_EOL       (1 << 0) /* End of line: [\r\n] */
+#define CHAR_TYPE_EOL_EXT   (1 << 1) /* End of line: [\r\n], JSON5 */
+#define CHAR_TYPE_ID_START  (1 << 2) /* ID start: [_$A-Za-z\], U+0080+ */
+#define CHAR_TYPE_ID_NEXT   (1 << 3) /* ID next: [_$A-Za-z0-9\], U+0080+ */
+#define CHAR_TYPE_ID_ASCII  (1 << 4) /* ID next ASCII: [_$A-Za-z0-9] */
 
-    for (int i = 0; i <= 9; i++) {
-        table[i + '0'] |= CHAR_TYPE_NUMBER;
-    }
-    table['-'] |= CHAR_TYPE_NUMBER;
-    table['+'] |= CHAR_TYPE_NUMBER; // Extended Number Format
-    table['.'] |= CHAR_TYPE_NUMBER; // Extended Number Format
-    
-    table['"'] |= CHAR_TYPE_ESC_ASCII;
-    table['\\'] |= CHAR_TYPE_ESC_ASCII;
-    for (int i = 0x00; i <= 0x1F; i++) {
-        table[i] |= CHAR_TYPE_ESC_ASCII;
-    }
-    
-    for (int i = 0x80; i <= 0xFF; i++) {
-        table[i] |= CHAR_TYPE_NON_ASCII;
-    }
-    
-    table['{'] |= CHAR_TYPE_CONTAINER;
-    table['['] |= CHAR_TYPE_CONTAINER;
+/* char_table3 */
+#define CHAR_TYPE_SIGN      (1 << 0) /* [-+] */
+#define CHAR_TYPE_DIGIT     (1 << 1) /* [0-9] */
+#define CHAR_TYPE_NONZERO   (1 << 2) /* [1-9] */
+#define CHAR_TYPE_EXP       (1 << 3) /* [eE] */
+#define CHAR_TYPE_DOT       (1 << 4) /* [.] */
 
-    table['/'] |= CHAR_TYPE_COMMENT;
-    
-    table['\n'] |= CHAR_TYPE_LINE_END;
-    table['\r'] |= CHAR_TYPE_LINE_END;
-    table['\0'] |= CHAR_TYPE_LINE_END;
-    
-    for (int i = '0'; i <= '9'; i++) {
-        table[i] |= CHAR_TYPE_HEX;
-    }
-    for (int i = 'a'; i <= 'f'; i++) {
-        table[i] |= CHAR_TYPE_HEX;
-    }
-    for (int i = 'A'; i <= 'F'; i++) {
-        table[i] |= CHAR_TYPE_HEX;
-    }
-
+static void print_char_table(u8 *table, const char *name) {
     int table_len = 256;
     int line_len = 8;
-    printf("static const char_type char_table[256] = {\n");
+    
+    printf("static const u8 %s[256] = {\n", name);
     for (int i = 0; i < table_len; i++) {
         bool is_head = ((i % line_len) == 0);
         bool is_tail = ((i % line_len) == line_len - 1);
@@ -303,52 +264,86 @@ static void make_char_table(void) {
     printf("\n");
 }
 
-/*----------------------------------------------------------------------------*/
-
-/** Digit type */
-typedef u8 digi_type;
-/** Digit: '0'. */
-static const digi_type DIGI_TYPE_ZERO       = 1 << 0;
-/** Digit: [1-9]. */
-static const digi_type DIGI_TYPE_NONZERO    = 1 << 1;
-/** Plus sign (positive): '+'. */
-static const digi_type DIGI_TYPE_POS        = 1 << 2;
-/** Minus sign (negative): '-'. */
-static const digi_type DIGI_TYPE_NEG        = 1 << 3;
-/** Decimal point: '.' */
-static const digi_type DIGI_TYPE_DOT        = 1 << 4;
-/** Exponent sign: 'e, 'E'. */
-static const digi_type DIGI_TYPE_EXP        = 1 << 5;
-
-static void make_digit_table(void) {
-    u8 table[256] = {0};
+static void make_char_table(void) {
+    u8 table[256];
     
-    table['0'] |= DIGI_TYPE_ZERO;
-    for (int i = 1; i <= 9; i++) {
-        table[i + '0'] |= DIGI_TYPE_NONZERO;
-    }
-    table['+'] |= DIGI_TYPE_POS;
-    table['-'] |= DIGI_TYPE_NEG;
-    table['.'] |= DIGI_TYPE_DOT;
-    table['e'] |= DIGI_TYPE_EXP;
-    table['E'] |= DIGI_TYPE_EXP;
+    // ------------- table1 -------------
+    memset(table, 0, sizeof(table));
     
-    int table_len = 128; /* ASCII only */
-    int line_len = 8;
-    printf("static const digi_type digi_table[256] = {\n");
-    for (int i = 0; i < table_len; i++) {
-        bool is_head = ((i % line_len) == 0);
-        bool is_tail = ((i % line_len) == line_len - 1);
-        bool is_last = i + 1 == table_len;
-        
-        if (is_head) printf("    ");
-        printf("0x%.2X", table[i]);
-        if (i + 1 < table_len) printf(",");
-        if (!is_tail && !is_last) printf(" "); else printf("\n");
+    for (int i = 0; i <= 0xFF; i++) {
+        table[i] |= (CHAR_TYPE_ASCII | CHAR_TYPE_ASCII_SQ);
     }
-    printf("};\n");
-    printf("\n");
+    table['\"'] &= ~(u8)(CHAR_TYPE_ASCII);     // double quote
+    table['\''] &= ~(u8)(CHAR_TYPE_ASCII_SQ);  // single quote
+    table['\\'] &= ~(u8)(CHAR_TYPE_ASCII | CHAR_TYPE_ASCII_SQ);
+    for (int i = 0x00; i <= 0x1F; i++) {
+        table[i] &= ~(u8)(CHAR_TYPE_ASCII | CHAR_TYPE_ASCII_SQ);
+    }
+    for (int i = 0x80; i <= 0xFF; i++) {
+        table[i] &= ~(u8)(CHAR_TYPE_ASCII | CHAR_TYPE_ASCII_SQ);
+    }
+    
+    table[' ']  |= (CHAR_TYPE_SPACE | CHAR_TYPE_SPACE_EXT);
+    table['\t'] |= (CHAR_TYPE_SPACE | CHAR_TYPE_SPACE_EXT);
+    table['\n'] |= (CHAR_TYPE_SPACE | CHAR_TYPE_SPACE_EXT);
+    table['\r'] |= (CHAR_TYPE_SPACE | CHAR_TYPE_SPACE_EXT);
+    table['\v'] |= CHAR_TYPE_SPACE_EXT;
+    table['\f'] |= CHAR_TYPE_SPACE_EXT;
+    table[0xC2] |= CHAR_TYPE_SPACE_EXT; // U+00a0  [C2 A0]    non-breaking space
+    table[0xE1] |= CHAR_TYPE_SPACE_EXT; // U+1680  [E1 9A 80] ogham space mark
+    table[0xE2] |= CHAR_TYPE_SPACE_EXT; // U+2000+ [E2 XX XX] unicode 'Zs' category
+    table[0xE3] |= CHAR_TYPE_SPACE_EXT; // U+3000  [E3 80 80] ideographical space
+    table[0xEF] |= CHAR_TYPE_SPACE_EXT; // U+FEFF  [EF BB BF] byte order mark
+    table['.'] |= CHAR_TYPE_NUM;
+    table['-'] |= CHAR_TYPE_NUM;
+    table['+'] |= CHAR_TYPE_NUM;
+    for (int i = '0'; i <= '9'; i++) {
+        table[i] |= CHAR_TYPE_NUM;
+    }
+    
+    table['/'] |= CHAR_TYPE_COMMENT;
+    print_char_table(table, "char_table1");
+    
+    
+    // ------------- table2 -------------
+    memset(table, 0, sizeof(table));
+    table['\r'] |= (CHAR_TYPE_EOL | CHAR_TYPE_EOL_EXT);
+    table['\n'] |= (CHAR_TYPE_EOL | CHAR_TYPE_EOL_EXT);
+    table[0xE2] |= CHAR_TYPE_EOL_EXT; // <LS> U+2028 [E2 80 A8], <PS> U+2029 [E2 80 A9]
+    table['_'] |= (CHAR_TYPE_ID_START | CHAR_TYPE_ID_NEXT | CHAR_TYPE_ID_ASCII);
+    table['$'] |= (CHAR_TYPE_ID_START | CHAR_TYPE_ID_NEXT | CHAR_TYPE_ID_ASCII);
+    table['\\'] |= (CHAR_TYPE_ID_START | CHAR_TYPE_ID_NEXT);
+    for (int i = 'A'; i <= 'Z'; i++) {
+        table[i] |= (CHAR_TYPE_ID_START | CHAR_TYPE_ID_NEXT | CHAR_TYPE_ID_ASCII);
+    }
+    for (int i = 'a'; i <= 'z'; i++) {
+        table[i] |= (CHAR_TYPE_ID_START | CHAR_TYPE_ID_NEXT | CHAR_TYPE_ID_ASCII);
+    }
+    for (int i = '0'; i <= '9'; i++) {
+        table[i] |= (CHAR_TYPE_ID_NEXT | CHAR_TYPE_ID_ASCII);
+    }
+    for (int i = 0x80; i <= 0xFF; i++) {
+        table[i] |= (CHAR_TYPE_ID_START | CHAR_TYPE_ID_NEXT);
+    }
+    print_char_table(table, "char_table2");
+    
+    
+    // ------------- table3 -------------
+    memset(table, 0, sizeof(table));
+    table['-'] |= CHAR_TYPE_SIGN;
+    table['+'] |= CHAR_TYPE_SIGN;
+    table['e'] |= CHAR_TYPE_EXP;
+    table['E'] |= CHAR_TYPE_EXP;
+    table['.'] |= CHAR_TYPE_DOT;
+    for (int i = '0'; i <= '9'; i++) {
+        table[i] |= CHAR_TYPE_DIGIT;
+    }
+    for (int i = '1'; i <= '9'; i++) {
+        table[i] |= CHAR_TYPE_NONZERO;
+    }
+    print_char_table(table, "char_table3");
 }
+
 
 /*----------------------------------------------------------------------------*/
 
@@ -560,7 +555,6 @@ static void make_esc_single_char_table(void) {
 int main(void) {
     make_dec_trailing_zero_table();
     make_char_table();
-    make_digit_table();
     make_hex_conv_table();
     make_u64_pow10_table();
     make_enc_table();

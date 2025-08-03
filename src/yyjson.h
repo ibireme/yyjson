@@ -173,8 +173,10 @@
 #endif
 
 /** real gcc check */
-#if !defined(__clang__) && !defined(__INTEL_COMPILER) && !defined(__ICC) && \
-    defined(__GNUC__)
+#if defined(__GNUC__) && defined(__GNUC_MINOR__) && \
+    !defined(__clang__) && !defined(__llvm__) && \
+    !defined(__INTEL_COMPILER) && !defined(__ICC) && \
+    !defined(__NVCC__) && !defined(__PGI) && !defined(__TINYC__)
 #   define YYJSON_IS_REAL_GCC 1
 #else
 #   define YYJSON_IS_REAL_GCC 0
@@ -777,10 +779,6 @@ static const yyjson_read_flag YYJSON_READ_BIGNUM_AS_RAW             = 1 << 7;
 /** Allow UTF-8 BOM and skip it before parsing if any (non-standard). */
 static const yyjson_read_flag YYJSON_READ_ALLOW_BOM                 = 1 << 8;
 
-
-
-/* -----Unimplemented----- */
-
 /** Allow extended number formats (non-standard):
     - Hexadecimal numbers, such as `0x7B`.
     - Numbers with leading or trailing decimal point, such as `.123`, `123.`.
@@ -788,8 +786,8 @@ static const yyjson_read_flag YYJSON_READ_ALLOW_BOM                 = 1 << 8;
 static const yyjson_read_flag YYJSON_READ_ALLOW_EXT_NUMBER          = 1 << 9;
 
 /** Allow extended escape sequences in strings (non-standard):
-    - Additional escapes: `\a`, `\e`, `\v`, `\'`, `\?`, `\0`.
-    - Hex escapes: `\xNN`, such as `\x7B`.
+    - Additional escapes: `\\a`, `\\e`, `\\v`, `\\'`, `\\?`, `\\0`.
+    - Hex escapes: `\\xNN`, such as `\\x7B`.
     - Line continuation: backslash followed by line terminator sequences.
     - Unknown escape: if backslash is followed by an unsupported character,
         the backslash will be removed and the character will be kept as-is.
@@ -797,10 +795,10 @@ static const yyjson_read_flag YYJSON_READ_ALLOW_EXT_NUMBER          = 1 << 9;
 static const yyjson_read_flag YYJSON_READ_ALLOW_EXT_ESCAPE          = 1 << 10;
 
 /** Allow extended whitespace characters (non-standard):
-    - Vertical tab `\v` and form feed `\f`.
-    - Line separator `\u2028` and paragraph separator `\u2029`.
-    - Non-breaking space `\xA0`.
-    - Byte order mark: `\uFEFF`.
+    - Vertical tab `\\v` and form feed `\\f`.
+    - Line separator `\\u2028` and paragraph separator `\\u2029`.
+    - Non-breaking space `\\xA0`.
+    - Byte order mark: `\\uFEFF`.
     - Other Unicode characters in the Zs (Separator, space) category. */
 static const yyjson_read_flag YYJSON_READ_ALLOW_EXT_WHITESPACE      = 1 << 11;
 
@@ -812,12 +810,11 @@ static const yyjson_read_flag YYJSON_READ_ALLOW_SINGLE_QUOTED_STR   = 1 << 12;
     such as `{a:1,b:2}`. */
 static const yyjson_read_flag YYJSON_READ_ALLOW_UNQUOTED_KEY        = 1 << 13;
 
-/** Allow JSON5 format, see: https://json5.org and https://spec.json5.org
-
+/** Allow JSON5 format, see: [https://json5.org].
     This flag supports all JSON5 features with some additional extensions:
     - Accepts more escape sequences than JSON5 (e.g. `\a`, `\e`).
     - Unquoted keys are and not limited to ECMAScript IdentifierName.
-    - The `Inf`, `Infinity` and `NaN` literals are case-insensitive. */
+    - Allow case-insensitive `NaN`, `Inf` and `Infinity` literals. */
 static const yyjson_read_flag YYJSON_READ_JSON5 =
     (1 << 2)  | /* YYJSON_READ_ALLOW_TRAILING_COMMAS */
     (1 << 3)  | /* YYJSON_READ_ALLOW_COMMENTS */
@@ -839,7 +836,7 @@ static const yyjson_read_code YYJSON_READ_SUCCESS                       = 0;
 /** Invalid parameter, such as NULL input string or 0 input length. */
 static const yyjson_read_code YYJSON_READ_ERROR_INVALID_PARAMETER       = 1;
 
-/** Memory allocation failure occurs. */
+/** Memory allocation failed. */
 static const yyjson_read_code YYJSON_READ_ERROR_MEMORY_ALLOCATION       = 2;
 
 /** Input JSON string is empty. */
@@ -848,7 +845,7 @@ static const yyjson_read_code YYJSON_READ_ERROR_EMPTY_CONTENT           = 3;
 /** Unexpected content after document, such as `[123]abc`. */
 static const yyjson_read_code YYJSON_READ_ERROR_UNEXPECTED_CONTENT      = 4;
 
-/** Unexpected ending, such as `[123`. */
+/** Unexpected end of input, the parsed part is valid, such as `[123`. */
 static const yyjson_read_code YYJSON_READ_ERROR_UNEXPECTED_END          = 5;
 
 /** Unexpected character inside the document, such as `[abc]`. */
@@ -857,7 +854,7 @@ static const yyjson_read_code YYJSON_READ_ERROR_UNEXPECTED_CHARACTER    = 6;
 /** Invalid JSON structure, such as `[1,]`. */
 static const yyjson_read_code YYJSON_READ_ERROR_JSON_STRUCTURE          = 7;
 
-/** Invalid comment, such as unclosed multi-line comment. */
+/** Invalid comment, deprecated, use `UNEXPECTED_END` for unclosed comment. */
 static const yyjson_read_code YYJSON_READ_ERROR_INVALID_COMMENT         = 8;
 
 /** Invalid number, such as `123.e12`, `000`. */
@@ -875,7 +872,7 @@ static const yyjson_read_code YYJSON_READ_ERROR_FILE_OPEN               = 12;
 /** Failed to read a file. */
 static const yyjson_read_code YYJSON_READ_ERROR_FILE_READ               = 13;
 
-/** Unexpected ending during incremental parsing. Parsing state is saved. */
+/** Incomplete input during incremental parsing; parsing state is preserved. */
 static const yyjson_read_code YYJSON_READ_ERROR_MORE                    = 14;
 
 /** Error information for JSON reader. */
@@ -1005,6 +1002,9 @@ typedef struct yyjson_incr_state yyjson_incr_state;
  1. Call `yyjson_incr_new()` to create the state for incremental reading.
  2. Call `yyjson_incr_read()` repeatedly.
  3. Call `yyjson_incr_free()` to free the state.
+
+ Note: The incremental JSON reader only supports standard JSON.
+ Flags for non-standard features (e.g. comments, trailing commas) are ignored.
 
  @param buf The JSON data, null-terminator is not required.
     If this parameter is NULL, the function will fail and return NULL.

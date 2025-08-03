@@ -5,106 +5,94 @@
 
 #if !YYJSON_DISABLE_READER
 
+// Expect result
 typedef enum {
     EXPECT_NONE,
     EXPECT_PASS,
     EXPECT_FAIL,
 } expect_type;
 
-typedef enum {
-    FLAG_NONE       = 0 << 0,
-    FLAG_COMMA      = 1 << 0,
-    FLAG_COMMENT    = 1 << 1,
-    FLAG_INF_NAN    = 1 << 2,
-    FLAG_EXTRA      = 1 << 3,
-    FLAG_NUM_RAW    = 1 << 4,
-    FLAG_BOM        = 1 << 5,
-    FLAG_MAX        = 1 << 6,
-} flag_type;
+// All feature flags
+static const yyjson_read_flag ALL_FLAGS[] = {
+    YYJSON_READ_STOP_WHEN_DONE,
+    YYJSON_READ_BIGNUM_AS_RAW,
+    YYJSON_READ_NUMBER_AS_RAW,
+    YYJSON_READ_ALLOW_TRAILING_COMMAS,
+    YYJSON_READ_ALLOW_COMMENTS,
+    YYJSON_READ_ALLOW_INF_AND_NAN,
+    YYJSON_READ_ALLOW_INVALID_UNICODE,
+    YYJSON_READ_ALLOW_BOM,
+    YYJSON_READ_ALLOW_EXT_NUMBER,
+    YYJSON_READ_ALLOW_EXT_ESCAPE,
+    YYJSON_READ_ALLOW_EXT_WHITESPACE,
+    YYJSON_READ_ALLOW_SINGLE_QUOTED_STR,
+    YYJSON_READ_ALLOW_UNQUOTED_KEY
+};
 
-static void test_read_file(const char *path, flag_type type, expect_type expect) {
+static void test_read_data(const char *path, char *dat, usize len,
+                           yyjson_read_flag flg, expect_type expect) {
 #if YYJSON_DISABLE_UTF8_VALIDATION
-    {
-        u8 *dat;
-        usize dat_len;
-        if (yy_file_read(path, &dat, &dat_len)) {
-            bool is_utf8 = yy_str_is_utf8((const char *)dat, dat_len);
-            free(dat);
-            if (!is_utf8) return;
-        }
-    }
+    bool is_utf8 = yy_str_is_utf8(dat, len);
+    if (!is_utf8) return;
 #endif
-    
-    yyjson_read_flag flag = YYJSON_READ_NOFLAG;
-    if (type & FLAG_COMMA) flag |= YYJSON_READ_ALLOW_TRAILING_COMMAS;
-    if (type & FLAG_COMMENT) flag |= YYJSON_READ_ALLOW_COMMENTS;
-    if (type & FLAG_INF_NAN) flag |= YYJSON_READ_ALLOW_INF_AND_NAN;
-    if (type & FLAG_EXTRA) flag |= YYJSON_READ_STOP_WHEN_DONE;
-    if (type & FLAG_NUM_RAW) flag |= YYJSON_READ_NUMBER_AS_RAW;
-    if (type & FLAG_BOM) flag |= YYJSON_READ_ALLOW_BOM;
-    
-    // test read from file
+
+    // test read
     yyjson_read_err err;
-    yyjson_doc *doc = yyjson_read_file(path, flag, NULL, &err);
+    yyjson_doc *doc = yyjson_read_opts(dat, len, flg, NULL, &err);
     if (expect == EXPECT_PASS) {
-        yy_assertf(doc != NULL, "file should pass with flag 0x%u, but fail:\n%s\n", flag, path);
+        yy_assertf(doc != NULL, "should pass but fail (0x%X): %s", flg, path);
         yy_assert(yyjson_doc_get_read_size(doc) > 0);
         yy_assert(yyjson_doc_get_val_count(doc) > 0);
         yy_assert(err.code == YYJSON_READ_SUCCESS);
         yy_assert(err.msg == NULL);
     }
     if (expect == EXPECT_FAIL) {
-        yy_assertf(doc == NULL, "file should fail with flag 0x%u, but pass:\n%s\n", flag, path);
+        yy_assertf(doc == NULL, "should fail but pass (0x%X): %s", flg, path);
         yy_assert(yyjson_doc_get_read_size(doc) == 0);
         yy_assert(yyjson_doc_get_val_count(doc) == 0);
         yy_assert(err.code != YYJSON_READ_SUCCESS);
         yy_assert(err.msg != NULL);
     }
-    if (doc) { // test write again
+    
+    // test write again
 #if !YYJSON_DISABLE_WRITER
-        usize len;
+    if (doc) {
+        usize ret_len;
         char *ret;
-        ret = yyjson_write(doc, YYJSON_WRITE_ALLOW_INF_AND_NAN, &len);
-        yy_assert(ret && len);
+        ret = yyjson_write(doc, YYJSON_WRITE_INF_AND_NAN_AS_NULL, &ret_len);
+        yy_assert(ret && ret_len);
         free(ret);
-        ret = yyjson_write(doc, YYJSON_WRITE_PRETTY | YYJSON_WRITE_ALLOW_INF_AND_NAN, &len);
-        yy_assert(ret && len);
+        ret = yyjson_write(doc, YYJSON_WRITE_INF_AND_NAN_AS_NULL | YYJSON_WRITE_PRETTY, &ret_len);
+        yy_assert(ret && ret_len);
         free(ret);
-#endif
     }
+#endif
     yyjson_doc_free(doc);
     
     
-    // test alloc fail
-    yyjson_alc alc_small;
-    char alc_buf[64];
-    yy_assert(yyjson_alc_pool_init(&alc_small, alc_buf, sizeof(void *) * 8));
-    yy_assert(!yyjson_read_file(path, flag, &alc_small, NULL));
-    
-    
     // test read insitu
-    flag |= YYJSON_READ_INSITU;
+    flg |= YYJSON_READ_INSITU;
     
-    u8 *dat;
-    usize len;
-    bool read_suc = yy_file_read_with_padding(path, &dat, &len, YYJSON_PADDING_SIZE);
-    yy_assert(read_suc);
+    char *dat_cpy = malloc(len + YYJSON_PADDING_SIZE);
+    yy_assert(dat_cpy);
+    memcpy(dat_cpy, dat, len);
+    memset(dat_cpy + len, 0, YYJSON_PADDING_SIZE);
     
-    usize max_mem_len = yyjson_read_max_memory_usage(len, flag);
+    usize max_mem_len = yyjson_read_max_memory_usage(len, flg);
     void *buf = malloc(max_mem_len);
     yyjson_alc alc;
     yyjson_alc_pool_init(&alc, buf, max_mem_len);
     
-    doc = yyjson_read_opts((char *)dat, len, flag, &alc, &err);
+    doc = yyjson_read_opts(dat_cpy, len, flg, &alc, &err);
     if (expect == EXPECT_PASS) {
-        yy_assertf(doc != NULL, "file should pass but fail:\n%s\n", path);
+        yy_assertf(doc != NULL, "should pass but fail (0x%X): %s", flg, path);
         yy_assert(yyjson_doc_get_read_size(doc) > 0);
         yy_assert(yyjson_doc_get_val_count(doc) > 0);
         yy_assert(err.code == YYJSON_READ_SUCCESS);
         yy_assert(err.msg == NULL);
     }
     if (expect == EXPECT_FAIL) {
-        yy_assertf(doc == NULL, "file should fail but pass:\n%s\n", path);
+        yy_assertf(doc == NULL, "should fail but pass (0x%X): %s", flg, path);
         yy_assert(yyjson_doc_get_read_size(doc) == 0);
         yy_assert(yyjson_doc_get_val_count(doc) == 0);
         yy_assert(err.code != YYJSON_READ_SUCCESS);
@@ -112,20 +100,31 @@ static void test_read_file(const char *path, flag_type type, expect_type expect)
     }
     yyjson_doc_free(doc);
     free(buf);
-    free(dat);
+    free(dat_cpy);
 
-#if !YYJSON_DISABLE_INCR_READER
+
     // test incremental read
+#if !YYJSON_DISABLE_INCR_READER
+    // incremental read only support standard JSON
+    yyjson_read_flag non_std_flg =
+        YYJSON_READ_JSON5 |
+        YYJSON_READ_ALLOW_BOM |
+        YYJSON_READ_ALLOW_INVALID_UNICODE;
+    if (flg & non_std_flg) return;
+    
     // extend input length in chunks of one byte at a time
     const size_t chunk_len = 1;
     size_t read_len = 0;
-    flag &= ~YYJSON_READ_INSITU;
-    read_suc = yy_file_read_with_padding(path, &dat, &len, YYJSON_PADDING_SIZE);
-    yy_assert(read_suc);
-
+    flg &= ~YYJSON_READ_INSITU;
+    
+    dat_cpy = malloc(len + YYJSON_PADDING_SIZE);
+    yy_assert(dat_cpy);
+    memcpy(dat_cpy, dat, len);
+    memset(dat_cpy + len, 0, YYJSON_PADDING_SIZE);
+    
     yyjson_incr_state *state = NULL;
 restart_incr_read:
-    state = yyjson_incr_new((char *)dat, len, flag, NULL);
+    state = yyjson_incr_new((char *)dat, len, flg, NULL);
     yy_assert(state != NULL);
     while (read_len < len || len == 0) {
         read_len += chunk_len;
@@ -149,25 +148,20 @@ restart_incr_read:
     }
     if (doc) { // test write again
 #if !YYJSON_DISABLE_WRITER
-        usize out_len;
-        char *ret;
-        ret = yyjson_write(doc, YYJSON_WRITE_ALLOW_INF_AND_NAN, &out_len);
-        yy_assert(ret && out_len);
-        free(ret);
-        ret = yyjson_write(doc, YYJSON_WRITE_PRETTY | YYJSON_WRITE_ALLOW_INF_AND_NAN, &out_len);
-        yy_assert(ret && out_len);
+        char *ret = yyjson_write(doc, 0, NULL);
+        yy_assert(ret);
         free(ret);
 #endif
     }
     if (expect == EXPECT_PASS) {
-        yy_assertf(doc != NULL, "file should pass but fail:\n%s\n", path);
+        yy_assertf(doc != NULL, "should pass but fail (0x%X): %s", flg, path);
         yy_assert(yyjson_doc_get_read_size(doc) > 0);
         yy_assert(yyjson_doc_get_val_count(doc) > 0);
         yy_assert(err.code == YYJSON_READ_SUCCESS);
         yy_assert(err.msg == NULL);
     }
     if (expect == EXPECT_FAIL) {
-        yy_assertf(doc == NULL, "file should fail but pass:\n%s\n", path);
+        yy_assertf(doc == NULL, "should fail but pass (0x%X): %s", flg, path);
         yy_assert(yyjson_doc_get_read_size(doc) == 0);
         yy_assert(yyjson_doc_get_val_count(doc) == 0);
         yy_assert(err.code != YYJSON_READ_SUCCESS);
@@ -175,25 +169,26 @@ restart_incr_read:
     }
     yyjson_incr_free(state);
     yyjson_doc_free(doc);
-    free(dat);
+    free(dat_cpy);
 #endif
 }
 
+static void test_read_file(const char *path, yyjson_read_flag flg, expect_type expect) {
+    u8 *dat;
+    usize len;
+    yy_assertf(yy_file_read(path, &dat, &len), "fail to read file: %s", path);
+    test_read_data(path, (char *)dat, len, flg, expect);
+    free(dat);
+}
+
 #if !YYJSON_DISABLE_INCR_READER
-static yyjson_doc *test_incr_read_insitu(char *dat, usize len, usize chunk_len, flag_type type) {
+static yyjson_doc *test_incr_read_insitu(char *dat, usize len, usize chunk_len, yyjson_read_flag flg) {
 #if YYJSON_DISABLE_UTF8_VALIDATION
     if (!yy_str_is_utf8(dat, len)) return NULL;
 #endif
 
-    yyjson_read_flag flag = YYJSON_READ_INSITU;
-    if (type & FLAG_COMMA) flag |= YYJSON_READ_ALLOW_TRAILING_COMMAS;
-    if (type & FLAG_COMMENT) flag |= YYJSON_READ_ALLOW_COMMENTS;
-    if (type & FLAG_INF_NAN) flag |= YYJSON_READ_ALLOW_INF_AND_NAN;
-    if (type & FLAG_EXTRA) flag |= YYJSON_READ_STOP_WHEN_DONE;
-    if (type & FLAG_NUM_RAW) flag |= YYJSON_READ_NUMBER_AS_RAW;
-
     yyjson_read_err err;
-    yyjson_incr_state *state = yyjson_incr_new(dat, len, flag, NULL);
+    yyjson_incr_state *state = yyjson_incr_new(dat, len, flg, NULL);
     size_t read_len = 0;
     yyjson_doc *doc = NULL;
     while (read_len < len) {
@@ -229,6 +224,7 @@ static yyjson_doc *test_incr_read_insitu(char *dat, usize len, usize chunk_len, 
 
 // yyjson test data
 static void test_json_yyjson(void) {
+    // read dir
     char dir[YY_MAX_PATH];
     yy_path_combine(dir, YYJSON_TEST_DATA_PATH, "data", "json", "test_yyjson", NULL);
     int count;
@@ -236,67 +232,102 @@ static void test_json_yyjson(void) {
     yy_assertf(names != NULL && count != 0, "read dir fail:%s\n", dir);
 
     for (int i = 0; i < count; i++) {
+        // read file
         char *name = names[i];
+        if (name[0] == '.') continue;
         char path[YY_MAX_PATH];
         yy_path_combine(path, dir, name, NULL);
-     
-        for (flag_type type = 0; type < FLAG_MAX; type++) {
-            if (yy_str_has_prefix(name, "pass_")) {
-                bool should_fail = false;
-                if (yy_str_contains(name, "(comma)")) {
-#if !YYJSON_DISABLE_NON_STANDARD
-                    should_fail |= (type & FLAG_COMMA) == 0;
-#else
-                    should_fail = true;
-#endif
-                }
-                if (yy_str_contains(name, "(comment)")) {
-#if !YYJSON_DISABLE_NON_STANDARD
-                    should_fail |= (type & FLAG_COMMENT) == 0;
-#else
-                    should_fail = true;
-#endif
-                }
-                if (yy_str_contains(name, "(inf)") || yy_str_contains(name, "(nan)")) {
-#if !YYJSON_DISABLE_NON_STANDARD
-                    should_fail |= (type & FLAG_INF_NAN) == 0;
-#else
-                    should_fail = true;
-#endif
-                }
-                if (yy_str_contains(name, "(big)")) {
-#if !YYJSON_DISABLE_NON_STANDARD
-                    should_fail |= (type & (FLAG_INF_NAN | FLAG_NUM_RAW)) == 0;
-#else
-                    should_fail |= (type & (FLAG_NUM_RAW)) == 0;
-#endif
-                }
-                if (yy_str_contains(name, "(extra)")) {
-                    should_fail |= (type & FLAG_EXTRA) == 0;
-                }
-                test_read_file(path, type, should_fail ? EXPECT_FAIL : EXPECT_PASS);
-            } else if (yy_str_has_prefix(name, "fail_")) {
-                test_read_file(path, type, EXPECT_FAIL);
-            } else {
-                test_read_file(path, type, EXPECT_NONE);
+        u8 *dat;
+        usize len;
+        yy_assertf(yy_file_read(path, &dat, &len), "fail to read file: %s", path);
+        
+        // check file name
+        bool has_fail       = yy_str_contains(name, "(fail)");
+        bool has_junk       = yy_str_contains(name, "(junk)");
+        bool has_bignum     = yy_str_contains(name, "(bignum)");
+        bool has_bighex     = yy_str_contains(name, "(bighex)");
+        bool has_comma      = yy_str_contains(name, "(comma)");
+        bool has_comment    = yy_str_contains(name, "(comment)");
+        bool has_inf        = yy_str_contains(name, "(inf)");
+        bool has_nan        = yy_str_contains(name, "(nan)");
+        bool has_str_err    = yy_str_contains(name, "(str_err)");
+        bool has_bom        = yy_str_contains(name, "(bom)");
+        bool has_ext_num    = yy_str_contains(name, "(ext_num)");
+        bool has_ext_esc    = yy_str_contains(name, "(ext_esc)");
+        bool has_ext_ws     = yy_str_contains(name, "(ext_ws)");
+        bool has_str_sq     = yy_str_contains(name, "(str_sq)");
+        bool has_str_uq     = yy_str_contains(name, "(str_uq)");
+        bool has_non_std = (has_bighex | has_comma | has_comment |
+                            has_inf | has_nan | has_str_err | has_bom |
+                            has_ext_num | has_ext_esc | has_ext_ws |
+                            has_str_sq | has_str_uq);
+        
+        // test all flag combination
+        u32 flg_num = (u32)yy_nelems(ALL_FLAGS);
+        u32 flg_comb_num = 1 << flg_num;
+        for (u32 c = 0; c < flg_comb_num; c++) {
+            yyjson_write_flag flg = 0;
+            for (u32 f = 0; f < flg_num; f++) {
+                if (c & (1 << f)) flg |= ALL_FLAGS[f];
             }
+            
+            // check if the current combined flag is valid
+            bool pass = !has_fail;
+            pass &= !has_junk       || (flg & (YYJSON_READ_STOP_WHEN_DONE));
+            pass &= !has_bignum     || (flg & (YYJSON_READ_BIGNUM_AS_RAW |
+                                               YYJSON_READ_NUMBER_AS_RAW |
+                                               YYJSON_READ_ALLOW_INF_AND_NAN));
+            pass &= !has_bighex     || (flg & (YYJSON_READ_BIGNUM_AS_RAW |
+                                               YYJSON_READ_NUMBER_AS_RAW));
+            pass &= !has_comma      || (flg & (YYJSON_READ_ALLOW_TRAILING_COMMAS));
+            pass &= !has_comment    || (flg & (YYJSON_READ_ALLOW_COMMENTS));
+            pass &= !has_inf        || (flg & (YYJSON_READ_ALLOW_INF_AND_NAN));
+            pass &= !has_nan        || (flg & (YYJSON_READ_ALLOW_INF_AND_NAN));
+            pass &= !has_str_err    || (flg & (YYJSON_READ_ALLOW_INVALID_UNICODE));
+            pass &= !has_bom        || (flg & (YYJSON_READ_ALLOW_BOM |
+                                               YYJSON_READ_ALLOW_EXT_WHITESPACE));
+            pass &= !has_ext_num    || (flg & (YYJSON_READ_ALLOW_EXT_NUMBER));
+            pass &= !has_ext_esc    || (flg & (YYJSON_READ_ALLOW_EXT_ESCAPE));
+            pass &= !has_ext_ws     || (flg & (YYJSON_READ_ALLOW_EXT_WHITESPACE));
+            pass &= !has_str_sq     || (flg & (YYJSON_READ_ALLOW_SINGLE_QUOTED_STR));
+            pass &= !has_str_uq     || (flg & (YYJSON_READ_ALLOW_UNQUOTED_KEY));
+#if YYJSON_DISABLE_NON_STANDARD
+            pass &= !has_non_std;
+            pass &= !has_bignum     || (flg & (YYJSON_READ_BIGNUM_AS_RAW |
+                                               YYJSON_READ_NUMBER_AS_RAW));
+#endif
+            test_read_data(path, (char *)dat, len, flg, pass ? EXPECT_PASS : EXPECT_FAIL);
         }
+        
+        // free file data
+        free(dat);
     }
+    yy_dir_free(names);
     
-    // test fail
+    
+    // test invalid input
     yy_assert(!yyjson_read_opts(NULL, 0, 0, NULL, NULL));
     yy_assert(!yyjson_read_opts("1", 0, 0, NULL, NULL));
     yy_assert(!yyjson_read_opts("1", SIZE_MAX, 0, NULL, NULL));
     
+    // test read file
+    yy_path_combine(dir, YYJSON_TEST_DATA_PATH, "data", "json", "test_yyjson", "blns.json", NULL);
+    yyjson_doc *doc = yyjson_read_file(dir, 0, NULL, NULL);
+    yy_assert(yyjson_is_arr(yyjson_doc_get_root(doc)));
+    yyjson_doc_free(doc);
+    
+    // test read file fail
+    yyjson_read_err err;
+    yy_assert(!yyjson_read_file(NULL, 0, NULL, NULL));
+    yy_assert(!yyjson_read_file("...not a valid file...", 0, NULL, &err));
+    yy_assert(err.code == YYJSON_READ_ERROR_FILE_OPEN);
+    
+    // test alloc fail
     yyjson_alc alc_small;
     char alc_buf[64];
     yy_assert(yyjson_alc_pool_init(&alc_small, alc_buf, sizeof(void *) * 8));
     yy_assert(!yyjson_read_opts("", 64, 0, &alc_small, NULL));
-    
-    yy_assert(!yyjson_read_file(NULL, 0, NULL, NULL));
-    yy_assert(!yyjson_read_file("...not a valid file...", 0, NULL, NULL));
-    
-    yy_dir_free(names);
+    yy_assert(!yyjson_read_file(dir, 0, &alc_small, NULL));
 }
 
 
@@ -314,12 +345,12 @@ static void test_json_checker(void) {
         char path[YY_MAX_PATH];
         yy_path_combine(path, dir, name, NULL);
         if (yy_str_has_prefix(name, "pass_")) {
-            test_read_file(path, FLAG_NONE, EXPECT_PASS);
+            test_read_file(path, 0, EXPECT_PASS);
         } else if (yy_str_has_prefix(name, "fail_") &&
                    !yy_str_contains(name, "EXCLUDE")) {
-            test_read_file(path, FLAG_NONE, EXPECT_FAIL);
+            test_read_file(path, 0, EXPECT_FAIL);
         } else {
-            test_read_file(path, FLAG_NONE, EXPECT_NONE);
+            test_read_file(path, 0, EXPECT_NONE);
         }
     }
     
@@ -341,11 +372,11 @@ static void test_json_parsing(void) {
         yy_path_combine(path, dir, name, NULL);
         
         if (yy_str_has_prefix(name, "y_")) {
-            test_read_file(path, FLAG_NONE, EXPECT_PASS);
+            test_read_file(path, 0, EXPECT_PASS);
         } else if (yy_str_has_prefix(name, "n_")) {
-            test_read_file(path, FLAG_NONE, EXPECT_FAIL);
+            test_read_file(path, 0, EXPECT_FAIL);
         } else {
-            test_read_file(path, FLAG_NONE, EXPECT_NONE);
+            test_read_file(path, 0, EXPECT_NONE);
         }
     }
     yy_dir_free(names);
@@ -366,9 +397,9 @@ static void test_json_transform(void) {
         yy_path_combine(path, dir, name, NULL);
         
         if (yy_str_contains(name, "invalid")) {
-            test_read_file(path, FLAG_NONE, EXPECT_FAIL);
+            test_read_file(path, 0, EXPECT_FAIL);
         } else {
-            test_read_file(path, FLAG_NONE, EXPECT_PASS);
+            test_read_file(path, 0, EXPECT_PASS);
         }
     }
     
@@ -390,18 +421,20 @@ static void test_json_encoding(void) {
         yy_path_combine(path, dir, name, NULL);
         
         if (strcmp(name, "utf8.json") == 0) {
-            test_read_file(path, FLAG_NONE, EXPECT_PASS);
-            test_read_file(path, FLAG_BOM, EXPECT_PASS);
+            test_read_file(path, 0, EXPECT_PASS);
         } else if (strcmp(name, "utf8bom.json") == 0) {
-            test_read_file(path, FLAG_NONE, EXPECT_FAIL);
+            test_read_file(path, 0, EXPECT_FAIL);
 #if !YYJSON_DISABLE_NON_STANDARD
-            test_read_file(path, FLAG_BOM, EXPECT_PASS);
+            test_read_file(path, YYJSON_READ_ALLOW_BOM, EXPECT_PASS);
+            test_read_file(path, YYJSON_READ_ALLOW_EXT_WHITESPACE, EXPECT_PASS);
 #else
-            test_read_file(path, FLAG_BOM, EXPECT_FAIL);
+            test_read_file(path, YYJSON_READ_ALLOW_BOM, EXPECT_FAIL);
+            test_read_file(path, YYJSON_READ_ALLOW_EXT_WHITESPACE, EXPECT_FAIL);
 #endif
         } else {
-            test_read_file(path, FLAG_NONE, EXPECT_FAIL);
-            test_read_file(path, FLAG_BOM, EXPECT_FAIL);
+            test_read_file(path, 0, EXPECT_FAIL);
+            test_read_file(path, YYJSON_READ_ALLOW_BOM, EXPECT_FAIL);
+            test_read_file(path, YYJSON_READ_ALLOW_EXT_WHITESPACE, EXPECT_FAIL);
         }
     }
     yy_dir_free(names);
@@ -447,7 +480,7 @@ static void test_json_incremental(void) {
     char *dat = create_json(3, 10);
     usize len = strlen(dat);
     char *dat_dup = yy_str_copy(dat);
-    yyjson_doc *doc = test_incr_read_insitu(dat, len, 1, FLAG_NONE);
+    yyjson_doc *doc = test_incr_read_insitu(dat, len, 1, 0);
     yy_assertf(doc != NULL, "incremental read should pass but fail\n");
 
 #if !YYJSON_DISABLE_WRITER
@@ -457,7 +490,7 @@ static void test_json_incremental(void) {
     yy_assert(pretty && pretty_len);
     yyjson_doc_free(doc);
     pretty = realloc(pretty, pretty_len + YYJSON_PADDING_SIZE); /* for insitu */
-    doc = test_incr_read_insitu(pretty, pretty_len, 1, FLAG_NONE);
+    doc = test_incr_read_insitu(pretty, pretty_len, 1, 0);
     yy_assertf(doc != NULL, "incremental read pretty should pass but fail\n");
     usize minify_len;
     char *minify;

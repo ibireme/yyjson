@@ -39,17 +39,25 @@ yyjson add more test case in this directory.
 ## test_encoding
 Source: <https://github.com/miloyip/nativejson-benchmark>
 
-Same JSON encoded as UTF-8/UTF-16/UTF-32 with or without BOM. RFC 8259 only accept UTF-8 without BOM.
+Same JSON encoded as UTF-8/UTF-16/UTF-32 with or without BOM. 
+RFC 8259 only accept UTF-8 without BOM.
 
 
 ## test_yyjson
-JSON files used by yyjson testing.
+JSON files used for yyjson testing.
 
-- `pass_` content must be accepted (with specified flags)
-- `fail_` content must be rejected
-- `(comma)` content has trailing commas
-- `(comment)` content has comments
+- `(fail)` content must be rejected
+- `(comma)` content has trailing comma
+- `(comment)` content has comment
 - `(inf)` content has infinity literal
 - `(nan)` content has nan literal
-- `(big)` content has large number (infinity for double)
-- `(extra)` content has extra bytes after document
+- `(bignum)` content has large number (double overflow)
+- `(bighex)` content has large hex number (u64/i64 overflow)
+- `(junk)` content has junk after document
+- `(str_err)` content has invalid unicode
+- `(bom)` content has byte order mask (BOM)
+- `(ext_num)` content has extended number format
+- `(ext_esc)` content has extended escape sequence
+- `(ext_ws)` content has extended whitespace
+- `(str_sq)` content has single-quoted string
+- `(str_uq)` content has unquoted key
