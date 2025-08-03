@@ -3370,7 +3370,7 @@ static_noinline bool read_num_hex(u8 **ptr, u8 **pre, yyjson_read_flag flg,
                in the latter case, `ptr` will be set to `eof`.
  */
 static_noinline bool skip_trivia(u8 **ptr, u8 *eof, yyjson_read_flag flg) {
-    u8 *hdr = *ptr, *cur = *ptr, *tmp;
+    u8 *hdr = *ptr, *cur = *ptr;
     usize len;
 
     while (cur < eof) {
@@ -6680,7 +6680,6 @@ yyjson_doc *yyjson_incr_read(yyjson_incr_state *state, size_t len,
     u8 **pre = &raw_ptr; /* previous raw end pointer */
     u8 **con = NULL; /* for incremental string parsing */
     u8 saved_end = '\0'; /* saved end char */
-    u8 *cmt_pos = NULL; /* comment position */
 
     /* validate input parameters */
     if (!err) err = &tmp_err;
