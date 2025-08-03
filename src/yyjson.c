@@ -962,7 +962,7 @@ static_inline bool char_is_ctn(u8 c) {
 }
 
 /** Convert ASCII letter to lowercase; valid only for [A-Za-z]. */
-static_inline char char_to_lower(char c) {
+static_inline u8 char_to_lower(u8 c) {
     return c | 0x20;
 }
 
@@ -3470,7 +3470,7 @@ static bool is_truncated_str(u8 *cur, u8 *eof, const char *str,
         return memcmp(cur, str, (usize)(eof - cur)) == 0;
     }
     for (; cur < eof; cur++, str++) {
-        if (char_to_lower((char)*cur) != *str) return false;
+        if (char_to_lower(*cur) != *(const u8 *)str) return false;
     }
     return true;
 }
