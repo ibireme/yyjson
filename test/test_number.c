@@ -1088,6 +1088,7 @@ static void test_read_flags(void) {
         "123.", // ext number
         "+.123e12", // ext number
         "+123.e12", // ext number
+        ".000000000000000000000", // ext number
         
         "001", // fail
     };

@@ -4088,7 +4088,7 @@ digi_frac_more:
 
     /* ignore trailing zeros */
     tmp = cur - 1;
-    while (*tmp == '0' || *tmp == '.') tmp--;
+    while ((*tmp == '0' || *tmp == '.') && tmp > hdr) tmp--;
     if (tmp < sig_cut) {
         sig_cut = NULL;
     } else {
