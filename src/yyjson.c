@@ -6280,11 +6280,9 @@ yyjson_doc *yyjson_read_opts(char *dat, usize len,
     if (unlikely(!char_is_ctn(*cur))) {
         while (char_is_space(*cur)) cur++;
         if (unlikely(!char_is_ctn(*cur))) {
-            if (has_allow(TRIVIA)) {
-                if (char_is_trivia(*cur)) {
-                    if (!skip_trivia(&cur, eof, flg) && cur == eof) {
-                        return_err(cur - hdr, INVALID_COMMENT, MSG_COMMENT);
-                    }
+            if (has_allow(TRIVIA) && char_is_trivia(*cur)) {
+                if (!skip_trivia(&cur, eof, flg) && cur == eof) {
+                    return_err(cur - hdr, INVALID_COMMENT, MSG_COMMENT);
                 }
             }
         }

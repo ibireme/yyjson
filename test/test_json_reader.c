@@ -5,6 +5,8 @@
 
 #if !YYJSON_DISABLE_READER
 
+
+
 // Expect result
 typedef enum {
     EXPECT_NONE,
@@ -28,6 +30,12 @@ static const yyjson_read_flag ALL_FLAGS[] = {
     1 << 12, // YYJSON_READ_ALLOW_SINGLE_QUOTED_STR
     1 << 13, // YYJSON_READ_ALLOW_UNQUOTED_KEY
 };
+
+
+
+/*==============================================================================
+ * MARK: - Helper
+ *============================================================================*/
 
 static void test_read_data(const char *path, char *dat, usize len,
                            yyjson_read_flag flg, expect_type expect) {
@@ -181,46 +189,11 @@ static void test_read_file(const char *path, yyjson_read_flag flg, expect_type e
     free(dat);
 }
 
-#if !YYJSON_DISABLE_INCR_READER
-static yyjson_doc *test_incr_read_insitu(char *dat, usize len, usize chunk_len, yyjson_read_flag flg) {
-#if YYJSON_DISABLE_UTF8_VALIDATION
-    if (!yy_str_is_utf8(dat, len)) return NULL;
-#endif
 
-    yyjson_read_err err;
-    yyjson_incr_state *state = yyjson_incr_new(dat, len, flg, NULL);
-    size_t read_len = 0;
-    yyjson_doc *doc = NULL;
-    while (read_len < len) {
-        read_len += chunk_len;
-        if (read_len > len) {
-            read_len = len;
-        }
-        /* put some garbage where the parser is supposed to stop */
-        u8 saved_end = dat[read_len];
-        dat[read_len] = 'X';
-        doc = yyjson_incr_read(state, read_len, &err);
-        dat[read_len] = saved_end;
-        if (doc != NULL || err.code != YYJSON_READ_ERROR_MORE) {
-            break;
-        }
-    }
-    if (doc != NULL) {
-        yy_assert(yyjson_doc_get_read_size(doc) > 0);
-        yy_assert(yyjson_doc_get_val_count(doc) > 0);
-        yy_assert(err.code == YYJSON_READ_SUCCESS);
-        yy_assert(err.msg == NULL);
-    } else {
-        yy_assert(yyjson_doc_get_read_size(doc) == 0);
-        yy_assert(yyjson_doc_get_val_count(doc) == 0);
-        yy_assert(err.code != YYJSON_READ_SUCCESS);
-        yy_assert(err.msg != NULL);
-    }
-    yy_assert(err.code != YYJSON_READ_ERROR_MORE);
-    yyjson_incr_free(state);
-    return doc;
-}
-#endif
+
+/*==============================================================================
+ * MARK: - Datasets
+ *============================================================================*/
 
 // yyjson test data
 static void test_json_yyjson(void) {
@@ -440,7 +413,234 @@ static void test_json_encoding(void) {
     yy_dir_free(names);
 }
 
+
+
+/*==============================================================================
+ * MARK: - Whitespace
+ *============================================================================*/
+
+/// Validate `read(src, flg) == read(dst)`.
+static void validate_whitespace(const char *src, const char *dst, yyjson_read_flag flg) {
+    yyjson_doc *doc_src = yyjson_read(src, src ? strlen(src) : 0, flg);
+    yyjson_doc *doc_dst = yyjson_read(dst, dst ? strlen(dst) : 0, 0);
+
+#if !YYJSON_DISABLE_NON_STANDARD
+    if (doc_dst) {
+        yy_assert(doc_src);
+        yy_assert(yyjson_equals(yyjson_doc_get_root(doc_src), yyjson_doc_get_root(doc_dst)));
+    } else {
+        yy_assert(!doc_src);
+    }
+#endif
+    
+    yyjson_doc_free(doc_src);
+    yyjson_doc_free(doc_dst);
+}
+
+static void test_json_whitespace(void) {
+    // ---------------------------------
+    // standard whitespace
+    validate_whitespace
+    (
+     "[1, 2]",
+     "[1,2]", 0);
+    validate_whitespace
+    (
+     "[1, 2]",
+     "[1,2]", YYJSON_READ_ALLOW_EXT_WHITESPACE);
+    
+    validate_whitespace
+    (
+     "[1,\n2]",
+     "[1,2]", 0);
+    validate_whitespace
+    (
+     "[1,\n2]",
+     "[1,2]", YYJSON_READ_ALLOW_EXT_WHITESPACE);
+    
+    
+    // ---------------------------------
+    // single-byte whitespace
+    validate_whitespace
+    (
+     "[1,\v2]",
+     NULL, 0);
+    validate_whitespace
+    (
+     "[1,\v2]",
+     "[1,2]", YYJSON_READ_ALLOW_EXT_WHITESPACE);
+    validate_whitespace
+    (
+     "[1,\f2]",
+     NULL, 0);
+    validate_whitespace
+    (
+     "[1,\f2]",
+     "[1,2]", YYJSON_READ_ALLOW_EXT_WHITESPACE);
+    
+    
+    // ---------------------------------
+    // multe-byte whitespace
+    validate_whitespace
+    (
+     "[1, \xC2\xA0 2]",
+     NULL, 0);
+    validate_whitespace
+    (
+     "[1, \xC2\xA0 2]",
+     "[1,2]", YYJSON_READ_ALLOW_EXT_WHITESPACE);
+    validate_whitespace
+    (
+     "[1, \xE1\x9A\x80\xE2\x80\x80\xE2\x80\x81\xE2\x80\x8A 2]",
+     NULL, 0);
+    validate_whitespace
+    (
+     "[1, \xE1\x9A\x80\xE2\x80\x80\xE2\x80\x81\xE2\x80\x8A 2]",
+     "[1,2]", YYJSON_READ_ALLOW_EXT_WHITESPACE);
+    validate_whitespace
+    (
+     "[1, \xE2\x80\x8A\xE2\x80\xA8\xE2\x80\xA9\xE2\x80\xAF 2]",
+     NULL, 0);
+    validate_whitespace
+    (
+     "[1, \xE2\x80\x8A\xE2\x80\xA8\xE2\x80\xA9\xE2\x80\xAF 2]",
+     "[1,2]", YYJSON_READ_ALLOW_EXT_WHITESPACE);
+    validate_whitespace
+    (
+     "[1, \xE2\x81\x9F\xE3\x80\x80 2]",
+     NULL, 0);
+    validate_whitespace
+    (
+     "[1, \xE2\x81\x9F\xE3\x80\x80 2]",
+     "[1,2]", YYJSON_READ_ALLOW_EXT_WHITESPACE);
+    
+    
+    // ---------------------------------
+    // BOM head
+    validate_whitespace
+    (
+     "\xEF\xBB\xBF[1,2]",
+     NULL, 0);
+    validate_whitespace
+    (
+     "\xEF\xBB\xBF[1,2]",
+     "[1,2]", YYJSON_READ_ALLOW_BOM);
+    validate_whitespace
+    (
+     "\xEF\xBB\xBF[1,2]",
+     "[1,2]", YYJSON_READ_ALLOW_EXT_WHITESPACE);
+    validate_whitespace
+    (
+     "\xEF\xBB\xBF[1,2]",
+     "[1,2]", YYJSON_READ_ALLOW_BOM | YYJSON_READ_ALLOW_EXT_WHITESPACE);
+    
+    
+    // ---------------------------------
+    // BOM inside
+    validate_whitespace
+    (
+     "[1,2\xEF\xBB\xBF]",
+     NULL, 0);
+    validate_whitespace
+    (
+     "[1,2\xEF\xBB\xBF]",
+     NULL, YYJSON_READ_ALLOW_BOM);
+    validate_whitespace
+    (
+     "[1,2\xEF\xBB\xBF]",
+     "[1,2]", YYJSON_READ_ALLOW_EXT_WHITESPACE);
+    validate_whitespace
+    (
+     "[1,2\xEF\xBB\xBF]",
+     "[1,2]", YYJSON_READ_ALLOW_BOM | YYJSON_READ_ALLOW_EXT_WHITESPACE);
+    
+    
+    // ---------------------------------
+    // single-line comment
+    validate_whitespace
+    (
+     "[1,//test\n 2]",
+     "[1,2]", YYJSON_READ_ALLOW_COMMENTS);
+    validate_whitespace
+    (
+     "[1,//test\n 2]",
+     "[1,2]", YYJSON_READ_ALLOW_COMMENTS | YYJSON_READ_ALLOW_EXT_WHITESPACE);
+    
+    validate_whitespace
+    (
+     "[1,//test\xE2\x80\xA8 2]",
+     NULL, YYJSON_READ_ALLOW_COMMENTS);
+    validate_whitespace
+    (
+     "[1,//test\xE2\x80\xA8 2]",
+     "[1,2]", YYJSON_READ_ALLOW_COMMENTS | YYJSON_READ_ALLOW_EXT_WHITESPACE);
+    
+    validate_whitespace
+    (
+     "[1,//test\xE2\x80\xA9 2]",
+     NULL, YYJSON_READ_ALLOW_COMMENTS);
+    validate_whitespace
+    (
+     "[1,//test\xE2\x80\xA9 2]",
+     "[1,2]", YYJSON_READ_ALLOW_COMMENTS | YYJSON_READ_ALLOW_EXT_WHITESPACE);
+    
+    validate_whitespace
+    (
+     "[1,//test\xE2\x80\xAF 2]",
+     NULL, YYJSON_READ_ALLOW_COMMENTS);
+    validate_whitespace
+    (
+     "[1,//test\xE2\x80\xAF 2]",
+     NULL, YYJSON_READ_ALLOW_COMMENTS | YYJSON_READ_ALLOW_EXT_WHITESPACE);
+    
+}
+
+
+
+/*==============================================================================
+ * MARK: - Incremental
+ *============================================================================*/
+
 #if !YYJSON_DISABLE_INCR_READER
+
+static yyjson_doc *test_incr_read_insitu(char *dat, usize len, usize chunk_len, yyjson_read_flag flg) {
+#if YYJSON_DISABLE_UTF8_VALIDATION
+    if (!yy_str_is_utf8(dat, len)) return NULL;
+#endif
+
+    yyjson_read_err err;
+    yyjson_incr_state *state = yyjson_incr_new(dat, len, flg, NULL);
+    size_t read_len = 0;
+    yyjson_doc *doc = NULL;
+    while (read_len < len) {
+        read_len += chunk_len;
+        if (read_len > len) {
+            read_len = len;
+        }
+        /* put some garbage where the parser is supposed to stop */
+        u8 saved_end = dat[read_len];
+        dat[read_len] = 'X';
+        doc = yyjson_incr_read(state, read_len, &err);
+        dat[read_len] = saved_end;
+        if (doc != NULL || err.code != YYJSON_READ_ERROR_MORE) {
+            break;
+        }
+    }
+    if (doc != NULL) {
+        yy_assert(yyjson_doc_get_read_size(doc) > 0);
+        yy_assert(yyjson_doc_get_val_count(doc) > 0);
+        yy_assert(err.code == YYJSON_READ_SUCCESS);
+        yy_assert(err.msg == NULL);
+    } else {
+        yy_assert(yyjson_doc_get_read_size(doc) == 0);
+        yy_assert(yyjson_doc_get_val_count(doc) == 0);
+        yy_assert(err.code != YYJSON_READ_SUCCESS);
+        yy_assert(err.msg != NULL);
+    }
+    yy_assert(err.code != YYJSON_READ_ERROR_MORE);
+    yyjson_incr_free(state);
+    return doc;
+}
 
 /** Returns an allocated minified JSON string representation of an object with
     obj_len keys. The values are arrays of length arr_len. The elements in the
@@ -511,12 +711,19 @@ static void test_json_incremental(void) {
 static void test_json_incremental() {}
 #endif
 
+
+
+/*==============================================================================
+ * MARK: - Entry
+ *============================================================================*/
+
 yy_test_case(test_json_reader) {
     test_json_yyjson();
     test_json_checker();
     test_json_parsing();
     test_json_transform();
     test_json_encoding();
+    test_json_whitespace();
     test_json_incremental();
 }
 

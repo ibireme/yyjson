@@ -4,6 +4,11 @@
 #include "yy_test_utils.h"
 
 
+
+/*==============================================================================
+ * MARK: - Val
+ *============================================================================*/
+
 /// Validate value type
 static bool validate_mut_val_type(yyjson_mut_val *val,
                                   yyjson_type type,
@@ -49,7 +54,6 @@ static bool validate_mut_val_type(yyjson_mut_val *val,
     
     return true;
 }
-
 
 /// Validate creation of mutable string value
 static void validate_mut_str(yyjson_mut_doc *doc,
@@ -235,6 +239,12 @@ static void test_json_mut_val_api(void) {
     
     yyjson_mut_doc_free(doc);
 }
+
+
+
+/*==============================================================================
+ * MARK: - Arr
+ *============================================================================*/
 
 /// Validate array with int
 static void validate_mut_arr(yyjson_mut_val *arr, i64 *cmp,  usize len) {
@@ -1218,6 +1228,11 @@ static void test_json_mut_arr_api(void) {
 }
 
 
+
+/*==============================================================================
+ * MARK: - Obj
+ *============================================================================*/
+
 /// Validate object with int
 static void validate_mut_obj(yyjson_mut_val *obj,
                              const char **keys, usize *key_lens,
@@ -1333,7 +1348,6 @@ static void validate_mut_obj(yyjson_mut_val *obj,
         yy_assert(count == len);
     }
 }
-
 
 static void test_json_mut_obj_api(void) {
     yyjson_mut_doc *doc;
@@ -2090,6 +2104,11 @@ static void test_json_mut_obj_api(void) {
     yyjson_mut_doc_free(doc);
 }
 
+
+/*==============================================================================
+ * MARK: - Doc
+ *============================================================================*/
+
 #if !YYJSON_DISABLE_READER
 static void test_json_mut_doc_api_one(const char *json_str) {
     yyjson_doc *json = yyjson_read(json_str, strlen(json_str), 0);
@@ -2164,6 +2183,12 @@ static void test_json_mut_doc_api(void) {
     }
 #endif
 }
+
+
+
+/*==============================================================================
+ * MARK: - Equals
+ *============================================================================*/
 
 static void validate_equals(const char *lhs_json, const char *rhs_json, bool equals) {
 #if !YYJSON_DISABLE_READER
@@ -2287,6 +2312,12 @@ static void test_json_mut_equals_api(void) {
   \"array\": [1,2,3,4,5,\"test\",123.456,true,false,null,{\"a\":1,\"b\":2,\"c\":3}]\
 }]", true);
 }
+
+
+
+/*==============================================================================
+ * MARK: - Entry
+ *============================================================================*/
 
 yy_test_case(test_json_mut_val) {
     test_json_mut_val_api();

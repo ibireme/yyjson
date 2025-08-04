@@ -17,9 +17,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
                     YYJSON_READ_NOFLAG,
                     YYJSON_WRITE_NOFLAG);
     test_with_flags(data, size,
-                    YYJSON_READ_ALLOW_TRAILING_COMMAS |
-                    YYJSON_READ_ALLOW_COMMENTS |
-                    YYJSON_READ_ALLOW_INF_AND_NAN,
+                    YYJSON_READ_JSON5,
                     YYJSON_WRITE_PRETTY |
                     YYJSON_WRITE_ESCAPE_UNICODE |
                     YYJSON_WRITE_ESCAPE_SLASHES |
