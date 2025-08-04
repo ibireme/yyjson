@@ -184,6 +184,9 @@ Incremental reading is recommended only for large documents and only when the
 program needs to be responsive. Incremental reading is slightly slower than
 `yyjson_read()` and `yyjson_read_opts()`.
 
+Note: The incremental JSON reader only supports standard JSON.
+Flags for non-standard features (e.g. comments, trailing commas) are ignored.
+
 To read a large JSON document incrementally:
 
 1. Call `yyjson_incr_new()` to create the state for incremental reading.
@@ -432,6 +435,42 @@ This flag permits invalid characters to appear in the string values, but it stil
 
 ### **YYJSON_READ_ALLOW_BOM**
 Allow UTF-8 BOM and skip it before parsing if any (non-standard).
+
+### **YYJSON_READ_ALLOW_EXT_NUMBER**
+Allow extended number formats (non-standard):
+    - Hexadecimal numbers, such as `0x7B`.
+    - Numbers with leading or trailing decimal point, such as `.123`, `123.`.
+    - Numbers with a leading plus sign, such as `+123`.
+
+### **YYJSON_READ_ALLOW_EXT_ESCAPE**
+Allow extended escape sequences in strings (non-standard):
+    - Additional escapes: `\\a`, `\\e`, `\\v`, `\\'`, `\\?`, `\\0`.
+    - Hex escapes: `\\xNN`, such as `\\x7B`.
+    - Line continuation: backslash followed by line terminator sequences.
+    - Unknown escape: if backslash is followed by an unsupported character,
+        the backslash will be removed and the character will be kept as-is.
+        However, `\1`-`\9` will still trigger an error.
+
+### **YYJSON_READ_ALLOW_EXT_WHITESPACE**
+Allow extended whitespace characters (non-standard):
+    - Vertical tab `\\v` and form feed `\\f`.
+    - Line separator `\\u2028` and paragraph separator `\\u2029`.
+    - Non-breaking space `\\xA0`.
+    - Byte order mark: `\\uFEFF`.
+    - Other Unicode characters in the Zs (Separator, space) category.
+
+### **YYJSON_READ_ALLOW_SINGLE_QUOTED_STR**
+Allow strings enclosed in single quotes (non-standard), such as `'abc'`.
+
+### **YYJSON_READ_ALLOW_UNQUOTED_KEY**
+Allow object keys without quotes (non-standard), such as `{a:1,b:2}`.
+
+### **YYJSON_READ_JSON5**
+Allow JSON5 format, see: [https://json5.org].
+    This flag supports all JSON5 features with some additional extensions:
+    - Accepts more escape sequences than JSON5 (e.g. `\a`, `\e`).
+    - Unquoted keys are and not limited to ECMAScript IdentifierName.
+    - Allow case-insensitive `NaN`, `Inf` and `Infinity` literals.
 
 
 ---------------

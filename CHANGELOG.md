@@ -5,7 +5,16 @@ All notable changes to this project will be documented in this file.
 
 ## Unreleased
 #### Added
-- Add `yyjson_write_number()` and `yyjson_mut_write_number()` functions to write a number value to a string buffer.
+- Add `yyjson_write_number()` and `yyjson_mut_write_number()` to write a number value to a string buffer.
+- Add `YYJSON_READ_ALLOW_EXT_NUMBER` to support extended number formats, such as `0x7B`, `+.123`.
+- Add `YYJSON_READ_ALLOW_EXT_ESCAPE` to support extended escape, such as `\a`, `\0`, `\x7B`.
+- Add `YYJSON_READ_ALLOW_EXT_WHITESPACE` to support extended whitespace, such as `\v`, `\u2028`.
+- Add `YYJSON_READ_ALLOW_SINGLE_QUOTED_STR` to support single-quoted strings, such as `'abc'`.
+- Add `YYJSON_READ_ALLOW_UNQUOTED_KEY` to allow unquoted keys, such as `{a:1,b:2}`.
+- Add `YYJSON_READ_JSON5` to enable full JSON5 support:  [https://json5.org].
+
+#### Changed
+- Removed support for non-standard JSON in the incremental reader `yyjson_incr_read()`.
 
 
 ## 0.11.1 (2025-05-14)

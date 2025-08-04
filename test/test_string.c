@@ -1115,6 +1115,7 @@ static void validate_str_sq(string_set set) {
         val = yyjson_doc_get_root(ret_doc);
         yy_assert(yyjson_equals_strn(val, dst->str, dst->len));
         free(ret);
+        yyjson_doc_free(ret_doc);
 #endif
     } else {
         yy_assert(!doc);
