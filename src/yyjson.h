@@ -786,8 +786,8 @@ static const yyjson_read_flag YYJSON_READ_ALLOW_BOM                 = 1 << 8;
 static const yyjson_read_flag YYJSON_READ_ALLOW_EXT_NUMBER          = 1 << 9;
 
 /** Allow extended escape sequences in strings (non-standard):
-    - Additional escapes: `\\a`, `\\e`, `\\v`, `\\'`, `\\?`, `\\0`.
-    - Hex escapes: `\\xNN`, such as `\\x7B`.
+    - Additional escapes: `\a`, `\e`, `\v`, ``\'``, `\?`, `\0`.
+    - Hex escapes: `\xNN`, such as `\x7B`.
     - Line continuation: backslash followed by line terminator sequences.
     - Unknown escape: if backslash is followed by an unsupported character,
         the backslash will be removed and the character will be kept as-is.
@@ -795,25 +795,25 @@ static const yyjson_read_flag YYJSON_READ_ALLOW_EXT_NUMBER          = 1 << 9;
 static const yyjson_read_flag YYJSON_READ_ALLOW_EXT_ESCAPE          = 1 << 10;
 
 /** Allow extended whitespace characters (non-standard):
-    - Vertical tab `\\v` and form feed `\\f`.
-    - Line separator `\\u2028` and paragraph separator `\\u2029`.
-    - Non-breaking space `\\xA0`.
-    - Byte order mark: `\\uFEFF`.
+    - Vertical tab `\v` and form feed `\f`.
+    - Line separator `\u2028` and paragraph separator `\u2029`.
+    - Non-breaking space `\xA0`.
+    - Byte order mark: `\uFEFF`.
     - Other Unicode characters in the Zs (Separator, space) category. */
 static const yyjson_read_flag YYJSON_READ_ALLOW_EXT_WHITESPACE      = 1 << 11;
 
-/** Allow strings enclosed in single quotes (non-standard),
-    such as `'abc'`. */
+/** Allow strings enclosed in single quotes (non-standard), such as ``'ab'``. */
 static const yyjson_read_flag YYJSON_READ_ALLOW_SINGLE_QUOTED_STR   = 1 << 12;
 
-/** Allow object keys without quotes (non-standard),
-    such as `{a:1,b:2}`. */
+/** Allow object keys without quotes (non-standard), such as `{a:1,b:2}`.
+    This extends the ECMAScript IdentifierName rule by allowing any
+    non-whitespace character with code point above `U+007F`. */
 static const yyjson_read_flag YYJSON_READ_ALLOW_UNQUOTED_KEY        = 1 << 13;
 
 /** Allow JSON5 format, see: [https://json5.org].
     This flag supports all JSON5 features with some additional extensions:
     - Accepts more escape sequences than JSON5 (e.g. `\a`, `\e`).
-    - Unquoted keys are and not limited to ECMAScript IdentifierName.
+    - Unquoted keys are not limited to ECMAScript IdentifierName.
     - Allow case-insensitive `NaN`, `Inf` and `Infinity` literals. */
 static const yyjson_read_flag YYJSON_READ_JSON5 =
     (1 << 2)  | /* YYJSON_READ_ALLOW_TRAILING_COMMAS */

@@ -5,12 +5,18 @@
     -NaN,
     -Nan,
     -nan,
+    +NaN,
+    +Nan,
+    +nan,
     {
         "n": NaN,
         "n": Nan,
         "n": nan,
         "n": -NaN,
         "n": -Nan,
-        "n": -nan
+        "n": -nan,
+        "n": +NaN,
+        "n": +Nan,
+        "n": +nan
     }
 ]

@@ -2115,8 +2115,10 @@ static void test_json_mut_doc_api_one(const char *json_str) {
     yyjson_mut_doc *json_cp = yyjson_doc_mut_copy(json, NULL);
     yyjson_mut_doc *json_mut_cp = yyjson_mut_doc_mut_copy(json_cp, NULL);
     yy_assert(yyjson_mut_equals(json_cp->root, json_mut_cp->root) == true);
+    yy_assert(!yyjson_mut_doc_imut_copy(NULL, NULL));
     yyjson_doc *idoc_cp = yyjson_mut_doc_imut_copy(json_cp, NULL);
     yy_assert(yyjson_equals(json->root, idoc_cp->root) == true);
+    yy_assert(!yyjson_mut_val_imut_copy(NULL, NULL));
     yyjson_doc *ival_cp = yyjson_mut_val_imut_copy(json_cp->root, NULL);
     yy_assert(yyjson_equals(json->root, idoc_cp->root) == true);
     yyjson_doc_free(json);

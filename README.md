@@ -10,14 +10,14 @@
 A high performance JSON library written in ANSI C.
 
 # Features
-- **Fast**: can read or write gigabytes per second JSON data on modern CPUs.
+- **Fast**: can read or write gigabytes of JSON data per second on modern CPUs.
 - **Portable**: complies with ANSI C (C89) for cross-platform compatibility.
-- **Strict**: complies with [RFC 8259](https://datatracker.ietf.org/doc/html/rfc8259) JSON standard, ensuring strict number format and UTF-8 validation.
-- **Extendable**: offers options to allow comments, trailing commas, NaN/Inf, and custom memory allocator.
+- **Strict**: complies with [RFC 8259](https://datatracker.ietf.org/doc/html/rfc8259) JSON standard, ensuring strict number formats and UTF-8 validation.
+- **Extendable**: offers options to enable individual JSON5 features and custom allocator.
 - **Accuracy**: can accurately read and write `int64`, `uint64`, and `double` numbers.
-- **Flexible**: supports unlimited JSON nesting levels, `\u0000` characters, and non null-terminated strings.
-- **Manipulation**: supports querying and modifying using [JSON Pointer](https://datatracker.ietf.org/doc/html/rfc6901), [JSON Patch](https://datatracker.ietf.org/doc/html/rfc6902) and [JSON Merge Patch](https://datatracker.ietf.org/doc/html/rfc7386).
-- **Developer-Friendly**: easy integration with only one `h` and one `c` file.
+- **Flexible**: supports unlimited JSON nesting levels, `\u0000` characters, and non-null-terminated strings.
+- **Manipulation**: supports querying and modifying with [JSON Pointer](https://datatracker.ietf.org/doc/html/rfc6901), [JSON Patch](https://datatracker.ietf.org/doc/html/rfc6902), and [JSON Merge Patch](https://datatracker.ietf.org/doc/html/rfc7386).
+- **Developer-Friendly**: easy integration with just one `.h` and one `.c` file.
 
 # Limitations
 - An array or object is stored as a [data structure](https://ibireme.github.io/yyjson/doc/doxygen/html/md_doc__data_structure.html) such as linked list, which makes accessing elements by index or key slower than using an iterator.
@@ -205,7 +205,7 @@ The pre-generated Doxygen HTML for the release version can be viewed here:
 
 # Packaging status
 
-[![Packaging status](https://repology.org/badge/vertical-allrepos/yyjson.svg)](https://repology.org/project/yyjson/versions)
+[![Packaging status](https://repology.org/badge/vertical-allrepos/yyjson.svg?columns=2)](https://repology.org/project/yyjson/versions)
 
 # Built With yyjson
 
@@ -235,7 +235,7 @@ yyjson, feel free to open a PR to add it to this list.
 * [x] Support JSON Pointer to query and modify JSON.
 * [x] Add `RAW` type for JSON reader and writer.
 * [x] Add option to limit real number output precision.
-* [ ] Add option to support JSON5 (if feasible).
+* [x] Add option to support JSON5.
 * [ ] Add functions to diff two JSON documents.
 * [ ] Add documentation on performance optimizations.
 * [ ] Ensure ABI stability.
