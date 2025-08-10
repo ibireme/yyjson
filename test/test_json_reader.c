@@ -216,11 +216,12 @@ static void test_json_yyjson(void) {
         
         // check file name
         bool has_fail       = yy_str_contains(name, "(fail)");
-        bool has_junk       = yy_str_contains(name, "(junk)");
+        bool has_garbage    = yy_str_contains(name, "(garbage)");
         bool has_bignum     = yy_str_contains(name, "(bignum)");
         bool has_bighex     = yy_str_contains(name, "(bighex)");
         bool has_comma      = yy_str_contains(name, "(comma)");
         bool has_comment    = yy_str_contains(name, "(comment)");
+        bool has_endcomment = yy_str_contains(name, "(endcomment)");
         bool has_inf        = yy_str_contains(name, "(inf)");
         bool has_nan        = yy_str_contains(name, "(nan)");
         bool has_str_err    = yy_str_contains(name, "(str_err)");
@@ -232,8 +233,8 @@ static void test_json_yyjson(void) {
         bool has_str_uq     = yy_str_contains(name, "(str_uq)");
         bool has_non_std = (has_bighex | has_comma | has_comment |
                             has_inf | has_nan | has_str_err | has_bom |
-                            has_ext_num | has_ext_esc | has_ext_ws |
-                            has_str_sq | has_str_uq);
+                            has_ext_num | has_ext_esc |
+                            has_ext_ws | has_str_sq | has_str_uq);
         
         // test all flag combination
         u32 flg_num = (u32)yy_nelems(ALL_FLAGS);
@@ -246,7 +247,7 @@ static void test_json_yyjson(void) {
             
             // check if the current combined flag is valid
             bool pass = !has_fail;
-            pass &= !has_junk       || (flg & (YYJSON_READ_STOP_WHEN_DONE));
+            pass &= !has_garbage    || (flg & (YYJSON_READ_STOP_WHEN_DONE));
             pass &= !has_bignum     || (flg & (YYJSON_READ_BIGNUM_AS_RAW |
                                                YYJSON_READ_NUMBER_AS_RAW |
                                                YYJSON_READ_ALLOW_INF_AND_NAN));
@@ -254,6 +255,8 @@ static void test_json_yyjson(void) {
                                                YYJSON_READ_NUMBER_AS_RAW));
             pass &= !has_comma      || (flg & (YYJSON_READ_ALLOW_TRAILING_COMMAS));
             pass &= !has_comment    || (flg & (YYJSON_READ_ALLOW_COMMENTS));
+            pass &= !has_endcomment || (flg & (YYJSON_READ_ALLOW_COMMENTS |
+                                               YYJSON_READ_STOP_WHEN_DONE));
             pass &= !has_inf        || (flg & (YYJSON_READ_ALLOW_INF_AND_NAN));
             pass &= !has_nan        || (flg & (YYJSON_READ_ALLOW_INF_AND_NAN));
             pass &= !has_str_err    || (flg & (YYJSON_READ_ALLOW_INVALID_UNICODE));
@@ -268,6 +271,7 @@ static void test_json_yyjson(void) {
             pass &= !has_non_std;
             pass &= !has_bignum     || (flg & (YYJSON_READ_BIGNUM_AS_RAW |
                                                YYJSON_READ_NUMBER_AS_RAW));
+            pass &= !has_endcomment || (flg & YYJSON_READ_STOP_WHEN_DONE);
 #endif
             test_read_data(path, (char *)dat, len, flg, pass ? EXPECT_PASS : EXPECT_FAIL);
         }

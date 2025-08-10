@@ -1330,6 +1330,26 @@ static void test_unquoted_key(void) {
     }, 0);
     
     validate_str_uq((string_set) {
+        { "$", 1 }, // char `$`
+        { "$", 1 }
+    }, 0);
+    
+    validate_str_uq((string_set) {
+        { "_", 1 }, // char `_`
+        { "_", 1 }
+    }, 0);
+    
+    validate_str_uq((string_set) {
+        { "#", 1 }, // char `#`
+        { NULL, 0 }
+    }, 0);
+    
+    validate_str_uq((string_set) {
+        { "@", 1 }, // char `@`
+        { NULL, 0 }
+    }, 0);
+    
+    validate_str_uq((string_set) {
         { "abc\f", 4 }, // extended space <FF> with flag
         { "abc", 3 }
     }, YYJSON_READ_ALLOW_EXT_WHITESPACE);

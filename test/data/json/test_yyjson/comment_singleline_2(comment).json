@@ -1,5 +1,6 @@
-[
-    1, // singlie-line comment
-    2,
-    3
-]
+// aaa
+{
+    "a": 1,// aaa
+    "b": 2, // aaa
+    "c": 3 // aaa
+}

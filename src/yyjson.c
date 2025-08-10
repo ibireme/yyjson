@@ -3242,7 +3242,7 @@ static_noinline bool read_num_raw(u8 **ptr, u8 **pre, yyjson_read_flag flg,
         if (has_allow(INF_AND_NAN)) {
             if (read_inf_or_nan(ptr, pre, flg, val)) return true;
         }
-        return_err(cur, "no digit after minus sign");
+        return_err(cur, "no digit after sign");
     }
 
     /* read integral part */
@@ -3252,8 +3252,7 @@ static_noinline bool read_num_raw(u8 **ptr, u8 **pre, yyjson_read_flag flg,
             return_err(cur - 1, "number with leading zero is not allowed");
         }
         if (!char_is_fp(*cur)) {
-            if (has_allow(EXT_NUMBER) &&
-                (*cur == 'x' || *cur == 'X')) { /* hex integer */
+            if (has_allow(EXT_NUMBER) && char_to_lower(*cur) == 'x') { /* hex */
                 if (!char_is_hex(*++cur)) return_err(cur, "invalid hex number");
                 while(char_is_hex(*cur)) cur++;
             }
@@ -3893,9 +3892,8 @@ static_inline bool read_num(u8 **ptr, u8 **pre, yyjson_read_flag flg,
                     cur++;
                     continue;
                 }
-                if (*cur == '.' && char_is_digit(cur[1])) {
-                    dot_pos = cur--;  /* e.g. '.123' */
-                    goto digi_frac_1;
+                if (*cur == '.' && char_is_digit(cur[1])) { /* e.g. '.123' */
+                    goto leading_dot;
                 }
             }
             if (has_allow(INF_AND_NAN)) {
@@ -3905,13 +3903,13 @@ static_inline bool read_num(u8 **ptr, u8 **pre, yyjson_read_flag flg,
         }
         /* begin with 0 */
         if (likely(!char_is_digit_or_fp(*++cur))) {
-            if (has_allow(EXT_NUMBER) &&
-                (*cur == 'x' || *cur == 'X')) { /* hex integer */
+            if (has_allow(EXT_NUMBER) && char_to_lower(*cur) == 'x') { /* hex */
                 return read_num_hex(ptr, pre, flg, val, msg);
             }
             return_0();
         }
         if (likely(*cur == '.')) {
+leading_dot:
             dot_pos = cur++;
             if (unlikely(!char_is_digit(*cur))) {
                 if (has_allow(EXT_NUMBER)) {
@@ -4488,10 +4486,9 @@ static_inline bool read_num(u8 **ptr, u8 **pre, yyjson_read_flag flg,
 } while (false)
 
 #define return_raw() do { \
-    **pre = '\0'; /* add null-terminator for previous raw string */ \
     val->tag = ((u64)(cur - hdr) << YYJSON_TAG_BIT) | YYJSON_TYPE_RAW; \
     val->uni.str = (const char *)hdr; \
-    *pre = cur; *end = cur; return true; \
+    **pre = '\0'; *pre = cur; *end = cur; return true; \
 } while (false)
 
     u64 sig, num;
@@ -4526,7 +4523,7 @@ static_inline bool read_num(u8 **ptr, u8 **pre, yyjson_read_flag flg,
         if (has_allow(INF_AND_NAN)) {
             if (read_inf_or_nan(ptr, pre, flg, val)) return true;
         }
-        return_err(cur, "no digit after minus sign");
+        return_err(cur, "no digit after sign");
     }
     if (*cur == '0') {
         cur++;

@@ -796,6 +796,17 @@ static void test_all_files(void) {
         bool file_suc = yy_dat_init_with_file(&dat, path);
         yy_assertf(file_suc == true, "file read fail: %s\n", path);
         
+        /// check flags
+        bool is_int     = yy_str_has_prefix(name, "int"); // uint/sint
+        bool is_hex     = yy_str_has_prefix(name, "hex"); // hex int
+        bool is_real    = yy_str_has_prefix(name, "real"); // real
+        bool is_literal = yy_str_has_prefix(name, "literal"); // literal
+        
+        bool is_ext     = yy_str_contains(name, "(ext)"); // extended format
+        bool is_big     = yy_str_contains(name, "(big)"); // int overflow -> real
+        bool is_inf     = yy_str_contains(name, "(inf)"); // int/real overflow -> inf
+        bool is_fail    = yy_str_contains(name, "(fail)"); // always fail
+        
         /// iterate over each line of the file
         usize len;
         char *line;
@@ -804,8 +815,38 @@ static void test_all_files(void) {
             if (len == 0 || line[0] == '#') continue;
             /// add a null-terminator
             line[len] = '\0';
-            /// test one line
-            test_num_info(get_num_info(line));
+            
+            /// check number format
+            num_info info = get_num_info(line);
+            if (is_fail) {
+                yy_assert(info.type == NUM_TYPE_FAIL);
+            } else {
+                yy_assert(info.ext == is_ext);
+                if (is_int || is_hex) {
+                    if (line[0] == '-') {
+                        yy_assert(info.type == NUM_TYPE_SINT);
+                    } else {
+                        yy_assert(info.type == NUM_TYPE_UINT);
+                    }
+                    if (is_inf) {
+                        yy_assert(info.int_overflow == true);
+                        yy_assert(info.real_overflow == true);
+                    } else if (is_big) {
+                        yy_assert(info.int_overflow == true);
+                        yy_assert(info.real_overflow == false);
+                    }
+                } else if (is_real) {
+                    yy_assert(info.type == NUM_TYPE_REAL);
+                    if (is_inf) {
+                        yy_assert(info.real_overflow == is_inf);
+                    }
+                } else if (is_literal) {
+                    yy_assert(info.type == NUM_TYPE_LITERAL);
+                }
+            }
+            
+            /// test one number
+            test_num_info(info);
         }
         
         yy_dat_release(&dat);
@@ -1082,6 +1123,7 @@ static void test_read_flags(void) {
         
         "0x123", // hex
         "-0x123", // hex
+        "+0X000123" // hex
         
         "+123", // ext number
         ".123", // ext number

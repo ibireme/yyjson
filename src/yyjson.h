@@ -749,7 +749,7 @@ static const yyjson_read_flag YYJSON_READ_STOP_WHEN_DONE            = 1 << 1;
     such as `[1,2,3,]`, `{"a":1,"b":2,}` (non-standard). */
 static const yyjson_read_flag YYJSON_READ_ALLOW_TRAILING_COMMAS     = 1 << 2;
 
-/** Allow C-style single line and multiple line comments (non-standard). */
+/** Allow C-style single-line and mult-line comments (non-standard). */
 static const yyjson_read_flag YYJSON_READ_ALLOW_COMMENTS            = 1 << 3;
 
 /** Allow inf/nan number and literal, case-insensitive,

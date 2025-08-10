@@ -381,12 +381,12 @@ Allow a single trailing comma at the end of an object or array (non-standard), f
 ```
 
 ### **YYJSON_READ_ALLOW_COMMENTS**
-Allow C-style single line and multiple line comments (non-standard), for example:
+Allow C-style single-line and multi-line comments (non-standard), for example:
 
 ```
 {
-    "name": "Harry", // single line comment
-    "id": /* multiple line comment */ 123
+    "name": "Harry", // single-line comment
+    "id": /* multi-line comment */ 123
 }
 ```
 

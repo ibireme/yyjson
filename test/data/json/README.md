@@ -1,4 +1,4 @@
-# JSON test data
+# JSON Test Data
 
 
 ## test_parsing
@@ -49,11 +49,12 @@ JSON files used for yyjson testing.
 - `(fail)` content must be rejected
 - `(comma)` content has trailing comma
 - `(comment)` content has comment
+- `(endcomment)` content has comment at end
 - `(inf)` content has infinity literal
 - `(nan)` content has nan literal
 - `(bignum)` content has large number (double overflow)
 - `(bighex)` content has large hex number (u64/i64 overflow)
-- `(junk)` content has junk after document
+- `(garbage)` content has garbage after document
 - `(str_err)` content has invalid unicode
 - `(bom)` content has byte order mask (BOM)
 - `(ext_num)` content has extended number format
