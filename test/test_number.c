@@ -10,13 +10,13 @@
 
 #if !YYJSON_DISABLE_READER && !YYJSON_DISABLE_WRITER
 
-// IEEE 754 binary floating-point format is used in the current environment.
+// Whether IEEE 754 binary floating-point format is used.
 #define FP_IEEE_754 GOO_HAS_IEEE_754
 
 // Whether yyjson use libc's strtod/sprintf instead of its built-in functions.
 #define FP_USE_LIBC (!FP_IEEE_754 || YYJSON_DISABLE_FAST_FP_CONV)
 
-// The decimal precision required to serialize/deserialize a floating-point value.
+// The decimal precision required to read/write a floating-point value.
 #ifndef FLT_DECIMAL_DIG
 #define FLT_DECIMAL_DIG 9
 #endif
@@ -25,19 +25,20 @@
 #endif
 
 
-// =============================================================================
-// Number conversion helper
-// =============================================================================
 
-/// Convert raw to float.
-static yy_inline f32 f32_from_raw(u32 u) {
+/*==============================================================================
+ * MARK: - Helper
+ *============================================================================*/
+
+/// Convert bits to float.
+static yy_inline f32 f32_from_bits(u32 u) {
     f32 f;
     memcpy((void *)&f, (void *)&u, sizeof(u));
     return f;
 }
 
-/// Convert raw to double.
-static yy_inline f64 f64_from_raw(u64 u) {
+/// Convert bits to double.
+static yy_inline f64 f64_from_bits(u64 u) {
     f64 f;
     memcpy((void *)&f, (void *)&u, sizeof(u));
     return f;
@@ -69,9 +70,9 @@ static void decimal_point_to_std(char *buf) {
 
 
 
-// =============================================================================
-// Number conversion (libc)
-// =============================================================================
+/*==============================================================================
+ * MARK: - Conversion (Libc)
+ *============================================================================*/
 
 /// Read float from string (libc).
 static usize libc_f32_read(const char *str, f32 *val) {
@@ -132,9 +133,9 @@ static usize libc_f64_write_fixed(f64 val, int prec, char *buf, usize len) {
 
 
 
-// =============================================================================
-// Number conversion (google/double-conversion)
-// =============================================================================
+/*==============================================================================
+ * MARK: - Conversion (Google)
+ *============================================================================*/
 
 /// Read float from string (google/double-conversion).
 static usize goo_f32_read(const char *str, f32 *val) {
@@ -167,9 +168,9 @@ static usize goo_f64_write_fixed(f64 val, int prec, char *buf, usize len) {
 
 
 
-// =============================================================================
-// Number conversion (common)
-// =============================================================================
+/*==============================================================================
+ * MARK: - Conversion (Common)
+ *============================================================================*/
 
 /// Read float from string.
 static usize f32_read(const char *str, f32 *val) {
@@ -218,55 +219,82 @@ static usize f64_write_fixed(f64 val, int prec, char *buf, usize len) {
 
 
 
-// =============================================================================
-// Number string format checker
-// =============================================================================
+/*==============================================================================
+ * MARK: - Number String Format Checker
+ *============================================================================*/
 
-/// number type
+/// number type (accept overflow)
 typedef enum {
-    NUM_TYPE_FAIL,      // not a JSON number
+    NUM_TYPE_FAIL,      // not a number
     NUM_TYPE_SINT,      // signed integer
     NUM_TYPE_UINT,      // unsigned integer
     NUM_TYPE_REAL,      // real number
-    NUM_TYPE_LITERAL    // nan or inf literal (non standard)
+    NUM_TYPE_LITERAL    // nan or inf literal
 } num_type;
 
 /// number information
 typedef struct {
-    const char *str;
-    usize len;
-    num_type type;
-    bool int_overflow;
-    bool real_overflow;
-    i64 i;
-    u64 u;
-    f64 f;
+    const char *str; // string
+    usize len; // string length
+    num_type type; // string number type
+    bool ext; // extended number format
+    bool int_overflow; // overflow when reading as an integer
+    bool real_overflow; // overflow when reading as a real number
+    i64 i; // read as int64
+    u64 u; // read as uint64
+    f64 f; // read as double
 } num_info;
 
-/// Whether this character is digit.
+static yy_inline bool char_is_sign(char c) {
+    return c == '-' || c == '+';
+}
+
+static yy_inline bool char_is_e(char c) {
+    return c == 'e' || c == 'E';
+}
+
+static yy_inline bool char_is_x(char c) {
+    return c == 'x' || c == 'X';
+}
+
 static yy_inline bool char_is_digit(char c) {
     return '0' <= c && c <= '9';
 }
 
-/// Whether this character is sign.
-static yy_inline bool char_is_sign(char c) {
-    return c == '-' || c == '+';
+static yy_inline bool char_is_hex(char c) {
+    return ('0' <= c && c <= '9') ||
+           ('a' <= c && c <= 'f') ||
+           ('A' <= c && c <= 'F');
 }
 
 /// Check for overflow when reading an integer number (uint64/int64).
 static yy_inline bool check_int_overflow(const char *str, num_type type) {
     if (type != NUM_TYPE_SINT && type != NUM_TYPE_UINT) return false;
     
-    bool sign = (*str == '-');
-    str += sign;
+    bool neg = (*str == '-');
+    str += char_is_sign(*str);
     usize str_len = strlen(str);
-    if (str_len < 19) return false;
     
-    const char *max = sign ? "9223372036854775808" : "18446744073709551615";
-    usize max_len = strlen(max);
-    if (str_len > max_len) return true;
-    if (str_len == max_len && strcmp(str, max) > 0) return true;
-    return false;
+    if (str[0] == '0' && char_is_x(str[1])) {
+        // hex integer
+        str_len -= 2;
+        str += 2;
+        if (str_len < 16) return false;
+        if (str_len > 16) return true;
+        if (neg) {
+            return strcmp(str, "8000000000000000") > 0;
+        } else {
+            return false;
+        }
+    } else {
+        // standard integer
+        if (str_len < 19) return false;
+        const char *max = neg ? "9223372036854775808" : "18446744073709551615";
+        usize max_len = strlen(max);
+        if (str_len > max_len) return true;
+        if (str_len == max_len && strcmp(str, max) > 0) return true;
+        return false;
+    }
 }
 
 /// Check for overflow when reading a real number (double).
@@ -280,51 +308,119 @@ static yy_inline bool check_real_overflow(const char *str, num_type type) {
 
 /// Check JSON number string and return its type.
 /// This checks only the string format, not for numeric overflow.
-static yy_inline num_type get_num_type(const char *str) {
-    if (!str) return NUM_TYPE_FAIL;
+/// @param str A null-terminated string.
+/// @param ext Allow extended number format.
+static yy_inline num_type get_num_type(const char *str, bool ext) {
+    if (!str || !*str) return NUM_TYPE_FAIL;
     
-    // optional sign
-    bool sign = (*str == '-');
-    str += sign;
-    
-    // must begin with a digit
-    if (!char_is_digit(*str)) {
-        if (!yy_str_cmp(str, "nan", true) ||
-            !yy_str_cmp(str, "inf", true) ||
-            !yy_str_cmp(str, "infinity", true)) return NUM_TYPE_LITERAL;
-        return NUM_TYPE_FAIL;
-    }
-    
-    // leading zeros are not allowed
-    if (*str == '0' && char_is_digit(str[1])) return NUM_TYPE_FAIL;
-    
-    // one or more digits
-    while (char_is_digit(*str)) str++;
-    
-    // ending with integer type
-    if (*str == '\0') return sign ? NUM_TYPE_SINT : NUM_TYPE_UINT;
-    
-    // optional fraction part
-    if (*str == '.') {
-        str++;
-        // one or more digits
-        if (!char_is_digit(*str)) return NUM_TYPE_FAIL;
-        while (char_is_digit(*str)) str++;
-    }
-    
-    // optional exponent part
-    if (*str == 'e' || *str == 'E') {
-        str++;
+    if (!ext) {
         // optional sign
-        if (*str == '-' || *str == '+') str++;
+        bool neg = (*str == '-');
+        str += neg;
+        
+        // must begin with a digit
+        if (!char_is_digit(*str)) {
+            if (!yy_str_cmp(str, "nan", true) ||
+                !yy_str_cmp(str, "inf", true) ||
+                !yy_str_cmp(str, "infinity", true)) return NUM_TYPE_LITERAL;
+            return NUM_TYPE_FAIL;
+        }
+        
+        // leading zeros are not allowed
+        if (str[0] == '0' && char_is_digit(str[1])) return NUM_TYPE_FAIL;
+        
         // one or more digits
-        if (!char_is_digit(*str)) return NUM_TYPE_FAIL;
         while (char_is_digit(*str)) str++;
+        
+        // ending with integer type
+        if (*str == '\0') return neg ? NUM_TYPE_SINT : NUM_TYPE_UINT;
+        
+        // optional fraction part
+        if (*str == '.') {
+            str++;
+            // one or more digits
+            if (!char_is_digit(*str)) return NUM_TYPE_FAIL;
+            while (char_is_digit(*str)) str++;
+        }
+        
+        // optional exponent part
+        if (char_is_e(*str)) {
+            str++;
+            // optional sign
+            if (char_is_sign(*str)) str++;
+            // one or more digits
+            if (!char_is_digit(*str)) return NUM_TYPE_FAIL;
+            while (char_is_digit(*str)) str++;
+        }
+        
+        // ending with real type
+        return *str == '\0' ? NUM_TYPE_REAL : NUM_TYPE_FAIL;
+        
+    } else {
+        // optional sign
+        bool neg = (*str == '-');
+        str += char_is_sign(*str);
+        
+        // hex integer
+        if (str[0] == '0' && char_is_x(str[1])) {
+            str += 2;
+            if (!char_is_hex(*str)) return NUM_TYPE_FAIL;
+            while (char_is_hex(*str)) str++;
+            if (*str == '\0') return neg ? NUM_TYPE_SINT : NUM_TYPE_UINT;
+            return NUM_TYPE_FAIL;
+        }
+        
+        // real number start with '.'
+        if (*str == '.') {
+            str++;
+            if (!char_is_digit(*str)) return NUM_TYPE_FAIL;
+            while (char_is_digit(*str)) str++;
+            
+            // optional exponent part
+            if (char_is_e(*str)) {
+                str++;
+                if (char_is_sign(*str)) str++;
+                if (!char_is_digit(*str)) return NUM_TYPE_FAIL;
+                while (char_is_digit(*str)) str++;
+            }
+            
+            return *str == '\0' ? NUM_TYPE_REAL : NUM_TYPE_FAIL;
+        }
+        
+        // must begin with a digit
+        if (!char_is_digit(*str)) {
+            if (!yy_str_cmp(str, "nan", true) ||
+                !yy_str_cmp(str, "inf", true) ||
+                !yy_str_cmp(str, "infinity", true)) return NUM_TYPE_LITERAL;
+            return NUM_TYPE_FAIL;
+        }
+        
+        // leading zeros are not allowed
+        if (*str == '0' && char_is_digit(str[1])) return NUM_TYPE_FAIL;
+        
+        // one or more digits
+        while (char_is_digit(*str)) str++;
+        
+        // ending with integer type
+        if (*str == '\0') return neg ? NUM_TYPE_SINT : NUM_TYPE_UINT;
+        
+        // optional fraction part
+        if (*str == '.') {
+            str++;
+            while (char_is_digit(*str)) str++;
+        }
+        
+        // optional exponent part
+        if (char_is_e(*str)) {
+            str++;
+            if (char_is_sign(*str)) str++;
+            if (!char_is_digit(*str)) return NUM_TYPE_FAIL;
+            while (char_is_digit(*str)) str++;
+        }
+        
+        // ending with real type
+        return *str == '\0' ? NUM_TYPE_REAL : NUM_TYPE_FAIL;
     }
-    
-    // ending with real type
-    if (*str == '\0') return NUM_TYPE_REAL;
-    return NUM_TYPE_FAIL;
 }
 
 /// Get number information from a string.
@@ -332,16 +428,17 @@ static yy_inline num_info get_num_info(const char *str) {
     num_info info = { 0 };
     info.str = str;
     info.len = str ? strlen(str) : 0;
-    info.type = get_num_type(str);
-    
+    info.type = get_num_type(str, false);
     if (info.type == NUM_TYPE_FAIL) {
-        return info;
+        info.type = get_num_type(str, true);
+        if (info.type == NUM_TYPE_FAIL) return info;
+        info.ext = true;
     }
     
     if (info.type == NUM_TYPE_LITERAL) {
-        bool sign = *str == '-';
-        str += sign;
-        info.f = (*str == 'n' || *str == 'N') ? NAN : (sign ? -INFINITY : INFINITY);
+        bool neg = *str == '-';
+        str += char_is_sign(*str);
+        info.f = (*str == 'n' || *str == 'N') ? NAN : (neg ? -INFINITY : INFINITY);
         return info;
     }
     
@@ -350,11 +447,11 @@ static yy_inline num_info get_num_info(const char *str) {
         if (!info.int_overflow) {
             if (info.type == NUM_TYPE_UINT) {
                 yy_assert(sizeof(unsigned long long) >= sizeof(u64));
-                info.u = (u64)strtoull(str, NULL, 10);
+                info.u = (u64)strtoull(str, NULL, 0);
                 info.f = (f64)info.u;
             } else {
                 yy_assert(sizeof(signed long long) >= sizeof(i64));
-                info.i = (i64)strtoll(str, NULL, 10);
+                info.i = (i64)strtoll(str, NULL, 0);
                 info.f = (f64)info.i;
             }
             return info;
@@ -372,7 +469,7 @@ static yy_inline num_info get_num_info(const char *str) {
 /// Check if the number string is in its most compact (shortest) form.
 static yy_inline bool check_num_compact(const char *str, num_type type) {
     if (type == NUM_TYPE_SINT || type == NUM_TYPE_UINT) {
-        return true;
+        return *str != '+';
     }
     
     if (type == NUM_TYPE_LITERAL) {
@@ -388,7 +485,7 @@ static yy_inline bool check_num_compact(const char *str, num_type type) {
         const char *cur = str;
         while (*cur) {
             if (*cur == '.') dot = cur;
-            else if (*cur == 'e' || *cur == 'E') exp = cur;
+            else if (char_is_e(*cur)) exp = cur;
             cur++;
         }
         end = cur;
@@ -418,9 +515,9 @@ static yy_inline bool check_num_compact(const char *str, num_type type) {
 
 
 
-// =============================================================================
-// Number read and write
-// =============================================================================
+/*==============================================================================
+ * MARK: - Number Read/Write
+ *============================================================================*/
 
 /// Validate a real number's output.
 static void validate_real_output(const char *str,
@@ -450,7 +547,7 @@ static void validate_real_output(const char *str,
     if (to_float) num = (f32)num;
     
     if (isfinite(num)) {
-        expect(get_num_type(str) == NUM_TYPE_REAL);
+        expect(get_num_type(str, false) == NUM_TYPE_REAL);
         expect(check_num_compact(str, NUM_TYPE_REAL));
         
         if (to_fixed && (-1e21 < num && num < 1e21)) {
@@ -512,7 +609,6 @@ static void validate_real_output(const char *str,
 #undef expect
 }
 
-
 /// Test number write with info and flag.
 static void test_num_write(num_info info, yyjson_write_flag flg) {
 #define expect(expr) yy_assertf(expr, "num str: [%s], flg: %u", info.str, flg)
@@ -573,8 +669,9 @@ static void test_num_read(num_info info, yyjson_read_flag flg) {
     bool flg_big_raw = (flg & YYJSON_READ_BIGNUM_AS_RAW) != 0;
     bool flg_num_raw = (flg & YYJSON_READ_NUMBER_AS_RAW) != 0;
     bool flg_inf_nan = (flg & YYJSON_READ_ALLOW_INF_AND_NAN) != 0;
+    bool flg_ext     = (flg & YYJSON_READ_ALLOW_EXT_NUMBER) != 0;
     
-    if (info.type == NUM_TYPE_FAIL) {
+    if (info.type == NUM_TYPE_FAIL || (info.ext && (!flg_ext || !non_std))) {
         /// not a valid number
         expect(val == NULL);
         
@@ -611,7 +708,12 @@ static void test_num_read(num_info info, yyjson_read_flag flg) {
         if (flg_big_raw) {
             expect(yyjson_is_raw(val) && !strcmp(yyjson_get_raw(val), str));
         } else {
-            expect(yyjson_is_real(val) && yyjson_get_real(val) == info.f);
+            if (strchr(info.str, 'x') || strchr(info.str, 'X')) {
+                // Hex, do not read as float
+                expect(val == NULL);
+            } else {
+                expect(yyjson_is_real(val) && yyjson_get_real(val) == info.f);
+            }
         }
         
     } else if (info.type == NUM_TYPE_UINT) {
@@ -649,8 +751,14 @@ static void test_num_info(num_info info) {
     test_num_read(info, YYJSON_READ_BIGNUM_AS_RAW);
     test_num_read(info, YYJSON_READ_NUMBER_AS_RAW);
     test_num_read(info, YYJSON_READ_ALLOW_INF_AND_NAN);
+    test_num_read(info, YYJSON_READ_ALLOW_EXT_NUMBER);
+    test_num_read(info, YYJSON_READ_ALLOW_INF_AND_NAN | YYJSON_READ_ALLOW_EXT_NUMBER);
     test_num_read(info, YYJSON_READ_BIGNUM_AS_RAW | YYJSON_READ_ALLOW_INF_AND_NAN);
     test_num_read(info, YYJSON_READ_NUMBER_AS_RAW | YYJSON_READ_ALLOW_INF_AND_NAN);
+    test_num_read(info, YYJSON_READ_BIGNUM_AS_RAW | YYJSON_READ_ALLOW_EXT_NUMBER);
+    test_num_read(info, YYJSON_READ_NUMBER_AS_RAW | YYJSON_READ_ALLOW_EXT_NUMBER);
+    test_num_read(info, YYJSON_READ_BIGNUM_AS_RAW | YYJSON_READ_ALLOW_INF_AND_NAN | YYJSON_READ_ALLOW_EXT_NUMBER);
+    test_num_read(info, YYJSON_READ_NUMBER_AS_RAW | YYJSON_READ_ALLOW_INF_AND_NAN | YYJSON_READ_ALLOW_EXT_NUMBER);
     
     /// test write
     test_num_write(info, YYJSON_WRITE_NOFLAG);
@@ -688,6 +796,17 @@ static void test_all_files(void) {
         bool file_suc = yy_dat_init_with_file(&dat, path);
         yy_assertf(file_suc == true, "file read fail: %s\n", path);
         
+        /// check flags
+        bool is_int     = yy_str_has_prefix(name, "int"); // uint/sint
+        bool is_hex     = yy_str_has_prefix(name, "hex"); // hex int
+        bool is_real    = yy_str_has_prefix(name, "real"); // real
+        bool is_literal = yy_str_has_prefix(name, "literal"); // literal
+        
+        bool is_ext     = yy_str_contains(name, "(ext)"); // extended format
+        bool is_big     = yy_str_contains(name, "(big)"); // int overflow -> real
+        bool is_inf     = yy_str_contains(name, "(inf)"); // int/real overflow -> inf
+        bool is_fail    = yy_str_contains(name, "(fail)"); // always fail
+        
         /// iterate over each line of the file
         usize len;
         char *line;
@@ -696,8 +815,38 @@ static void test_all_files(void) {
             if (len == 0 || line[0] == '#') continue;
             /// add a null-terminator
             line[len] = '\0';
-            /// test one line
-            test_num_info(get_num_info(line));
+            
+            /// check number format
+            num_info info = get_num_info(line);
+            if (is_fail) {
+                yy_assert(info.type == NUM_TYPE_FAIL);
+            } else {
+                yy_assert(info.ext == is_ext);
+                if (is_int || is_hex) {
+                    if (line[0] == '-') {
+                        yy_assert(info.type == NUM_TYPE_SINT);
+                    } else {
+                        yy_assert(info.type == NUM_TYPE_UINT);
+                    }
+                    if (is_inf) {
+                        yy_assert(info.int_overflow == true);
+                        yy_assert(info.real_overflow == true);
+                    } else if (is_big) {
+                        yy_assert(info.int_overflow == true);
+                        yy_assert(info.real_overflow == false);
+                    }
+                } else if (is_real) {
+                    yy_assert(info.type == NUM_TYPE_REAL);
+                    if (is_inf) {
+                        yy_assert(info.real_overflow == is_inf);
+                    }
+                } else if (is_literal) {
+                    yy_assert(info.type == NUM_TYPE_LITERAL);
+                }
+            }
+            
+            /// test one number
+            test_num_info(info);
         }
         
         yy_dat_release(&dat);
@@ -821,14 +970,14 @@ static void test_random_real(void) {
     yy_rand_reset(0);
     for (int i = 0; i < count; i++) {
         u64 r = yy_rand_u64();
-        f64 f = f64_from_raw(r);
+        f64 f = f64_from_bits(r);
         test_real_fast(f, &alc, true, true);
     }
     
     yy_rand_reset(0);
     for (int i = 0; i < count; i++) {
         u32 r = yy_rand_u32();
-        f32 f = f32_from_raw(r);
+        f32 f = f32_from_bits(r);
         test_real_fast(f, &alc, true, true);
     }
 }
@@ -854,18 +1003,18 @@ static void test_special_real(void) {
     for (u64 exp = 0; exp <= 2046; exp++) {
         for (u64 sig = 0; sig <= 100; sig++) {
             u64 raw = (exp << 52) | sig;
-            f64 num = f64_from_raw(raw);
+            f64 num = f64_from_bits(raw);
             test_real_fast(num, &alc, true, true);
         }
         for (u64 sig = 0xFFFFFFFFFFFFFULL; sig >= (0xFFFFFFFFFFFFFULL - 100); sig--) {
             u64 raw = (exp << 52) | sig;
-            f64 num = f64_from_raw(raw);
+            f64 num = f64_from_bits(raw);
             test_real_fast(num, &alc, true, true);
         }
     }
 }
 
-/// Test all float number read/write.
+/// Test all float32 number read/write.
 static void test_all_float(void) {
     char alc_buf[4096];
     yyjson_alc alc;
@@ -874,7 +1023,7 @@ static void test_all_float(void) {
     printf("--- begin test all float ---\n");
     f64 begin_time = yy_get_time();
     for (u32 i = 0, max = (u32)1 << 31; i < max; i++) {
-        f32 f = f32_from_raw(i);
+        f32 f = f32_from_bits(i);
         test_real_fast((f64)f, &alc, true, false);
         
         // print progress
@@ -892,9 +1041,9 @@ static void test_all_float(void) {
 
 
 
-// =============================================================================
-// Test input types and flags
-// =============================================================================
+/*==============================================================================
+ * MARK: - Test Input Types and Flags
+ *============================================================================*/
 
 /// Test reader with different parameters.
 static void test_read_params(void) {
@@ -966,8 +1115,23 @@ static void test_read_flags(void) {
         "-123e999", // real overflow
         
         "NaN", // nan
+        "+NaN", // nan
+        "-NaN", // nan
         "Inf", // inf
+        "+Infinity", // -inf
         "-Infinity", // -inf
+        
+        "0x123", // hex
+        "-0x123", // hex
+        "+0X000123" // hex
+        
+        "+123", // ext number
+        ".123", // ext number
+        "123.", // ext number
+        "+.123e12", // ext number
+        "+123.e12", // ext number
+        ".000000000000000000000", // ext number
+        
         "001", // fail
     };
     
@@ -976,13 +1140,20 @@ static void test_read_flags(void) {
         YYJSON_READ_NUMBER_AS_RAW,
         YYJSON_READ_BIGNUM_AS_RAW,
         YYJSON_READ_ALLOW_INF_AND_NAN,
+        YYJSON_READ_ALLOW_EXT_NUMBER,
     };
     
     /// test number type
     for (usize i = 0; i < yy_nelems(num_arr); i++) {
         const char *num_str = num_arr[i];
         usize num_len = strlen(num_str);
-        num_type type = get_num_type(num_str);
+        
+        bool ext = false;
+        num_type type = get_num_type(num_str, false);
+        if (type == NUM_TYPE_FAIL) {
+            type = get_num_type(num_str, true);
+            if (type != NUM_TYPE_FAIL) ext = true;
+        }
         
         /// test flag combination
         u32 flag_count = (u32)yy_nelems(flag_arr);
@@ -1004,7 +1175,7 @@ static void test_read_flags(void) {
                     yy_assert(yyjson_equals(val, &val2));
                     yy_assert(end && *end == '\0');
                 } else {
-                    yy_assert(!end);
+                    yy_assert(end != num_str);
                 }
             }
             {   /// mut val read
@@ -1014,7 +1185,7 @@ static void test_read_flags(void) {
                     yy_assert(yyjson_equals(val, (yyjson_val *)&val2));
                     yy_assert(end && *end == '\0');
                 } else {
-                    yy_assert(!end);
+                    yy_assert(end != num_str);
                 }
             }
             {   /// minity format read
@@ -1044,8 +1215,9 @@ static void test_read_flags(void) {
             
 #if YYJSON_DISABLE_NON_STANDARD
             flg &= ~YYJSON_READ_ALLOW_INF_AND_NAN;
+            flg &= ~YYJSON_READ_ALLOW_EXT_NUMBER;
 #endif
-            if (type == NUM_TYPE_FAIL) {
+            if (type == NUM_TYPE_FAIL || (ext && !(flg & YYJSON_READ_ALLOW_EXT_NUMBER))) {
                 /// invalid number format
                 yy_assert(!doc);
             } else if (flg & YYJSON_READ_NUMBER_AS_RAW) {
@@ -1152,7 +1324,7 @@ static void test_write_flags(void) {
         /// int
         yyjson_set_int(&val, 321);
         str = yyjson_val_write(&val, flg, NULL);
-        yy_assert(get_num_type(str) == NUM_TYPE_UINT);
+        yy_assert(get_num_type(str, false) == NUM_TYPE_UINT);
         free(str);
         
         /// float
@@ -1320,7 +1492,7 @@ static void test_write_flags(void) {
         
         /// float
         memset(&val, 0, sizeof(val));
-        yyjson_set_float(&val, 1.23456789);
+        yyjson_set_float(&val, 1.23456789f);
         str = yyjson_val_write(&val, 0, NULL);
         end = yyjson_write_number(&val, flt_buf);
         yy_assert(!strcmp(str, flt_buf));
@@ -1366,9 +1538,9 @@ static void test_write_flags(void) {
 
 
 
-// =============================================================================
-// Test locale
-// =============================================================================
+/*==============================================================================
+ * MARK: - Entry
+ *============================================================================*/
 
 static void test_number_locale(void) {
     test_read_params();

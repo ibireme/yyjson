@@ -524,17 +524,7 @@ if(YYJSON_BUILD_MISC)
     endif()
 
     # make tables
-    find_package(GMP REQUIRED)
-    find_package(MPFR REQUIRED)
     add_executable(make_tables "misc/make_tables.c")
-    target_include_directories(make_tables PRIVATE
-        ${GMP_INCLUDE_DIR}
-        ${MPFR_INCLUDES}
-    )
-    target_link_libraries(make_tables PRIVATE
-        ${GMP_LIBRARIES}
-        ${MPFR_LIBRARIES}
-    )
     if(XCODE)
         set_default_xcode_property(make_tables)
     endif()

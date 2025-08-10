@@ -1,16 +1,18 @@
 // This file is used to test string processing and Unicode encoding validation.
+// This file must be compiled with UTF-8 encoding.
 
 #include "yyjson.h"
 #include "yy_test_utils.h"
 
-// Validate string encoding and decoding.
-// This file must be compiled with UTF-8 encoding.
 
+
+/// A string value with length.
 typedef struct {
     const char *str;
     usize len;
 } string_val;
 
+/// A string set for different flags.
 typedef struct {
     string_val str;         // raw string
     string_val esc_non;     // json string
@@ -20,12 +22,55 @@ typedef struct {
     bool invalid_unicode;   // flag `ALLOW_INVALID_UNICODE`
 } string_set;
 
-/// `src` should be decoded as `dst` with flag.
-static void validate_str_read(string_val *src,
-                              string_val *dst,
-                              yyjson_read_flag flg) {
-#if !YYJSON_DISABLE_READER
+
+
+/*==============================================================================
+ * MARK: - Standard Reader/Writer
+ *============================================================================*/
+
+/// Validate roundtrip: `write(read(str)) == str`.
+static void validate_roundtrip(char *str, usize len, yyjson_write_flag flg) {
+#if !YYJSON_DISABLE_READER && !YYJSON_DISABLE_WRITER
+#if YYJSON_DISABLE_UTF8_VALIDATION
+    if (str && !yy_str_is_utf8(str, len)) return;
+#endif
     
+    yyjson_doc *doc;
+    usize ret_len = 0;
+    char *ret;
+    
+    // str == write(read(str))
+    doc = yyjson_read(str, len, YYJSON_READ_ALLOW_INVALID_UNICODE);
+    ret = yyjson_write(doc, flg, &ret_len);
+    yy_assert(ret);
+    yy_assert(ret_len == len);
+    yy_assert(memcmp(ret, str, len) == 0);
+    free(ret);
+    yyjson_doc_free(doc);
+    
+    // test no read/write flag
+    doc = yyjson_read(str, len, 0);
+    ret = yyjson_write(doc, flg, NULL);
+    free(ret);
+    yyjson_doc_free(doc);
+    
+    // test no write flag
+    doc = yyjson_read(str, len, YYJSON_READ_ALLOW_INVALID_UNICODE);
+    ret = yyjson_write(doc, 0, NULL);
+    free(ret);
+    yyjson_doc_free(doc);
+    
+    // test pretty flag
+    doc = yyjson_read(str, len, YYJSON_READ_ALLOW_INVALID_UNICODE);
+    ret = yyjson_write(doc, YYJSON_WRITE_PRETTY, NULL);
+    free(ret);
+    yyjson_doc_free(doc);
+#endif
+}
+
+/// Validate read: `read(src) == dst`.
+static void validate_str_read(string_val *src, string_val *dst, yyjson_read_flag flg) {
+#if !YYJSON_DISABLE_READER
 #if YYJSON_DISABLE_UTF8_VALIDATION
     if (src->str && !yy_str_is_utf8(src->str, src->len)) return;
 #endif
@@ -64,46 +109,9 @@ static void validate_str_read(string_val *src,
 #endif
 }
 
-static void validate_roundtrip(char *str, usize len, yyjson_write_flag flg) {
-#if !YYJSON_DISABLE_READER && !YYJSON_DISABLE_WRITER
-    
-#if YYJSON_DISABLE_UTF8_VALIDATION
-    if (str && !yy_str_is_utf8(str, len)) return;
-#endif
-    
-    yyjson_doc *doc = yyjson_read(str, len, YYJSON_READ_ALLOW_INVALID_UNICODE);
-    usize ret_len = 0;
-    char *ret = yyjson_write(doc, flg, &ret_len);
-    yy_assert(ret);
-    yy_assert(ret_len == len);
-    yy_assert(memcmp(ret, str, len) == 0);
-    free(ret);
-    yyjson_doc_free(doc);
-    
-    doc = yyjson_read(str, len, 0);
-    ret = yyjson_write(doc, flg, NULL);
-    if (ret) free(ret);
-    yyjson_doc_free(doc);
-    
-    doc = yyjson_read(str, len, YYJSON_READ_ALLOW_INVALID_UNICODE);
-    ret = yyjson_write(doc, 0, NULL);
-    if (ret) free(ret);
-    yyjson_doc_free(doc);
-    
-    doc = yyjson_read(str, len, YYJSON_READ_ALLOW_INVALID_UNICODE);
-    ret = yyjson_write(doc, YYJSON_WRITE_PRETTY, NULL);
-    if (ret) free(ret);
-    yyjson_doc_free(doc);
-#endif
-}
-
-
-/// `src` should be encoded as `dst` with flag.
-static void validate_str_write(string_val *src,
-                               string_val *dst,
-                               yyjson_write_flag flg) {
+/// Validate write: `write(src) == dst`.
+static void validate_str_write(string_val *src, string_val *dst, yyjson_write_flag flg) {
 #if !YYJSON_DISABLE_WRITER
-    
 #if YYJSON_DISABLE_UTF8_VALIDATION
     if (src->str && !yy_str_is_utf8(src->str, src->len)) return;
 #endif
@@ -180,11 +188,11 @@ static void validate_str_write(string_val *src,
 #endif
 }
 
-/// validate string decode:
-///     esc_non -> str
-///     esc_sla -> str
-///     esc_uni -> str
-///     esc_all -> str
+/// Validate string read:
+///     `read(esc_non) -> str`
+///     `read(esc_sla) -> str`
+///     `read(esc_uni) -> str`
+///     `read(esc_all) -> str`
 static void validate_read(string_set set) {
     yyjson_read_flag flg = YYJSON_READ_ALLOW_INVALID_UNICODE;
     
@@ -213,11 +221,11 @@ static void validate_read(string_set set) {
     }
 }
 
-/// validate string encode:
-///     str -> esc_non
-///     str -> esc_sla
-///     str -> esc_uni
-///     str -> esc_all
+/// Validate string encode:
+///     `write(str) -> esc_non (NOFLAG)`
+///     `write(str) -> esc_sla (ESCAPE_SLASHES)`
+///     `write(str) -> esc_uni (ESCAPE_UNICODE)`
+///     `write(str) -> esc_all (ESCAPE_SLASHES | ESCAPE_UNICODE)`
 static void validate_write(string_set set) {
     yyjson_write_flag flg_non = YYJSON_WRITE_NOFLAG;
     yyjson_write_flag flg_sla = YYJSON_WRITE_ESCAPE_SLASHES;
@@ -259,8 +267,7 @@ static void validate_read_write(string_set set) {
     validate_write(set);
 }
 
-yy_test_case(test_string) {
-    
+static void test_read_write(void) {
     validate_read_write((string_set) {
         { "", 0 },
         { "", 0 },
@@ -759,4 +766,699 @@ yy_test_case(test_string) {
         });
     }
     
+}
+
+
+
+/*==============================================================================
+ * MARK: - Extended Escape
+ *============================================================================*/
+
+/// Validate unquoted key: `read(set.str) == set.esc_non`.
+static void validate_str_esc(char quote, string_set set, yyjson_read_flag flg) {
+#if !YYJSON_DISABLE_READER && !YYJSON_DISABLE_NON_STANDARD
+    
+    string_val *src = &set.str;
+    string_val *dst = &set.esc_non;
+    
+#if YYJSON_DISABLE_UTF8_VALIDATION
+    if (src->str && !yy_str_is_utf8(src->str, src->len)) return;
+#endif
+    
+    usize buf_len = src->len + 2;
+    char *buf = malloc(buf_len);
+    buf[0] = quote;
+    memcpy(buf + 1, src->str, src->len);
+    buf[buf_len - 1] = quote;
+    
+    yyjson_doc *doc = yyjson_read(buf, buf_len, flg);
+    yyjson_val *val = yyjson_doc_get_root(doc);
+    if (dst->str) {
+        yy_assert(yyjson_equals_strn(val, dst->str, dst->len) &&
+                  val->uni.str[dst->len] == '\0');
+    } else {
+        yy_assert(!doc);
+    }
+    free(buf);
+    yyjson_doc_free(doc);
+#endif
+}
+
+static void test_extended_escape(void) {
+    
+    // ----------------------------------
+    // double-quoted string
+    validate_str_esc('\"', (string_set) {
+        { "ab\\\"xy", 6 },
+        { "ab\"xy", 5 }
+    }, 0);
+    validate_str_esc('\"', (string_set) {
+        { "ab\\\"xy", 6 },
+        { "ab\"xy", 5 }
+    }, YYJSON_READ_ALLOW_EXT_ESCAPE);
+    
+    validate_str_esc('\"', (string_set) {
+        { "ab\\\'xy", 6 },
+        { NULL, 0 }
+    }, 0);
+    validate_str_esc('\"', (string_set) {
+        { "ab\\\'xy", 6 },
+        { "ab\'xy", 5 }
+    }, YYJSON_READ_ALLOW_EXT_ESCAPE);
+    
+    validate_str_esc('\"', (string_set) {
+        { "ab\\", 3 },
+        { NULL, 0 }
+    }, 0);
+    validate_str_esc('\"', (string_set) {
+        { "ab\\", 3 },
+        { NULL, 0 }
+    }, YYJSON_READ_ALLOW_EXT_ESCAPE);
+    
+    
+    // ----------------------------------
+    // single-quote string
+    validate_str_esc('\'', (string_set) {
+        { "ab\\\"xy", 6 },
+        { "ab\"xy", 5 }
+    }, YYJSON_READ_ALLOW_SINGLE_QUOTED_STR);
+    validate_str_esc('\'', (string_set) {
+        { "ab\\\"xy", 6 },
+        { "ab\"xy", 5 }
+    }, YYJSON_READ_ALLOW_SINGLE_QUOTED_STR | YYJSON_READ_ALLOW_EXT_ESCAPE);
+    
+    validate_str_esc('\'', (string_set) {
+        { "ab\\\'xy", 6 },
+        { "ab\'xy", 5 }
+    }, YYJSON_READ_ALLOW_SINGLE_QUOTED_STR);
+    validate_str_esc('\'', (string_set) {
+        { "ab\\\'xy", 6 },
+        { "ab\'xy", 5 }
+    }, YYJSON_READ_ALLOW_SINGLE_QUOTED_STR | YYJSON_READ_ALLOW_EXT_ESCAPE);
+    
+    validate_str_esc('\'', (string_set) {
+        { "ab\\", 3 },
+        { NULL, 0 }
+    }, YYJSON_READ_ALLOW_SINGLE_QUOTED_STR);
+    validate_str_esc('\'', (string_set) {
+        { "ab\\", 3 },
+        { NULL, 0 }
+    }, YYJSON_READ_ALLOW_SINGLE_QUOTED_STR | YYJSON_READ_ALLOW_EXT_ESCAPE);
+    
+    
+    // ----------------------------------
+    // single escape
+    
+    validate_str_esc('\"', (string_set) {
+        { "ab\\axy", 6 },
+        { NULL, 0 }
+    }, 0);
+    validate_str_esc('\"', (string_set) {
+        { "ab\\axy", 6 },
+        { "ab\axy", 5 }
+    }, YYJSON_READ_ALLOW_EXT_ESCAPE);
+    
+    validate_str_esc('\"', (string_set) {
+        { "ab\\exy", 6 },
+        { NULL, 0 }
+    }, 0);
+    validate_str_esc('\"', (string_set) {
+        { "ab\\exy", 6 },
+        { "ab\x1Bxy", 5 } // this is not standard C escape
+    }, YYJSON_READ_ALLOW_EXT_ESCAPE);
+    
+    validate_str_esc('\"', (string_set) {
+        { "ab\\vxy", 6 },
+        { NULL, 0 }
+    }, 0);
+    validate_str_esc('\"', (string_set) {
+        { "ab\\vxy", 6 },
+        { "ab\vxy", 5 }
+    }, YYJSON_READ_ALLOW_EXT_ESCAPE);
+    
+    validate_str_esc('\"', (string_set) {
+        { "ab\\?xy", 6 },
+        { NULL, 0 }
+    }, 0);
+    validate_str_esc('\"', (string_set) {
+        { "ab\\?xy", 6 },
+        { "ab\?xy", 5 }
+    }, YYJSON_READ_ALLOW_EXT_ESCAPE);
+    
+    validate_str_esc('\"', (string_set) {
+        { "ab\\0xy", 6 },
+        { NULL, 0 }
+    }, 0);
+    validate_str_esc('\"', (string_set) {
+        { "ab\\0xy", 6 },
+        { "ab\x00xy", 5 }
+    }, YYJSON_READ_ALLOW_EXT_ESCAPE);
+    
+    validate_str_esc('\"', (string_set) {
+        { "ab\\012xy", 8 },
+        { NULL, 0 }
+    }, 0);
+    validate_str_esc('\"', (string_set) {
+        { "ab\\012xy", 8 }, // oct not allowed
+        { NULL, 0 }
+    }, YYJSON_READ_ALLOW_EXT_ESCAPE);
+    
+    
+    // ----------------------------------
+    // hex escape
+    
+    validate_str_esc('\"', (string_set) {
+        { "ab\\x00xy", 8 },
+        { NULL, 0 }
+    }, 0);
+    validate_str_esc('\"', (string_set) {
+        { "ab\\x00xy", 8 },
+        { "ab\x00xy", 5 }
+    }, YYJSON_READ_ALLOW_EXT_ESCAPE);
+    
+    validate_str_esc('\"', (string_set) {
+        { "ab\\x7Fxy", 8 },
+        { NULL, 0 }
+    }, 0);
+    validate_str_esc('\"', (string_set) {
+        { "ab\\x7Fxy", 8 }, // max ascii
+        { "ab\x7Fxy", 5 }
+    }, YYJSON_READ_ALLOW_EXT_ESCAPE);
+    
+    validate_str_esc('\"', (string_set) {
+        { "ab\\x80xy", 8 },
+        { NULL, 0 }
+    }, 0);
+    validate_str_esc('\"', (string_set) {
+        { "ab\\x80xy", 8 }, // 2-byte utf8
+        { "ab\xC2\x80xy", 6 }
+    }, YYJSON_READ_ALLOW_EXT_ESCAPE);
+    
+    validate_str_esc('\"', (string_set) {
+        { "ab\\xFFxy", 8 },
+        { NULL, 0 }
+    }, 0);
+    validate_str_esc('\"', (string_set) {
+        { "ab\\xFFxy", 8 }, // 2-byte utf8
+        { "abÿxy", 6 }
+    }, YYJSON_READ_ALLOW_EXT_ESCAPE);
+    
+    validate_str_esc('\"', (string_set) {
+        { "ab\\xPPxy", 8 }, // not hex
+        { NULL, 0 }
+    }, 0);
+    validate_str_esc('\"', (string_set) {
+        { "ab\\xPPxy", 8 }, // not hex
+        { NULL, 0 }
+    }, YYJSON_READ_ALLOW_EXT_ESCAPE);
+    
+    validate_str_esc('\"', (string_set) {
+        { "ab\\X7Fxy", 8 },
+        { NULL, 0 }
+    }, 0);
+    validate_str_esc('\"', (string_set) {
+        { "ab\\X7Fxy", 8 }, // `X` not `x`
+        { "abX7Fxy", 7 } // just ignore '\'
+    }, YYJSON_READ_ALLOW_EXT_ESCAPE);
+    
+    
+    // ----------------------------------
+    // unknown escape
+    
+    validate_str_esc('\"', (string_set) {
+        { "ab\\U1234xy", 10 },
+        { NULL, 0 }
+    }, 0);
+    validate_str_esc('\"', (string_set) {
+        { "ab\\U1234xy", 10 },
+        { "abU1234xy", 9 }
+    }, YYJSON_READ_ALLOW_EXT_ESCAPE);
+    
+    validate_str_esc('\"', (string_set) {
+        { "ab\\😀xy", 9 },
+        { NULL, 0 }
+    }, 0);
+    validate_str_esc('\"', (string_set) {
+        { "ab\\😀xy", 9 },
+        { "ab😀xy", 8 }
+    }, YYJSON_READ_ALLOW_EXT_ESCAPE);
+    
+    validate_str_esc('\"', (string_set) {
+        { "ab\\1xy", 6 },
+        { NULL, 0 }
+    }, 0);
+    validate_str_esc('\"', (string_set) {
+        { "ab\\1xy", 6 },
+        { NULL, 0 } // oct not allow
+    }, YYJSON_READ_ALLOW_EXT_ESCAPE);
+    
+    
+    // ----------------------------------
+    // line continuation
+    
+    validate_str_esc('\"', (string_set) {
+        { "ab\\\nxy", 6 },
+        { NULL, 0 }
+    }, 0);
+    validate_str_esc('\"', (string_set) {
+        { "ab\\\nxy", 6 },
+        { "abxy", 4 }
+    }, YYJSON_READ_ALLOW_EXT_ESCAPE);
+    
+    validate_str_esc('\"', (string_set) {
+        { "ab\\\rxy", 6 },
+        { NULL, 0 }
+    }, 0);
+    validate_str_esc('\"', (string_set) {
+        { "ab\\\rxy", 6 },
+        { "abxy", 4 }
+    }, YYJSON_READ_ALLOW_EXT_ESCAPE);
+    
+    validate_str_esc('\"', (string_set) {
+        { "ab\\\r\nxy", 7 },
+        { NULL, 0 }
+    }, 0);
+    validate_str_esc('\"', (string_set) {
+        { "ab\\\r\nxy", 7 },
+        { "abxy", 4 }
+    }, YYJSON_READ_ALLOW_EXT_ESCAPE);
+    
+    validate_str_esc('\"', (string_set) {
+        { "ab\\\n\rxy", 7 },
+        { NULL, 0 }
+    }, 0);
+    validate_str_esc('\"', (string_set) {
+        { "ab\\\n\rxy", 7 },
+        { NULL, 0 }
+    }, YYJSON_READ_ALLOW_EXT_ESCAPE);
+    
+    validate_str_esc('\"', (string_set) {
+        { "ab\\\xE2\x80\xA8xy", 8 }, // <LS>
+        { NULL, 0 }
+    }, 0);
+    validate_str_esc('\"', (string_set) {
+        { "ab\\\xE2\x80\xA8xy", 8 }, // <LS>
+        { "abxy", 4 }
+    }, YYJSON_READ_ALLOW_EXT_ESCAPE);
+    
+    validate_str_esc('\"', (string_set) {
+        { "ab\\\xE2\x80\xA9xy", 8 }, // <PS>
+        { NULL, 0 }
+    }, 0);
+    validate_str_esc('\"', (string_set) {
+        { "ab\\\xE2\x80\xA9xy", 8 }, // <PS>
+        { "abxy", 4 }
+    }, YYJSON_READ_ALLOW_EXT_ESCAPE);
+}
+
+
+
+/*==============================================================================
+ * MARK: - Single-quoted String
+ *============================================================================*/
+
+/// Validate single-quoted string: `read(set.str) == set.esc_non`.
+static void validate_str_sq(string_set set) {
+#if !YYJSON_DISABLE_READER && !YYJSON_DISABLE_NON_STANDARD
+    
+    string_val *src = &set.str;
+    string_val *dst = &set.esc_non;
+    
+#if YYJSON_DISABLE_UTF8_VALIDATION
+    if (src->str && !yy_str_is_utf8(src->str, src->len)) return;
+#endif
+    
+    usize buf_len;
+    char *buf, *cur;
+    yyjson_doc *doc;
+    yyjson_val *key, *val, *arr, *obj;
+    yyjson_obj_iter iter;
+    
+    // single str
+    buf_len = src->len + 2;
+    cur = buf = malloc(buf_len);
+    cur[0] = '\''; cur += 1;
+    memcpy(cur, src->str, src->len); cur += src->len;
+    cur[0] = '\''; cur += 1;
+    
+    doc = yyjson_read(buf, buf_len, YYJSON_READ_ALLOW_SINGLE_QUOTED_STR);
+    val = yyjson_doc_get_root(doc);
+    if (dst->str) {
+        yy_assert(yyjson_equals_strn(val, dst->str, dst->len) &&
+                  val->uni.str[dst->len] == '\0');
+        
+#if !YYJSON_DISABLE_WRITER
+        // write again
+        usize ret_len;
+        char *ret = yyjson_write(doc, 0, &ret_len);
+        yyjson_doc *ret_doc = yyjson_read(ret, ret_len, 0);
+        val = yyjson_doc_get_root(ret_doc);
+        yy_assert(yyjson_equals_strn(val, dst->str, dst->len));
+        free(ret);
+        yyjson_doc_free(ret_doc);
+#endif
+    } else {
+        yy_assert(!doc);
+    }
+    free(buf);
+    yyjson_doc_free(doc);
+    
+    
+    // str in array
+    for (int pretty = 0; pretty <= 1; pretty++) {
+        buf_len = (src->len + 2) * 2 + 3 + pretty;
+        cur = buf = malloc(buf_len);
+        memcpy(cur, pretty ? "[ '" : "['", 2 + pretty); cur += 2 + pretty;
+        memcpy(cur, src->str, src->len); cur += src->len;
+        memcpy(cur, "','", 3); cur += 3;
+        memcpy(cur, src->str, src->len); cur += src->len;
+        memcpy(cur, "']", 2); cur += 2;
+        
+        doc = yyjson_read(buf, buf_len, YYJSON_READ_ALLOW_SINGLE_QUOTED_STR);
+        arr = yyjson_doc_get_root(doc);
+        val = yyjson_arr_get(arr, 0);
+        if (dst->str) {
+            yy_assert(yyjson_equals_strn(val, dst->str, dst->len) &&
+                      val->uni.str[dst->len] == '\0' &&
+                      yyjson_equals(val, yyjson_arr_get(arr, 1)));
+        } else {
+            yy_assert(!doc);
+        }
+        free(buf);
+        yyjson_doc_free(doc);
+    }
+    
+    
+    // str in object key
+    for (int pretty = 0; pretty <= 1; pretty++) {
+        buf_len = (src->len + 2) * 2 + 3 + pretty;
+        cur = buf = malloc(buf_len);
+        memcpy(cur, pretty ? "{ '" : "{'", 2 + pretty); cur += 2 + pretty;
+        memcpy(cur, src->str, src->len); cur += src->len;
+        memcpy(cur, "':'", 3); cur += 3;
+        memset(cur, ' ', src->len); cur += src->len;
+        memcpy(cur, "'}", 2); cur += 2;
+        
+        doc = yyjson_read(buf, buf_len, YYJSON_READ_ALLOW_SINGLE_QUOTED_STR);
+        obj = yyjson_doc_get_root(doc);
+        iter = yyjson_obj_iter_with(obj);
+        key = yyjson_obj_iter_next(&iter);
+        val = yyjson_obj_iter_get_val(key);
+        if (dst->str) {
+            yy_assert(yyjson_equals_strn(key, dst->str, dst->len) &&
+                      key->uni.str[dst->len] == '\0');
+        } else {
+            yy_assert(!doc);
+        }
+        free(buf);
+        yyjson_doc_free(doc);
+    }
+    
+    // str in object value
+    for (int pretty = 0; pretty <= 1; pretty++) {
+        buf_len = (src->len + 2) * 2 + 3 + pretty;
+        cur = buf = malloc(buf_len);
+        memcpy(cur, pretty ? "{ '" : "{'", 2 + pretty); cur += 2 + pretty;
+        memset(cur, ' ', src->len); cur += src->len;
+        memcpy(cur, "':'", 3); cur += 3;
+        memcpy(cur, src->str, src->len); cur += src->len;
+        memcpy(cur, "'}", 2); cur += 2;
+        
+        doc = yyjson_read(buf, buf_len, YYJSON_READ_ALLOW_SINGLE_QUOTED_STR);
+        obj = yyjson_doc_get_root(doc);
+        iter = yyjson_obj_iter_with(obj);
+        key = yyjson_obj_iter_next(&iter);
+        val = yyjson_obj_iter_get_val(key);
+        if (dst->str) {
+            yy_assert(yyjson_equals_strn(val, dst->str, dst->len) &&
+                      val->uni.str[dst->len] == '\0');
+        } else {
+            yy_assert(!doc);
+        }
+        free(buf);
+        yyjson_doc_free(doc);
+    }
+#endif
+}
+
+static void test_single_quoted_string(void) {
+    validate_str_sq((string_set) {
+        { "", 0 },
+        { "", 0 }
+    });
+    validate_str_sq((string_set) {
+        { "abcd", 4 },
+        { "abcd", 4 }
+    });
+    validate_str_sq((string_set) {
+        { "ab\"cd", 5 },
+        { "ab\"cd", 5 }
+    });
+    validate_str_sq((string_set) {
+        { "ab'cd", 5 },
+        { NULL, 0 }
+    });
+    validate_str_sq((string_set) {
+        { "ab\\'cd", 6 },
+        { "ab\'cd", 5 }
+    });
+    validate_str_sq((string_set) {
+        { "ab\x00cd", 5 },
+        { NULL, 0 }
+    });
+    validate_str_sq((string_set) {
+        { "abcdefghijklmnopqrstuvwxyz😀\\u0000😀", 40 },
+        { "abcdefghijklmnopqrstuvwxyz😀\x00😀", 35 }
+    });
+}
+
+
+
+/*==============================================================================
+ * MARK: - Unquoted Key
+ *============================================================================*/
+
+/// Validate unquoted key: `read(set.str) == set.esc_non`.
+static void validate_str_uq(string_set set, yyjson_read_flag flg) {
+#if !YYJSON_DISABLE_READER && !YYJSON_DISABLE_NON_STANDARD
+    
+    string_val *src = &set.str;
+    string_val *dst = &set.esc_non;
+    
+#if YYJSON_DISABLE_UTF8_VALIDATION
+    if (src->str && !yy_str_is_utf8(src->str, src->len)) return;
+#endif
+    
+    usize buf_len;
+    char *buf, *cur;
+    yyjson_doc *doc;
+    yyjson_val *key, *val, *arr, *obj;
+    yyjson_obj_iter iter;
+    
+    // str in object key
+    for (int pretty = 0; pretty <= 1; pretty++) {
+        buf_len = 1 + pretty + src->len + pretty + 3;
+        cur = buf = malloc(buf_len);
+        memcpy(cur, pretty ? "{ " : "{", 1 + pretty); cur += 1 + pretty;
+        memcpy(cur, src->str, src->len); cur += src->len;
+        memcpy(cur, pretty ? " " : "", pretty); cur += pretty;
+        memcpy(cur, ":0}", 3);
+        
+        flg |= YYJSON_READ_ALLOW_UNQUOTED_KEY;
+        doc = yyjson_read(buf, buf_len, flg);
+        obj = yyjson_doc_get_root(doc);
+        iter = yyjson_obj_iter_with(obj);
+        key = yyjson_obj_iter_next(&iter);
+        val = yyjson_obj_iter_get_val(key);
+        if (dst->str) {
+            yy_assert(yyjson_equals_strn(key, dst->str, dst->len) &&
+                      key->uni.str[dst->len] == '\0');
+        } else {
+            yy_assert(!doc);
+        }
+        free(buf);
+        yyjson_doc_free(doc);
+    }
+#endif
+}
+
+static void test_unquoted_key(void) {
+    
+    validate_str_uq((string_set) {
+        { "abcd", 4 },
+        { "abcd", 4 }
+    }, 0);
+    
+    validate_str_uq((string_set) {
+        { "ab-cd", 5 }, // `-` is not allowed
+        { NULL, 0 }
+    }, 0);
+    
+    validate_str_uq((string_set) {
+        { "1", 1 }, // cannot start with digit
+        { NULL, 0 }
+    }, 0);
+    
+    validate_str_uq((string_set) {
+        { "123abc", 6 }, // cannot start with digit
+        { NULL, 0 }
+    }, 0);
+    
+    validate_str_uq((string_set) {
+        { ".abc", 4 }, // cannot start with dot
+        { NULL, 0 }
+    }, 0);
+    
+    validate_str_uq((string_set) {
+        { "abc\n", 4 }, // JSON space
+        { "abc", 3 }
+    }, 0);
+    
+    validate_str_uq((string_set) {
+        { "ab\0cd", 5 }, // invalid '\0'
+        { NULL, 0 }
+    }, 0);
+    
+    validate_str_uq((string_set) {
+        { "\\u0000", 6 }, // escaped '\0'
+        { "\0", 1 }
+    }, 0);
+    
+    validate_str_uq((string_set) {
+        { "abc\f", 4 }, // extended space <FF>
+        { NULL, 0 }
+    }, 0);
+    
+    validate_str_uq((string_set) {
+        { "$", 1 }, // char `$`
+        { "$", 1 }
+    }, 0);
+    
+    validate_str_uq((string_set) {
+        { "_", 1 }, // char `_`
+        { "_", 1 }
+    }, 0);
+    
+    validate_str_uq((string_set) {
+        { "#", 1 }, // char `#`
+        { NULL, 0 }
+    }, 0);
+    
+    validate_str_uq((string_set) {
+        { "@", 1 }, // char `@`
+        { NULL, 0 }
+    }, 0);
+    
+    validate_str_uq((string_set) {
+        { "abc\f", 4 }, // extended space <FF> with flag
+        { "abc", 3 }
+    }, YYJSON_READ_ALLOW_EXT_WHITESPACE);
+    
+    validate_str_uq((string_set) {
+        { "abc\xC2\xA0", 5 }, // extended unicode space <NBSP>
+        { "abc\xC2\xA0", 5 }
+    }, 0);
+    
+    validate_str_uq((string_set) {
+        { "abc\xC2\xA0", 5 }, // extended unicode space <NBSP> with flag
+        { "abc", 3 }
+    }, YYJSON_READ_ALLOW_EXT_WHITESPACE);
+    
+    validate_str_uq((string_set) {
+        { "\\u679Cabc\xC2\xA0", 11 }, // extended unicode space <NBSP>
+        { "果abc\xC2\xA0", 8 }
+    }, 0);
+    
+    validate_str_uq((string_set) {
+        { "\\u679Cabc\xC2\xA0", 11 }, // extended unicode space <NBSP> with flag
+        { "果abc", 6 }
+    }, YYJSON_READ_ALLOW_EXT_WHITESPACE);
+    
+    validate_str_uq((string_set) {
+        { "ab\\nc", 4 }, // single escape
+        { NULL, 0 }
+    }, 0);
+    
+    validate_str_uq((string_set) {
+        { "\\u00E9\\u679Cabcd", 16 }, // unicode escape prefix
+        { "é果abcd", 9 }
+    }, 0);
+    
+    validate_str_uq((string_set) {
+        { "ab\\u00E9\\u679Ccd", 16 }, // unicode escape
+        { "abé果cd", 9 }
+    }, 0);
+    
+    validate_str_uq((string_set) {
+        { "ab\\uASDFcd", 10 }, // invalid unicode escape
+        { NULL, 0 }
+    }, 0);
+    
+    validate_str_uq((string_set) {
+        { "\\uD83D\\uDE00abcdÄ果", 16 }, // unicode escape prefix
+        { "😀abcdÄ", 8 }
+    }, 0);
+    
+    validate_str_uq((string_set) {
+        {"ab\\uD83D\\uDE00cdÄ果", 16}, // unicode escape
+        {"ab😀cdÄ", 8}
+    }, 0);
+    
+    validate_str_uq((string_set) {
+        {"ab\\uD83D\\uFFFFcdÄ果", 16}, // invalid unicode escape
+        {NULL, 0}
+    }, 0);
+    
+    validate_str_uq((string_set) {
+        {"\\uDE0Aabc", 9}, // invalid high surrogate
+        {NULL, 0}
+    }, 0);
+    
+    validate_str_uq((string_set) {
+        {"\\uD83D\\uXXXX", 12}, // invalid low surrogate
+        {NULL, 0}
+    }, 0);
+    
+    validate_str_uq((string_set) {
+        {"\\uD83Dabc", 9}, // no low surrogate
+        {NULL, 0}
+    }, 0);
+    
+    validate_str_uq((string_set) {
+        { "abcdefghijklmnopqrstuvwxyz\\u00E9abcdefghijklmnopqrstuvwxyz😀果éabc", 70 }, // long string
+        { "abcdefghijklmnopqrstuvwxyzéabcdefghijklmnopqrstuvwxyz😀果éabc", 66 }
+    }, 0);
+    
+    validate_str_uq((string_set) {
+        { "😀Check✅©2020®яблокоแอปเปิ้ลリンゴتفاحة蘋果사과", 90 }, // utf8
+        { "😀Check✅©2020®яблокоแอปเปิ้ลリンゴتفاحة蘋果사과", 90 }
+    }, 0);
+    
+    validate_str_uq((string_set) {
+        { "PPPPPQQQQQ\\u00E9PPPPPQQQQQ\x80", 27 }, //  invalid UTF-8
+        { NULL, 0 }
+    }, 0);
+    
+    validate_str_uq((string_set) {
+        { "\x80PPPPPQQQQQ\\u00E9PPPPPQQQQQ\x80", 28 }, //  invalid UTF-8
+        { NULL, 0 }
+    }, 0);
+    
+    validate_str_uq((string_set) {
+        { "\x80PPPPPQQQQQ\\u00E9PPPPPQQQQQ\x80", 28 }, //  invalid UTF-8
+        { "\x80PPPPPQQQQQéPPPPPQQQQQ\x80", 24 }
+    }, YYJSON_READ_ALLOW_INVALID_UNICODE);
+}
+
+
+
+/*==============================================================================
+ * MARK: - Entry
+ *============================================================================*/
+
+yy_test_case(test_string) {
+    test_read_write();
+    test_extended_escape();
+    test_single_quoted_string();
+    test_unquoted_key();
 }

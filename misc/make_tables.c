@@ -13,9 +13,6 @@
 #include <string.h>
 #include <math.h>
 
-#include <gmp.h>
-#include <mpfr.h>
-
 typedef float       f32;
 typedef double      f64;
 typedef int8_t      i8;
@@ -30,82 +27,170 @@ typedef size_t      usize;
 
 /*----------------------------------------------------------------------------*/
 
-void make_pow10_sig_table(void) {
-    static const int DEF_PREC = 5000;
-    static const int BUF_LEN = 2000;
-    char buf[BUF_LEN];
-    
-    mpfr_t sigMax, sigMin, half;
-    mpfr_t pow10, pow2, div, sub;
-    mpfr_inits2(DEF_PREC, sigMax, sigMin, half, NULL);
-    mpfr_inits2(DEF_PREC, pow10, pow2, div, sub, NULL);
-    
-    mpfr_set_ui(sigMax, 0xFFFFFFFFFFFFFFFFULL, MPFR_RNDN);
-    mpfr_set_ui(sigMin, 0x8000000000000000ULL, MPFR_RNDN);
-    mpfr_set_d(half, 0.5, MPFR_RNDN);
-    
-    int e10min = -343, e10max = 324, e10step = 1;
-    
-    printf("#define POW10_SIG_TABLE_MIN_EXP %d\n", e10min);
-    printf("#define POW10_SIG_TABLE_MAX_EXP %d\n", e10max);
-    printf("#define POW10_SIG_TABLE_MIN_EXACT_EXP %d\n", 0);
-    printf("#define POW10_SIG_TABLE_MAX_EXACT_EXP %d\n", 55);
-    printf("static const u64 pow10_sig_table[] = {\n");
-    
-    for (int e10 = e10min; e10 <= e10max; e10 += e10step) {
-        mpfr_set_d(pow10, 10, MPFR_RNDN);
-        mpfr_pow_si(pow10, pow10, e10, MPFR_RNDN); // pow10 = 10^e10
-        
-        // 10^e10 = 2^e2
-        // e2 = floor(log2(pow(10, e10)))
-        // e2 = floor(log2(10) * e10)
-        int e2 = (int)floor(log2(10) * e10) - 64 + 1;
-        mpfr_set_d(pow2, 2, MPFR_RNDN);
-        mpfr_pow_si(pow2, pow2, e2, MPFR_RNDN); // pow2 = 2^e2
-        mpfr_div(div, pow10, pow2, MPFR_RNDN); // div = pow10 / pow2;
-        if (mpfr_cmp(div, sigMin) < 0 || mpfr_cmp(div, sigMax) > 0) {
-            printf("err!\n"); // make sure the highest bit is 1 (normalized)
-        }
-        
-        mpfr_set_d(pow2, 2, MPFR_RNDN);
-        mpfr_pow_si(pow2, pow2, e2, MPFR_RNDN); // pow2 = 2^e2
-        mpfr_div(div, pow10, pow2, MPFR_RNDN); // div = pow10 / pow2;
-        
-        mpfr_snprintf(buf, BUF_LEN, "%.1000Rg", div);
-        u64 val = strtoull(buf, NULL, 0);
-        mpfr_sub_ui(sub, div, val, MPFR_RNDN); // sub = div - (uint64_t)div
-        int cmp = mpfr_cmp(sub, half);
-        if (cmp == 0) printf("err!\n"); // avoid round to even
-        if (cmp > 0 && val == UINT64_MAX) printf("err!\n"); // avoid round up overflow
-        
-        printf("    ");
-        printf("U64(0x%.8X, 0x%.8X),", (u32)(val >> 32), (u32)val);
-        
-        mpfr_set_d(pow2, 2, MPFR_RNDN);
-        mpfr_pow_si(pow2, pow2, 64, MPFR_RNDN); // pow2 = 2^64
-        mpfr_mul(sub, sub, pow2, MPFR_RNDN); // sub *= 2^64
-        
-        mpfr_snprintf(buf, BUF_LEN, "%.1000Rg", sub);
-        u64 val2 = strtoull(buf, NULL, 0);
-        mpfr_sub_ui(sub, sub, val2, MPFR_RNDN); // sub -= (uint64_t)sub
-        int cmp2 = mpfr_cmp(sub, half);
-        if (cmp2 == 0) printf("err!\n"); // avoid round to even
-        if ((cmp > 0) && (val2 < ((u64)1) << 63)) printf("err!\n"); // avoid round up overflow
-        bool is_exact = mpfr_cmp_ui(sub, 0) == 0;
-        
-        printf(" ");
-        printf("U64(0x%.8X, 0x%.8X)", (u32)(val2 >> 32), (u32)val2);
-        printf("%c", e10 < e10max ? ',' : ' ');
-        printf(" /* %s 10^%d */", is_exact ? "==" : "~=", e10);
-        printf("\n");
-    }
-    
-    printf("};\n");
-    printf("\n");
-    
-    mpfr_clears(sigMax, sigMin, half, NULL);
-    mpfr_clears(pow10, pow2, div, sub, NULL);
-}
+//Generate fp table with C (gmp/mpfr):
+//#include <gmp.h>
+//#include <mpfr.h>
+//void make_pow10_sig_table(void) {
+//    static const int DEF_PREC = 5000;
+//    static const int BUF_LEN = 2000;
+//    char buf[BUF_LEN];
+//    
+//    mpfr_t sigMax, sigMin, half;
+//    mpfr_t pow10, pow2, div, sub;
+//    mpfr_inits2(DEF_PREC, sigMax, sigMin, half, NULL);
+//    mpfr_inits2(DEF_PREC, pow10, pow2, div, sub, NULL);
+//    
+//    mpfr_set_ui(sigMax, 0xFFFFFFFFFFFFFFFFULL, MPFR_RNDN);
+//    mpfr_set_ui(sigMin, 0x8000000000000000ULL, MPFR_RNDN);
+//    mpfr_set_d(half, 0.5, MPFR_RNDN);
+//    
+//    int e10min = -343, e10max = 324, e10step = 1;
+//    
+//    printf("#define POW10_SIG_TABLE_MIN_EXP %d\n", e10min);
+//    printf("#define POW10_SIG_TABLE_MAX_EXP %d\n", e10max);
+//    printf("#define POW10_SIG_TABLE_MIN_EXACT_EXP %d\n", 0);
+//    printf("#define POW10_SIG_TABLE_MAX_EXACT_EXP %d\n", 55);
+//    printf("static const u64 pow10_sig_table[] = {\n");
+//    
+//    for (int e10 = e10min; e10 <= e10max; e10 += e10step) {
+//        mpfr_set_d(pow10, 10, MPFR_RNDN);
+//        mpfr_pow_si(pow10, pow10, e10, MPFR_RNDN); // pow10 = 10^e10
+//        
+//        // 10^e10 = 2^e2
+//        // e2 = floor(log2(pow(10, e10)))
+//        // e2 = floor(log2(10) * e10)
+//        int e2 = (int)floor(log2(10) * e10) - 64 + 1;
+//        mpfr_set_d(pow2, 2, MPFR_RNDN);
+//        mpfr_pow_si(pow2, pow2, e2, MPFR_RNDN); // pow2 = 2^e2
+//        mpfr_div(div, pow10, pow2, MPFR_RNDN); // div = pow10 / pow2;
+//        if (mpfr_cmp(div, sigMin) < 0 || mpfr_cmp(div, sigMax) > 0) {
+//            printf("err!\n"); // make sure the highest bit is 1 (normalized)
+//        }
+//        
+//        mpfr_set_d(pow2, 2, MPFR_RNDN);
+//        mpfr_pow_si(pow2, pow2, e2, MPFR_RNDN); // pow2 = 2^e2
+//        mpfr_div(div, pow10, pow2, MPFR_RNDN); // div = pow10 / pow2;
+//        
+//        mpfr_snprintf(buf, BUF_LEN, "%.1000Rg", div);
+//        u64 val = strtoull(buf, NULL, 0);
+//        mpfr_sub_ui(sub, div, val, MPFR_RNDN); // sub = div - (uint64_t)div
+//        int cmp = mpfr_cmp(sub, half);
+//        if (cmp == 0) printf("err!\n"); // avoid round to even
+//        if (cmp > 0 && val == UINT64_MAX) printf("err!\n"); // avoid round up overflow
+//        
+//        printf("    ");
+//        printf("U64(0x%.8X, 0x%.8X),", (u32)(val >> 32), (u32)val);
+//        
+//        mpfr_set_d(pow2, 2, MPFR_RNDN);
+//        mpfr_pow_si(pow2, pow2, 64, MPFR_RNDN); // pow2 = 2^64
+//        mpfr_mul(sub, sub, pow2, MPFR_RNDN); // sub *= 2^64
+//        
+//        mpfr_snprintf(buf, BUF_LEN, "%.1000Rg", sub);
+//        u64 val2 = strtoull(buf, NULL, 0);
+//        mpfr_sub_ui(sub, sub, val2, MPFR_RNDN); // sub -= (uint64_t)sub
+//        int cmp2 = mpfr_cmp(sub, half);
+//        if (cmp2 == 0) printf("err!\n"); // avoid round to even
+//        if ((cmp > 0) && (val2 < ((u64)1) << 63)) printf("err!\n"); // avoid round up overflow
+//        bool is_exact = mpfr_cmp_ui(sub, 0) == 0;
+//        
+//        printf(" ");
+//        printf("U64(0x%.8X, 0x%.8X)", (u32)(val2 >> 32), (u32)val2);
+//        printf("%c", e10 < e10max ? ',' : ' ');
+//        printf(" /* %s 10^%d */", is_exact ? "==" : "~=", e10);
+//        printf("\n");
+//    }
+//    
+//    printf("};\n");
+//    printf("\n");
+//    
+//    mpfr_clears(sigMax, sigMin, half, NULL);
+//    mpfr_clears(pow10, pow2, div, sub, NULL);
+//}
+
+
+
+//Generate fp table with Python:
+//import decimal
+//from decimal import Decimal
+//
+//POW10_SIG_TABLE_MIN_EXP = -343
+//POW10_SIG_TABLE_MAX_EXP =  324
+//POW10_SIG_TABLE_MIN_EXACT_EXP = 0
+//POW10_SIG_TABLE_MAX_EXACT_EXP = 55
+//
+//
+//def calc_pow10_u128(p: int) -> int:
+//    """
+//    Calculate the power of 10 and return the high 128 bits of the result.
+//    """
+//    
+//    # Calculate 10^p with high precision
+//    decimal.getcontext().prec = 5000
+//    sig = Decimal(10) ** p
+//
+//    # Normalize the sig to range [0.5,1)
+//    while sig < 1:
+//        sig *= 2
+//    while sig >= 1:
+//        sig /= 2
+//
+//    # Calculate the highest 128 bits of the sig
+//    all = sig * (2 ** 128)
+//    top = int(all)
+//    return top
+//
+//
+//def is_pow10_u128_exact(p: int) -> bool:
+//    """
+//    Check if calc_pow10_u128(p) is exact value.
+//    """
+//    
+//    # Calculate 10^p with high precision
+//    decimal.getcontext().prec = 5000
+//    sig = Decimal(10) ** p
+//
+//    # Normalize the sig to range [0.5,1)
+//    while sig < 1:
+//        sig *= 2
+//    while sig >= 1:
+//        sig /= 2
+//
+//    # Calculate the highest 128 bits of the sig
+//    all = sig * (2 ** 128)
+//    top = int(all)
+//    return top == all
+//
+//
+//def print_pow10_u128_table():
+//    """
+//    Print the power of 10 table for yy_strtod() and yy_dtoa().
+//    """
+//    print(f"#define POW10_SIG_TABLE_MIN_EXP {POW10_SIG_TABLE_MIN_EXP}")
+//    print(f"#define POW10_SIG_TABLE_MAX_EXP {POW10_SIG_TABLE_MAX_EXP}")
+//    print(f"#define POW10_SIG_TABLE_MIN_EXACT_EXP {POW10_SIG_TABLE_MIN_EXACT_EXP}")
+//    print(f"#define POW10_SIG_TABLE_MAX_EXACT_EXP {POW10_SIG_TABLE_MAX_EXACT_EXP}")
+//    print("static const u64 pow10_sig_table[] = {")
+//    for p in range(POW10_SIG_TABLE_MIN_EXP, POW10_SIG_TABLE_MAX_EXP + 1):
+//        is_exact = is_pow10_u128_exact(p)
+//        assert is_exact == (p in range(POW10_SIG_TABLE_MIN_EXACT_EXP, POW10_SIG_TABLE_MAX_EXACT_EXP + 1))
+//
+//        c = calc_pow10_u128(p)
+//        s = f"{c:X}"
+//        line = f"    U64(0x{s[0:8]}, 0x{s[8:16]}), U64(0x{s[16:24]}, 0x{s[24:32]})"
+//        if is_exact:
+//            line += f", /* == 10^{p} */"
+//        elif p == POW10_SIG_TABLE_MAX_EXP:
+//            line += f"  /* ~= 10^{p} */"
+//        else:
+//            line += f", /* ~= 10^{p} */"
+//        print(line)
+//    print("};")
+//
+//
+//if __name__ == "__main__":
+//    print_pow10_u128_table()
+
+
 
 /*----------------------------------------------------------------------------*/
 
@@ -138,70 +223,33 @@ static void make_dec_trailing_zero_table(void) {
 
 /*----------------------------------------------------------------------------*/
 
-/** Character type */
-typedef u8 char_type;
-/** Whitespace character: ' ', '\\t', '\\n', '\\r'. */
-static const char_type CHAR_TYPE_SPACE      = 1 << 0;
-/** Number character: '-', [0-9]. */
-static const char_type CHAR_TYPE_NUMBER     = 1 << 1;
-/** JSON Escaped character: '"', '\', [0x00-0x1F]. */
-static const char_type CHAR_TYPE_ESC_ASCII  = 1 << 2;
-/** Non-ASCII character: [0x80-0xFF]. */
-static const char_type CHAR_TYPE_NON_ASCII  = 1 << 3;
-/** JSON container character: '{', '['. */
-static const char_type CHAR_TYPE_CONTAINER  = 1 << 4;
-/** Comment character: '/'. */
-static const char_type CHAR_TYPE_COMMENT    = 1 << 5;
-/** Line end character: '\\n', '\\r', '\0'. */
-static const char_type CHAR_TYPE_LINE_END   = 1 << 6;
-/** Hex character: [0-9a-fA-F]. */
-static const char_type CHAR_TYPE_HEX        = 1 << 7;
+/* char_table1 */
+#define CHAR_TYPE_ASCII     (1 << 0) /* Except: ["\], [0x00-0x1F, 0x80-0xFF] */
+#define CHAR_TYPE_ASCII_SQ  (1 << 1) /* Except: ['\], [0x00-0x1F, 0x80-0xFF] */
+#define CHAR_TYPE_SPACE     (1 << 2) /* Whitespace: [ \t\n\r] */
+#define CHAR_TYPE_SPACE_EXT (1 << 3) /* Whitespace: [ \t\n\r\v\f], JSON5 */
+#define CHAR_TYPE_NUM       (1 << 4) /* Number: [.-+0-9] */
+#define CHAR_TYPE_COMMENT   (1 << 5) /* Comment: [/] */
 
-static void make_char_table(void) {
-    u8 table[256] = {0};
-    
-    table[' '] |= CHAR_TYPE_SPACE;
-    table['\t'] |= CHAR_TYPE_SPACE;
-    table['\n'] |= CHAR_TYPE_SPACE;
-    table['\r'] |= CHAR_TYPE_SPACE;
+/* char_table2 */
+#define CHAR_TYPE_EOL       (1 << 0) /* End of line: [\r\n] */
+#define CHAR_TYPE_EOL_EXT   (1 << 1) /* End of line: [\r\n], JSON5 */
+#define CHAR_TYPE_ID_START  (1 << 2) /* ID start: [_$A-Za-z\], U+0080+ */
+#define CHAR_TYPE_ID_NEXT   (1 << 3) /* ID next: [_$A-Za-z0-9\], U+0080+ */
+#define CHAR_TYPE_ID_ASCII  (1 << 4) /* ID next ASCII: [_$A-Za-z0-9] */
 
-    table['-'] |= CHAR_TYPE_NUMBER;
-    for (int i = 0; i <= 9; i++) {
-        table[i + '0'] |= CHAR_TYPE_NUMBER;
-    }
-    
-    table['"'] |= CHAR_TYPE_ESC_ASCII;
-    table['\\'] |= CHAR_TYPE_ESC_ASCII;
-    for (int i = 0x00; i <= 0x1F; i++) {
-        table[i] |= CHAR_TYPE_ESC_ASCII;
-    }
-    
-    for (int i = 0x80; i <= 0xFF; i++) {
-        table[i] |= CHAR_TYPE_NON_ASCII;
-    }
-    
-    table['{'] |= CHAR_TYPE_CONTAINER;
-    table['['] |= CHAR_TYPE_CONTAINER;
+/* char_table3 */
+#define CHAR_TYPE_SIGN      (1 << 0) /* [-+] */
+#define CHAR_TYPE_DIGIT     (1 << 1) /* [0-9] */
+#define CHAR_TYPE_NONZERO   (1 << 2) /* [1-9] */
+#define CHAR_TYPE_EXP       (1 << 3) /* [eE] */
+#define CHAR_TYPE_DOT       (1 << 4) /* [.] */
 
-    table['/'] |= CHAR_TYPE_COMMENT;
-    
-    table['\n'] |= CHAR_TYPE_LINE_END;
-    table['\r'] |= CHAR_TYPE_LINE_END;
-    table['\0'] |= CHAR_TYPE_LINE_END;
-    
-    for (int i = '0'; i <= '9'; i++) {
-        table[i] |= CHAR_TYPE_HEX;
-    }
-    for (int i = 'a'; i <= 'f'; i++) {
-        table[i] |= CHAR_TYPE_HEX;
-    }
-    for (int i = 'A'; i <= 'F'; i++) {
-        table[i] |= CHAR_TYPE_HEX;
-    }
-
+static void print_char_table(u8 *table, const char *name) {
     int table_len = 256;
     int line_len = 8;
-    printf("static const char_type char_table[256] = {\n");
+    
+    printf("static const u8 %s[256] = {\n", name);
     for (int i = 0; i < table_len; i++) {
         bool is_head = ((i % line_len) == 0);
         bool is_tail = ((i % line_len) == line_len - 1);
@@ -216,52 +264,86 @@ static void make_char_table(void) {
     printf("\n");
 }
 
-/*----------------------------------------------------------------------------*/
-
-/** Digit type */
-typedef u8 digi_type;
-/** Digit: '0'. */
-static const digi_type DIGI_TYPE_ZERO       = 1 << 0;
-/** Digit: [1-9]. */
-static const digi_type DIGI_TYPE_NONZERO    = 1 << 1;
-/** Plus sign (positive): '+'. */
-static const digi_type DIGI_TYPE_POS        = 1 << 2;
-/** Minus sign (negative): '-'. */
-static const digi_type DIGI_TYPE_NEG        = 1 << 3;
-/** Decimal point: '.' */
-static const digi_type DIGI_TYPE_DOT        = 1 << 4;
-/** Exponent sign: 'e, 'E'. */
-static const digi_type DIGI_TYPE_EXP        = 1 << 5;
-
-static void make_digit_table(void) {
-    u8 table[256] = {0};
+static void make_char_table(void) {
+    u8 table[256];
     
-    table['0'] |= DIGI_TYPE_ZERO;
-    for (int i = 1; i <= 9; i++) {
-        table[i + '0'] |= DIGI_TYPE_NONZERO;
-    }
-    table['+'] |= DIGI_TYPE_POS;
-    table['-'] |= DIGI_TYPE_NEG;
-    table['.'] |= DIGI_TYPE_DOT;
-    table['e'] |= DIGI_TYPE_EXP;
-    table['E'] |= DIGI_TYPE_EXP;
+    // ------------- table1 -------------
+    memset(table, 0, sizeof(table));
     
-    int table_len = 128; /* ASCII only */
-    int line_len = 8;
-    printf("static const digi_type digi_table[256] = {\n");
-    for (int i = 0; i < table_len; i++) {
-        bool is_head = ((i % line_len) == 0);
-        bool is_tail = ((i % line_len) == line_len - 1);
-        bool is_last = i + 1 == table_len;
-        
-        if (is_head) printf("    ");
-        printf("0x%.2X", table[i]);
-        if (i + 1 < table_len) printf(",");
-        if (!is_tail && !is_last) printf(" "); else printf("\n");
+    for (int i = 0; i <= 0xFF; i++) {
+        table[i] |= (CHAR_TYPE_ASCII | CHAR_TYPE_ASCII_SQ);
     }
-    printf("};\n");
-    printf("\n");
+    table['\"'] &= ~(u8)(CHAR_TYPE_ASCII);     // double quote
+    table['\''] &= ~(u8)(CHAR_TYPE_ASCII_SQ);  // single quote
+    table['\\'] &= ~(u8)(CHAR_TYPE_ASCII | CHAR_TYPE_ASCII_SQ);
+    for (int i = 0x00; i <= 0x1F; i++) {
+        table[i] &= ~(u8)(CHAR_TYPE_ASCII | CHAR_TYPE_ASCII_SQ);
+    }
+    for (int i = 0x80; i <= 0xFF; i++) {
+        table[i] &= ~(u8)(CHAR_TYPE_ASCII | CHAR_TYPE_ASCII_SQ);
+    }
+    
+    table[' ']  |= (CHAR_TYPE_SPACE | CHAR_TYPE_SPACE_EXT);
+    table['\t'] |= (CHAR_TYPE_SPACE | CHAR_TYPE_SPACE_EXT);
+    table['\n'] |= (CHAR_TYPE_SPACE | CHAR_TYPE_SPACE_EXT);
+    table['\r'] |= (CHAR_TYPE_SPACE | CHAR_TYPE_SPACE_EXT);
+    table['\v'] |= CHAR_TYPE_SPACE_EXT;
+    table['\f'] |= CHAR_TYPE_SPACE_EXT;
+    table[0xC2] |= CHAR_TYPE_SPACE_EXT; // U+00a0  [C2 A0]    non-breaking space
+    table[0xE1] |= CHAR_TYPE_SPACE_EXT; // U+1680  [E1 9A 80] ogham space mark
+    table[0xE2] |= CHAR_TYPE_SPACE_EXT; // U+2000+ [E2 XX XX] unicode 'Zs' category
+    table[0xE3] |= CHAR_TYPE_SPACE_EXT; // U+3000  [E3 80 80] ideographical space
+    table[0xEF] |= CHAR_TYPE_SPACE_EXT; // U+FEFF  [EF BB BF] byte order mark
+    table['.'] |= CHAR_TYPE_NUM;
+    table['-'] |= CHAR_TYPE_NUM;
+    table['+'] |= CHAR_TYPE_NUM;
+    for (int i = '0'; i <= '9'; i++) {
+        table[i] |= CHAR_TYPE_NUM;
+    }
+    
+    table['/'] |= CHAR_TYPE_COMMENT;
+    print_char_table(table, "char_table1");
+    
+    
+    // ------------- table2 -------------
+    memset(table, 0, sizeof(table));
+    table['\r'] |= (CHAR_TYPE_EOL | CHAR_TYPE_EOL_EXT);
+    table['\n'] |= (CHAR_TYPE_EOL | CHAR_TYPE_EOL_EXT);
+    table[0xE2] |= CHAR_TYPE_EOL_EXT; // <LS> U+2028 [E2 80 A8], <PS> U+2029 [E2 80 A9]
+    table['_'] |= (CHAR_TYPE_ID_START | CHAR_TYPE_ID_NEXT | CHAR_TYPE_ID_ASCII);
+    table['$'] |= (CHAR_TYPE_ID_START | CHAR_TYPE_ID_NEXT | CHAR_TYPE_ID_ASCII);
+    table['\\'] |= (CHAR_TYPE_ID_START | CHAR_TYPE_ID_NEXT);
+    for (int i = 'A'; i <= 'Z'; i++) {
+        table[i] |= (CHAR_TYPE_ID_START | CHAR_TYPE_ID_NEXT | CHAR_TYPE_ID_ASCII);
+    }
+    for (int i = 'a'; i <= 'z'; i++) {
+        table[i] |= (CHAR_TYPE_ID_START | CHAR_TYPE_ID_NEXT | CHAR_TYPE_ID_ASCII);
+    }
+    for (int i = '0'; i <= '9'; i++) {
+        table[i] |= (CHAR_TYPE_ID_NEXT | CHAR_TYPE_ID_ASCII);
+    }
+    for (int i = 0x80; i <= 0xFF; i++) {
+        table[i] |= (CHAR_TYPE_ID_START | CHAR_TYPE_ID_NEXT);
+    }
+    print_char_table(table, "char_table2");
+    
+    
+    // ------------- table3 -------------
+    memset(table, 0, sizeof(table));
+    table['-'] |= CHAR_TYPE_SIGN;
+    table['+'] |= CHAR_TYPE_SIGN;
+    table['e'] |= CHAR_TYPE_EXP;
+    table['E'] |= CHAR_TYPE_EXP;
+    table['.'] |= CHAR_TYPE_DOT;
+    for (int i = '0'; i <= '9'; i++) {
+        table[i] |= CHAR_TYPE_DIGIT;
+    }
+    for (int i = '1'; i <= '9'; i++) {
+        table[i] |= CHAR_TYPE_NONZERO;
+    }
+    print_char_table(table, "char_table3");
 }
+
 
 /*----------------------------------------------------------------------------*/
 
@@ -471,10 +553,8 @@ static void make_esc_single_char_table(void) {
 }
 
 int main(void) {
-    make_pow10_sig_table();
     make_dec_trailing_zero_table();
     make_char_table();
-    make_digit_table();
     make_hex_conv_table();
     make_u64_pow10_table();
     make_enc_table();

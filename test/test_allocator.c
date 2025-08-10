@@ -341,6 +341,7 @@ static void test_alc_dyn(void) {
 }
 
 
+
 yy_test_case(test_allocator) {
     test_alc_pool_init();
     test_alc_pool_func();
