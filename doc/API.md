@@ -477,6 +477,18 @@ This flag supports all JSON5 features with some additional extensions:
 - Unquoted keys are and not limited to ECMAScript IdentifierName.
 - Allow case-insensitive `NaN`, `Inf` and `Infinity` literals.
 
+For example:
+```json
+{
+    /* JSON5 example */
+    id: 123,
+    name: 'Harry',
+    color: 0x66CCFF,
+    min: .001,
+    max: Inf,
+    data: '\x00\xAA\xFF',
+}
+```
 
 ---------------
 # Writing JSON
@@ -1549,16 +1561,18 @@ char *yyjson_write_number(const yyjson_val *val, char *buf);
 # Text Processing
 
 ## Character Encoding
-This library only supports UTF-8 encoding without BOM, as specified in [RFC 8259](https://datatracker.ietf.org/doc/html/rfc8259#section-8.1):
+By default, this library supports UTF-8 encoding without a BOM, as specified in [RFC 8259](https://datatracker.ietf.org/doc/html/rfc8259#section-8.1):
 
 > JSON text exchanged between systems that are not part of a closed ecosystem MUST be encoded using UTF-8.
 > Implementations MUST NOT add a byte order mark (U+FEFF) to the beginning of a networked-transmitted JSON text.
 
-By default, yyjson performs strict UTF-8 encoding validation on input strings. If an invalid character is encountered, an error will be reported.
+This library performs strict UTF-8 encoding validation on input strings by default. If an invalid character is encountered, an error will be reported.
 
-You can use `YYJSON_READ_ALLOW_INVALID_UNICODE` and `YYJSON_WRITE_ALLOW_INVALID_UNICODE` flags to allow invalid Unicode encoding. However, please note that if you enable these flags, the resulting values from yyjson may contain invalid characters, which could be used by other code and introduce security risks.
+To allow a BOM, use the `YYJSON_READ_ALLOW_BOM` or `YYJSON_READ_ALLOW_EXT_WHITESPACE` flags.
 
-You can use `yyjson_set_str_noesc(yyjson_val *val, bool noesc)` or `yyjson_mut_set_str_noesc(yyjson_mut_val *val, bool noesc)` to mark a string as not needing to be escaped during JSON writing. This will make string writing faster and preserve the original string bytes.
+To allow invalid Unicode encoding, use the `YYJSON_READ_ALLOW_INVALID_UNICODE` and `YYJSON_WRITE_ALLOW_INVALID_UNICODE` flags. **Note:** Enabling these flags may result in yyjson producing values that contain invalid characters, which could be processed by other code and potentially introduce security risks.
+
+To mark a string as not requiring escaping during JSON writing, use `yyjson_set_str_noesc(yyjson_val *val, bool noesc)` or `yyjson_mut_set_str_noesc(yyjson_mut_val *val, bool noesc)`.  This can improve string-writing performance and preserve the original string bytes.
 
 ## NUL Character
 This library supports the `NUL` character (also known as the `null terminator`, or Unicode `U+0000`, ASCII `\0`) inside strings.
