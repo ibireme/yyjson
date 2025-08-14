@@ -302,7 +302,9 @@ if (yyjson_locate_pos(dat, dat_len, err.pos, &line, &col, &chr)) {
 ## Reader flag
 The library provides a set of flags for JSON reader.<br/>
 
-You can use a single flag, or combine multiple flags with bitwise `|` operator.
+You can use a single flag, or combine multiple flags with bitwise `|` operator.<br/>
+
+Non-standard flags (such as `YYJSON_READ_JSON5`) have no performance impact when reading standard JSON input.
 
 ### **YYJSON_READ_NOFLAG = 0**
 
