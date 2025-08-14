@@ -4656,6 +4656,60 @@ read_double:
  * MARK: - String Reader (Private)
  *============================================================================*/
 
+/** Read unicode escape sequence. */
+static_inline bool read_uni_esc(u8 **src_ptr, u8 **dst_ptr, const char **msg) {
+#define return_err(_end, _msg) *msg = _msg; *src_ptr = _end; return false
+    
+    u8 *src = *src_ptr;
+    u8 *dst = *dst_ptr;
+    u16 hi, lo;
+    u32 uni;
+    
+    src += 2; /* skip `\u` */
+    if (unlikely(!hex_load_4(src, &hi))) {
+        return_err(src - 2, "invalid escaped sequence in string");
+    }
+    src += 4; /* skip hex */
+    if (likely((hi & 0xF800) != 0xD800)) {
+        /* a BMP character */
+        if (hi >= 0x800) {
+            *dst++ = (u8)(0xE0 | (hi >> 12));
+            *dst++ = (u8)(0x80 | ((hi >> 6) & 0x3F));
+            *dst++ = (u8)(0x80 | (hi & 0x3F));
+        } else if (hi >= 0x80) {
+            *dst++ = (u8)(0xC0 | (hi >> 6));
+            *dst++ = (u8)(0x80 | (hi & 0x3F));
+        } else {
+            *dst++ = (u8)hi;
+        }
+    } else {
+        /* a non-BMP character, represented as a surrogate pair */
+        if (unlikely((hi & 0xFC00) != 0xD800)) {
+            return_err(src - 6, "invalid high surrogate in string");
+        }
+        if (unlikely(!byte_match_2(src, "\\u"))) {
+            return_err(src - 6, "no low surrogate in string");
+        }
+        if (unlikely(!hex_load_4(src + 2, &lo))) {
+            return_err(src - 6, "invalid escape in string");
+        }
+        if (unlikely((lo & 0xFC00) != 0xDC00)) {
+            return_err(src - 6, "invalid low surrogate in string");
+        }
+        uni = ((((u32)hi - 0xD800) << 10) |
+                ((u32)lo - 0xDC00)) + 0x10000;
+        *dst++ = (u8)(0xF0 | (uni >> 18));
+        *dst++ = (u8)(0x80 | ((uni >> 12) & 0x3F));
+        *dst++ = (u8)(0x80 | ((uni >> 6) & 0x3F));
+        *dst++ = (u8)(0x80 | (uni & 0x3F));
+        src += 6;
+    }
+    *src_ptr = src;
+    *dst_ptr = dst;
+    return true;
+#undef return_err
+}
+
 /**
  Read a JSON string.
  @param quo The quote character (single quote or double quote).
@@ -4821,44 +4875,8 @@ copy_escape:
             case 'r':  *dst++ = '\r'; src++; break;
             case 't':  *dst++ = '\t'; src++; break;
             case 'u':
-                if (unlikely(!hex_load_4(++src, &hi))) {
-                    return_err(src - 2, "invalid escaped sequence in string");
-                }
-                src += 4;
-                if (likely((hi & 0xF800) != 0xD800)) {
-                    /* a BMP character */
-                    if (hi >= 0x800) {
-                        *dst++ = (u8)(0xE0 | (hi >> 12));
-                        *dst++ = (u8)(0x80 | ((hi >> 6) & 0x3F));
-                        *dst++ = (u8)(0x80 | (hi & 0x3F));
-                    } else if (hi >= 0x80) {
-                        *dst++ = (u8)(0xC0 | (hi >> 6));
-                        *dst++ = (u8)(0x80 | (hi & 0x3F));
-                    } else {
-                        *dst++ = (u8)hi;
-                    }
-                } else {
-                    /* a non-BMP character, represented as a surrogate pair */
-                    if (unlikely((hi & 0xFC00) != 0xD800)) {
-                        return_err(src - 6, "invalid high surrogate in string");
-                    }
-                    if (unlikely(!byte_match_2(src, "\\u"))) {
-                        return_err(src - 6, "no low surrogate in string");
-                    }
-                    if (unlikely(!hex_load_4(src + 2, &lo))) {
-                        return_err(src - 6, "invalid escape in string");
-                    }
-                    if (unlikely((lo & 0xFC00) != 0xDC00)) {
-                        return_err(src - 6, "invalid low surrogate in string");
-                    }
-                    uni = ((((u32)hi - 0xD800) << 10) |
-                            ((u32)lo - 0xDC00)) + 0x10000;
-                    *dst++ = (u8)(0xF0 | (uni >> 18));
-                    *dst++ = (u8)(0x80 | ((uni >> 12) & 0x3F));
-                    *dst++ = (u8)(0x80 | ((uni >> 6) & 0x3F));
-                    *dst++ = (u8)(0x80 | (uni & 0x3F));
-                    src += 6;
-                }
+                src--;
+                if (!read_uni_esc(&src, &dst, msg)) return_err(src, *msg);
                 break;
             default: {
                 if (has_allow(EXT_ESCAPE)) {
@@ -5026,14 +5044,14 @@ static_inline bool read_str(u8 **ptr, u8 *eof, yyjson_read_flag flg,
     return read_str_opt('\"', ptr, eof, flg, val, msg, NULL);
 }
 
-static_noinline bool read_str_sq(u8 **ptr, u8 *eof, yyjson_read_flag flg,
-                                 yyjson_val *val, const char **msg) {
-    return read_str_opt('\'', ptr, eof, flg, val, msg, NULL);
-}
-
 static_inline bool read_str_con(u8 **ptr, u8 *eof, yyjson_read_flag flg,
                                 yyjson_val *val, const char **msg, u8 **con) {
     return read_str_opt('\"', ptr, eof, flg, val, msg, con);
+}
+
+static_noinline bool read_str_sq(u8 **ptr, u8 *eof, yyjson_read_flag flg,
+                                 yyjson_val *val, const char **msg) {
+    return read_str_opt('\'', ptr, eof, flg, val, msg, NULL);
 }
 
 /** Read unquoted key (identifier name). */
@@ -5113,45 +5131,7 @@ skip_utf8:
     dst = src;
 copy_escape:
     if (byte_match_2(src, "\\u")) {
-        src += 2;
-        if (unlikely(!hex_load_4(src, &hi))) {
-            return_err(src - 2, "invalid escaped sequence in string");
-        }
-        src += 4;
-        if (likely((hi & 0xF800) != 0xD800)) {
-            /* a BMP character */
-            if (hi >= 0x800) {
-                *dst++ = (u8)(0xE0 | (hi >> 12));
-                *dst++ = (u8)(0x80 | ((hi >> 6) & 0x3F));
-                *dst++ = (u8)(0x80 | (hi & 0x3F));
-            } else if (hi >= 0x80) {
-                *dst++ = (u8)(0xC0 | (hi >> 6));
-                *dst++ = (u8)(0x80 | (hi & 0x3F));
-            } else {
-                *dst++ = (u8)hi;
-            }
-        } else {
-            /* a non-BMP character, represented as a surrogate pair */
-            if (unlikely((hi & 0xFC00) != 0xD800)) {
-                return_err(src - 6, "invalid high surrogate in string");
-            }
-            if (unlikely(!byte_match_2(src, "\\u"))) {
-                return_err(src - 6, "no low surrogate in string");
-            }
-            if (unlikely(!hex_load_4(src + 2, &lo))) {
-                return_err(src - 6, "invalid escape in string");
-            }
-            if (unlikely((lo & 0xFC00) != 0xDC00)) {
-                return_err(src - 6, "invalid low surrogate in string");
-            }
-            uni = ((((u32)hi - 0xD800) << 10) |
-                    ((u32)lo - 0xDC00)) + 0x10000;
-            *dst++ = (u8)(0xF0 | (uni >> 18));
-            *dst++ = (u8)(0x80 | ((uni >> 12) & 0x3F));
-            *dst++ = (u8)(0x80 | ((uni >> 6) & 0x3F));
-            *dst++ = (u8)(0x80 | (uni & 0x3F));
-            src += 6;
-        }
+        if (!read_uni_esc(&src, &dst, msg)) return_err(src, *msg);
     } else {
         if (!char_is_id_next(*src)) return_suc(dst, src);
         return_err(src, "unexpected character in key");
