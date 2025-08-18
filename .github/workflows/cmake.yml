@@ -396,13 +396,13 @@ jobs:
         ctest_files=$(echo $ctest_files | sed 's/  $//' | sed "s/ / -object /g")
 
         llvm-profdata merge -sparse cov/profile-*.profraw -o coverage.profdata
-        llvm-cov show $ctest_files -instr-profile=coverage.profdata > coverage.txt
+        llvm-cov export $ctest_files -format=lcov -instr-profile=coverage.profdata --skip-branches > coverage.lcov
 
     - name: Upload Coverage Report
       uses: codecov/codecov-action@v4
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
-        files: ./build/coverage.txt
+        files: ./build/coverage.lcov
         flags: unittests
         name: llvm-cov-coverage
         fail_ci_if_error: true
