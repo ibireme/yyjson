@@ -381,7 +381,7 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y llvm
 
-    - name: CodeCov
+    - name: Build and Test with Coverage
       shell: bash
       run: |
         mkdir build
@@ -390,9 +390,19 @@ jobs:
         cmake .. -DCMAKE_BUILD_TYPE=Debug -DYYJSON_BUILD_TESTS=ON -DYYJSON_ENABLE_COVERAGE=ON \
                  -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
         cmake --build . --config Debug
-        ctest
+        ctest --output-on-failure
+
         ctest_files=$(grep -o "test_\w\+" CTestTestfile.cmake | uniq | tr '\n' ' ')
         ctest_files=$(echo $ctest_files | sed 's/  $//' | sed "s/ / -object /g")
+
         llvm-profdata merge -sparse cov/profile-*.profraw -o coverage.profdata
-        llvm-cov show $ctest_files -instr-profile=coverage.profdata > coverage.txt
-        bash <(curl -s https://codecov.io/bash)  -t ${{ secrets.CODECOV_TOKEN }} || echo "Codecov did not collect coverage reports"
+        llvm-cov export $ctest_files -format=lcov -instr-profile=coverage.profdata > coverage.lcov
+
+    - name: Upload Coverage Report
+      uses: codecov/codecov-action@v4
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        files: ./build/coverage.lcov
+        flags: unittests
+        name: llvm-cov-coverage
+        fail_ci_if_error: true
