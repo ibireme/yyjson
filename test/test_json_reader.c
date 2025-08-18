@@ -134,6 +134,11 @@ static void test_read_data(const char *path, char *dat, usize len,
 restart_incr_read:
     state = yyjson_incr_new((char *)dat, len, flg, NULL);
     yy_assert(state != NULL);
+    yy_assert(!yyjson_incr_read(NULL, read_len, &err));
+    yy_assert(!yyjson_incr_read(state, 0, &err));
+    yy_assert(!yyjson_incr_read(state, 0, NULL));
+    yy_assert(!yyjson_incr_read(state, len + 1, NULL));
+    
     while (read_len < len || len == 0) {
         read_len += chunk_len;
         if (read_len > len) {
@@ -303,7 +308,9 @@ static void test_json_yyjson(void) {
     yyjson_alc alc_small;
     char alc_buf[64];
     yy_assert(yyjson_alc_pool_init(&alc_small, alc_buf, sizeof(void *) * 8));
-    yy_assert(!yyjson_read_opts("", 64, 0, &alc_small, NULL));
+    yy_assert(!yyjson_read_opts("[]", 2, 0, &alc_small, NULL));
+    yy_assert(!yyjson_read_opts("[  ]", 4, 0, &alc_small, NULL));
+    yy_assert(!yyjson_read_opts("123", 3, 0, &alc_small, NULL));
     yy_assert(!yyjson_read_file(dir, 0, &alc_small, NULL));
 }
 

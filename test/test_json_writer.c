@@ -976,6 +976,7 @@ yy_test_case(test_json_writer) {
         yyjson_mut_set_int(&code, 200);
         yyjson_mut_set_str(&msg_key, "msg");
         yyjson_mut_set_str(&msg, "success");
+        yyjson_mut_set_str_noesc(&msg, true);
         yyjson_mut_set_str(&arr_key, "arr");
         yyjson_mut_set_arr(&arr);
         yyjson_mut_set_bool(&vals[0], true);

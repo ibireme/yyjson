@@ -1015,6 +1015,7 @@ static void test_special_real(void) {
 }
 
 /// Test all float32 number read/write.
+/// It takes about 13 minutes on Apple M1/M2 (release build).
 static void test_all_float(void) {
     char alc_buf[4096];
     yyjson_alc alc;
@@ -1034,6 +1035,7 @@ static void test_all_float(void) {
             f64 remaining = expected - elapsed;
             printf("progress: %.2f%%, remaining: %.1f minutes\n",
                    progress * 100, remaining / 60);
+            fflush(NULL);
         }
     }
     printf("--- end test all float ---\n");
@@ -1512,6 +1514,16 @@ static void test_write_flags(void) {
         memset(&val, 0, sizeof(val));
         yyjson_set_double(&val, 1.23456789);
         yyjson_set_fp_to_fixed(&val, 2);
+        str = yyjson_val_write(&val, 0, NULL);
+        end = yyjson_write_number(&val, flt_buf);
+        yy_assert(!strcmp(str, flt_buf));
+        yy_assert((usize)(end - flt_buf) == strlen(str));
+        free(str);
+        
+        /// extra flag bits
+        memset(&val, 0, sizeof(val));
+        yyjson_set_double(&val, 1.23456789);
+        val.tag |= (u64)1 << (64 - 6);
         str = yyjson_val_write(&val, 0, NULL);
         end = yyjson_write_number(&val, flt_buf);
         yy_assert(!strcmp(str, flt_buf));

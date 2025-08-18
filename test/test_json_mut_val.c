@@ -120,6 +120,7 @@ static void test_json_mut_val_api(void) {
     yy_assert(validate_mut_val_type(val, YYJSON_TYPE_RAW, YYJSON_SUBTYPE_NONE));
     yy_assert(strcmp(yyjson_mut_get_type_desc(val), "raw") == 0);
     yy_assert(strcmp(yyjson_mut_get_raw(val), "abc") == 0);
+    yy_assert(yyjson_mut_get_len(val) == 3);
     
     yy_assert(yyjson_mut_rawcpy(NULL, NULL) == NULL);
     yy_assert(yyjson_mut_rawcpy(NULL, "abc") == NULL);
@@ -127,6 +128,26 @@ static void test_json_mut_val_api(void) {
     val = yyjson_mut_rawcpy(doc, "abc");
     yy_assert(validate_mut_val_type(val, YYJSON_TYPE_RAW, YYJSON_SUBTYPE_NONE));
     yy_assert(strcmp(yyjson_mut_get_type_desc(val), "raw") == 0);
+    yy_assert(strcmp(yyjson_mut_get_raw(val), "abc") == 0);
+    yy_assert(yyjson_mut_get_len(val) == 3);
+    
+    yy_assert(yyjson_mut_rawn(NULL, NULL, 0) == NULL);
+    yy_assert(yyjson_mut_rawn(NULL, "abc", 3) == NULL);
+    yy_assert(yyjson_mut_rawn(doc, NULL, 0) == NULL);
+    val = yyjson_mut_rawn(doc, "abc(garbage)", 3);
+    yy_assert(validate_mut_val_type(val, YYJSON_TYPE_RAW, YYJSON_SUBTYPE_NONE));
+    yy_assert(strcmp(yyjson_mut_get_type_desc(val), "raw") == 0);
+    yy_assert(strncmp(yyjson_mut_get_raw(val), "abc", 3) == 0);
+    yy_assert(yyjson_mut_get_len(val) == 3);
+    
+    yy_assert(yyjson_mut_rawncpy(NULL, NULL, 0) == NULL);
+    yy_assert(yyjson_mut_rawncpy(NULL, "abc", 3) == NULL);
+    yy_assert(yyjson_mut_rawncpy(doc, NULL, 3) == NULL);
+    val = yyjson_mut_rawncpy(doc, "abc(garbage)", 3);
+    yy_assert(validate_mut_val_type(val, YYJSON_TYPE_RAW, YYJSON_SUBTYPE_NONE));
+    yy_assert(strcmp(yyjson_mut_get_type_desc(val), "raw") == 0);
+    yy_assert(strncmp(yyjson_mut_get_raw(val), "abc", 3) == 0);
+    yy_assert(yyjson_mut_get_len(val) == 3);
 
     yy_assert(yyjson_mut_null(NULL) == NULL);
     val = yyjson_mut_null(doc);

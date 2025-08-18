@@ -4659,12 +4659,12 @@ read_double:
 /** Read unicode escape sequence. */
 static_inline bool read_uni_esc(u8 **src_ptr, u8 **dst_ptr, const char **msg) {
 #define return_err(_end, _msg) *msg = _msg; *src_ptr = _end; return false
-    
+
     u8 *src = *src_ptr;
     u8 *dst = *dst_ptr;
     u16 hi, lo;
     u32 uni;
-    
+
     src += 2; /* skip `\u` */
     if (unlikely(!hex_load_4(src, &hi))) {
         return_err(src - 2, "invalid escaped sequence in string");
@@ -6620,9 +6620,6 @@ yyjson_doc *yyjson_incr_read(yyjson_incr_state *state, size_t len,
     if (unlikely(!len)) {
         return_err_inv_param("input length is 0");
     }
-    if (unlikely(len < (usize)(state->cur - state->hdr))) {
-        return_err_inv_param("length is smaller than parsed length");
-    }
     if (unlikely(len > state->buf_len)) {
         return_err_inv_param("length is greater than total input length");
     }
@@ -7247,15 +7244,6 @@ static const u8 dec_trailing_zero_table[] = {
     1, 0, 0, 0, 0, 0, 0, 0, 0, 0
 };
 
-static_inline u8 *write_u32_len_1_to_9(u32 val, u8 *buf) {
-    if (val >= 100000000) {
-        u32 hi = val / 10000000;
-        val = val - hi * 10000000;
-        *buf++ = (u8)(hi + '0');
-    }
-    return write_u32_len_1_to_8((u32)val, buf);
-}
-
 static_inline u8 *write_u64_len_1_to_16(u64 val, u8 *buf) {
     u64 hgh;
     u32 low;
@@ -7860,7 +7848,7 @@ static_noinline u8 *write_f32_raw(u8 *buf, u64 raw_f64,
         f32_bin_to_dec(sig_raw, exp_raw, sig_bin, exp_bin, &sig_dec, &exp_dec);
 
         /* write significand part */
-        end = write_u32_len_1_to_9(sig_dec, buf + 1);
+        end = write_u32_len_1_to_8(sig_dec, buf + 1);
         buf[0] = buf[1];
         buf[1] = '.';
         exp_dec += (i32)(end - buf) - 2;
@@ -8717,11 +8705,10 @@ copy_utf8:
 #if YYJSON_DISABLE_UTF8_VALIDATION
             byte_copy_2(cur, src);
 #else
-            u32 v4 = 0;
-            u16 v2 = byte_load_2(src);
-            byte_copy_2(&v4, &v2);
-            if (unlikely(!is_utf8_seq2(v4))) goto err_cpy;
-            byte_copy_2(cur, src);
+            u32 uni = 0;
+            byte_copy_2(&uni, src);
+            if (unlikely(!is_utf8_seq2(uni))) goto err_cpy;
+            byte_copy_2(cur, &uni);
 #endif
             cur += 2;
             src += 2;
@@ -8736,15 +8723,15 @@ copy_utf8:
                 cur[2] = src[2];
             }
 #else
-            u32 v, tmp;
+            u32 uni, tmp;
             if (likely(src + 4 <= end)) {
-                v = byte_load_4(src);
-                if (unlikely(!is_utf8_seq3(v))) goto err_cpy;
+                uni = byte_load_4(src);
+                if (unlikely(!is_utf8_seq3(uni))) goto err_cpy;
                 byte_copy_4(cur, src);
             } else {
-                v = byte_load_3(src);
-                if (unlikely(!is_utf8_seq3(v))) goto err_cpy;
-                byte_copy_4(cur, &v);
+                uni = byte_load_3(src);
+                if (unlikely(!is_utf8_seq3(uni))) goto err_cpy;
+                byte_copy_4(cur, &uni);
             }
 #endif
             cur += 3;
@@ -8755,9 +8742,9 @@ copy_utf8:
 #if YYJSON_DISABLE_UTF8_VALIDATION
             byte_copy_4(cur, src);
 #else
-            u32 v, tmp;
-            v = byte_load_4(src);
-            if (unlikely(!is_utf8_seq4(v))) goto err_cpy;
+            u32 uni, tmp;
+            uni = byte_load_4(src);
+            if (unlikely(!is_utf8_seq4(uni))) goto err_cpy;
             byte_copy_4(cur, src);
 #endif
             cur += 4;
@@ -8837,7 +8824,7 @@ copy_utf8:
         case CHAR_ENC_ERR_1: {
             goto err_one;
         }
-        default: break;
+        default: break; /* unreachable */
     }
 
 copy_end:

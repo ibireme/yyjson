@@ -562,6 +562,13 @@ static void test_read_err_code(void) {
     yy_assert(err.code == YYJSON_READ_ERROR_FILE_OPEN);
     yy_assert(err.pos == 0);
     
+    // Failed to parse a file.
+    yy_path_combine(dir, YYJSON_TEST_DATA_PATH, "data", "json", "test_yyjson", "comment_multiline_empty(fail).json", NULL);
+    memset(&err, -1, sizeof(err));
+    yyjson_doc_free(yyjson_read_file(dir, 0, NULL, &err));
+    yy_assert(err.code == YYJSON_READ_ERROR_UNEXPECTED_CHARACTER);
+    yy_assert(err.pos == 0);
+    
 #endif
 }
 
