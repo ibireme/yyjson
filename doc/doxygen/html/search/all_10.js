@@ -16,5 +16,6 @@ var searchData=
   ['free_20the_20state_20used_20for_20incremental_20reading_13',['Free the state used for incremental reading',['../api.html#free-the-state-used-for-incremental-reading',1,'']]],
   ['from_20file_14',['Read JSON from file',['../api.html#read-json-from-file',1,'']]],
   ['from_20file_20pointer_15',['Read JSON from file pointer',['../api.html#read-json-from-file-pointer',1,'']]],
-  ['from_20string_16',['Read JSON from string',['../api.html#read-json-from-string',1,'']]]
+  ['from_20string_16',['Read JSON from string',['../api.html#read-json-from-string',1,'']]],
+  ['function_17',['Number conversion function',['../api.html#number-conversion-function',1,'']]]
 ];

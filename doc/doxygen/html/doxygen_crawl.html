@@ -39,6 +39,7 @@
 <a href="api.html#mutable-document"/>
 <a href="api.html#nul-character"/>
 <a href="api.html#null-check"/>
+<a href="api.html#number-conversion-function"/>
 <a href="api.html#number-processing"/>
 <a href="api.html#number-reader"/>
 <a href="api.html#number-writer"/>
@@ -66,11 +67,17 @@
 <a href="api.html#writing-json"/>
 <a href="api.html#yyjson_read_allow_bom"/>
 <a href="api.html#yyjson_read_allow_comments"/>
+<a href="api.html#yyjson_read_allow_ext_escape"/>
+<a href="api.html#yyjson_read_allow_ext_number"/>
+<a href="api.html#yyjson_read_allow_ext_whitespace"/>
 <a href="api.html#yyjson_read_allow_inf_and_nan"/>
 <a href="api.html#yyjson_read_allow_invalid_unicode"/>
+<a href="api.html#yyjson_read_allow_single_quoted_str"/>
 <a href="api.html#yyjson_read_allow_trailing_commas"/>
+<a href="api.html#yyjson_read_allow_unquoted_key"/>
 <a href="api.html#yyjson_read_bignum_as_raw"/>
 <a href="api.html#yyjson_read_insitu"/>
+<a href="api.html#yyjson_read_json5"/>
 <a href="api.html#yyjson_read_noflag--0"/>
 <a href="api.html#yyjson_read_number_as_raw"/>
 <a href="api.html#yyjson_read_stop_when_done"/>
@@ -146,6 +153,7 @@
 <a href="md__c_h_a_n_g_e_l_o_g.html#added"/>
 <a href="md__c_h_a_n_g_e_l_o_g.html#added-1"/>
 <a href="md__c_h_a_n_g_e_l_o_g.html#added-10"/>
+<a href="md__c_h_a_n_g_e_l_o_g.html#added-11"/>
 <a href="md__c_h_a_n_g_e_l_o_g.html#added-2"/>
 <a href="md__c_h_a_n_g_e_l_o_g.html#added-3"/>
 <a href="md__c_h_a_n_g_e_l_o_g.html#added-4"/>
@@ -158,6 +166,7 @@
 <a href="md__c_h_a_n_g_e_l_o_g.html#autotoc_md0100-2024-07-09"/>
 <a href="md__c_h_a_n_g_e_l_o_g.html#autotoc_md0110-2025-05-05"/>
 <a href="md__c_h_a_n_g_e_l_o_g.html#autotoc_md0111-2025-05-14"/>
+<a href="md__c_h_a_n_g_e_l_o_g.html#autotoc_md0129-2025-08-18"/>
 <a href="md__c_h_a_n_g_e_l_o_g.html#autotoc_md020-2020-12-12"/>
 <a href="md__c_h_a_n_g_e_l_o_g.html#autotoc_md030-2021-05-25"/>
 <a href="md__c_h_a_n_g_e_l_o_g.html#autotoc_md040-2021-12-12"/>
@@ -176,6 +185,7 @@
 <a href="md__c_h_a_n_g_e_l_o_g.html#changed-6"/>
 <a href="md__c_h_a_n_g_e_l_o_g.html#changed-7"/>
 <a href="md__c_h_a_n_g_e_l_o_g.html#changed-8"/>
+<a href="md__c_h_a_n_g_e_l_o_g.html#changed-9"/>
 <a href="md__c_h_a_n_g_e_l_o_g.html#fixed"/>
 <a href="md__c_h_a_n_g_e_l_o_g.html#fixed-1"/>
 <a href="md__c_h_a_n_g_e_l_o_g.html#fixed-10"/>
@@ -239,6 +249,7 @@
 <a href="yyjson_8h.html#a15bbce96107aa455670ebe9aab98964d"/>
 <a href="yyjson_8h.html#a16058fb6568716afd9754100862d460d"/>
 <a href="yyjson_8h.html#a172090776a18e45190c933fb3294c07c"/>
+<a href="yyjson_8h.html#a17429af07c44e8d9b3f6083df78e2ab1"/>
 <a href="yyjson_8h.html#a177181eee333314c7b40e2dc573fcdec"/>
 <a href="yyjson_8h.html#a177e25caf069be7e36b1ba17cad7dc7d"/>
 <a href="yyjson_8h.html#a17877edf97bce2f3d7cf993cc9662a30"/>
@@ -278,6 +289,7 @@
 <a href="yyjson_8h.html#a2498a5bf91ec2eb7d4a00f89dc465954"/>
 <a href="yyjson_8h.html#a256b4f50ed8e6830d57fbf7df7053141"/>
 <a href="yyjson_8h.html#a25f0e04af88792dd01e0ed8461ffb51b"/>
+<a href="yyjson_8h.html#a26250087651ed3282ef31a27a0673333"/>
 <a href="yyjson_8h.html#a26d9cd39957b06085492ec7050850a19"/>
 <a href="yyjson_8h.html#a274fc7be14bed93794e3e720927f7bc5"/>
 <a href="yyjson_8h.html#a286c610e7e27b8b4667a93eba2e2fa28"/>
@@ -322,6 +334,7 @@
 <a href="yyjson_8h.html#a37d0c7987b2958550076586ca36082fd"/>
 <a href="yyjson_8h.html#a383b0a924785a30a49f6c59de235cd28"/>
 <a href="yyjson_8h.html#a38b10c3293b817b25d9dd985da121cb5"/>
+<a href="yyjson_8h.html#a38be7a9df2511df7d72b678379d7ca01"/>
 <a href="yyjson_8h.html#a38fa90e4cf75b0a78148de2058c1b3bd"/>
 <a href="yyjson_8h.html#a39283533d6fee8d33eb0e3b818ce8fee"/>
 <a href="yyjson_8h.html#a39520db5ba6361257b7b51783357b877"/>
@@ -406,6 +419,7 @@
 <a href="yyjson_8h.html#a60fd8094ee3eff6e7b629471f50aa139"/>
 <a href="yyjson_8h.html#a6105e202bdb2e3b0bd1b561722b80afa"/>
 <a href="yyjson_8h.html#a630b55e2937f7ffe8c0dcef20497ce93"/>
+<a href="yyjson_8h.html#a63f7c53c14f9de30d222acaa287eb490"/>
 <a href="yyjson_8h.html#a64168360e4ac45070f98c6db92b89cd7"/>
 <a href="yyjson_8h.html#a64603b1c33c9ebc626665dea61e25abd"/>
 <a href="yyjson_8h.html#a660d533ce8b661e85c5b14e4e99e5085"/>
@@ -478,6 +492,7 @@
 <a href="yyjson_8h.html#a853738b59790700627f7212b6e00922d"/>
 <a href="yyjson_8h.html#a858ac36d7ad6a86e539cd84118498edb"/>
 <a href="yyjson_8h.html#a85f4bcdc777cde51a40359ac9e38c98b"/>
+<a href="yyjson_8h.html#a8618ef9d06392f4267d853d8c0986319"/>
 <a href="yyjson_8h.html#a874f912f9c023bc353d1a770798017a1"/>
 <a href="yyjson_8h.html#a87eb200779eff088b93ea0a67ab3e300"/>
 <a href="yyjson_8h.html#a881e2ee3f487385810829df8bc675f1f"/>
@@ -519,12 +534,14 @@
 <a href="yyjson_8h.html#a9c6dd96d063bacfa6413f7de90f90d91"/>
 <a href="yyjson_8h.html#a9d8bf48b287cc0099eb6619d8b4b712e"/>
 <a href="yyjson_8h.html#a9dd1f854542f298e963f0912a5a0e002"/>
+<a href="yyjson_8h.html#a9dec76e0a9d0c9e6039f2d15ec8b26fb"/>
 <a href="yyjson_8h.html#a9e49dc52b6209708df0ccf4ddf49b8c4"/>
 <a href="yyjson_8h.html#a9e79f1480256c6e2e8dfbf61da9cd853"/>
 <a href="yyjson_8h.html#a9f40302607516131c026ca5f13a29946"/>
 <a href="yyjson_8h.html#a9fabdf4380dc8f44f9b7479b54c75dd0"/>
 <a href="yyjson_8h.html#a9ff667f95ec6e6e264509e1681c74357"/>
 <a href="yyjson_8h.html#aa0dcc48007c1754a4a181d81f22cb488"/>
+<a href="yyjson_8h.html#aa0ef136f329e2b6016ceddf508e2d996"/>
 <a href="yyjson_8h.html#aa2481ee429a84f67e5f2200a4bbc6155"/>
 <a href="yyjson_8h.html#aa33a13a85b840b3dbc1f8534db2bd8fc"/>
 <a href="yyjson_8h.html#aa33ac310f363ace5f4dda3697b2c0123"/>
@@ -638,6 +655,7 @@
 <a href="yyjson_8h.html#add7037998fb39b3e2d1b3caf59f9d66a"/>
 <a href="yyjson_8h.html#addde26cc012f50aee79a623e6be4614e"/>
 <a href="yyjson_8h.html#addf8b34eb1d89a54df0482acbd29872c"/>
+<a href="yyjson_8h.html#ade31e55bb9edddbaf2cd5c0c0ba03c64"/>
 <a href="yyjson_8h.html#adf5847c72fffb345de33667fd935097a"/>
 <a href="yyjson_8h.html#adf8b2d3c8b57e85d58108d58c68b0db5"/>
 <a href="yyjson_8h.html#ae0898f45c9fca1d7d6bdd35b3488a10f"/>

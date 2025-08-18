@@ -78,7 +78,13 @@ var NAVTREE =
           [ "YYJSON_READ_NUMBER_AS_RAW", "api.html#yyjson_read_number_as_raw", null ],
           [ "YYJSON_READ_BIGNUM_AS_RAW", "api.html#yyjson_read_bignum_as_raw", null ],
           [ "YYJSON_READ_ALLOW_INVALID_UNICODE", "api.html#yyjson_read_allow_invalid_unicode", null ],
-          [ "YYJSON_READ_ALLOW_BOM", "api.html#yyjson_read_allow_bom", null ]
+          [ "YYJSON_READ_ALLOW_BOM", "api.html#yyjson_read_allow_bom", null ],
+          [ "YYJSON_READ_ALLOW_EXT_NUMBER", "api.html#yyjson_read_allow_ext_number", null ],
+          [ "YYJSON_READ_ALLOW_EXT_ESCAPE", "api.html#yyjson_read_allow_ext_escape", null ],
+          [ "YYJSON_READ_ALLOW_EXT_WHITESPACE", "api.html#yyjson_read_allow_ext_whitespace", null ],
+          [ "YYJSON_READ_ALLOW_SINGLE_QUOTED_STR", "api.html#yyjson_read_allow_single_quoted_str", null ],
+          [ "YYJSON_READ_ALLOW_UNQUOTED_KEY", "api.html#yyjson_read_allow_unquoted_key", null ],
+          [ "YYJSON_READ_JSON5", "api.html#yyjson_read_json5", null ]
         ] ]
       ] ],
       [ "Writing JSON", "api.html#writing-json", [
@@ -123,7 +129,8 @@ var NAVTREE =
       ] ],
       [ "Number Processing", "api.html#number-processing", [
         [ "Number reader", "api.html#number-reader", null ],
-        [ "Number writer", "api.html#number-writer", null ]
+        [ "Number writer", "api.html#number-writer", null ],
+        [ "Number conversion function", "api.html#number-conversion-function", null ]
       ] ],
       [ "Text Processing", "api.html#text-processing", [
         [ "Character Encoding", "api.html#character-encoding", null ],
@@ -147,6 +154,7 @@ var NAVTREE =
       [ "Memory Management", "data-structures.html#memory-management", null ]
     ] ],
     [ "Changelog", "md__c_h_a_n_g_e_l_o_g.html", [
+      [ "0.12.0 (2025-08-18)", "md__c_h_a_n_g_e_l_o_g.html#autotoc_md0129-2025-08-18", null ],
       [ "0.11.1 (2025-05-14)", "md__c_h_a_n_g_e_l_o_g.html#autotoc_md0111-2025-05-14", null ],
       [ "0.11.0 (2025-05-05)", "md__c_h_a_n_g_e_l_o_g.html#autotoc_md0110-2025-05-05", null ],
       [ "0.10.0 (2024-07-09)", "md__c_h_a_n_g_e_l_o_g.html#autotoc_md0100-2024-07-09", null ],
@@ -186,8 +194,8 @@ var NAVTREE =
 var NAVTREEINDEX =
 [
 "annotated.html",
-"yyjson_8h.html#a2d0864410efdd15e4591fecc0b4c082c",
-"yyjson_8h.html#aaed218041aa262337e179d487f4c770c"
+"yyjson_8h.html#a2a9e116a307c8dbcebc82305eca91fd3",
+"yyjson_8h.html#aa4b243e9de837405d83bcc3251156cea"
 ];
 
 var SYNCONMSG = 'click to disable panel synchronization';

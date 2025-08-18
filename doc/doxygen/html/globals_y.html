@@ -37,7 +37,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname"><a href="index.html">yyjson</a><span id="projectnumber">&#160;0.11.1</span>
+   <div id="projectname"><a href="index.html">yyjson</a><span id="projectnumber">&#160;0.12.0</span>
    </div>
    <div id="projectbrief">A high performance C JSON library.</div>
   </td>
@@ -396,6 +396,7 @@ $(function(){initNavTree('globals_y.html',''); initResizable(true); });
 <li>yyjson_mut_write()&#160;:&#160;<a class="el" href="yyjson_8h.html#a881e2ee3f487385810829df8bc675f1f">yyjson.h</a></li>
 <li>yyjson_mut_write_file()&#160;:&#160;<a class="el" href="yyjson_8h.html#ad2a7aa77fa66a593536e3d7c3edb1d7a">yyjson.h</a></li>
 <li>yyjson_mut_write_fp()&#160;:&#160;<a class="el" href="yyjson_8h.html#ac8c17e7086a6d0a8db559ce0076c71e0">yyjson.h</a></li>
+<li>yyjson_mut_write_number()&#160;:&#160;<a class="el" href="yyjson_8h.html#a9dec76e0a9d0c9e6039f2d15ec8b26fb">yyjson.h</a></li>
 <li>yyjson_mut_write_opts()&#160;:&#160;<a class="el" href="yyjson_8h.html#a7af42d62aa1583986c687c5cd10b010e">yyjson.h</a></li>
 <li>yyjson_noinline&#160;:&#160;<a class="el" href="yyjson_8h.html#a07affd3b28fe93360627a1c4e03b5b88">yyjson.h</a></li>
 <li>yyjson_obj_foreach&#160;:&#160;<a class="el" href="yyjson_8h.html#a32884e21b899ea5869b12aec02083002">yyjson.h</a></li>
@@ -443,9 +444,14 @@ $(function(){initNavTree('globals_y.html',''); initResizable(true); });
 <li>yyjson_read()&#160;:&#160;<a class="el" href="yyjson_8h.html#aeab3c2a1d86225e5b181fb1bba7587d4">yyjson.h</a></li>
 <li>YYJSON_READ_ALLOW_BOM&#160;:&#160;<a class="el" href="yyjson_8h.html#af1d965029a44a6a65b9ef3f9a4ccbc09">yyjson.h</a></li>
 <li>YYJSON_READ_ALLOW_COMMENTS&#160;:&#160;<a class="el" href="yyjson_8h.html#aff1d62b68993630e74355e4611b77520">yyjson.h</a></li>
+<li>YYJSON_READ_ALLOW_EXT_ESCAPE&#160;:&#160;<a class="el" href="yyjson_8h.html#aa0ef136f329e2b6016ceddf508e2d996">yyjson.h</a></li>
+<li>YYJSON_READ_ALLOW_EXT_NUMBER&#160;:&#160;<a class="el" href="yyjson_8h.html#a17429af07c44e8d9b3f6083df78e2ab1">yyjson.h</a></li>
+<li>YYJSON_READ_ALLOW_EXT_WHITESPACE&#160;:&#160;<a class="el" href="yyjson_8h.html#a63f7c53c14f9de30d222acaa287eb490">yyjson.h</a></li>
 <li>YYJSON_READ_ALLOW_INF_AND_NAN&#160;:&#160;<a class="el" href="yyjson_8h.html#a4b5c0a7092625f0324bccec938f8862f">yyjson.h</a></li>
 <li>YYJSON_READ_ALLOW_INVALID_UNICODE&#160;:&#160;<a class="el" href="yyjson_8h.html#abdbf139ee03d263c8a833fbef8cbf63c">yyjson.h</a></li>
+<li>YYJSON_READ_ALLOW_SINGLE_QUOTED_STR&#160;:&#160;<a class="el" href="yyjson_8h.html#ade31e55bb9edddbaf2cd5c0c0ba03c64">yyjson.h</a></li>
 <li>YYJSON_READ_ALLOW_TRAILING_COMMAS&#160;:&#160;<a class="el" href="yyjson_8h.html#a046c7832484dab943bed61ffac274e9c">yyjson.h</a></li>
+<li>YYJSON_READ_ALLOW_UNQUOTED_KEY&#160;:&#160;<a class="el" href="yyjson_8h.html#a38be7a9df2511df7d72b678379d7ca01">yyjson.h</a></li>
 <li>YYJSON_READ_BIGNUM_AS_RAW&#160;:&#160;<a class="el" href="yyjson_8h.html#a305e109d45b8e2b419b7266b839dffa0">yyjson.h</a></li>
 <li>yyjson_read_code&#160;:&#160;<a class="el" href="yyjson_8h.html#a0590c5ffcdd4f997a0ab5845ef624531">yyjson.h</a></li>
 <li>YYJSON_READ_ERROR_EMPTY_CONTENT&#160;:&#160;<a class="el" href="yyjson_8h.html#ad8eeaba5611ace5817c7019067cf85fd">yyjson.h</a></li>
@@ -466,6 +472,7 @@ $(function(){initNavTree('globals_y.html',''); initResizable(true); });
 <li>yyjson_read_flag&#160;:&#160;<a class="el" href="yyjson_8h.html#a36af676813028c1360e8b343768f0e81">yyjson.h</a></li>
 <li>yyjson_read_fp()&#160;:&#160;<a class="el" href="yyjson_8h.html#a7f8c3918f8ab161bf7e2e203ff0f291e">yyjson.h</a></li>
 <li>YYJSON_READ_INSITU&#160;:&#160;<a class="el" href="yyjson_8h.html#aa476cdc60442393b93dd0474ed4f08bc">yyjson.h</a></li>
+<li>YYJSON_READ_JSON5&#160;:&#160;<a class="el" href="yyjson_8h.html#a8618ef9d06392f4267d853d8c0986319">yyjson.h</a></li>
 <li>yyjson_read_max_memory_usage()&#160;:&#160;<a class="el" href="yyjson_8h.html#ae511cac592355c2f60f170402b9d8dbf">yyjson.h</a></li>
 <li>YYJSON_READ_NOFLAG&#160;:&#160;<a class="el" href="yyjson_8h.html#a8940a4ae4ba3467bb7bc6c5ee3deb2ea">yyjson.h</a></li>
 <li>yyjson_read_number()&#160;:&#160;<a class="el" href="yyjson_8h.html#a2b7dfa8495fb1d839e6294f2e7c4b58a">yyjson.h</a></li>
@@ -549,6 +556,7 @@ $(function(){initNavTree('globals_y.html',''); initResizable(true); });
 <li>YYJSON_WRITE_INF_AND_NAN_AS_NULL&#160;:&#160;<a class="el" href="yyjson_8h.html#a4408e0c5928db936b89d49ccf255100b">yyjson.h</a></li>
 <li>YYJSON_WRITE_NEWLINE_AT_END&#160;:&#160;<a class="el" href="yyjson_8h.html#ab0cfae40d7ae6489d73c6cf5db9c09e1">yyjson.h</a></li>
 <li>YYJSON_WRITE_NOFLAG&#160;:&#160;<a class="el" href="yyjson_8h.html#ae152a6e8e8c6e4efd798fa6eca9d311f">yyjson.h</a></li>
+<li>yyjson_write_number()&#160;:&#160;<a class="el" href="yyjson_8h.html#a26250087651ed3282ef31a27a0673333">yyjson.h</a></li>
 <li>yyjson_write_opts()&#160;:&#160;<a class="el" href="yyjson_8h.html#a43ccc01254525cef16699e72079e3e49">yyjson.h</a></li>
 <li>YYJSON_WRITE_PRETTY&#160;:&#160;<a class="el" href="yyjson_8h.html#aebdaa55a1673e99d2dcea01a15c633be">yyjson.h</a></li>
 <li>YYJSON_WRITE_PRETTY_TWO_SPACES&#160;:&#160;<a class="el" href="yyjson_8h.html#a7b13411e137d8085b68b2e0fc9d6736b">yyjson.h</a></li>
