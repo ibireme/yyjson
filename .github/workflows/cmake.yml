@@ -395,4 +395,4 @@ jobs:
         ctest_files=$(echo $ctest_files | sed 's/  $//' | sed "s/ / -object /g")
         llvm-profdata merge -sparse cov/profile-*.profraw -o coverage.profdata
         llvm-cov show $ctest_files -instr-profile=coverage.profdata > coverage.txt
-        bash <(curl -s https://codecov.io/bash) || echo "Codecov did not collect coverage reports"
+        bash <(curl -s https://codecov.io/bash)  -t ${{ secrets.CODECOV_TOKEN }} || echo "Codecov did not collect coverage reports"
