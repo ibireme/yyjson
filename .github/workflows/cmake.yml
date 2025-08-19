@@ -365,7 +365,7 @@ jobs:
       with:
         usesh: true
         run: |
-          pkg install -y cmake
+          pkg install -y cmake-core
           mkdir build
           cd build
           cmake .. -DCMAKE_BUILD_TYPE=Release -DYYJSON_BUILD_TESTS=ON
