@@ -355,6 +355,24 @@ jobs:
         ctest -C Release --output-on-failure
 
 
+  # Check FreeBSD clang
+  freebsd_clang:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Build and Test on FreeBSD
+      uses: vmactions/freebsd-vm@v1
+      with:
+        usesh: true
+        run: |
+          pkg install -y cmake clang git
+          mkdir build
+          cd build
+          cmake .. -DCMAKE_BUILD_TYPE=Release -DYYJSON_BUILD_TESTS=ON
+          cmake --build . --config Release
+          ctest -C Release --output-on-failure
+
+
   # Fuzzing with LLVM libFuzzer for a short time
   fuzzing:
     runs-on: ubuntu-latest
