@@ -2,9 +2,19 @@
 
 #include "yyjson.h"
 #include "yy_test_utils.h"
+#include "goo_double_conv.h"
 
 
 #if !YYJSON_DISABLE_WRITER
+
+static yy_inline bool f64_isfinite(double x) {
+#if GOO_HAS_IEEE_754
+    u64 u; memcpy(&u, &x, 8);
+    return ((u >> 52) & 0x7FF) != 0x7FF;
+#else
+    return true;
+#endif
+}
 
 static bool mut_val_has_inf_nan(yyjson_mut_val *val) {
     usize idx, max;
@@ -12,7 +22,7 @@ static bool mut_val_has_inf_nan(yyjson_mut_val *val) {
     
     if (yyjson_mut_is_real(val)) {
         f64 num = yyjson_mut_get_real(val);
-        if (isnan(num) || isinf(num)) return true;
+        if (!f64_isfinite(num)) return true;
         return false;
     }
     if (yyjson_mut_is_arr(val)) {

@@ -44,6 +44,36 @@ static yy_inline f64 f64_from_bits(u64 u) {
     return f;
 }
 
+/// Same as isinf.
+static yy_inline bool f64_isinf(double x) {
+#if FP_IEEE_754
+    u64 u; memcpy(&u, &x, 8);
+    return ((u >> 52) & 0x7FF) == 0x7FF && !(u & (((u64)1 << 52 ) - 1));
+#else
+    return false;
+#endif
+}
+
+/// Same as isnan.
+static yy_inline bool f64_isnan(double x) {
+#if FP_IEEE_754
+    u64 u; memcpy(&u, &x, 8);
+    return ((u >> 52) & 0x7FF) == 0x7FF && (u & (((u64)1 << 52) - 1));
+#else
+    return false;
+#endif
+}
+
+/// Same as isfinite.
+static yy_inline bool f64_isfinite(double x) {
+#if FP_IEEE_754
+    u64 u; memcpy(&u, &x, 8);
+    return ((u >> 52) & 0x7FF) != 0x7FF;
+#else
+    return true;
+#endif
+}
+
 /// Current locale decimal point.
 static char locale_decimal_point = '.';
 
@@ -106,8 +136,8 @@ static usize libc_f64_read(const char *str, f64 *val) {
 
 /// Write float to string shortest (libc).
 static usize libc_f32_write(f32 val, char *buf, usize len) {
-    if (isinf(val)) return snprintf(buf, len, (val > 0) ? "Infinity" : "-Infinity");
-    if (isnan(val)) return snprintf(buf, len, "NaN");
+    if (f64_isinf(val)) return snprintf(buf, len, (val > 0) ? "Infinity" : "-Infinity");
+    if (f64_isnan(val)) return snprintf(buf, len, "NaN");
     int out_len = snprintf(buf, len, "%.*g", FLT_DECIMAL_DIG, val);
     if (locale_decimal_point != '.') decimal_point_to_std(buf);
     return (out_len >= (int)len) ? 0 : out_len;
@@ -115,8 +145,8 @@ static usize libc_f32_write(f32 val, char *buf, usize len) {
 
 /// Write double to string shortest (libc).
 static usize libc_f64_write(f64 val, char *buf, usize len) {
-    if (isinf(val)) return snprintf(buf, len, (val > 0) ? "Infinity" : "-Infinity");
-    if (isnan(val)) return snprintf(buf, len, "NaN");
+    if (f64_isinf(val)) return snprintf(buf, len, (val > 0) ? "Infinity" : "-Infinity");
+    if (f64_isnan(val)) return snprintf(buf, len, "NaN");
     int out_len = snprintf(buf, len, "%.*g", DBL_DECIMAL_DIG, val);
     if (locale_decimal_point != '.') decimal_point_to_std(buf);
     return (out_len >= (int)len) ? 0 : out_len;
@@ -124,8 +154,8 @@ static usize libc_f64_write(f64 val, char *buf, usize len) {
 
 /// Write double to string with fixed-point notation (libc).
 static usize libc_f64_write_fixed(f64 val, int prec, char *buf, usize len) {
-    if (isinf(val)) return snprintf(buf, len, (val > 0) ? "Infinity" : "-Infinity");
-    if (isnan(val)) return snprintf(buf, len, "NaN");
+    if (f64_isinf(val)) return snprintf(buf, len, (val > 0) ? "Infinity" : "-Infinity");
+    if (f64_isnan(val)) return snprintf(buf, len, "NaN");
     int out_len = snprintf(buf, len, "%.*f", prec, val);
     if (locale_decimal_point != '.') decimal_point_to_std(buf);
     return (out_len >= (int)len) ? 0 : out_len;
@@ -303,7 +333,7 @@ static yy_inline bool check_real_overflow(const char *str, num_type type) {
     
     f64 val = 0;
     if (!f64_read(str, &val)) return false;
-    return !!isinf(val);
+    return f64_isinf(val);
 }
 
 /// Check JSON number string and return its type.
@@ -462,7 +492,7 @@ static yy_inline num_info get_num_info(const char *str) {
     f64 val = 0;
     yy_assert(f64_read(str, &val) > 0);
     info.f = val;
-    info.real_overflow = !!isinf(val);
+    info.real_overflow = f64_isinf(val);
     return info;
 }
 
@@ -546,7 +576,7 @@ static void validate_real_output(const char *str,
     f64 num = val->uni.f64;
     if (to_float) num = (f32)num;
     
-    if (isfinite(num)) {
+    if (f64_isfinite(num)) {
         expect(get_num_type(str, false) == NUM_TYPE_REAL);
         expect(check_num_compact(str, NUM_TYPE_REAL));
         
@@ -593,7 +623,7 @@ static void validate_real_output(const char *str,
         }
 #if !YYJSON_DISABLE_NON_STANDARD
         else if (allow_inf_nan) {
-            if (isnan(num)) {
+            if (f64_isnan(num)) {
                 expect(!strcmp(str, "NaN"));
             } else if (num > 0) {
                 expect(!strcmp(str, "Infinity"));
@@ -680,8 +710,8 @@ static void test_num_read(num_info info, yyjson_read_flag flg) {
         if (flg_inf_nan && non_std) {
             if (flg_num_raw) {
                 expect(yyjson_is_raw(val) && !strcmp(yyjson_get_raw(val), str));
-            } else if (isnan(info.f)) {
-                expect(yyjson_is_real(val) && isnan(yyjson_get_real(val)));
+            } else if (f64_isnan(info.f)) {
+                expect(yyjson_is_real(val) && f64_isnan(yyjson_get_real(val)));
             } else {
                 expect(yyjson_is_real(val) && yyjson_get_real(val) == info.f);
             }
