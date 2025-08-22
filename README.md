@@ -20,7 +20,7 @@ A high performance JSON library written in ANSI C.
 - **Developer-Friendly**: easy integration with just one `.h` and one `.c` file.
 
 # Limitations
-- An array or object is stored as a [data structure](https://ibireme.github.io/yyjson/doc/doxygen/html/md_doc__data_structure.html) such as linked list, which makes accessing elements by index or key slower than using an iterator.
+- An array or object is stored as a [data structure](https://ibireme.github.io/yyjson/doc/doxygen/html/data-structures.html) such as linked list, which makes accessing elements by index or key slower than using an iterator.
 - Duplicate keys are allowed in an object, and the order of the keys is preserved.
 - JSON parsing result is immutable, requiring a `mutable copy` for modification.
 
