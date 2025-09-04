@@ -2171,15 +2171,15 @@ static_inline void *mem_align_up(void *mem, usize align) {
  * This is a simple libc memory allocator wrapper.
  *============================================================================*/
 
-static void *default_malloc(void *ctx, usize size) {
+static void * __stdcall default_malloc(void *ctx, usize size) {
     return malloc(size);
 }
 
-static void *default_realloc(void *ctx, void *ptr, usize old_size, usize size) {
+static void * __stdcall default_realloc(void *ctx, void *ptr, usize old_size, usize size) {
     return realloc(ptr, size);
 }
 
-static void default_free(void *ctx, void *ptr) {
+static void __stdcall default_free(void *ctx, void *ptr) {
     free(ptr);
 }
 
@@ -2195,15 +2195,15 @@ static const yyjson_alc YYJSON_DEFAULT_ALC = {
  * malloc/realloc/free function pointers are not null.
  *============================================================================*/
 
-static void *null_malloc(void *ctx, usize size) {
+static void * __stdcall null_malloc(void *ctx, usize size) {
     return NULL;
 }
 
-static void *null_realloc(void *ctx, void *ptr, usize old_size, usize size) {
+static void * __stdcall null_realloc(void *ctx, void *ptr, usize old_size, usize size) {
     return NULL;
 }
 
-static void null_free(void *ctx, void *ptr) {
+static void __stdcall null_free(void *ctx, void *ptr) {
     return;
 }
 
@@ -2238,7 +2238,7 @@ static_inline void pool_size_align(usize *size) {
     *size = size_align_up(*size, sizeof(pool_chunk)) + sizeof(pool_chunk);
 }
 
-static void *pool_malloc(void *ctx_ptr, usize size) {
+static void * __stdcall pool_malloc(void *ctx_ptr, usize size) {
     /* assert(size != 0) */
     pool_ctx *ctx = (pool_ctx *)ctx_ptr;
     pool_chunk *next, *prev = NULL, *cur = ctx->free_list;
@@ -2270,7 +2270,7 @@ static void *pool_malloc(void *ctx_ptr, usize size) {
     return NULL;
 }
 
-static void pool_free(void *ctx_ptr, void *ptr) {
+static void __stdcall pool_free(void *ctx_ptr, void *ptr) {
     /* assert(ptr != NULL) */
     pool_ctx *ctx = (pool_ctx *)ctx_ptr;
     pool_chunk *cur = ((pool_chunk *)ptr) - 1;
@@ -2296,7 +2296,7 @@ static void pool_free(void *ctx_ptr, void *ptr) {
     }
 }
 
-static void *pool_realloc(void *ctx_ptr, void *ptr,
+static void * __stdcall pool_realloc(void *ctx_ptr, void *ptr,
                           usize old_size, usize size) {
     /* assert(ptr != NULL && size != 0 && old_size < size) */
     pool_ctx *ctx = (pool_ctx *)ctx_ptr;
@@ -2419,7 +2419,7 @@ static_inline void dyn_chunk_list_add(dyn_chunk *list, dyn_chunk *chunk) {
     list->next = chunk;
 }
 
-static void *dyn_malloc(void *ctx_ptr, usize size) {
+static void * __stdcall dyn_malloc(void *ctx_ptr, usize size) {
     /* assert(size != 0) */
     const yyjson_alc def = YYJSON_DEFAULT_ALC;
     dyn_ctx *ctx = (dyn_ctx *)ctx_ptr;
@@ -2457,7 +2457,7 @@ static void *dyn_malloc(void *ctx_ptr, usize size) {
     }
 }
 
-static void *dyn_realloc(void *ctx_ptr, void *ptr,
+static void * __stdcall dyn_realloc(void *ctx_ptr, void *ptr,
                           usize old_size, usize size) {
     /* assert(ptr != NULL && size != 0 && old_size < size) */
     const yyjson_alc def = YYJSON_DEFAULT_ALC;
@@ -2476,7 +2476,7 @@ static void *dyn_realloc(void *ctx_ptr, void *ptr,
     return new_chunk ? (void *)(new_chunk + 1) : NULL;
 }
 
-static void dyn_free(void *ctx_ptr, void *ptr) {
+static void __stdcall dyn_free(void *ctx_ptr, void *ptr) {
     /* assert(ptr != NULL) */
     dyn_ctx *ctx = (dyn_ctx *)ctx_ptr;
     dyn_chunk *chunk = (dyn_chunk *)ptr - 1, *prev;

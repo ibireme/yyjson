@@ -337,7 +337,7 @@
 
 /** inline function export */
 #ifndef yyjson_api_inline
-#   define yyjson_api_inline static yyjson_inline
+#   define yyjson_api_inline yyjson_inline yyjson_api
 #endif
 
 /** stdint (C89 compatible) */
@@ -585,11 +585,11 @@ typedef uint8_t yyjson_subtype;
  */
 typedef struct yyjson_alc {
     /** Same as libc's malloc(size), should not be NULL. */
-    void *(*malloc)(void *ctx, size_t size);
+    void *(__stdcall *malloc)(void *ctx, size_t size);
     /** Same as libc's realloc(ptr, size), should not be NULL. */
-    void *(*realloc)(void *ctx, void *ptr, size_t old_size, size_t size);
+    void *(__stdcall *realloc)(void *ctx, void *ptr, size_t old_size, size_t size);
     /** Same as libc's free(ptr), should not be NULL. */
-    void (*free)(void *ctx, void *ptr);
+    void (__stdcall *free)(void *ctx, void *ptr);
     /** A context for malloc/realloc/free, can be NULL. */
     void *ctx;
 } yyjson_alc;
@@ -8208,6 +8208,13 @@ yyjson_api_inline yyjson_mut_val *unsafe_yyjson_mut_get_pointer(
 #endif /* YYJSON_DISABLE_UTILS */
 
 
+yyjson_api_inline void yyjson_free(void* ptr) {
+    free(ptr);
+}
+
+yyjson_api_inline void* yyjson_malloc(size_t size) {
+    return malloc(size);
+}
 
 /*==============================================================================
  * MARK: - Compiler Hint End
