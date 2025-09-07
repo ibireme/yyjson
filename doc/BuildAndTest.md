@@ -68,7 +68,7 @@ Supported CMake options (default OFF):
 - `-DYYJSON_DISABLE_WRITER=ON` Disable JSON writer if you don't need it.
 - `-DYYJSON_DISABLE_INCR_READER=ON` Disable incremental reader if you don't need it.
 - `-DYYJSON_DISABLE_UTILS=ON` Disable JSON Pointer, JSON Patch and JSON Merge Patch.
-- `-DYYJSON_DISABLE_FAST_FP_CONV=ON` Disable builtin fast floating-pointer conversion.
+- `-DYYJSON_DISABLE_FAST_FP_CONV=ON` Disable builtin fast floating point number conversion.
 - `-DYYJSON_DISABLE_NON_STANDARD=ON` Disable non-standard JSON support at compile-time.
 - `-DYYJSON_DISABLE_UTF8_VALIDATION=ON` Disable UTF-8 validation at compile-time.
 - `-DYYJSON_DISABLE_UNALIGNED_MEMORY_ACCESS=ON` Disable unaligned memory access support at compile-time.
@@ -263,6 +263,12 @@ Define as 1 to disable non-standard JSON features support at compile-time:
 - YYJSON_READ_ALLOW_TRAILING_COMMAS
 - YYJSON_READ_ALLOW_INVALID_UNICODE
 - YYJSON_READ_ALLOW_BOM
+- YYJSON_READ_ALLOW_EXT_NUMBER
+- YYJSON_READ_ALLOW_EXT_ESCAPE
+- YYJSON_READ_ALLOW_EXT_WHITESPACE
+- YYJSON_READ_ALLOW_SINGLE_QUOTED_STR
+- YYJSON_READ_ALLOW_UNQUOTED_KEY
+- YYJSON_READ_JSON5
 - YYJSON_WRITE_ALLOW_INF_AND_NAN
 - YYJSON_WRITE_ALLOW_INVALID_UNICODE
 

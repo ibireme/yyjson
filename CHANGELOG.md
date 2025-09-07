@@ -4,7 +4,8 @@ All notable changes to this project will be documented in this file.
 
 
 ## Unreleased
-### Added a set of `write_buf()` functions for writing JSON to a buffer without allocation.
+#### Added 
+- Add a set of `write_buf()` functions for writing JSON to a buffer without allocation.
 
 
 ## 0.12.0 (2025-08-18)

@@ -1574,7 +1574,7 @@ There are several flags that can be used to adjust the number writing strategy:
 See the `Writer flag` section for more details.
 
 There are also some helper functions to control the output format of individual values:
-- `yyjson_set_fp_to_float(yyjson_val *val, bool fpt)` and `yyjson_mut_set_fp_to_float(yyjson_mut_val *val, bool flt)` write this real number with `float` or `double` precision.
+- `yyjson_set_fp_to_float(yyjson_val *val, bool flt)` and `yyjson_mut_set_fp_to_float(yyjson_mut_val *val, bool flt)` write this real number with `float` or `double` precision.
 - `yyjson_set_fp_to_fixed(yyjson_val *val, int prec)` and `yyjson_mut_set_fp_to_fixed(yyjson_mut_val *val, int prec)` write this real number using fixed-point notation, the prec should be in the range of 1 to 15.
 
 ## Number conversion function
@@ -1582,7 +1582,7 @@ There are also some helper functions to control the output format of individual 
 There are also two utility functions provide direct access to the library's internal number conversion logic.  
 They are intended for standalone use and typically do not allocate memory.
 ```c
-// parse a number from strin
+// parse a number from string
 const char *yyjson_read_number(const char *dat,
                                yyjson_val *val,
                                yyjson_read_flag flg,
