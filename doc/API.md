@@ -492,7 +492,7 @@ For example:
 
 ---------------
 # Writing JSON
-The library provides 4 sets of functions for writing JSON.<br/>
+The library provides 5 sets of functions for writing JSON.<br/>
 Each function accepts an input of JSON document or root value, and returns a UTF-8 string or file.
 
 ## Write JSON to string
@@ -592,6 +592,42 @@ bool suc = yyjson_write_fp(fp, doc, YYJSON_WRITE_PRETTY, NULL, NULL);
 if (fp) fclose(fp);
 if (suc) printf("OK");
 ```
+
+## Write JSON to buffer
+The `buf` is output buffer, if you pass NULL, the function will return 0.<br/>
+The `buf_len` is the length of output buffer. If the length is too small, the function will fail and return 0.<br/>
+The `doc/val` is JSON document or root value, if you pass NULL, you will get an error.<br/>
+The `flg` is writer flag, pass 0 if you don't need it, see `writer flag` for details.<br/>
+The `err` is a pointer to receive error message, pass NULL if you don't need it.<br/>
+This function returns the number of bytes written (excluding the null terminator), or 0 on failure.<br/>
+
+This function does not allocate memory, but the buffer must be larger than the final JSON size to allow temporary space.
+ 
+ The extra space is needed temporarily for each value while it is written, and is reused for later values:
+ - Number: `40`
+ - String: `16 + (str_len * 6)`
+ - Other values: `16`
+ - Nesting depth: `16 * max_json_depth`
+
+```c
+// doc -> buffer
+bool yyjson_write_fp(char *buf, size_t buf_len, const yyjson_doc *doc, yyjson_write_flag flg, yyjson_write_err *err);
+// mut_doc -> buffer
+bool yyjson_mut_write_fp(char *buf, size_t buf_len, const yyjson_mut_doc *doc, yyjson_write_flag flg, yyjson_write_err *err);
+// val -> buffer
+bool yyjson_val_write_fp(char *buf, size_t buf_len, const yyjson_val *val, yyjson_write_flag flg, yyjson_write_err *err);
+// mut_val -> buffer
+bool yyjson_mut_val_write_buf(char *buf, size_t buf_len, const yyjson_mut_val *val, yyjson_write_flag flg, yyjson_write_err *err);
+```
+
+Sample code:
+
+```c
+char buf[512];
+size_t len = yyjson_write_buf(buf, sizeof(buf), doc, YYJSON_WRITE_PRETTY, NULL);
+if (len > 0) printf("OK, output:\n%s\n", buf);
+```
+
 
 ## Write JSON with options
 The `doc/val` is JSON document or root value, if you pass NULL, you will get NULL result.<br/>

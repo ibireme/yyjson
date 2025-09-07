@@ -1339,6 +1339,30 @@ yyjson_api bool yyjson_write_fp(FILE *fp,
                                 yyjson_write_err *err);
 
 /**
+ Write a document into a buffer.
+
+ This function does not allocate memory, but the buffer must be larger than the
+ final JSON size to allow temporary space. See `API.md` for details.
+
+ @param buf The output buffer.
+    If the buffer is NULL, the function will fail and return 0.
+ @param buf_len The buffer length.
+    If the buf_len is too small, the function will fail and return 0.
+ @param doc doc The JSON document.
+    If this doc is NULL or has no root, the function will fail and return 0.
+ @param flg flg The JSON write options.
+    Multiple options can be combined with `|` operator. 0 means no options.
+ @param err err A pointer to receive error information.
+    Pass NULL if you don't need error information.
+ @return The number of bytes written (excluding the null terminator),
+    or 0 on failure.
+ */
+yyjson_api size_t yyjson_write_buf(char *buf, size_t buf_len,
+                                   const yyjson_doc *doc,
+                                   yyjson_write_flag flg,
+                                   yyjson_write_err *err);
+
+/**
  Write a document to JSON string.
 
  This function is thread-safe.
@@ -1441,6 +1465,30 @@ yyjson_api bool yyjson_mut_write_fp(FILE *fp,
                                     yyjson_write_flag flg,
                                     const yyjson_alc *alc,
                                     yyjson_write_err *err);
+
+/**
+ Write a document into a buffer.
+ 
+ This function does not allocate memory, but the buffer must be larger than the
+ final JSON size to allow temporary space. See `API.md` for details.
+ 
+ @param buf The output buffer.
+    If the buffer is NULL, the function will fail and return 0.
+ @param buf_len The buffer length.
+    If the buf_len is too small, the function will fail and return 0.
+ @param doc doc The JSON document.
+    If this doc is NULL or has no root, the function will fail and return 0.
+ @param flg flg The JSON write options.
+    Multiple options can be combined with `|` operator. 0 means no options.
+ @param err err A pointer to receive error information.
+    Pass NULL if you don't need error information.
+ @return The number of bytes written (excluding the null terminator),
+    or 0 on failure.
+ */
+yyjson_api size_t yyjson_mut_write_buf(char *buf, size_t buf_len,
+                                       const yyjson_mut_doc *doc,
+                                       yyjson_write_flag flg,
+                                       yyjson_write_err *err);
 
 /**
  Write a document to JSON string.
@@ -1550,6 +1598,30 @@ yyjson_api bool yyjson_val_write_fp(FILE *fp,
                                     yyjson_write_err *err);
 
 /**
+ Write a value into a buffer.
+
+ This function does not allocate memory, but the buffer must be larger than the
+ final JSON size to allow temporary space. See `API.md` for details.
+
+ @param buf The output buffer.
+    If the buffer is NULL, the function will fail and return 0.
+ @param buf_len The buffer length.
+    If the buf_len is too small, the function will fail and return 0.
+ @param val The JSON root value.
+    If this parameter is NULL, the function will fail and return NULL.
+ @param flg flg The JSON write options.
+    Multiple options can be combined with `|` operator. 0 means no options.
+ @param err err A pointer to receive error information.
+    Pass NULL if you don't need error information.
+ @return The number of bytes written (excluding the null terminator),
+    or 0 on failure.
+ */
+yyjson_api size_t yyjson_val_write_buf(char *buf, size_t buf_len,
+                                       const yyjson_val *val,
+                                       yyjson_write_flag flg,
+                                       yyjson_write_err *err);
+
+/**
  Write a value to JSON string.
 
  This function is thread-safe.
@@ -1650,6 +1722,30 @@ yyjson_api bool yyjson_mut_val_write_fp(FILE *fp,
                                         yyjson_write_flag flg,
                                         const yyjson_alc *alc,
                                         yyjson_write_err *err);
+
+/**
+ Write a value into a buffer.
+
+ This function does not allocate memory, but the buffer must be larger than the
+ final JSON size to allow temporary space. See `API.md` for details.
+
+ @param buf The output buffer.
+    If the buffer is NULL, the function will fail and return 0.
+ @param buf_len The buffer length.
+    If the buf_len is too small, the function will fail and return 0.
+ @param val The JSON root value.
+    If this parameter is NULL, the function will fail and return NULL.
+ @param flg flg The JSON write options.
+    Multiple options can be combined with `|` operator. 0 means no options.
+ @param err err A pointer to receive error information.
+    Pass NULL if you don't need error information.
+ @return The number of bytes written (excluding the null terminator),
+    or 0 on failure.
+ */
+yyjson_api size_t yyjson_mut_val_write_buf(char *buf, size_t buf_len,
+                                           const yyjson_mut_val *val,
+                                           yyjson_write_flag flg,
+                                           yyjson_write_err *err);
 
 /**
  Write a value to JSON string.
