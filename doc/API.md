@@ -12,7 +12,7 @@ All public functions and structs are prefixed with `yyjson_`, and all constants 
 
 ## API for immutable/mutable data
 
-The library have 2 types of data structures: immutable and mutable:
+The library has 2 types of data structures: immutable and mutable:
 
 |          | Immutable  | Mutable        |
 |----------|------------|----------------|
@@ -282,7 +282,7 @@ if (!doc) {
 yyjson_doc_free(doc);
 ```
 
-The pos in the error information indicates the byte position where the error occurred. If you need the line and column number of the error, you can use the `yyjson_locate_pos()` function. Note that the `line` and `column` start from 1, while `character` starts from 0. All values are calculated based on Unicode characters to ensure compatibility with various text editors.
+The `pos` in the error information indicates the byte position where the error occurred. If you need the line and column number of the error, you can use the `yyjson_locate_pos()` function. Note that `line` and `column` start from 1, while `character` starts from 0. All values are calculated based on Unicode characters to ensure compatibility with various text editors.
 
 Sample code:
 ```c
@@ -338,7 +338,7 @@ free(buf); // the input dat should free after document.
 ```
 
 ### **YYJSON_READ_STOP_WHEN_DONE**
-Stop parsing when reaching the end of a JSON document instead of issues an error if there's additional content after it.<br/>
+Stop parsing when reaching the end of a JSON document instead of issuing an error if there's additional content after it.<br/>
 
 This option is useful for parsing small pieces of JSON within larger data, such as [NDJSON](https://en.wikipedia.org/wiki/JSON_streaming).<br/>
 
@@ -502,7 +502,7 @@ The `len` is a pointer to receive output length (not including the
     null-terminator), pass NULL if you don't need it.<br/>
 This function returns a new JSON string, or NULL if error occurs.<br/>
 The string is encoded as UTF-8 with a null-terminator. <br/>
-You should use free() or alc->free() to release it when it's no longer needed.
+You should use `free()` or `alc->free()` to release it when it's no longer needed.
 
 ```c
 // doc -> str
@@ -611,11 +611,11 @@ This function does not allocate memory, but the buffer must be larger than the f
 
 ```c
 // doc -> buffer
-size_t yyjson_write_fp(char *buf, size_t buf_len, const yyjson_doc *doc, yyjson_write_flag flg, yyjson_write_err *err);
+size_t yyjson_write_buf(char *buf, size_t buf_len, const yyjson_doc *doc, yyjson_write_flag flg, yyjson_write_err *err);
 // mut_doc -> buffer
-size_t yyjson_mut_write_fp(char *buf, size_t buf_len, const yyjson_mut_doc *doc, yyjson_write_flag flg, yyjson_write_err *err);
+size_t yyjson_mut_write_buf(char *buf, size_t buf_len, const yyjson_mut_doc *doc, yyjson_write_flag flg, yyjson_write_err *err);
 // val -> buffer
-size_t yyjson_val_write_fp(char *buf, size_t buf_len, const yyjson_val *val, yyjson_write_flag flg, yyjson_write_err *err);
+size_t yyjson_val_write_buf(char *buf, size_t buf_len, const yyjson_val *val, yyjson_write_flag flg, yyjson_write_err *err);
 // mut_val -> buffer
 size_t yyjson_mut_val_write_buf(char *buf, size_t buf_len, const yyjson_mut_val *val, yyjson_write_flag flg, yyjson_write_err *err);
 ```
@@ -789,7 +789,7 @@ Each JSON Value has a type and subtype, as specified in the table:
 | YYJSON_TYPE_NULL |                      | `null` literal          |
 | YYJSON_TYPE_BOOL | YYJSON_SUBTYPE_FALSE | `false` literal         |
 | YYJSON_TYPE_BOOL | YYJSON_SUBTYPE_TRUE  | `true` literal          |
-| YYJSON_TYPE_NUM  | YYJSON_SUBTYPE_UINT  | `uint64_t` nummer       |
+| YYJSON_TYPE_NUM  | YYJSON_SUBTYPE_UINT  | `uint64_t` number       |
 | YYJSON_TYPE_NUM  | YYJSON_SUBTYPE_SINT  | `int64_t` number        |
 | YYJSON_TYPE_NUM  | YYJSON_SUBTYPE_REAL  | `double` number         |
 | YYJSON_TYPE_STR  |                      | String value            |
@@ -1751,7 +1751,7 @@ alc->free(alc->ctx, json);
 # Stack Memory Usage
 Most functions in the library use fixed-size stack memory. This includes functions for JSON reading and writing, as well as JSON Pointer handling.
 
-However, a few functions use recursion and may cause a stack overflow if the object level is too deep. These functions are marked with the following warning in the header file: 
+However, a few functions use recursion and may cause a stack overflow if the nesting level is too deep. These functions are marked with the following warning in the header file: 
 > @warning 
 > This function is recursive and may cause a stack overflow 
 > if the object level is too deep.
