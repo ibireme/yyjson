@@ -611,13 +611,13 @@ This function does not allocate memory, but the buffer must be larger than the f
 
 ```c
 // doc -> buffer
-bool yyjson_write_fp(char *buf, size_t buf_len, const yyjson_doc *doc, yyjson_write_flag flg, yyjson_write_err *err);
+size_t yyjson_write_fp(char *buf, size_t buf_len, const yyjson_doc *doc, yyjson_write_flag flg, yyjson_write_err *err);
 // mut_doc -> buffer
-bool yyjson_mut_write_fp(char *buf, size_t buf_len, const yyjson_mut_doc *doc, yyjson_write_flag flg, yyjson_write_err *err);
+size_t yyjson_mut_write_fp(char *buf, size_t buf_len, const yyjson_mut_doc *doc, yyjson_write_flag flg, yyjson_write_err *err);
 // val -> buffer
-bool yyjson_val_write_fp(char *buf, size_t buf_len, const yyjson_val *val, yyjson_write_flag flg, yyjson_write_err *err);
+size_t yyjson_val_write_fp(char *buf, size_t buf_len, const yyjson_val *val, yyjson_write_flag flg, yyjson_write_err *err);
 // mut_val -> buffer
-bool yyjson_mut_val_write_buf(char *buf, size_t buf_len, const yyjson_mut_val *val, yyjson_write_flag flg, yyjson_write_err *err);
+size_t yyjson_mut_val_write_buf(char *buf, size_t buf_len, const yyjson_mut_val *val, yyjson_write_flag flg, yyjson_write_err *err);
 ```
 
 Sample code:
