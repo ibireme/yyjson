@@ -418,8 +418,8 @@
 
 /** stdbool (C89 compatible) */
 #if (defined(YYJSON_HAS_STDBOOL_H) && YYJSON_HAS_STDBOOL_H) || \
-    (yyjson_has_include(<stdbool.h>) && !defined(__STRICT_ANSI__)) || \
-    YYJSON_MSC_VER >= 1800 || YYJSON_STDC_VER >= 199901L
+    YYJSON_MSC_VER >= 1800 || YYJSON_STDC_VER >= 199901L || \
+    (yyjson_has_include(<stdbool.h>) && !defined(__STRICT_ANSI__))
 #   include <stdbool.h>
 #elif !defined(__bool_true_false_are_defined)
 #   define __bool_true_false_are_defined 1
@@ -474,7 +474,7 @@ extern "C" {
 #   pragma clang diagnostic push
 #   pragma clang diagnostic ignored "-Wunused-function"
 #   pragma clang diagnostic ignored "-Wunused-parameter"
-#elif defined(__GNUC__)
+#elif YYJSON_IS_REAL_GCC
 #   if (__GNUC__ > 4) || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
 #       pragma GCC diagnostic push
 #   endif
