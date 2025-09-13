@@ -35,7 +35,7 @@
 #   pragma clang diagnostic ignored "-Wunused-label"
 #   pragma clang diagnostic ignored "-Wunused-macros"
 #   pragma clang diagnostic ignored "-Wunused-variable"
-#elif defined(__GNUC__)
+#elif YYJSON_IS_REAL_GCC
 #   pragma GCC diagnostic ignored "-Wunused-function"
 #   pragma GCC diagnostic ignored "-Wunused-parameter"
 #   pragma GCC diagnostic ignored "-Wunused-label"
