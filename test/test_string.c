@@ -1455,7 +1455,7 @@ static void test_unquoted_key(void) {
 /*----------------------------------------------------------------------------*/
 
 static void test_invalid_unicode_flags(void) {
-#if !YYJSON_DISABLE_READER
+#if !YYJSON_DISABLE_READER && !YYJSON_DISABLE_NON_STANDARD
     /* unpaired surrogate */
     char inv_sur_hi[8 + YYJSON_PADDING_SIZE];
     memcpy(inv_sur_hi, "\"\\uD83D\"", 8);
@@ -1562,7 +1562,7 @@ static void test_invalid_unicode_flags(void) {
     yy_assert(yyjson_get_len(val) == 3);
     yy_assert(yyjson_get_subtype(val) == YYJSON_SUBTYPE_UNIERR);
     yyjson_doc_free(doc);
-#endif
+#endif /* !YYJSON_DISABLE_READER && !YYJSON_DISABLE_NON_STANDARD */
 }
 
 
