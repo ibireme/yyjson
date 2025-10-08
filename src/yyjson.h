@@ -142,6 +142,9 @@
 #ifndef YYJSON_HAS_STDBOOL_H
 #endif
 
+/* Define to an integer to set a depth limit for containers (arrays, objects). */
+#ifndef YYJSON_READER_DEPTH_LIMIT
+#endif
 
 
 /*==============================================================================
@@ -874,6 +877,9 @@ static const yyjson_read_code YYJSON_READ_ERROR_FILE_READ               = 13;
 
 /** Incomplete input during incremental parsing; parsing state is preserved. */
 static const yyjson_read_code YYJSON_READ_ERROR_MORE                    = 14;
+
+/** Read depth limit exceeded. */
+static const yyjson_read_code YYJSON_READ_ERROR_DEPTH                   = 15;
 
 /** Error information for JSON reader. */
 typedef struct yyjson_read_err {

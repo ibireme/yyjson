@@ -338,6 +338,9 @@ uint32_t yyjson_version(void) {
 #ifndef YYJSON_DISABLE_UTF8_VALIDATION
 #define YYJSON_DISABLE_UTF8_VALIDATION 0
 #endif
+#ifndef YYJSON_READER_DEPTH_LIMIT
+#define YYJSON_READER_DEPTH_LIMIT 0
+#endif
 
 
 
@@ -438,6 +441,7 @@ uint32_t yyjson_version(void) {
 #define MSG_ERR_UTF8    "invalid utf-8 encoding in string"
 #define MSG_ERR_UTF16   "UTF-16 encoding is not supported"
 #define MSG_ERR_UTF32   "UTF-32 encoding is not supported"
+#define MSG_DEPTH       "depth limit exceeded"
 
 /* U64 constant values */
 #undef  U64_MAX
@@ -5306,6 +5310,7 @@ fail_literal_null:  return_err(cur, LITERAL, MSG_CHAR_N);
 fail_character:     return_err(cur, UNEXPECTED_CHARACTER, MSG_CHAR);
 fail_comment:       return_err(cur, INVALID_COMMENT, MSG_COMMENT);
 fail_garbage:       return_err(cur, UNEXPECTED_CONTENT, MSG_GARBAGE);
+fail_depth:         return_err(cur, DEPTH, MSG_DEPTH);
 
 #undef return_err
 }
@@ -5366,6 +5371,10 @@ static_inline yyjson_doc *read_root_minify(u8 *hdr, u8 *cur, u8 *eof,
     u8 *raw_ptr = raw_end;
     u8 **pre = &raw_ptr; /* previous raw end pointer */
 
+#if YYJSON_READER_DEPTH_LIMIT
+    u32 container_depth = 0; /* current array/object depth */
+#endif
+
     dat_len = has_flg(STOP_WHEN_DONE) ? 256 : (usize)(eof - cur);
     hdr_len = sizeof(yyjson_doc) / sizeof(yyjson_val);
     hdr_len += (sizeof(yyjson_doc) % sizeof(yyjson_val)) > 0;
@@ -5391,6 +5400,12 @@ static_inline yyjson_doc *read_root_minify(u8 *hdr, u8 *cur, u8 *eof,
     }
 
 arr_begin:
+#if YYJSON_READER_DEPTH_LIMIT
+    container_depth++;
+    if (unlikely(container_depth >= YYJSON_READER_DEPTH_LIMIT)) {
+        goto fail_depth;
+    }
+#endif
     /* save current container */
     ctn->tag = (((u64)ctn_len + 1) << YYJSON_TAG_BIT) |
                (ctn->tag & YYJSON_TAG_MASK);
@@ -5496,6 +5511,9 @@ arr_val_end:
     goto fail_character_arr_end;
 
 arr_end:
+#if YYJSON_READER_DEPTH_LIMIT
+    container_depth--;
+#endif
     /* get parent container */
     ctn_parent = (yyjson_val *)(void *)((u8 *)ctn - ctn->uni.ofs);
 
@@ -5514,6 +5532,12 @@ arr_end:
     }
 
 obj_begin:
+#if YYJSON_READER_DEPTH_LIMIT
+    container_depth++;
+    if (unlikely(container_depth >= YYJSON_READER_DEPTH_LIMIT)) {
+        goto fail_depth;
+    }
+#endif
     /* push container */
     ctn->tag = (((u64)ctn_len + 1) << YYJSON_TAG_BIT) |
                (ctn->tag & YYJSON_TAG_MASK);
@@ -5660,6 +5684,9 @@ obj_val_end:
     goto fail_character_obj_end;
 
 obj_end:
+#if YYJSON_READER_DEPTH_LIMIT
+    container_depth--;
+#endif
     /* pop container */
     ctn_parent = (yyjson_val *)(void *)((u8 *)ctn - ctn->uni.ofs);
     /* point to the next value */
@@ -5709,6 +5736,7 @@ fail_character_obj_sep: return_err(cur, UNEXPECTED_CHARACTER, MSG_OBJ_SEP);
 fail_character_obj_end: return_err(cur, UNEXPECTED_CHARACTER, MSG_OBJ_END);
 fail_comment:           return_err(cur, INVALID_COMMENT, MSG_COMMENT);
 fail_garbage:           return_err(cur, UNEXPECTED_CONTENT, MSG_GARBAGE);
+fail_depth:             return_err(cur, DEPTH, MSG_DEPTH);
 
 #undef val_incr
 #undef return_err
@@ -5769,6 +5797,9 @@ static_inline yyjson_doc *read_root_pretty(u8 *hdr, u8 *cur, u8 *eof,
     u8 raw_end[1]; /* raw end for null-terminator */
     u8 *raw_ptr = raw_end;
     u8 **pre = &raw_ptr; /* previous raw end pointer */
+#if YYJSON_READER_DEPTH_LIMIT
+    u32 container_depth = 0; /* current array/object depth */
+#endif
 
     dat_len = has_flg(STOP_WHEN_DONE) ? 256 : (usize)(eof - cur);
     hdr_len = sizeof(yyjson_doc) / sizeof(yyjson_val);
@@ -5797,6 +5828,13 @@ static_inline yyjson_doc *read_root_pretty(u8 *hdr, u8 *cur, u8 *eof,
     }
 
 arr_begin:
+#if YYJSON_READER_DEPTH_LIMIT
+    container_depth++;
+    if (unlikely(container_depth >= YYJSON_READER_DEPTH_LIMIT)) {
+        goto fail_depth;
+    }
+#endif
+
     /* save current container */
     ctn->tag = (((u64)ctn_len + 1) << YYJSON_TAG_BIT) |
                (ctn->tag & YYJSON_TAG_MASK);
@@ -5919,6 +5957,9 @@ arr_val_end:
     goto fail_character_arr_end;
 
 arr_end:
+#if YYJSON_READER_DEPTH_LIMIT
+    container_depth--;
+#endif
     /* get parent container */
     ctn_parent = (yyjson_val *)(void *)((u8 *)ctn - ctn->uni.ofs);
 
@@ -5938,6 +5979,13 @@ arr_end:
     }
 
 obj_begin:
+#if YYJSON_READER_DEPTH_LIMIT
+    container_depth++;
+    if (unlikely(container_depth >= YYJSON_READER_DEPTH_LIMIT)) {
+        goto fail_depth;
+    }
+#endif
+
     /* push container */
     ctn->tag = (((u64)ctn_len + 1) << YYJSON_TAG_BIT) |
                (ctn->tag & YYJSON_TAG_MASK);
@@ -6104,6 +6152,10 @@ obj_val_end:
     goto fail_character_obj_end;
 
 obj_end:
+#if YYJSON_READER_DEPTH_LIMIT
+    container_depth--;
+#endif
+
     /* pop container */
     ctn_parent = (yyjson_val *)(void *)((u8 *)ctn - ctn->uni.ofs);
     /* point to the next value */
@@ -6154,6 +6206,7 @@ fail_character_obj_sep: return_err(cur, UNEXPECTED_CHARACTER, MSG_OBJ_SEP);
 fail_character_obj_end: return_err(cur, UNEXPECTED_CHARACTER, MSG_OBJ_END);
 fail_comment:           return_err(cur, INVALID_COMMENT, MSG_COMMENT);
 fail_garbage:           return_err(cur, UNEXPECTED_CONTENT, MSG_GARBAGE);
+fail_depth:             return_err(cur, DEPTH, MSG_DEPTH);
 
 #undef val_incr
 #undef return_err
@@ -6612,6 +6665,10 @@ yyjson_doc *yyjson_incr_read(yyjson_incr_state *state, size_t len,
     u8 **con = NULL; /* for incremental string parsing */
     u8 saved_end = '\0'; /* saved end char */
 
+#if YYJSON_READER_DEPTH_LIMIT
+    u32 container_depth = 0; /* current array/object depth */
+#endif
+
     /* validate input parameters */
     if (!err) err = &tmp_err;
     if (unlikely(!state)) {
@@ -6733,6 +6790,13 @@ doc_begin:
     return_err(cur, UNEXPECTED_CHARACTER, msg);
 
 arr_begin:
+#if YYJSON_READER_DEPTH_LIMIT
+    container_depth++;
+    if (unlikely(container_depth >= YYJSON_READER_DEPTH_LIMIT)) {
+        goto fail_depth;
+    }
+#endif
+
     /* save current container */
     ctn->tag = (((u64)ctn_len + 1) << YYJSON_TAG_BIT) |
                (ctn->tag & YYJSON_TAG_MASK);
@@ -6822,6 +6886,9 @@ arr_val_end:
     goto fail_character_arr_end;
 
 arr_end:
+#if YYJSON_READER_DEPTH_LIMIT
+    container_depth--;
+#endif
     /* get parent container */
     ctn_parent = (yyjson_val *)(void *)((u8 *)ctn - ctn->uni.ofs);
 
@@ -6840,6 +6907,13 @@ arr_end:
     }
 
 obj_begin:
+#if YYJSON_READER_DEPTH_LIMIT
+    container_depth++;
+    if (unlikely(container_depth >= YYJSON_READER_DEPTH_LIMIT)) {
+        goto fail_depth;
+    }
+#endif
+
     /* push container */
     ctn->tag = (((u64)ctn_len + 1) << YYJSON_TAG_BIT) |
                (ctn->tag & YYJSON_TAG_MASK);
@@ -6954,6 +7028,10 @@ obj_val_end:
     goto fail_character_obj_end;
 
 obj_end:
+#if YYJSON_READER_DEPTH_LIMIT
+    container_depth--;
+#endif
+
     /* pop container */
     ctn_parent = (yyjson_val *)(void *)((u8 *)ctn - ctn->uni.ofs);
     /* point to the next value */
@@ -7020,6 +7098,7 @@ fail_character_obj_key: return_err(cur, UNEXPECTED_CHARACTER, MSG_OBJ_KEY);
 fail_character_obj_sep: return_err(cur, UNEXPECTED_CHARACTER, MSG_OBJ_SEP);
 fail_character_obj_end: return_err(cur, UNEXPECTED_CHARACTER, MSG_OBJ_END);
 fail_garbage:           return_err(cur, UNEXPECTED_CONTENT, MSG_GARBAGE);
+fail_depth:             return_err(cur, DEPTH, MSG_DEPTH);
 
 #undef val_incr
 #undef return_err
