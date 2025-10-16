@@ -46,6 +46,7 @@
 #   pragma warning(disable:4101) /* unreferenced variable */
 #   pragma warning(disable:4102) /* unreferenced label */
 #   pragma warning(disable:4127) /* conditional expression is constant */
+#   pragma warning(disable:4702) /* unreachable code */
 #   pragma warning(disable:4706) /* assignment within conditional expression */
 #endif
 
@@ -341,8 +342,6 @@ uint32_t yyjson_version(void) {
 #ifndef YYJSON_READER_DEPTH_LIMIT
 #define YYJSON_READER_DEPTH_LIMIT 0
 #endif
-
-
 
 /*==============================================================================
  * MARK: - Macros (Private)
