@@ -1190,11 +1190,13 @@ utf8_seq_def(b4_req2, 03, 30, 00, 00)
 /** Maximum pow10 exponent that can be represented exactly as a float64. */
 #define F64_POW10_MAX_EXACT_EXP 22
 
+#if YYJSON_DOUBLE_MATH_CORRECT
 /** Cached pow10 table. */
 static const f64 f64_pow10_table[F64_POW10_MAX_EXACT_EXP + 1] = {
     1e0, 1e1, 1e2, 1e3, 1e4, 1e5, 1e6, 1e7, 1e8, 1e9, 1e10, 1e11, 1e12,
     1e13, 1e14, 1e15, 1e16, 1e17, 1e18, 1e19, 1e20, 1e21, 1e22
 };
+#endif
 
 /** Maximum pow10 exponent that can be represented exactly as a uint64. */
 #define U64_POW10_MAX_EXACT_EXP 19
