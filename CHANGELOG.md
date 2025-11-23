@@ -6,6 +6,13 @@ All notable changes to this project will be documented in this file.
 ## Unreleased
 #### Added 
 - Add a set of `write_buf()` functions for writing JSON to a buffer without allocation.
+- Add optional compile-time JSON depth limit via `YYJSON_READER_DEPTH_LIMIT`.
+
+#### Changed
+- Change `set_int()` parameter type from `int` to `int64_t`.
+
+#### Fixed
+- Fix `tinycc` preprocessor error.
 
 
 ## 0.12.0 (2025-08-18)

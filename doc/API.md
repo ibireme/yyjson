@@ -885,7 +885,7 @@ bool yyjson_set_null(yyjson_val *val);
 bool yyjson_set_bool(yyjson_val *val, bool num);
 bool yyjson_set_uint(yyjson_val *val, uint64_t num);
 bool yyjson_set_sint(yyjson_val *val, int64_t num);
-bool yyjson_set_int(yyjson_val *val, int num);
+bool yyjson_set_int(yyjson_val *val, int64_t num);
 bool yyjson_set_float(yyjson_val *val, float num);
 bool yyjson_set_double(yyjson_val *val, double num);
 bool yyjson_set_real(yyjson_val *val, double num);
