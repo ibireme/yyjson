@@ -205,7 +205,7 @@ The pre-generated Doxygen HTML for the release version can be viewed here:
 
 # Packaging status
 
-[![Packaging status](https://repology.org/badge/vertical-allrepos/yyjson.svg?columns=2)](https://repology.org/project/yyjson/versions)
+[![Packaging status](https://repology.org/badge/vertical-allrepos/yyjson.svg?columns=3)](https://repology.org/project/yyjson/versions)
 
 # Built With yyjson
 
