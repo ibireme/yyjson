@@ -220,6 +220,7 @@ yyjson, feel free to open a PR to add it to this list.
 | [serin][]       | C++ / Python | a C++ and Python serialization library supporting TOON, JSON, and YAML with cross-format conversion. |
 | [cpp-yyjson][]  | C++          | C++ JSON library with a yyjson backend                                                               |
 | [reflect-cpp][] | C++          | C++ library for serialization through automated field name retrieval from structs                    |
+| [xyjson][]      | C++          | C++ proxy and wrapper for yyjson with convenient operator overloading                                |
 | [yyjsonr][]     | R            | R binding for yyjson                                                                                 |
 | [Ananda][]      | Swift        | JSON model decoding based on yyjson                                                                  |
 | [ReerJSON][]    | Swift        | A faster version of JSONDecoder based on yyjson                                                      |
@@ -250,6 +251,7 @@ This project is released under the MIT license.
 [serin]: https://github.com/mohammadraziei/serin
 [cpp-yyjson]: https://github.com/yosh-matsuda/cpp-yyjson
 [reflect-cpp]: https://github.com/getml/reflect-cpp
+[xyjson]: https://github.com/lymslive/xyjson
 [yyjsonr]: https://github.com/coolbutuseless/yyjsonr
 [Ananda]: https://github.com/nixzhu/Ananda
 [ReerJSON]: https://github.com/reers/ReerJSON
