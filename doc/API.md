@@ -794,12 +794,14 @@ Each JSON Value has a type and subtype, as specified in the table:
 | YYJSON_TYPE_NUM  | YYJSON_SUBTYPE_REAL  | `double` number         |
 | YYJSON_TYPE_STR  |                      | String value            |
 | YYJSON_TYPE_STR  | YYJSON_SUBTYPE_NOESC | String value, no-escape |
+| YYJSON_TYPE_STR  | YYJSON_SUBTYPE_UNIERR | String value, invalid unicode |
 | YYJSON_TYPE_ARR  |                      | Array value             |
 | YYJSON_TYPE_OBJ  |                      | Object value            |
 
 - `YYJSON_TYPE_NONE` means invalid value, it does not appear when the JSON is successfully parsed.
 - `YYJSON_TYPE_RAW` only appears when the corresponding flag `YYJSON_READ_XXX_AS_RAW` is used.
 - `YYJSON_SUBTYPE_NOESC` is used to optimize the writing speed of strings that do not need to be escaped. This subtype is used internally, and the user does not need to handle it.
+- `YYJSON_SUBTYPE_UNIERR` marks strings that contained invalid Unicode during parsing. Such strings may require special handling.
 
 The following functions can be used to determine the type of a JSON value.
 
