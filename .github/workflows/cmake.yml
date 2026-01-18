@@ -360,6 +360,27 @@ jobs:
       - name: Build
         run: swift build -c release
 
+  # Check Swift Package Manager with traits (Swift 6.1+)
+  macos_swift_traits:
+    runs-on: macos-15
+    env:
+      DEVELOPER_DIR: "/Applications/Xcode_16.3.app/Contents/Developer"
+    strategy:
+      fail-fast: false
+      matrix:
+        trait:
+          - noReader
+          - noWriter
+          - noIncrementalReader
+          - noUtilities
+          - noFastFloatingPoint
+          - strictStandardJSON
+          - noUTF8Validation
+    steps:
+    - uses: actions/checkout@v4
+    - name: Build
+      run: swift build -c release --traits ${{ matrix.trait }}
+
   # Check Windows MSVC
   windows_msvc:
     runs-on: windows-latest
