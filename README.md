@@ -198,9 +198,9 @@ yyjson_mut_doc_free(doc);
 The latest (unreleased) documentation can be accessed in the [doc](https://github.com/ibireme/yyjson/tree/master/doc) directory.
 The pre-generated Doxygen HTML for the release version can be viewed here:
 * [Home Page](https://ibireme.github.io/yyjson/doc/doxygen/html/)
-    * [Build and test](https://ibireme.github.io/yyjson/doc/doxygen/html/md_doc__build_and_test.html)
-    * [API and sample code](https://ibireme.github.io/yyjson/doc/doxygen/html/md_doc__a_p_i.html)
-    * [Data structure](https://ibireme.github.io/yyjson/doc/doxygen/html/md_doc__data_structure.html)
+    * [Build and test](https://ibireme.github.io/yyjson/doc/doxygen/html/building-and-testing.html)
+    * [API and sample code](https://ibireme.github.io/yyjson/doc/doxygen/html/api.html)
+    * [Data structure](https://ibireme.github.io/yyjson/doc/doxygen/html/data-structures.html)
     * [Changelog](https://ibireme.github.io/yyjson/doc/doxygen/html/md__c_h_a_n_g_e_l_o_g.html)
 
 # Packaging status
