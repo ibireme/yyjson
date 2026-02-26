@@ -28,22 +28,22 @@ For most immutable APIs, you can just add a `mut` after `yyjson_` to get the mut
 char *yyjson_write(yyjson_doc *doc, ...);
 char *yyjson_mut_write(yyjson_mut_doc *doc, ...);
 
-bool yyjson_is_str(yyjson_val *val);
-bool yyjson_mut_is_str(yyjson_mut_val *val);
+bool yyjson_is_str(const yyjson_val *val);
+bool yyjson_mut_is_str(const yyjson_mut_val *val);
 ```
 
 The library also provides some functions to convert values between immutable and mutable:<br/>
 
 ```c
 // doc -> mut_doc
-yyjson_mut_doc *yyjson_doc_mut_copy(yyjson_doc *doc, ...);
+yyjson_mut_doc *yyjson_doc_mut_copy(const yyjson_doc *doc, ...);
 // val -> mut_val
-yyjson_mut_val *yyjson_val_mut_copy(yyjson_val *val, ...);
+yyjson_mut_val *yyjson_val_mut_copy(const yyjson_val *val, ...);
 
 // mut_doc -> doc
-yyjson_doc *yyjson_mut_doc_imut_copy(yyjson_mut_doc *doc, ...);
+yyjson_doc *yyjson_mut_doc_imut_copy(const yyjson_mut_doc *doc, ...);
 // mut_val -> val
-yyjson_doc *yyjson_mut_val_imut_copy(yyjson_mut_val *val, ...);
+yyjson_doc *yyjson_mut_val_imut_copy(const yyjson_mut_val *val, ...);
 ```
 
 ## API for string
@@ -51,9 +51,9 @@ The library supports strings with or without null-terminator ('\0').<br/>
 When you need to use a string without a null-terminator or when you explicitly know the length of the string, you can use the function that ends with `n`, for example:
 ```c
 // null-terminator is required
-bool yyjson_equals_str(yyjson_val *val, const char *str);
+bool yyjson_equals_str(const yyjson_val *val, const char *str);
 // null-terminator is optional
-bool yyjson_equals_strn(yyjson_val *val, const char *str, size_t len);
+bool yyjson_equals_strn(const yyjson_val *val, const char *str, size_t len);
 ```
 
 When creating JSON, yyjson treats strings as constants for better performance. However, if your string will be modified, you should use a function with a `cpy` to copy the string to the document, for example:
@@ -411,9 +411,9 @@ Read all numbers as raw strings without parsing.
 This flag is useful if you want to handle number parsing yourself.
 You can use the following functions to extract raw strings:
 ```c
-bool yyjson_is_raw(yyjson_val *val);
-const char *yyjson_get_raw(yyjson_val *val);
-size_t yyjson_get_len(yyjson_val *val)
+bool yyjson_is_raw(const yyjson_val *val);
+const char *yyjson_get_raw(const yyjson_val *val);
+size_t yyjson_get_len(const yyjson_val *val)
 ```
 
 ### **YYJSON_READ_BIGNUM_AS_RAW**
@@ -761,15 +761,15 @@ This will produce shorter output but may lose some precision.
 You can access the content of a document with the following functions:
 ```c
 // Get the root value of this JSON document.
-yyjson_val *yyjson_doc_get_root(yyjson_doc *doc);
+yyjson_val *yyjson_doc_get_root(const yyjson_doc *doc);
 
 // Get how many bytes are read when parsing JSON.
 // e.g. "[1,2,3]" returns 7.
-size_t yyjson_doc_get_read_size(yyjson_doc *doc);
+size_t yyjson_doc_get_read_size(const yyjson_doc *doc);
 
 // Get total value count in this JSON document.
 // e.g. "[1,2,3]" returns 4 (1 array and 3 numbers).
-size_t yyjson_doc_get_val_count(yyjson_doc *doc);
+size_t yyjson_doc_get_val_count(const yyjson_doc *doc);
 ```
 
 A document holds all the memory for its internal values and strings. When you no longer need it, you should release the document and free up all the memory:
@@ -806,70 +806,70 @@ The following functions can be used to determine the type of a JSON value.
 ```c
 // Returns the type and subtype of a JSON value.
 // Returns 0 if the input is NULL.
-yyjson_type yyjson_get_type(yyjson_val *val);
-yyjson_subtype yyjson_get_subtype(yyjson_val *val);
+yyjson_type yyjson_get_type(const yyjson_val *val);
+yyjson_subtype yyjson_get_subtype(const yyjson_val *val);
 
 // Returns value's tag, see `Data Structures` doc for details.
-uint8_t yyjson_get_tag(yyjson_val *val);
+uint8_t yyjson_get_tag(const yyjson_val *val);
 
 // returns type description, such as:  
 // "null", "string", "array", "object", "true", "false",
 // "uint", "sint", "real", "unknown"
-const char *yyjson_get_type_desc(yyjson_val *val);
+const char *yyjson_get_type_desc(const yyjson_val *val);
 
 // Returns true if the JSON value is specified type.
 // Returns false if the input is NULL or not the specified type.
-bool yyjson_is_null(yyjson_val *val);  // null
-bool yyjson_is_true(yyjson_val *val);  // true
-bool yyjson_is_false(yyjson_val *val); // false
-bool yyjson_is_bool(yyjson_val *val);  // true/false
-bool yyjson_is_uint(yyjson_val *val);  // uint64_t
-bool yyjson_is_sint(yyjson_val *val);  // int64_t
-bool yyjson_is_int(yyjson_val *val);   // uint64_t/int64_t
-bool yyjson_is_real(yyjson_val *val);  // double
-bool yyjson_is_num(yyjson_val *val);   // uint64_t/int64_t/double
-bool yyjson_is_str(yyjson_val *val);   // string
-bool yyjson_is_arr(yyjson_val *val);   // array
-bool yyjson_is_obj(yyjson_val *val);   // object
-bool yyjson_is_ctn(yyjson_val *val);   // array/object
-bool yyjson_is_raw(yyjson_val *val);   // raw string
+bool yyjson_is_null(const yyjson_val *val);  // null
+bool yyjson_is_true(const yyjson_val *val);  // true
+bool yyjson_is_false(const yyjson_val *val); // false
+bool yyjson_is_bool(const yyjson_val *val);  // true/false
+bool yyjson_is_uint(const yyjson_val *val);  // uint64_t
+bool yyjson_is_sint(const yyjson_val *val);  // int64_t
+bool yyjson_is_int(const yyjson_val *val);   // uint64_t/int64_t
+bool yyjson_is_real(const yyjson_val *val);  // double
+bool yyjson_is_num(const yyjson_val *val);   // uint64_t/int64_t/double
+bool yyjson_is_str(const yyjson_val *val);   // string
+bool yyjson_is_arr(const yyjson_val *val);   // array
+bool yyjson_is_obj(const yyjson_val *val);   // object
+bool yyjson_is_ctn(const yyjson_val *val);   // array/object
+bool yyjson_is_raw(const yyjson_val *val);   // raw string
 ```
 
 The following functions can be used to get the contents of the JSON value.
 
 ```c
 // Returns the raw string, or NULL if `val` is not raw type.
-const char *yyjson_get_raw(yyjson_val *val);
+const char *yyjson_get_raw(const yyjson_val *val);
 
 // Returns bool value, or false if `val` is not bool type.
-bool yyjson_get_bool(yyjson_val *val);
+bool yyjson_get_bool(const yyjson_val *val);
 
 // Returns uint64_t value, or 0 if `val` is not uint type.
-uint64_t yyjson_get_uint(yyjson_val *val);
+uint64_t yyjson_get_uint(const yyjson_val *val);
 
 // Returns int64_t value, or 0 if `val` is not sint type.
-int64_t yyjson_get_sint(yyjson_val *val);
+int64_t yyjson_get_sint(const yyjson_val *val);
 
 // Returns int value (may overflow), or 0 if `val` is not uint/sint type.
-int yyjson_get_int(yyjson_val *val);
+int yyjson_get_int(const yyjson_val *val);
 
 // Returns double value, or 0 if `val` is not real type.
-double yyjson_get_real(yyjson_val *val);
+double yyjson_get_real(const yyjson_val *val);
 
 // Returns double value (typecast), or 0 if `val` is not uint/sint/real type.
-double yyjson_get_num(yyjson_val *val);
+double yyjson_get_num(const yyjson_val *val);
 
 // Returns the string value, or NULL if `val` is not string type.
-const char *yyjson_get_str(yyjson_val *val);
+const char *yyjson_get_str(const yyjson_val *val);
 
 // Returns the content length (string length in bytes, array size, 
 // object size), or 0 if the value does not contains length data.
-size_t yyjson_get_len(yyjson_val *val);
+size_t yyjson_get_len(const yyjson_val *val);
 
 // Returns whether the value is equals to a string.
 // Returns false if input is NULL or `val` is not string.
-bool yyjson_equals_str(yyjson_val *val, const char *str);
-bool yyjson_equals_strn(yyjson_val *val, const char *str, size_t len);
+bool yyjson_equals_str(const yyjson_val *val, const char *str);
+bool yyjson_equals_strn(const yyjson_val *val, const char *str, size_t len);
 ```
 
 
@@ -905,19 +905,19 @@ Note that accessing elements by index may take a linear search time. Therefore, 
 ```c
 // Returns the number of elements in this array.
 // Returns 0 if the input is not an array.
-size_t yyjson_arr_size(yyjson_val *arr);
+size_t yyjson_arr_size(const yyjson_val *arr);
 
 // Returns the element at the specified position (linear search time).
 // Returns NULL if the index is out of bounds, or input is not an array.
-yyjson_val *yyjson_arr_get(yyjson_val *arr, size_t idx);
+yyjson_val *yyjson_arr_get(const yyjson_val *arr, size_t idx);
 
 // Returns the first element of this array (constant time).
 // Returns NULL if array is empty or intput is not an array.
-yyjson_val *yyjson_arr_get_first(yyjson_val *arr);
+yyjson_val *yyjson_arr_get_first(const yyjson_val *arr);
 
 // Returns the last element of this array (linear search time).
 // Returns NULL if array is empty or intput is not an array.
-yyjson_val *yyjson_arr_get_last(yyjson_val *arr);
+yyjson_val *yyjson_arr_get_last(const yyjson_val *arr);
 ```
 
 ## JSON Array Iterator
@@ -983,12 +983,12 @@ Note that accessing elements by key may take a linear search time. Therefore, if
 ```c
 // Returns the number of key-value pairs in this object.
 // Returns 0 if input is not an object.
-size_t yyjson_obj_size(yyjson_val *obj);
+size_t yyjson_obj_size(const yyjson_val *obj);
 
 // Returns the value to which the specified key is mapped.
 // Returns NULL if this object contains no mapping for the key.
-yyjson_val *yyjson_obj_get(yyjson_val *obj, const char *key);
-yyjson_val *yyjson_obj_getn(yyjson_val *obj, const char *key, size_t key_len);
+yyjson_val *yyjson_obj_get(const yyjson_val *obj, const char *key);
+yyjson_val *yyjson_obj_getn(const yyjson_val *obj, const char *key, size_t key_len);
 
 // If the order of object's key is known at compile-time,
 // you can use this method to avoid searching the entire object.
@@ -1135,17 +1135,17 @@ void yyjson_mut_doc_set_root(yyjson_mut_doc *doc, yyjson_mut_val *root);
 // Returns NULL on error (e.g. memory allocation failure).
 
 // doc -> mut_doc
-yyjson_mut_doc *yyjson_doc_mut_copy(yyjson_doc *doc, const yyjson_alc *alc);
+yyjson_mut_doc *yyjson_doc_mut_copy(const yyjson_doc *doc, const yyjson_alc *alc);
 // val -> mut_val
-yyjson_mut_val *yyjson_val_mut_copy(yyjson_mut_doc *doc,  yyjson_val *val);
+yyjson_mut_val *yyjson_val_mut_copy(yyjson_mut_doc *doc, const yyjson_val *val);
 // mut_doc -> mut_doc
-yyjson_mut_doc *yyjson_mut_doc_mut_copy(yyjson_mut_doc *doc, const yyjson_alc *alc);
+yyjson_mut_doc *yyjson_mut_doc_mut_copy(const yyjson_mut_doc *doc, const yyjson_alc *alc);
 // mut_val -> mut_val
-yyjson_mut_val *yyjson_mut_val_mut_copy(yyjson_mut_doc *doc, yyjson_mut_val *val);
+yyjson_mut_val *yyjson_mut_val_mut_copy(yyjson_mut_doc *doc, const yyjson_mut_val *val);
 // mut_doc -> doc
-yyjson_doc *yyjson_mut_doc_imut_copy(yyjson_mut_doc *doc, yyjson_alc *alc);
+yyjson_doc *yyjson_mut_doc_imut_copy(const yyjson_mut_doc *doc, const yyjson_alc *alc);
 // mut_val -> doc
-yyjson_doc *yyjson_mut_val_imut_copy(yyjson_mut_val *val, yyjson_alc *alc);
+yyjson_doc *yyjson_mut_val_imut_copy(const yyjson_mut_val *val, const yyjson_alc *alc);
 ```
 
 ## JSON Value Creation
@@ -1373,22 +1373,22 @@ The library supports querying JSON values using `JSON Pointer` ([RFC 6901](https
 
 ```c
 // `JSON pointer` is a null-terminated string.
-yyjson_val *yyjson_ptr_get(yyjson_val *val, const char *ptr);
-yyjson_val *yyjson_doc_ptr_get(yyjson_doc *doc, const char *ptr);
-yyjson_mut_val *yyjson_mut_ptr_get(yyjson_mut_val *val, const char *ptr);
-yyjson_mut_val *yyjson_mut_doc_ptr_get(yyjson_mut_doc *doc, const char *ptr);
+yyjson_val *yyjson_ptr_get(const yyjson_val *val, const char *ptr);
+yyjson_val *yyjson_doc_ptr_get(const yyjson_doc *doc, const char *ptr);
+yyjson_mut_val *yyjson_mut_ptr_get(const yyjson_mut_val *val, const char *ptr);
+yyjson_mut_val *yyjson_mut_doc_ptr_get(const yyjson_mut_doc *doc, const char *ptr);
 
 // `JSON pointer` with string length, allow NUL (Unicode U+0000) characters inside.
-yyjson_val *yyjson_ptr_getn(yyjson_val *val, const char *ptr, size_t len);
-yyjson_val *yyjson_doc_ptr_getn(yyjson_doc *doc, const char *ptr, size_t len);
-yyjson_mut_val *yyjson_mut_ptr_getn(yyjson_mut_val *val, const char *ptr, size_t len);
-yyjson_mut_val *yyjson_mut_doc_ptr_getn(yyjson_mut_doc *doc, const char *ptr, size_t len);
+yyjson_val *yyjson_ptr_getn(const yyjson_val *val, const char *ptr, size_t len);
+yyjson_val *yyjson_doc_ptr_getn(const yyjson_doc *doc, const char *ptr, size_t len);
+yyjson_mut_val *yyjson_mut_ptr_getn(const yyjson_mut_val *val, const char *ptr, size_t len);
+yyjson_mut_val *yyjson_mut_doc_ptr_getn(const yyjson_mut_doc *doc, const char *ptr, size_t len);
 
 // `JSON pointer` with string length, context and error information.
-yyjson_val *yyjson_ptr_getx(yyjson_val *val, const char *ptr, size_t len, yyjson_ptr_err *err);
-yyjson_val *yyjson_doc_ptr_getx(yyjson_doc *doc, const char *ptr, size_t len, yyjson_ptr_err *err);
-yyjson_mut_val *yyjson_mut_ptr_getx(yyjson_mut_val *val, const char *ptr, size_t len, yyjson_ptr_ctx *ctx, yyjson_ptr_err *err);
-yyjson_mut_val *yyjson_mut_doc_ptr_getx(yyjson_mut_doc *doc, const char *ptr, size_t len, yyjson_ptr_ctx *ctx, yyjson_ptr_err *err);
+yyjson_val *yyjson_ptr_getx(const yyjson_val *val, const char *ptr, size_t len, yyjson_ptr_err *err);
+yyjson_val *yyjson_doc_ptr_getx(const yyjson_doc *doc, const char *ptr, size_t len, yyjson_ptr_err *err);
+yyjson_mut_val *yyjson_mut_ptr_getx(const yyjson_mut_val *val, const char *ptr, size_t len, yyjson_ptr_ctx *ctx, yyjson_ptr_err *err);
+yyjson_mut_val *yyjson_mut_doc_ptr_getx(const yyjson_mut_doc *doc, const char *ptr, size_t len, yyjson_ptr_ctx *ctx, yyjson_ptr_err *err);
 ```
 
 For example, given the JSON document:
@@ -1504,13 +1504,13 @@ Specification and example: <https://tools.ietf.org/html/rfc6902>
 // Creates and returns a patched JSON value.
 // Returns NULL if the patch could not be applied.
 yyjson_mut_val *yyjson_patch(yyjson_mut_doc *doc,
-                             yyjson_val *orig,
-                             yyjson_val *patch,
+                             const yyjson_val *orig,
+                             const yyjson_val *patch,
                              yyjson_patch_err *err);
 
 yyjson_mut_val *yyjson_mut_patch(yyjson_mut_doc *doc,
-                                 yyjson_mut_val *orig,
-                                 yyjson_mut_val *patch,
+                                 const yyjson_mut_val *orig,
+                                 const yyjson_mut_val *patch,
                                  yyjson_patch_err *err);
 ```
 
@@ -1522,12 +1522,12 @@ Specification and example: <https://tools.ietf.org/html/rfc7386>
 // Creates and returns a merge-patched JSON value.
 // Returns NULL if the patch could not be applied.
 yyjson_mut_val *yyjson_merge_patch(yyjson_mut_doc *doc,
-                                   yyjson_val *orig,
-                                   yyjson_val *patch);
+                                   const yyjson_val *orig,
+                                   const yyjson_val *patch);
 
 yyjson_mut_val *yyjson_mut_merge_patch(yyjson_mut_doc *doc,
-                                       yyjson_mut_val *orig,
-                                       yyjson_mut_val *patch);
+                                       const yyjson_mut_val *orig,
+                                       const yyjson_mut_val *patch);
 ```
 
 

@@ -10,6 +10,7 @@ All notable changes to this project will be documented in this file.
 
 #### Changed
 - Change `set_int()` parameter type from `int` to `int64_t`.
+- Add `const` qualifier to parameters of read-only functions: #248
 
 #### Fixed
 - Fix `tinycc` preprocessor error.

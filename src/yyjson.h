@@ -142,9 +142,10 @@
 #ifndef YYJSON_HAS_STDBOOL_H
 #endif
 
-/* Define to an integer to set a depth limit for containers (arrays, objects). */
+/* Define to an integer to set a depth limit for containers (arrays/objects). */
 #ifndef YYJSON_READER_DEPTH_LIMIT
 #endif
+
 
 
 /*==============================================================================
@@ -341,6 +342,11 @@
 /** inline function export */
 #ifndef yyjson_api_inline
 #   define yyjson_api_inline static yyjson_inline
+#endif
+
+/** Used to cast away (remove) const qualifier. */
+#ifndef yyjson_constcast
+#   define yyjson_constcast(type) (type)(void *)(size_t)(const void *)
 #endif
 
 /** stdint (C89 compatible) */
@@ -1474,10 +1480,10 @@ yyjson_api bool yyjson_mut_write_fp(FILE *fp,
 
 /**
  Write a document into a buffer.
- 
+
  This function does not allocate memory, but the buffer must be larger than the
  final JSON size to allow temporary space. See `API.md` for details.
- 
+
  @param buf The output buffer.
     If the buffer is NULL, the function will fail and return 0.
  @param buf_len The buffer length.
@@ -1813,17 +1819,17 @@ yyjson_api_inline char *yyjson_mut_write_number(const yyjson_mut_val *val,
 
 /** Returns the root value of this JSON document.
     Returns NULL if `doc` is NULL. */
-yyjson_api_inline yyjson_val *yyjson_doc_get_root(yyjson_doc *doc);
+yyjson_api_inline yyjson_val *yyjson_doc_get_root(const yyjson_doc *doc);
 
 /** Returns read size of input JSON data.
     Returns 0 if `doc` is NULL.
     For example: the read size of `[1,2,3]` is 7 bytes.  */
-yyjson_api_inline size_t yyjson_doc_get_read_size(yyjson_doc *doc);
+yyjson_api_inline size_t yyjson_doc_get_read_size(const yyjson_doc *doc);
 
 /** Returns total value count in this JSON document.
     Returns 0 if `doc` is NULL.
     For example: the value count of `[1,2,3]` is 4. */
-yyjson_api_inline size_t yyjson_doc_get_val_count(yyjson_doc *doc);
+yyjson_api_inline size_t yyjson_doc_get_val_count(const yyjson_doc *doc);
 
 /** Release the JSON document and free the memory.
     After calling this function, the `doc` and all values from the `doc` are no
@@ -1838,59 +1844,59 @@ yyjson_api_inline void yyjson_doc_free(yyjson_doc *doc);
 
 /** Returns whether the JSON value is raw.
     Returns false if `val` is NULL. */
-yyjson_api_inline bool yyjson_is_raw(yyjson_val *val);
+yyjson_api_inline bool yyjson_is_raw(const yyjson_val *val);
 
 /** Returns whether the JSON value is `null`.
     Returns false if `val` is NULL. */
-yyjson_api_inline bool yyjson_is_null(yyjson_val *val);
+yyjson_api_inline bool yyjson_is_null(const yyjson_val *val);
 
 /** Returns whether the JSON value is `true`.
     Returns false if `val` is NULL. */
-yyjson_api_inline bool yyjson_is_true(yyjson_val *val);
+yyjson_api_inline bool yyjson_is_true(const yyjson_val *val);
 
 /** Returns whether the JSON value is `false`.
     Returns false if `val` is NULL. */
-yyjson_api_inline bool yyjson_is_false(yyjson_val *val);
+yyjson_api_inline bool yyjson_is_false(const yyjson_val *val);
 
 /** Returns whether the JSON value is bool (true/false).
     Returns false if `val` is NULL. */
-yyjson_api_inline bool yyjson_is_bool(yyjson_val *val);
+yyjson_api_inline bool yyjson_is_bool(const yyjson_val *val);
 
 /** Returns whether the JSON value is unsigned integer (uint64_t).
     Returns false if `val` is NULL. */
-yyjson_api_inline bool yyjson_is_uint(yyjson_val *val);
+yyjson_api_inline bool yyjson_is_uint(const yyjson_val *val);
 
 /** Returns whether the JSON value is signed integer (int64_t).
     Returns false if `val` is NULL. */
-yyjson_api_inline bool yyjson_is_sint(yyjson_val *val);
+yyjson_api_inline bool yyjson_is_sint(const yyjson_val *val);
 
 /** Returns whether the JSON value is integer (uint64_t/int64_t).
     Returns false if `val` is NULL. */
-yyjson_api_inline bool yyjson_is_int(yyjson_val *val);
+yyjson_api_inline bool yyjson_is_int(const yyjson_val *val);
 
 /** Returns whether the JSON value is real number (double).
     Returns false if `val` is NULL. */
-yyjson_api_inline bool yyjson_is_real(yyjson_val *val);
+yyjson_api_inline bool yyjson_is_real(const yyjson_val *val);
 
 /** Returns whether the JSON value is number (uint64_t/int64_t/double).
     Returns false if `val` is NULL. */
-yyjson_api_inline bool yyjson_is_num(yyjson_val *val);
+yyjson_api_inline bool yyjson_is_num(const yyjson_val *val);
 
 /** Returns whether the JSON value is string.
     Returns false if `val` is NULL. */
-yyjson_api_inline bool yyjson_is_str(yyjson_val *val);
+yyjson_api_inline bool yyjson_is_str(const yyjson_val *val);
 
 /** Returns whether the JSON value is array.
     Returns false if `val` is NULL. */
-yyjson_api_inline bool yyjson_is_arr(yyjson_val *val);
+yyjson_api_inline bool yyjson_is_arr(const yyjson_val *val);
 
 /** Returns whether the JSON value is object.
     Returns false if `val` is NULL. */
-yyjson_api_inline bool yyjson_is_obj(yyjson_val *val);
+yyjson_api_inline bool yyjson_is_obj(const yyjson_val *val);
 
 /** Returns whether the JSON value is container (array/object).
     Returns false if `val` is NULL. */
-yyjson_api_inline bool yyjson_is_ctn(yyjson_val *val);
+yyjson_api_inline bool yyjson_is_ctn(const yyjson_val *val);
 
 
 
@@ -1900,73 +1906,75 @@ yyjson_api_inline bool yyjson_is_ctn(yyjson_val *val);
 
 /** Returns the JSON value's type.
     Returns YYJSON_TYPE_NONE if `val` is NULL. */
-yyjson_api_inline yyjson_type yyjson_get_type(yyjson_val *val);
+yyjson_api_inline yyjson_type yyjson_get_type(const yyjson_val *val);
 
 /** Returns the JSON value's subtype.
     Returns YYJSON_SUBTYPE_NONE if `val` is NULL. */
-yyjson_api_inline yyjson_subtype yyjson_get_subtype(yyjson_val *val);
+yyjson_api_inline yyjson_subtype yyjson_get_subtype(const yyjson_val *val);
 
 /** Returns the JSON value's tag.
     Returns 0 if `val` is NULL. */
-yyjson_api_inline uint8_t yyjson_get_tag(yyjson_val *val);
+yyjson_api_inline uint8_t yyjson_get_tag(const yyjson_val *val);
 
 /** Returns the JSON value's type description.
     The return value should be one of these strings: "raw", "null", "string",
     "array", "object", "true", "false", "uint", "sint", "real", "unknown". */
-yyjson_api_inline const char *yyjson_get_type_desc(yyjson_val *val);
+yyjson_api_inline const char *yyjson_get_type_desc(const yyjson_val *val);
 
 /** Returns the content if the value is raw.
     Returns NULL if `val` is NULL or type is not raw. */
-yyjson_api_inline const char *yyjson_get_raw(yyjson_val *val);
+yyjson_api_inline const char *yyjson_get_raw(const yyjson_val *val);
 
 /** Returns the content if the value is bool.
     Returns false if `val` is NULL or type is not bool. */
-yyjson_api_inline bool yyjson_get_bool(yyjson_val *val);
+yyjson_api_inline bool yyjson_get_bool(const yyjson_val *val);
 
 /** Returns the content and cast to uint64_t.
     Returns 0 if `val` is NULL or type is not integer(sint/uint). */
-yyjson_api_inline uint64_t yyjson_get_uint(yyjson_val *val);
+yyjson_api_inline uint64_t yyjson_get_uint(const yyjson_val *val);
 
 /** Returns the content and cast to int64_t.
     Returns 0 if `val` is NULL or type is not integer(sint/uint). */
-yyjson_api_inline int64_t yyjson_get_sint(yyjson_val *val);
+yyjson_api_inline int64_t yyjson_get_sint(const yyjson_val *val);
 
 /** Returns the content and cast to int.
     Returns 0 if `val` is NULL or type is not integer(sint/uint). */
-yyjson_api_inline int yyjson_get_int(yyjson_val *val);
+yyjson_api_inline int yyjson_get_int(const yyjson_val *val);
 
 /** Returns the content if the value is real number, or 0.0 on error.
     Returns 0.0 if `val` is NULL or type is not real(double). */
-yyjson_api_inline double yyjson_get_real(yyjson_val *val);
+yyjson_api_inline double yyjson_get_real(const yyjson_val *val);
 
 /** Returns the content and typecast to `double` if the value is number.
     Returns 0.0 if `val` is NULL or type is not number(uint/sint/real). */
-yyjson_api_inline double yyjson_get_num(yyjson_val *val);
+yyjson_api_inline double yyjson_get_num(const yyjson_val *val);
 
 /** Returns the content if the value is string.
     Returns NULL if `val` is NULL or type is not string. */
-yyjson_api_inline const char *yyjson_get_str(yyjson_val *val);
+yyjson_api_inline const char *yyjson_get_str(const yyjson_val *val);
 
 /** Returns the content length (string length, array size, object size.
     Returns 0 if `val` is NULL or type is not string/array/object. */
-yyjson_api_inline size_t yyjson_get_len(yyjson_val *val);
+yyjson_api_inline size_t yyjson_get_len(const yyjson_val *val);
 
 /** Returns whether the JSON value is equals to a string.
     Returns false if input is NULL or type is not string. */
-yyjson_api_inline bool yyjson_equals_str(yyjson_val *val, const char *str);
+yyjson_api_inline bool yyjson_equals_str(const yyjson_val *val,
+                                         const char *str);
 
 /** Returns whether the JSON value is equals to a string.
     The `str` should be a UTF-8 string, null-terminator is not required.
     Returns false if input is NULL or type is not string. */
-yyjson_api_inline bool yyjson_equals_strn(yyjson_val *val, const char *str,
-                                          size_t len);
+yyjson_api_inline bool yyjson_equals_strn(const yyjson_val *val,
+                                          const char *str, size_t len);
 
 /** Returns whether two JSON values are equal (deep compare).
     Returns false if input is NULL.
     @note the result may be inaccurate if object has duplicate keys.
     @warning This function is recursive and may cause a stack overflow
         if the object level is too deep. */
-yyjson_api_inline bool yyjson_equals(yyjson_val *lhs, yyjson_val *rhs);
+yyjson_api_inline bool yyjson_equals(const yyjson_val *lhs,
+                                     const yyjson_val *rhs);
 
 /** Set the value to raw.
     Returns false if input is NULL or `val` is object or array.
@@ -2053,23 +2061,23 @@ yyjson_api_inline bool yyjson_set_str_noesc(yyjson_val *val, bool noesc);
 
 /** Returns the number of elements in this array.
     Returns 0 if `arr` is NULL or type is not array. */
-yyjson_api_inline size_t yyjson_arr_size(yyjson_val *arr);
+yyjson_api_inline size_t yyjson_arr_size(const yyjson_val *arr);
 
 /** Returns the element at the specified position in this array.
     Returns NULL if array is NULL/empty or the index is out of bounds.
     @warning This function takes a linear search time if array is not flat.
         For example: `[1,{},3]` is flat, `[1,[2],3]` is not flat. */
-yyjson_api_inline yyjson_val *yyjson_arr_get(yyjson_val *arr, size_t idx);
+yyjson_api_inline yyjson_val *yyjson_arr_get(const yyjson_val *arr, size_t idx);
 
 /** Returns the first element of this array.
     Returns NULL if `arr` is NULL/empty or type is not array. */
-yyjson_api_inline yyjson_val *yyjson_arr_get_first(yyjson_val *arr);
+yyjson_api_inline yyjson_val *yyjson_arr_get_first(const yyjson_val *arr);
 
 /** Returns the last element of this array.
     Returns NULL if `arr` is NULL/empty or type is not array.
     @warning This function takes a linear search time if array is not flat.
         For example: `[1,{},3]` is flat, `[1,[2],3]` is not flat.*/
-yyjson_api_inline yyjson_val *yyjson_arr_get_last(yyjson_val *arr);
+yyjson_api_inline yyjson_val *yyjson_arr_get_last(const yyjson_val *arr);
 
 
 
@@ -2106,7 +2114,7 @@ typedef struct yyjson_arr_iter {
 
  @note The iterator does not need to be destroyed.
  */
-yyjson_api_inline bool yyjson_arr_iter_init(yyjson_val *arr,
+yyjson_api_inline bool yyjson_arr_iter_init(const yyjson_val *arr,
                                             yyjson_arr_iter *iter);
 
 /**
@@ -2118,7 +2126,7 @@ yyjson_api_inline bool yyjson_arr_iter_init(yyjson_val *arr,
 
  @note The iterator does not need to be destroyed.
  */
-yyjson_api_inline yyjson_arr_iter yyjson_arr_iter_with(yyjson_val *arr);
+yyjson_api_inline yyjson_arr_iter yyjson_arr_iter_with(const yyjson_val *arr);
 
 /**
  Returns whether the iteration has more elements.
@@ -2161,7 +2169,7 @@ yyjson_api_inline yyjson_val *yyjson_arr_iter_next(yyjson_arr_iter *iter);
 
 /** Returns the number of key-value pairs in this object.
     Returns 0 if `obj` is NULL or type is not object. */
-yyjson_api_inline size_t yyjson_obj_size(yyjson_val *obj);
+yyjson_api_inline size_t yyjson_obj_size(const yyjson_val *obj);
 
 /** Returns the value to which the specified key is mapped.
     Returns NULL if this object contains no mapping for the key.
@@ -2170,7 +2178,8 @@ yyjson_api_inline size_t yyjson_obj_size(yyjson_val *obj);
     The `key` should be a null-terminated UTF-8 string.
 
     @warning This function takes a linear search time. */
-yyjson_api_inline yyjson_val *yyjson_obj_get(yyjson_val *obj, const char *key);
+yyjson_api_inline yyjson_val *yyjson_obj_get(const yyjson_val *obj,
+                                             const char *key);
 
 /** Returns the value to which the specified key is mapped.
     Returns NULL if this object contains no mapping for the key.
@@ -2180,8 +2189,8 @@ yyjson_api_inline yyjson_val *yyjson_obj_get(yyjson_val *obj, const char *key);
     The `key_len` should be the length of the key, in bytes.
 
     @warning This function takes a linear search time. */
-yyjson_api_inline yyjson_val *yyjson_obj_getn(yyjson_val *obj, const char *key,
-                                              size_t key_len);
+yyjson_api_inline yyjson_val *yyjson_obj_getn(const yyjson_val *obj,
+                                              const char *key, size_t key_len);
 
 
 
@@ -2231,7 +2240,7 @@ typedef struct yyjson_obj_iter {
 
  @note The iterator does not need to be destroyed.
  */
-yyjson_api_inline bool yyjson_obj_iter_init(yyjson_val *obj,
+yyjson_api_inline bool yyjson_obj_iter_init(const yyjson_val *obj,
                                             yyjson_obj_iter *iter);
 
 /**
@@ -2243,7 +2252,7 @@ yyjson_api_inline bool yyjson_obj_iter_init(yyjson_val *obj,
 
  @note The iterator does not need to be destroyed.
  */
-yyjson_api_inline yyjson_obj_iter yyjson_obj_iter_with(yyjson_val *obj);
+yyjson_api_inline yyjson_obj_iter yyjson_obj_iter_with(const yyjson_val *obj);
 
 /**
  Returns whether the iteration has more elements.
@@ -2386,14 +2395,14 @@ yyjson_api yyjson_mut_doc *yyjson_mut_doc_new(const yyjson_alc *alc);
     This makes a `deep-copy` on the immutable document.
     If allocator is NULL, the default allocator will be used.
     @note `imut_doc` -> `mut_doc`. */
-yyjson_api yyjson_mut_doc *yyjson_doc_mut_copy(yyjson_doc *doc,
+yyjson_api yyjson_mut_doc *yyjson_doc_mut_copy(const yyjson_doc *doc,
                                                const yyjson_alc *alc);
 
 /** Copies and returns a new mutable document from input, returns NULL on error.
     This makes a `deep-copy` on the mutable document.
     If allocator is NULL, the default allocator will be used.
     @note `mut_doc` -> `mut_doc`. */
-yyjson_api yyjson_mut_doc *yyjson_mut_doc_mut_copy(yyjson_mut_doc *doc,
+yyjson_api yyjson_mut_doc *yyjson_mut_doc_mut_copy(const yyjson_mut_doc *doc,
                                                    const yyjson_alc *alc);
 
 /** Copies and returns a new mutable value from input, returns NULL on error.
@@ -2401,7 +2410,7 @@ yyjson_api yyjson_mut_doc *yyjson_mut_doc_mut_copy(yyjson_mut_doc *doc,
     The memory was managed by mutable document.
     @note `imut_val` -> `mut_val`. */
 yyjson_api yyjson_mut_val *yyjson_val_mut_copy(yyjson_mut_doc *doc,
-                                               yyjson_val *val);
+                                               const yyjson_val *val);
 
 /** Copies and returns a new mutable value from input, returns NULL on error.
     This makes a `deep-copy` on the mutable value.
@@ -2410,7 +2419,7 @@ yyjson_api yyjson_mut_val *yyjson_val_mut_copy(yyjson_mut_doc *doc,
     @warning This function is recursive and may cause a stack overflow
         if the object level is too deep. */
 yyjson_api yyjson_mut_val *yyjson_mut_val_mut_copy(yyjson_mut_doc *doc,
-                                                   yyjson_mut_val *val);
+                                                   const yyjson_mut_val *val);
 
 /** Copies and returns a new immutable document from input,
     returns NULL on error. This makes a `deep-copy` on the mutable document.
@@ -2418,7 +2427,7 @@ yyjson_api yyjson_mut_val *yyjson_mut_val_mut_copy(yyjson_mut_doc *doc,
     @note `mut_doc` -> `imut_doc`.
     @warning This function is recursive and may cause a stack overflow
         if the object level is too deep. */
-yyjson_api yyjson_doc *yyjson_mut_doc_imut_copy(yyjson_mut_doc *doc,
+yyjson_api yyjson_doc *yyjson_mut_doc_imut_copy(const yyjson_mut_doc *doc,
                                                 const yyjson_alc *alc);
 
 /** Copies and returns a new immutable document from input,
@@ -2427,7 +2436,7 @@ yyjson_api yyjson_doc *yyjson_mut_doc_imut_copy(yyjson_mut_doc *doc,
     @note `mut_val` -> `imut_doc`.
     @warning This function is recursive and may cause a stack overflow
         if the object level is too deep. */
-yyjson_api yyjson_doc *yyjson_mut_val_imut_copy(yyjson_mut_val *val,
+yyjson_api yyjson_doc *yyjson_mut_val_imut_copy(const yyjson_mut_val *val,
                                                 const yyjson_alc *alc);
 
 
@@ -2438,59 +2447,59 @@ yyjson_api yyjson_doc *yyjson_mut_val_imut_copy(yyjson_mut_val *val,
 
 /** Returns whether the JSON value is raw.
     Returns false if `val` is NULL. */
-yyjson_api_inline bool yyjson_mut_is_raw(yyjson_mut_val *val);
+yyjson_api_inline bool yyjson_mut_is_raw(const yyjson_mut_val *val);
 
 /** Returns whether the JSON value is `null`.
     Returns false if `val` is NULL. */
-yyjson_api_inline bool yyjson_mut_is_null(yyjson_mut_val *val);
+yyjson_api_inline bool yyjson_mut_is_null(const yyjson_mut_val *val);
 
 /** Returns whether the JSON value is `true`.
     Returns false if `val` is NULL. */
-yyjson_api_inline bool yyjson_mut_is_true(yyjson_mut_val *val);
+yyjson_api_inline bool yyjson_mut_is_true(const yyjson_mut_val *val);
 
 /** Returns whether the JSON value is `false`.
     Returns false if `val` is NULL. */
-yyjson_api_inline bool yyjson_mut_is_false(yyjson_mut_val *val);
+yyjson_api_inline bool yyjson_mut_is_false(const yyjson_mut_val *val);
 
 /** Returns whether the JSON value is bool (true/false).
     Returns false if `val` is NULL. */
-yyjson_api_inline bool yyjson_mut_is_bool(yyjson_mut_val *val);
+yyjson_api_inline bool yyjson_mut_is_bool(const yyjson_mut_val *val);
 
 /** Returns whether the JSON value is unsigned integer (uint64_t).
     Returns false if `val` is NULL. */
-yyjson_api_inline bool yyjson_mut_is_uint(yyjson_mut_val *val);
+yyjson_api_inline bool yyjson_mut_is_uint(const yyjson_mut_val *val);
 
 /** Returns whether the JSON value is signed integer (int64_t).
     Returns false if `val` is NULL. */
-yyjson_api_inline bool yyjson_mut_is_sint(yyjson_mut_val *val);
+yyjson_api_inline bool yyjson_mut_is_sint(const yyjson_mut_val *val);
 
 /** Returns whether the JSON value is integer (uint64_t/int64_t).
     Returns false if `val` is NULL. */
-yyjson_api_inline bool yyjson_mut_is_int(yyjson_mut_val *val);
+yyjson_api_inline bool yyjson_mut_is_int(const yyjson_mut_val *val);
 
 /** Returns whether the JSON value is real number (double).
     Returns false if `val` is NULL. */
-yyjson_api_inline bool yyjson_mut_is_real(yyjson_mut_val *val);
+yyjson_api_inline bool yyjson_mut_is_real(const yyjson_mut_val *val);
 
 /** Returns whether the JSON value is number (uint/sint/real).
     Returns false if `val` is NULL. */
-yyjson_api_inline bool yyjson_mut_is_num(yyjson_mut_val *val);
+yyjson_api_inline bool yyjson_mut_is_num(const yyjson_mut_val *val);
 
 /** Returns whether the JSON value is string.
     Returns false if `val` is NULL. */
-yyjson_api_inline bool yyjson_mut_is_str(yyjson_mut_val *val);
+yyjson_api_inline bool yyjson_mut_is_str(const yyjson_mut_val *val);
 
 /** Returns whether the JSON value is array.
     Returns false if `val` is NULL. */
-yyjson_api_inline bool yyjson_mut_is_arr(yyjson_mut_val *val);
+yyjson_api_inline bool yyjson_mut_is_arr(const yyjson_mut_val *val);
 
 /** Returns whether the JSON value is object.
     Returns false if `val` is NULL. */
-yyjson_api_inline bool yyjson_mut_is_obj(yyjson_mut_val *val);
+yyjson_api_inline bool yyjson_mut_is_obj(const yyjson_mut_val *val);
 
 /** Returns whether the JSON value is container (array/object).
     Returns false if `val` is NULL. */
-yyjson_api_inline bool yyjson_mut_is_ctn(yyjson_mut_val *val);
+yyjson_api_inline bool yyjson_mut_is_ctn(const yyjson_mut_val *val);
 
 
 
@@ -2500,67 +2509,69 @@ yyjson_api_inline bool yyjson_mut_is_ctn(yyjson_mut_val *val);
 
 /** Returns the JSON value's type.
     Returns `YYJSON_TYPE_NONE` if `val` is NULL. */
-yyjson_api_inline yyjson_type yyjson_mut_get_type(yyjson_mut_val *val);
+yyjson_api_inline yyjson_type yyjson_mut_get_type(const yyjson_mut_val *val);
 
 /** Returns the JSON value's subtype.
     Returns `YYJSON_SUBTYPE_NONE` if `val` is NULL. */
-yyjson_api_inline yyjson_subtype yyjson_mut_get_subtype(yyjson_mut_val *val);
+yyjson_api_inline yyjson_subtype yyjson_mut_get_subtype(
+    const yyjson_mut_val *val);
 
 /** Returns the JSON value's tag.
     Returns 0 if `val` is NULL. */
-yyjson_api_inline uint8_t yyjson_mut_get_tag(yyjson_mut_val *val);
+yyjson_api_inline uint8_t yyjson_mut_get_tag(const yyjson_mut_val *val);
 
 /** Returns the JSON value's type description.
     The return value should be one of these strings: "raw", "null", "string",
     "array", "object", "true", "false", "uint", "sint", "real", "unknown". */
-yyjson_api_inline const char *yyjson_mut_get_type_desc(yyjson_mut_val *val);
+yyjson_api_inline const char *yyjson_mut_get_type_desc(
+    const yyjson_mut_val *val);
 
 /** Returns the content if the value is raw.
     Returns NULL if `val` is NULL or type is not raw. */
-yyjson_api_inline const char *yyjson_mut_get_raw(yyjson_mut_val *val);
+yyjson_api_inline const char *yyjson_mut_get_raw(const yyjson_mut_val *val);
 
 /** Returns the content if the value is bool.
     Returns NULL if `val` is NULL or type is not bool. */
-yyjson_api_inline bool yyjson_mut_get_bool(yyjson_mut_val *val);
+yyjson_api_inline bool yyjson_mut_get_bool(const yyjson_mut_val *val);
 
 /** Returns the content and cast to uint64_t.
     Returns 0 if `val` is NULL or type is not integer(sint/uint). */
-yyjson_api_inline uint64_t yyjson_mut_get_uint(yyjson_mut_val *val);
+yyjson_api_inline uint64_t yyjson_mut_get_uint(const yyjson_mut_val *val);
 
 /** Returns the content and cast to int64_t.
     Returns 0 if `val` is NULL or type is not integer(sint/uint). */
-yyjson_api_inline int64_t yyjson_mut_get_sint(yyjson_mut_val *val);
+yyjson_api_inline int64_t yyjson_mut_get_sint(const yyjson_mut_val *val);
 
 /** Returns the content and cast to int.
     Returns 0 if `val` is NULL or type is not integer(sint/uint). */
-yyjson_api_inline int yyjson_mut_get_int(yyjson_mut_val *val);
+yyjson_api_inline int yyjson_mut_get_int(const yyjson_mut_val *val);
 
 /** Returns the content if the value is real number.
     Returns 0.0 if `val` is NULL or type is not real(double). */
-yyjson_api_inline double yyjson_mut_get_real(yyjson_mut_val *val);
+yyjson_api_inline double yyjson_mut_get_real(const yyjson_mut_val *val);
 
 /** Returns the content and typecast to `double` if the value is number.
     Returns 0.0 if `val` is NULL or type is not number(uint/sint/real). */
-yyjson_api_inline double yyjson_mut_get_num(yyjson_mut_val *val);
+yyjson_api_inline double yyjson_mut_get_num(const yyjson_mut_val *val);
 
 /** Returns the content if the value is string.
     Returns NULL if `val` is NULL or type is not string. */
-yyjson_api_inline const char *yyjson_mut_get_str(yyjson_mut_val *val);
+yyjson_api_inline const char *yyjson_mut_get_str(const yyjson_mut_val *val);
 
 /** Returns the content length (string length, array size, object size.
     Returns 0 if `val` is NULL or type is not string/array/object. */
-yyjson_api_inline size_t yyjson_mut_get_len(yyjson_mut_val *val);
+yyjson_api_inline size_t yyjson_mut_get_len(const yyjson_mut_val *val);
 
 /** Returns whether the JSON value is equals to a string.
     The `str` should be a null-terminated UTF-8 string.
     Returns false if input is NULL or type is not string. */
-yyjson_api_inline bool yyjson_mut_equals_str(yyjson_mut_val *val,
+yyjson_api_inline bool yyjson_mut_equals_str(const yyjson_mut_val *val,
                                              const char *str);
 
 /** Returns whether the JSON value is equals to a string.
     The `str` should be a UTF-8 string, null-terminator is not required.
     Returns false if input is NULL or type is not string. */
-yyjson_api_inline bool yyjson_mut_equals_strn(yyjson_mut_val *val,
+yyjson_api_inline bool yyjson_mut_equals_strn(const yyjson_mut_val *val,
                                               const char *str, size_t len);
 
 /** Returns whether two JSON values are equal (deep compare).
@@ -2568,8 +2579,8 @@ yyjson_api_inline bool yyjson_mut_equals_strn(yyjson_mut_val *val,
     @note the result may be inaccurate if object has duplicate keys.
     @warning This function is recursive and may cause a stack overflow
         if the object level is too deep. */
-yyjson_api_inline bool yyjson_mut_equals(yyjson_mut_val *lhs,
-                                         yyjson_mut_val *rhs);
+yyjson_api_inline bool yyjson_mut_equals(const yyjson_mut_val *lhs,
+                                         const yyjson_mut_val *rhs);
 
 /** Set the value to raw.
     Returns false if input is NULL.
@@ -2770,21 +2781,23 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_strncpy(yyjson_mut_doc *doc,
 
 /** Returns the number of elements in this array.
     Returns 0 if `arr` is NULL or type is not array. */
-yyjson_api_inline size_t yyjson_mut_arr_size(yyjson_mut_val *arr);
+yyjson_api_inline size_t yyjson_mut_arr_size(const yyjson_mut_val *arr);
 
 /** Returns the element at the specified position in this array.
     Returns NULL if array is NULL/empty or the index is out of bounds.
     @warning This function takes a linear search time. */
-yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_get(yyjson_mut_val *arr,
+yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_get(const yyjson_mut_val *arr,
                                                      size_t idx);
 
 /** Returns the first element of this array.
     Returns NULL if `arr` is NULL/empty or type is not array. */
-yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_get_first(yyjson_mut_val *arr);
+yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_get_first(
+    const yyjson_mut_val *arr);
 
 /** Returns the last element of this array.
     Returns NULL if `arr` is NULL/empty or type is not array. */
-yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_get_last(yyjson_mut_val *arr);
+yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_get_last(
+    const yyjson_mut_val *arr);
 
 
 
@@ -3576,7 +3589,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_add_obj(yyjson_mut_doc *doc,
 
 /** Returns the number of key-value pairs in this object.
     Returns 0 if `obj` is NULL or type is not object. */
-yyjson_api_inline size_t yyjson_mut_obj_size(yyjson_mut_val *obj);
+yyjson_api_inline size_t yyjson_mut_obj_size(const yyjson_mut_val *obj);
 
 /** Returns the value to which the specified key is mapped.
     Returns NULL if this object contains no mapping for the key.
@@ -3585,7 +3598,7 @@ yyjson_api_inline size_t yyjson_mut_obj_size(yyjson_mut_val *obj);
     The `key` should be a null-terminated UTF-8 string.
 
     @warning This function takes a linear search time. */
-yyjson_api_inline yyjson_mut_val *yyjson_mut_obj_get(yyjson_mut_val *obj,
+yyjson_api_inline yyjson_mut_val *yyjson_mut_obj_get(const yyjson_mut_val *obj,
                                                      const char *key);
 
 /** Returns the value to which the specified key is mapped.
@@ -3596,7 +3609,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_obj_get(yyjson_mut_val *obj,
     The `key_len` should be the length of the key, in bytes.
 
     @warning This function takes a linear search time. */
-yyjson_api_inline yyjson_mut_val *yyjson_mut_obj_getn(yyjson_mut_val *obj,
+yyjson_api_inline yyjson_mut_val *yyjson_mut_obj_getn(const yyjson_mut_val *obj,
                                                       const char *key,
                                                       size_t key_len);
 
@@ -4251,7 +4264,7 @@ typedef struct yyjson_ptr_ctx {
  @return The value referenced by the JSON pointer.
     NULL if `doc` or `ptr` is NULL, or the JSON pointer cannot be resolved.
  */
-yyjson_api_inline yyjson_val *yyjson_doc_ptr_get(yyjson_doc *doc,
+yyjson_api_inline yyjson_val *yyjson_doc_ptr_get(const yyjson_doc *doc,
                                                  const char *ptr);
 
 /**
@@ -4262,7 +4275,7 @@ yyjson_api_inline yyjson_val *yyjson_doc_ptr_get(yyjson_doc *doc,
  @return The value referenced by the JSON pointer.
     NULL if `doc` or `ptr` is NULL, or the JSON pointer cannot be resolved.
  */
-yyjson_api_inline yyjson_val *yyjson_doc_ptr_getn(yyjson_doc *doc,
+yyjson_api_inline yyjson_val *yyjson_doc_ptr_getn(const yyjson_doc *doc,
                                                   const char *ptr, size_t len);
 
 /**
@@ -4274,7 +4287,7 @@ yyjson_api_inline yyjson_val *yyjson_doc_ptr_getn(yyjson_doc *doc,
  @return The value referenced by the JSON pointer.
     NULL if `doc` or `ptr` is NULL, or the JSON pointer cannot be resolved.
  */
-yyjson_api_inline yyjson_val *yyjson_doc_ptr_getx(yyjson_doc *doc,
+yyjson_api_inline yyjson_val *yyjson_doc_ptr_getx(const yyjson_doc *doc,
                                                   const char *ptr, size_t len,
                                                   yyjson_ptr_err *err);
 
@@ -4285,7 +4298,7 @@ yyjson_api_inline yyjson_val *yyjson_doc_ptr_getx(yyjson_doc *doc,
  @return The value referenced by the JSON pointer.
     NULL if `val` or `ptr` is NULL, or the JSON pointer cannot be resolved.
  */
-yyjson_api_inline yyjson_val *yyjson_ptr_get(yyjson_val *val,
+yyjson_api_inline yyjson_val *yyjson_ptr_get(const yyjson_val *val,
                                              const char *ptr);
 
 /**
@@ -4296,7 +4309,7 @@ yyjson_api_inline yyjson_val *yyjson_ptr_get(yyjson_val *val,
  @return The value referenced by the JSON pointer.
     NULL if `val` or `ptr` is NULL, or the JSON pointer cannot be resolved.
  */
-yyjson_api_inline yyjson_val *yyjson_ptr_getn(yyjson_val *val,
+yyjson_api_inline yyjson_val *yyjson_ptr_getn(const yyjson_val *val,
                                               const char *ptr, size_t len);
 
 /**
@@ -4308,7 +4321,7 @@ yyjson_api_inline yyjson_val *yyjson_ptr_getn(yyjson_val *val,
  @return The value referenced by the JSON pointer.
     NULL if `val` or `ptr` is NULL, or the JSON pointer cannot be resolved.
  */
-yyjson_api_inline yyjson_val *yyjson_ptr_getx(yyjson_val *val,
+yyjson_api_inline yyjson_val *yyjson_ptr_getx(const yyjson_val *val,
                                               const char *ptr, size_t len,
                                               yyjson_ptr_err *err);
 
@@ -4319,8 +4332,8 @@ yyjson_api_inline yyjson_val *yyjson_ptr_getx(yyjson_val *val,
  @return The value referenced by the JSON pointer.
     NULL if `doc` or `ptr` is NULL, or the JSON pointer cannot be resolved.
  */
-yyjson_api_inline yyjson_mut_val *yyjson_mut_doc_ptr_get(yyjson_mut_doc *doc,
-                                                         const char *ptr);
+yyjson_api_inline yyjson_mut_val *yyjson_mut_doc_ptr_get(
+    const yyjson_mut_doc *doc, const char *ptr);
 
 /**
  Get value by a JSON Pointer.
@@ -4330,9 +4343,8 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_doc_ptr_get(yyjson_mut_doc *doc,
  @return The value referenced by the JSON pointer.
     NULL if `doc` or `ptr` is NULL, or the JSON pointer cannot be resolved.
  */
-yyjson_api_inline yyjson_mut_val *yyjson_mut_doc_ptr_getn(yyjson_mut_doc *doc,
-                                                          const char *ptr,
-                                                          size_t len);
+yyjson_api_inline yyjson_mut_val *yyjson_mut_doc_ptr_getn(
+    const yyjson_mut_doc *doc, const char *ptr, size_t len);
 
 /**
  Get value by a JSON Pointer.
@@ -4344,11 +4356,9 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_doc_ptr_getn(yyjson_mut_doc *doc,
  @return The value referenced by the JSON pointer.
     NULL if `doc` or `ptr` is NULL, or the JSON pointer cannot be resolved.
  */
-yyjson_api_inline yyjson_mut_val *yyjson_mut_doc_ptr_getx(yyjson_mut_doc *doc,
-                                                          const char *ptr,
-                                                          size_t len,
-                                                          yyjson_ptr_ctx *ctx,
-                                                          yyjson_ptr_err *err);
+yyjson_api_inline yyjson_mut_val *yyjson_mut_doc_ptr_getx(
+    const yyjson_mut_doc *doc, const char *ptr, size_t len,
+    yyjson_ptr_ctx *ctx, yyjson_ptr_err *err);
 
 /**
  Get value by a JSON Pointer.
@@ -4357,7 +4367,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_doc_ptr_getx(yyjson_mut_doc *doc,
  @return The value referenced by the JSON pointer.
     NULL if `val` or `ptr` is NULL, or the JSON pointer cannot be resolved.
  */
-yyjson_api_inline yyjson_mut_val *yyjson_mut_ptr_get(yyjson_mut_val *val,
+yyjson_api_inline yyjson_mut_val *yyjson_mut_ptr_get(const yyjson_mut_val *val,
                                                      const char *ptr);
 
 /**
@@ -4368,7 +4378,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_ptr_get(yyjson_mut_val *val,
  @return The value referenced by the JSON pointer.
     NULL if `val` or `ptr` is NULL, or the JSON pointer cannot be resolved.
  */
-yyjson_api_inline yyjson_mut_val *yyjson_mut_ptr_getn(yyjson_mut_val *val,
+yyjson_api_inline yyjson_mut_val *yyjson_mut_ptr_getn(const yyjson_mut_val *val,
                                                       const char *ptr,
                                                       size_t len);
 
@@ -4382,7 +4392,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_ptr_getn(yyjson_mut_val *val,
  @return The value referenced by the JSON pointer.
     NULL if `val` or `ptr` is NULL, or the JSON pointer cannot be resolved.
  */
-yyjson_api_inline yyjson_mut_val *yyjson_mut_ptr_getx(yyjson_mut_val *val,
+yyjson_api_inline yyjson_mut_val *yyjson_mut_ptr_getx(const yyjson_mut_val *val,
                                                       const char *ptr,
                                                       size_t len,
                                                       yyjson_ptr_ctx *ctx,
@@ -4797,8 +4807,8 @@ typedef struct yyjson_patch_err {
  Returns NULL if the patch could not be applied.
  */
 yyjson_api yyjson_mut_val *yyjson_patch(yyjson_mut_doc *doc,
-                                        yyjson_val *orig,
-                                        yyjson_val *patch,
+                                        const yyjson_val *orig,
+                                        const yyjson_val *patch,
                                         yyjson_patch_err *err);
 
 /**
@@ -4808,8 +4818,8 @@ yyjson_api yyjson_mut_val *yyjson_patch(yyjson_mut_doc *doc,
  Returns NULL if the patch could not be applied.
  */
 yyjson_api yyjson_mut_val *yyjson_mut_patch(yyjson_mut_doc *doc,
-                                            yyjson_mut_val *orig,
-                                            yyjson_mut_val *patch,
+                                            const yyjson_mut_val *orig,
+                                            const yyjson_mut_val *patch,
                                             yyjson_patch_err *err);
 
 
@@ -4828,8 +4838,8 @@ yyjson_api yyjson_mut_val *yyjson_mut_patch(yyjson_mut_doc *doc,
     object level is too deep.
  */
 yyjson_api yyjson_mut_val *yyjson_merge_patch(yyjson_mut_doc *doc,
-                                              yyjson_val *orig,
-                                              yyjson_val *patch);
+                                              const yyjson_val *orig,
+                                              const yyjson_val *patch);
 
 /**
  Creates and returns a merge-patched JSON value (RFC 7386).
@@ -4840,8 +4850,8 @@ yyjson_api yyjson_mut_val *yyjson_merge_patch(yyjson_mut_doc *doc,
     object level is too deep.
  */
 yyjson_api yyjson_mut_val *yyjson_mut_merge_patch(yyjson_mut_doc *doc,
-                                                  yyjson_mut_val *orig,
-                                                  yyjson_mut_val *patch);
+                                                  const yyjson_mut_val *orig,
+                                                  const yyjson_mut_val *patch);
 
 #endif /* YYJSON_DISABLE_UTILS */
 
@@ -4953,154 +4963,156 @@ yyjson_api_inline double unsafe_yyjson_u64_to_f64(uint64_t num) {
 #endif
 }
 
-yyjson_api_inline yyjson_type unsafe_yyjson_get_type(void *val) {
-    uint8_t tag = (uint8_t)((yyjson_val *)val)->tag;
+yyjson_api_inline yyjson_type unsafe_yyjson_get_type(const void *val) {
+    uint8_t tag = (uint8_t)((const yyjson_val *)val)->tag;
     return (yyjson_type)(tag & YYJSON_TYPE_MASK);
 }
 
-yyjson_api_inline yyjson_subtype unsafe_yyjson_get_subtype(void *val) {
-    uint8_t tag = (uint8_t)((yyjson_val *)val)->tag;
+yyjson_api_inline yyjson_subtype unsafe_yyjson_get_subtype(const void *val) {
+    uint8_t tag = (uint8_t)((const yyjson_val *)val)->tag;
     return (yyjson_subtype)(tag & YYJSON_SUBTYPE_MASK);
 }
 
-yyjson_api_inline uint8_t unsafe_yyjson_get_tag(void *val) {
-    uint8_t tag = (uint8_t)((yyjson_val *)val)->tag;
+yyjson_api_inline uint8_t unsafe_yyjson_get_tag(const void *val) {
+    uint8_t tag = (uint8_t)((const yyjson_val *)val)->tag;
     return (uint8_t)(tag & YYJSON_TAG_MASK);
 }
 
-yyjson_api_inline bool unsafe_yyjson_is_raw(void *val) {
+yyjson_api_inline bool unsafe_yyjson_is_raw(const void *val) {
     return unsafe_yyjson_get_type(val) == YYJSON_TYPE_RAW;
 }
 
-yyjson_api_inline bool unsafe_yyjson_is_null(void *val) {
+yyjson_api_inline bool unsafe_yyjson_is_null(const void *val) {
     return unsafe_yyjson_get_type(val) == YYJSON_TYPE_NULL;
 }
 
-yyjson_api_inline bool unsafe_yyjson_is_bool(void *val) {
+yyjson_api_inline bool unsafe_yyjson_is_bool(const void *val) {
     return unsafe_yyjson_get_type(val) == YYJSON_TYPE_BOOL;
 }
 
-yyjson_api_inline bool unsafe_yyjson_is_num(void *val) {
+yyjson_api_inline bool unsafe_yyjson_is_num(const void *val) {
     return unsafe_yyjson_get_type(val) == YYJSON_TYPE_NUM;
 }
 
-yyjson_api_inline bool unsafe_yyjson_is_str(void *val) {
+yyjson_api_inline bool unsafe_yyjson_is_str(const void *val) {
     return unsafe_yyjson_get_type(val) == YYJSON_TYPE_STR;
 }
 
-yyjson_api_inline bool unsafe_yyjson_is_arr(void *val) {
+yyjson_api_inline bool unsafe_yyjson_is_arr(const void *val) {
     return unsafe_yyjson_get_type(val) == YYJSON_TYPE_ARR;
 }
 
-yyjson_api_inline bool unsafe_yyjson_is_obj(void *val) {
+yyjson_api_inline bool unsafe_yyjson_is_obj(const void *val) {
     return unsafe_yyjson_get_type(val) == YYJSON_TYPE_OBJ;
 }
 
-yyjson_api_inline bool unsafe_yyjson_is_ctn(void *val) {
+yyjson_api_inline bool unsafe_yyjson_is_ctn(const void *val) {
     uint8_t mask = YYJSON_TYPE_ARR & YYJSON_TYPE_OBJ;
     return (unsafe_yyjson_get_tag(val) & mask) == mask;
 }
 
-yyjson_api_inline bool unsafe_yyjson_is_uint(void *val) {
+yyjson_api_inline bool unsafe_yyjson_is_uint(const void *val) {
     const uint8_t patt = YYJSON_TYPE_NUM | YYJSON_SUBTYPE_UINT;
     return unsafe_yyjson_get_tag(val) == patt;
 }
 
-yyjson_api_inline bool unsafe_yyjson_is_sint(void *val) {
+yyjson_api_inline bool unsafe_yyjson_is_sint(const void *val) {
     const uint8_t patt = YYJSON_TYPE_NUM | YYJSON_SUBTYPE_SINT;
     return unsafe_yyjson_get_tag(val) == patt;
 }
 
-yyjson_api_inline bool unsafe_yyjson_is_int(void *val) {
+yyjson_api_inline bool unsafe_yyjson_is_int(const void *val) {
     const uint8_t mask = YYJSON_TAG_MASK & (~YYJSON_SUBTYPE_SINT);
     const uint8_t patt = YYJSON_TYPE_NUM | YYJSON_SUBTYPE_UINT;
     return (unsafe_yyjson_get_tag(val) & mask) == patt;
 }
 
-yyjson_api_inline bool unsafe_yyjson_is_real(void *val) {
+yyjson_api_inline bool unsafe_yyjson_is_real(const void *val) {
     const uint8_t patt = YYJSON_TYPE_NUM | YYJSON_SUBTYPE_REAL;
     return unsafe_yyjson_get_tag(val) == patt;
 }
 
-yyjson_api_inline bool unsafe_yyjson_is_true(void *val) {
+yyjson_api_inline bool unsafe_yyjson_is_true(const void *val) {
     const uint8_t patt = YYJSON_TYPE_BOOL | YYJSON_SUBTYPE_TRUE;
     return unsafe_yyjson_get_tag(val) == patt;
 }
 
-yyjson_api_inline bool unsafe_yyjson_is_false(void *val) {
+yyjson_api_inline bool unsafe_yyjson_is_false(const void *val) {
     const uint8_t patt = YYJSON_TYPE_BOOL | YYJSON_SUBTYPE_FALSE;
     return unsafe_yyjson_get_tag(val) == patt;
 }
 
-yyjson_api_inline bool unsafe_yyjson_arr_is_flat(yyjson_val *val) {
+yyjson_api_inline bool unsafe_yyjson_arr_is_flat(const yyjson_val *val) {
     size_t ofs = val->uni.ofs;
     size_t len = (size_t)(val->tag >> YYJSON_TAG_BIT);
     return len * sizeof(yyjson_val) + sizeof(yyjson_val) == ofs;
 }
 
-yyjson_api_inline const char *unsafe_yyjson_get_raw(void *val) {
-    return ((yyjson_val *)val)->uni.str;
+yyjson_api_inline const char *unsafe_yyjson_get_raw(const void *val) {
+    return ((const yyjson_val *)val)->uni.str;
 }
 
-yyjson_api_inline bool unsafe_yyjson_get_bool(void *val) {
+yyjson_api_inline bool unsafe_yyjson_get_bool(const void *val) {
     uint8_t tag = unsafe_yyjson_get_tag(val);
     return (bool)((tag & YYJSON_SUBTYPE_MASK) >> YYJSON_TYPE_BIT);
 }
 
-yyjson_api_inline uint64_t unsafe_yyjson_get_uint(void *val) {
-    return ((yyjson_val *)val)->uni.u64;
+yyjson_api_inline uint64_t unsafe_yyjson_get_uint(const void *val) {
+    return ((const yyjson_val *)val)->uni.u64;
 }
 
-yyjson_api_inline int64_t unsafe_yyjson_get_sint(void *val) {
-    return ((yyjson_val *)val)->uni.i64;
+yyjson_api_inline int64_t unsafe_yyjson_get_sint(const void *val) {
+    return ((const yyjson_val *)val)->uni.i64;
 }
 
-yyjson_api_inline int unsafe_yyjson_get_int(void *val) {
-    return (int)((yyjson_val *)val)->uni.i64;
+yyjson_api_inline int unsafe_yyjson_get_int(const void *val) {
+    return (int)((const yyjson_val *)val)->uni.i64;
 }
 
-yyjson_api_inline double unsafe_yyjson_get_real(void *val) {
-    return ((yyjson_val *)val)->uni.f64;
+yyjson_api_inline double unsafe_yyjson_get_real(const void *val) {
+    return ((const yyjson_val *)val)->uni.f64;
 }
 
-yyjson_api_inline double unsafe_yyjson_get_num(void *val) {
+yyjson_api_inline double unsafe_yyjson_get_num(const void *val) {
     uint8_t tag = unsafe_yyjson_get_tag(val);
     if (tag == (YYJSON_TYPE_NUM | YYJSON_SUBTYPE_REAL)) {
-        return ((yyjson_val *)val)->uni.f64;
+        return ((const yyjson_val *)val)->uni.f64;
     } else if (tag == (YYJSON_TYPE_NUM | YYJSON_SUBTYPE_SINT)) {
-        return (double)((yyjson_val *)val)->uni.i64;
+        return (double)((const yyjson_val *)val)->uni.i64;
     } else if (tag == (YYJSON_TYPE_NUM | YYJSON_SUBTYPE_UINT)) {
-        return unsafe_yyjson_u64_to_f64(((yyjson_val *)val)->uni.u64);
+        return unsafe_yyjson_u64_to_f64(((const yyjson_val *)val)->uni.u64);
     }
     return 0.0;
 }
 
-yyjson_api_inline const char *unsafe_yyjson_get_str(void *val) {
-    return ((yyjson_val *)val)->uni.str;
+yyjson_api_inline const char *unsafe_yyjson_get_str(const void *val) {
+    return ((const yyjson_val *)val)->uni.str;
 }
 
-yyjson_api_inline size_t unsafe_yyjson_get_len(void *val) {
-    return (size_t)(((yyjson_val *)val)->tag >> YYJSON_TAG_BIT);
+yyjson_api_inline size_t unsafe_yyjson_get_len(const void *val) {
+    return (size_t)(((const yyjson_val *)val)->tag >> YYJSON_TAG_BIT);
 }
 
-yyjson_api_inline yyjson_val *unsafe_yyjson_get_first(yyjson_val *ctn) {
-    return ctn + 1;
+yyjson_api_inline yyjson_val *unsafe_yyjson_get_first(const yyjson_val *ctn) {
+    return yyjson_constcast(yyjson_val *)ctn + 1;
 }
 
-yyjson_api_inline yyjson_val *unsafe_yyjson_get_next(yyjson_val *val) {
+yyjson_api_inline yyjson_val *unsafe_yyjson_get_next(const yyjson_val *val) {
     bool is_ctn = unsafe_yyjson_is_ctn(val);
     size_t ctn_ofs = val->uni.ofs;
     size_t ofs = (is_ctn ? ctn_ofs : sizeof(yyjson_val));
-    return (yyjson_val *)(void *)((uint8_t *)val + ofs);
+    uint8_t *ptr = yyjson_constcast(uint8_t *)val;
+    return (yyjson_val *)(void *)(ptr + ofs);
 }
 
-yyjson_api_inline bool unsafe_yyjson_equals_strn(void *val, const char *str,
-                                                 size_t len) {
+yyjson_api_inline bool unsafe_yyjson_equals_strn(const void *val,
+                                                 const char *str, size_t len) {
     return unsafe_yyjson_get_len(val) == len &&
-           memcmp(((yyjson_val *)val)->uni.str, str, len) == 0;
+           memcmp(((const yyjson_val *)val)->uni.str, str, len) == 0;
 }
 
-yyjson_api_inline bool unsafe_yyjson_equals_str(void *val, const char *str) {
+yyjson_api_inline bool unsafe_yyjson_equals_str(const void *val,
+                                                const char *str) {
     return unsafe_yyjson_equals_strn(val, str, strlen(str));
 }
 
@@ -5217,15 +5229,15 @@ yyjson_api_inline void unsafe_yyjson_set_obj(void *val, size_t size) {
  * MARK: - JSON Document API (Implementation)
  *============================================================================*/
 
-yyjson_api_inline yyjson_val *yyjson_doc_get_root(yyjson_doc *doc) {
+yyjson_api_inline yyjson_val *yyjson_doc_get_root(const yyjson_doc *doc) {
     return doc ? doc->root : NULL;
 }
 
-yyjson_api_inline size_t yyjson_doc_get_read_size(yyjson_doc *doc) {
+yyjson_api_inline size_t yyjson_doc_get_read_size(const yyjson_doc *doc) {
     return doc ? doc->dat_read : 0;
 }
 
-yyjson_api_inline size_t yyjson_doc_get_val_count(yyjson_doc *doc) {
+yyjson_api_inline size_t yyjson_doc_get_val_count(const yyjson_doc *doc) {
     return doc ? doc->val_read : 0;
 }
 
@@ -5244,59 +5256,59 @@ yyjson_api_inline void yyjson_doc_free(yyjson_doc *doc) {
  * MARK: - JSON Value Type API (Implementation)
  *============================================================================*/
 
-yyjson_api_inline bool yyjson_is_raw(yyjson_val *val) {
+yyjson_api_inline bool yyjson_is_raw(const yyjson_val *val) {
     return val ? unsafe_yyjson_is_raw(val) : false;
 }
 
-yyjson_api_inline bool yyjson_is_null(yyjson_val *val) {
+yyjson_api_inline bool yyjson_is_null(const yyjson_val *val) {
     return val ? unsafe_yyjson_is_null(val) : false;
 }
 
-yyjson_api_inline bool yyjson_is_true(yyjson_val *val) {
+yyjson_api_inline bool yyjson_is_true(const yyjson_val *val) {
     return val ? unsafe_yyjson_is_true(val) : false;
 }
 
-yyjson_api_inline bool yyjson_is_false(yyjson_val *val) {
+yyjson_api_inline bool yyjson_is_false(const yyjson_val *val) {
     return val ? unsafe_yyjson_is_false(val) : false;
 }
 
-yyjson_api_inline bool yyjson_is_bool(yyjson_val *val) {
+yyjson_api_inline bool yyjson_is_bool(const yyjson_val *val) {
     return val ? unsafe_yyjson_is_bool(val) : false;
 }
 
-yyjson_api_inline bool yyjson_is_uint(yyjson_val *val) {
+yyjson_api_inline bool yyjson_is_uint(const yyjson_val *val) {
     return val ? unsafe_yyjson_is_uint(val) : false;
 }
 
-yyjson_api_inline bool yyjson_is_sint(yyjson_val *val) {
+yyjson_api_inline bool yyjson_is_sint(const yyjson_val *val) {
     return val ? unsafe_yyjson_is_sint(val) : false;
 }
 
-yyjson_api_inline bool yyjson_is_int(yyjson_val *val) {
+yyjson_api_inline bool yyjson_is_int(const yyjson_val *val) {
     return val ? unsafe_yyjson_is_int(val) : false;
 }
 
-yyjson_api_inline bool yyjson_is_real(yyjson_val *val) {
+yyjson_api_inline bool yyjson_is_real(const yyjson_val *val) {
     return val ? unsafe_yyjson_is_real(val) : false;
 }
 
-yyjson_api_inline bool yyjson_is_num(yyjson_val *val) {
+yyjson_api_inline bool yyjson_is_num(const yyjson_val *val) {
     return val ? unsafe_yyjson_is_num(val) : false;
 }
 
-yyjson_api_inline bool yyjson_is_str(yyjson_val *val) {
+yyjson_api_inline bool yyjson_is_str(const yyjson_val *val) {
     return val ? unsafe_yyjson_is_str(val) : false;
 }
 
-yyjson_api_inline bool yyjson_is_arr(yyjson_val *val) {
+yyjson_api_inline bool yyjson_is_arr(const yyjson_val *val) {
     return val ? unsafe_yyjson_is_arr(val) : false;
 }
 
-yyjson_api_inline bool yyjson_is_obj(yyjson_val *val) {
+yyjson_api_inline bool yyjson_is_obj(const yyjson_val *val) {
     return val ? unsafe_yyjson_is_obj(val) : false;
 }
 
-yyjson_api_inline bool yyjson_is_ctn(yyjson_val *val) {
+yyjson_api_inline bool yyjson_is_ctn(const yyjson_val *val) {
     return val ? unsafe_yyjson_is_ctn(val) : false;
 }
 
@@ -5306,19 +5318,19 @@ yyjson_api_inline bool yyjson_is_ctn(yyjson_val *val) {
  * MARK: - JSON Value Content API (Implementation)
  *============================================================================*/
 
-yyjson_api_inline yyjson_type yyjson_get_type(yyjson_val *val) {
+yyjson_api_inline yyjson_type yyjson_get_type(const yyjson_val *val) {
     return val ? unsafe_yyjson_get_type(val) : YYJSON_TYPE_NONE;
 }
 
-yyjson_api_inline yyjson_subtype yyjson_get_subtype(yyjson_val *val) {
+yyjson_api_inline yyjson_subtype yyjson_get_subtype(const yyjson_val *val) {
     return val ? unsafe_yyjson_get_subtype(val) : YYJSON_SUBTYPE_NONE;
 }
 
-yyjson_api_inline uint8_t yyjson_get_tag(yyjson_val *val) {
+yyjson_api_inline uint8_t yyjson_get_tag(const yyjson_val *val) {
     return val ? unsafe_yyjson_get_tag(val) : 0;
 }
 
-yyjson_api_inline const char *yyjson_get_type_desc(yyjson_val *val) {
+yyjson_api_inline const char *yyjson_get_type_desc(const yyjson_val *val) {
     switch (yyjson_get_tag(val)) {
         case YYJSON_TYPE_RAW  | YYJSON_SUBTYPE_NONE:  return "raw";
         case YYJSON_TYPE_NULL | YYJSON_SUBTYPE_NONE:  return "null";
@@ -5335,43 +5347,44 @@ yyjson_api_inline const char *yyjson_get_type_desc(yyjson_val *val) {
     }
 }
 
-yyjson_api_inline const char *yyjson_get_raw(yyjson_val *val) {
+yyjson_api_inline const char *yyjson_get_raw(const yyjson_val *val) {
     return yyjson_is_raw(val) ? unsafe_yyjson_get_raw(val) : NULL;
 }
 
-yyjson_api_inline bool yyjson_get_bool(yyjson_val *val) {
+yyjson_api_inline bool yyjson_get_bool(const yyjson_val *val) {
     return yyjson_is_bool(val) ? unsafe_yyjson_get_bool(val) : false;
 }
 
-yyjson_api_inline uint64_t yyjson_get_uint(yyjson_val *val) {
+yyjson_api_inline uint64_t yyjson_get_uint(const yyjson_val *val) {
     return yyjson_is_int(val) ? unsafe_yyjson_get_uint(val) : 0;
 }
 
-yyjson_api_inline int64_t yyjson_get_sint(yyjson_val *val) {
+yyjson_api_inline int64_t yyjson_get_sint(const yyjson_val *val) {
     return yyjson_is_int(val) ? unsafe_yyjson_get_sint(val) : 0;
 }
 
-yyjson_api_inline int yyjson_get_int(yyjson_val *val) {
+yyjson_api_inline int yyjson_get_int(const yyjson_val *val) {
     return yyjson_is_int(val) ? unsafe_yyjson_get_int(val) : 0;
 }
 
-yyjson_api_inline double yyjson_get_real(yyjson_val *val) {
+yyjson_api_inline double yyjson_get_real(const yyjson_val *val) {
     return yyjson_is_real(val) ? unsafe_yyjson_get_real(val) : 0.0;
 }
 
-yyjson_api_inline double yyjson_get_num(yyjson_val *val) {
+yyjson_api_inline double yyjson_get_num(const yyjson_val *val) {
     return val ? unsafe_yyjson_get_num(val) : 0.0;
 }
 
-yyjson_api_inline const char *yyjson_get_str(yyjson_val *val) {
+yyjson_api_inline const char *yyjson_get_str(const yyjson_val *val) {
     return yyjson_is_str(val) ? unsafe_yyjson_get_str(val) : NULL;
 }
 
-yyjson_api_inline size_t yyjson_get_len(yyjson_val *val) {
+yyjson_api_inline size_t yyjson_get_len(const yyjson_val *val) {
     return val ? unsafe_yyjson_get_len(val) : 0;
 }
 
-yyjson_api_inline bool yyjson_equals_str(yyjson_val *val, const char *str) {
+yyjson_api_inline bool yyjson_equals_str(const yyjson_val *val,
+                                         const char *str) {
     if (yyjson_likely(val && str)) {
         return unsafe_yyjson_is_str(val) &&
                unsafe_yyjson_equals_str(val, str);
@@ -5379,8 +5392,8 @@ yyjson_api_inline bool yyjson_equals_str(yyjson_val *val, const char *str) {
     return false;
 }
 
-yyjson_api_inline bool yyjson_equals_strn(yyjson_val *val, const char *str,
-                                          size_t len) {
+yyjson_api_inline bool yyjson_equals_strn(const yyjson_val *val,
+                                          const char *str, size_t len) {
     if (yyjson_likely(val && str)) {
         return unsafe_yyjson_is_str(val) &&
                unsafe_yyjson_equals_strn(val, str, len);
@@ -5388,9 +5401,11 @@ yyjson_api_inline bool yyjson_equals_strn(yyjson_val *val, const char *str,
     return false;
 }
 
-yyjson_api bool unsafe_yyjson_equals(yyjson_val *lhs, yyjson_val *rhs);
+yyjson_api bool unsafe_yyjson_equals(const yyjson_val *lhs,
+                                     const yyjson_val *rhs);
 
-yyjson_api_inline bool yyjson_equals(yyjson_val *lhs, yyjson_val *rhs) {
+yyjson_api_inline bool yyjson_equals(const yyjson_val *lhs,
+                                     const yyjson_val *rhs) {
     if (yyjson_unlikely(!lhs || !rhs)) return false;
     return unsafe_yyjson_equals(lhs, rhs);
 }
@@ -5489,11 +5504,12 @@ yyjson_api_inline bool yyjson_set_str_noesc(yyjson_val *val, bool noesc) {
  * MARK: - JSON Array API (Implementation)
  *============================================================================*/
 
-yyjson_api_inline size_t yyjson_arr_size(yyjson_val *arr) {
+yyjson_api_inline size_t yyjson_arr_size(const yyjson_val *arr) {
     return yyjson_is_arr(arr) ? unsafe_yyjson_get_len(arr) : 0;
 }
 
-yyjson_api_inline yyjson_val *yyjson_arr_get(yyjson_val *arr, size_t idx) {
+yyjson_api_inline yyjson_val *yyjson_arr_get(const yyjson_val *arr,
+                                             size_t idx) {
     if (yyjson_likely(yyjson_is_arr(arr))) {
         if (yyjson_likely(unsafe_yyjson_get_len(arr) > idx)) {
             yyjson_val *val = unsafe_yyjson_get_first(arr);
@@ -5508,7 +5524,7 @@ yyjson_api_inline yyjson_val *yyjson_arr_get(yyjson_val *arr, size_t idx) {
     return NULL;
 }
 
-yyjson_api_inline yyjson_val *yyjson_arr_get_first(yyjson_val *arr) {
+yyjson_api_inline yyjson_val *yyjson_arr_get_first(const yyjson_val *arr) {
     if (yyjson_likely(yyjson_is_arr(arr))) {
         if (yyjson_likely(unsafe_yyjson_get_len(arr) > 0)) {
             return unsafe_yyjson_get_first(arr);
@@ -5517,7 +5533,7 @@ yyjson_api_inline yyjson_val *yyjson_arr_get_first(yyjson_val *arr) {
     return NULL;
 }
 
-yyjson_api_inline yyjson_val *yyjson_arr_get_last(yyjson_val *arr) {
+yyjson_api_inline yyjson_val *yyjson_arr_get_last(const yyjson_val *arr) {
     if (yyjson_likely(yyjson_is_arr(arr))) {
         size_t len = unsafe_yyjson_get_len(arr);
         if (yyjson_likely(len > 0)) {
@@ -5539,7 +5555,7 @@ yyjson_api_inline yyjson_val *yyjson_arr_get_last(yyjson_val *arr) {
  * MARK: - JSON Array Iterator API (Implementation)
  *============================================================================*/
 
-yyjson_api_inline bool yyjson_arr_iter_init(yyjson_val *arr,
+yyjson_api_inline bool yyjson_arr_iter_init(const yyjson_val *arr,
                                             yyjson_arr_iter *iter) {
     if (yyjson_likely(yyjson_is_arr(arr) && iter)) {
         iter->idx = 0;
@@ -5551,7 +5567,7 @@ yyjson_api_inline bool yyjson_arr_iter_init(yyjson_val *arr,
     return false;
 }
 
-yyjson_api_inline yyjson_arr_iter yyjson_arr_iter_with(yyjson_val *arr) {
+yyjson_api_inline yyjson_arr_iter yyjson_arr_iter_with(const yyjson_val *arr) {
     yyjson_arr_iter iter;
     yyjson_arr_iter_init(arr, &iter);
     return iter;
@@ -5578,16 +5594,16 @@ yyjson_api_inline yyjson_val *yyjson_arr_iter_next(yyjson_arr_iter *iter) {
  * MARK: - JSON Object API (Implementation)
  *============================================================================*/
 
-yyjson_api_inline size_t yyjson_obj_size(yyjson_val *obj) {
+yyjson_api_inline size_t yyjson_obj_size(const yyjson_val *obj) {
     return yyjson_is_obj(obj) ? unsafe_yyjson_get_len(obj) : 0;
 }
 
-yyjson_api_inline yyjson_val *yyjson_obj_get(yyjson_val *obj,
+yyjson_api_inline yyjson_val *yyjson_obj_get(const yyjson_val *obj,
                                              const char *key) {
     return yyjson_obj_getn(obj, key, key ? strlen(key) : 0);
 }
 
-yyjson_api_inline yyjson_val *yyjson_obj_getn(yyjson_val *obj,
+yyjson_api_inline yyjson_val *yyjson_obj_getn(const yyjson_val *obj,
                                               const char *_key,
                                               size_t key_len) {
     if (yyjson_likely(yyjson_is_obj(obj) && _key)) {
@@ -5607,20 +5623,20 @@ yyjson_api_inline yyjson_val *yyjson_obj_getn(yyjson_val *obj,
  * MARK: - JSON Object Iterator API (Implementation)
  *============================================================================*/
 
-yyjson_api_inline bool yyjson_obj_iter_init(yyjson_val *obj,
+yyjson_api_inline bool yyjson_obj_iter_init(const yyjson_val *obj,
                                             yyjson_obj_iter *iter) {
     if (yyjson_likely(yyjson_is_obj(obj) && iter)) {
         iter->idx = 0;
         iter->max = unsafe_yyjson_get_len(obj);
         iter->cur = unsafe_yyjson_get_first(obj);
-        iter->obj = obj;
+        iter->obj = yyjson_constcast(yyjson_val *)obj;
         return true;
     }
     if (iter) memset(iter, 0, sizeof(yyjson_obj_iter));
     return false;
 }
 
-yyjson_api_inline yyjson_obj_iter yyjson_obj_iter_with(yyjson_val *obj) {
+yyjson_api_inline yyjson_obj_iter yyjson_obj_iter_with(const yyjson_val *obj) {
     yyjson_obj_iter iter;
     yyjson_obj_iter_init(obj, &iter);
     return iter;
@@ -5815,59 +5831,59 @@ yyjson_api_inline void yyjson_mut_doc_set_root(yyjson_mut_doc *doc,
  * MARK: - Mutable JSON Value Type API (Implementation)
  *============================================================================*/
 
-yyjson_api_inline bool yyjson_mut_is_raw(yyjson_mut_val *val) {
+yyjson_api_inline bool yyjson_mut_is_raw(const yyjson_mut_val *val) {
     return val ? unsafe_yyjson_is_raw(val) : false;
 }
 
-yyjson_api_inline bool yyjson_mut_is_null(yyjson_mut_val *val) {
+yyjson_api_inline bool yyjson_mut_is_null(const yyjson_mut_val *val) {
     return val ? unsafe_yyjson_is_null(val) : false;
 }
 
-yyjson_api_inline bool yyjson_mut_is_true(yyjson_mut_val *val) {
+yyjson_api_inline bool yyjson_mut_is_true(const yyjson_mut_val *val) {
     return val ? unsafe_yyjson_is_true(val) : false;
 }
 
-yyjson_api_inline bool yyjson_mut_is_false(yyjson_mut_val *val) {
+yyjson_api_inline bool yyjson_mut_is_false(const yyjson_mut_val *val) {
     return val ? unsafe_yyjson_is_false(val) : false;
 }
 
-yyjson_api_inline bool yyjson_mut_is_bool(yyjson_mut_val *val) {
+yyjson_api_inline bool yyjson_mut_is_bool(const yyjson_mut_val *val) {
     return val ? unsafe_yyjson_is_bool(val) : false;
 }
 
-yyjson_api_inline bool yyjson_mut_is_uint(yyjson_mut_val *val) {
+yyjson_api_inline bool yyjson_mut_is_uint(const yyjson_mut_val *val) {
     return val ? unsafe_yyjson_is_uint(val) : false;
 }
 
-yyjson_api_inline bool yyjson_mut_is_sint(yyjson_mut_val *val) {
+yyjson_api_inline bool yyjson_mut_is_sint(const yyjson_mut_val *val) {
     return val ? unsafe_yyjson_is_sint(val) : false;
 }
 
-yyjson_api_inline bool yyjson_mut_is_int(yyjson_mut_val *val) {
+yyjson_api_inline bool yyjson_mut_is_int(const yyjson_mut_val *val) {
     return val ? unsafe_yyjson_is_int(val) : false;
 }
 
-yyjson_api_inline bool yyjson_mut_is_real(yyjson_mut_val *val) {
+yyjson_api_inline bool yyjson_mut_is_real(const yyjson_mut_val *val) {
     return val ? unsafe_yyjson_is_real(val) : false;
 }
 
-yyjson_api_inline bool yyjson_mut_is_num(yyjson_mut_val *val) {
+yyjson_api_inline bool yyjson_mut_is_num(const yyjson_mut_val *val) {
     return val ? unsafe_yyjson_is_num(val) : false;
 }
 
-yyjson_api_inline bool yyjson_mut_is_str(yyjson_mut_val *val) {
+yyjson_api_inline bool yyjson_mut_is_str(const yyjson_mut_val *val) {
     return val ? unsafe_yyjson_is_str(val) : false;
 }
 
-yyjson_api_inline bool yyjson_mut_is_arr(yyjson_mut_val *val) {
+yyjson_api_inline bool yyjson_mut_is_arr(const yyjson_mut_val *val) {
     return val ? unsafe_yyjson_is_arr(val) : false;
 }
 
-yyjson_api_inline bool yyjson_mut_is_obj(yyjson_mut_val *val) {
+yyjson_api_inline bool yyjson_mut_is_obj(const yyjson_mut_val *val) {
     return val ? unsafe_yyjson_is_obj(val) : false;
 }
 
-yyjson_api_inline bool yyjson_mut_is_ctn(yyjson_mut_val *val) {
+yyjson_api_inline bool yyjson_mut_is_ctn(const yyjson_mut_val *val) {
     return val ? unsafe_yyjson_is_ctn(val) : false;
 }
 
@@ -5877,73 +5893,75 @@ yyjson_api_inline bool yyjson_mut_is_ctn(yyjson_mut_val *val) {
  * MARK: - Mutable JSON Value Content API (Implementation)
  *============================================================================*/
 
-yyjson_api_inline yyjson_type yyjson_mut_get_type(yyjson_mut_val *val) {
-    return yyjson_get_type((yyjson_val *)val);
+yyjson_api_inline yyjson_type yyjson_mut_get_type(const yyjson_mut_val *val) {
+    return yyjson_get_type((const yyjson_val *)val);
 }
 
-yyjson_api_inline yyjson_subtype yyjson_mut_get_subtype(yyjson_mut_val *val) {
-    return yyjson_get_subtype((yyjson_val *)val);
+yyjson_api_inline yyjson_subtype yyjson_mut_get_subtype(
+    const yyjson_mut_val *val) {
+    return yyjson_get_subtype((const yyjson_val *)val);
 }
 
-yyjson_api_inline uint8_t yyjson_mut_get_tag(yyjson_mut_val *val) {
-    return yyjson_get_tag((yyjson_val *)val);
+yyjson_api_inline uint8_t yyjson_mut_get_tag(const yyjson_mut_val *val) {
+    return yyjson_get_tag((const yyjson_val *)val);
 }
 
-yyjson_api_inline const char *yyjson_mut_get_type_desc(yyjson_mut_val *val) {
-    return yyjson_get_type_desc((yyjson_val *)val);
+yyjson_api_inline const char *yyjson_mut_get_type_desc(
+    const yyjson_mut_val *val) {
+    return yyjson_get_type_desc((const yyjson_val *)val);
 }
 
-yyjson_api_inline const char *yyjson_mut_get_raw(yyjson_mut_val *val) {
-    return yyjson_get_raw((yyjson_val *)val);
+yyjson_api_inline const char *yyjson_mut_get_raw(const yyjson_mut_val *val) {
+    return yyjson_get_raw((const yyjson_val *)val);
 }
 
-yyjson_api_inline bool yyjson_mut_get_bool(yyjson_mut_val *val) {
-    return yyjson_get_bool((yyjson_val *)val);
+yyjson_api_inline bool yyjson_mut_get_bool(const yyjson_mut_val *val) {
+    return yyjson_get_bool((const yyjson_val *)val);
 }
 
-yyjson_api_inline uint64_t yyjson_mut_get_uint(yyjson_mut_val *val) {
-    return yyjson_get_uint((yyjson_val *)val);
+yyjson_api_inline uint64_t yyjson_mut_get_uint(const yyjson_mut_val *val) {
+    return yyjson_get_uint((const yyjson_val *)val);
 }
 
-yyjson_api_inline int64_t yyjson_mut_get_sint(yyjson_mut_val *val) {
-    return yyjson_get_sint((yyjson_val *)val);
+yyjson_api_inline int64_t yyjson_mut_get_sint(const yyjson_mut_val *val) {
+    return yyjson_get_sint((const yyjson_val *)val);
 }
 
-yyjson_api_inline int yyjson_mut_get_int(yyjson_mut_val *val) {
-    return yyjson_get_int((yyjson_val *)val);
+yyjson_api_inline int yyjson_mut_get_int(const yyjson_mut_val *val) {
+    return yyjson_get_int((const yyjson_val *)val);
 }
 
-yyjson_api_inline double yyjson_mut_get_real(yyjson_mut_val *val) {
-    return yyjson_get_real((yyjson_val *)val);
+yyjson_api_inline double yyjson_mut_get_real(const yyjson_mut_val *val) {
+    return yyjson_get_real((const yyjson_val *)val);
 }
 
-yyjson_api_inline double yyjson_mut_get_num(yyjson_mut_val *val) {
-    return yyjson_get_num((yyjson_val *)val);
+yyjson_api_inline double yyjson_mut_get_num(const yyjson_mut_val *val) {
+    return yyjson_get_num((const yyjson_val *)val);
 }
 
-yyjson_api_inline const char *yyjson_mut_get_str(yyjson_mut_val *val) {
-    return yyjson_get_str((yyjson_val *)val);
+yyjson_api_inline const char *yyjson_mut_get_str(const yyjson_mut_val *val) {
+    return yyjson_get_str((const yyjson_val *)val);
 }
 
-yyjson_api_inline size_t yyjson_mut_get_len(yyjson_mut_val *val) {
-    return yyjson_get_len((yyjson_val *)val);
+yyjson_api_inline size_t yyjson_mut_get_len(const yyjson_mut_val *val) {
+    return yyjson_get_len((const yyjson_val *)val);
 }
 
-yyjson_api_inline bool yyjson_mut_equals_str(yyjson_mut_val *val,
+yyjson_api_inline bool yyjson_mut_equals_str(const yyjson_mut_val *val,
                                              const char *str) {
-    return yyjson_equals_str((yyjson_val *)val, str);
+    return yyjson_equals_str((const yyjson_val *)val, str);
 }
 
-yyjson_api_inline bool yyjson_mut_equals_strn(yyjson_mut_val *val,
+yyjson_api_inline bool yyjson_mut_equals_strn(const yyjson_mut_val *val,
                                               const char *str, size_t len) {
-    return yyjson_equals_strn((yyjson_val *)val, str, len);
+    return yyjson_equals_strn((const yyjson_val *)val, str, len);
 }
 
-yyjson_api bool unsafe_yyjson_mut_equals(yyjson_mut_val *lhs,
-                                         yyjson_mut_val *rhs);
+yyjson_api bool unsafe_yyjson_mut_equals(const yyjson_mut_val *lhs,
+                                         const yyjson_mut_val *rhs);
 
-yyjson_api_inline bool yyjson_mut_equals(yyjson_mut_val *lhs,
-                                         yyjson_mut_val *rhs) {
+yyjson_api_inline bool yyjson_mut_equals(const yyjson_mut_val *lhs,
+                                         const yyjson_mut_val *rhs) {
     if (yyjson_unlikely(!lhs || !rhs)) return false;
     return unsafe_yyjson_mut_equals(lhs, rhs);
 }
@@ -6197,11 +6215,11 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_strncpy(yyjson_mut_doc *doc,
  * MARK: - Mutable JSON Array API (Implementation)
  *============================================================================*/
 
-yyjson_api_inline size_t yyjson_mut_arr_size(yyjson_mut_val *arr) {
+yyjson_api_inline size_t yyjson_mut_arr_size(const yyjson_mut_val *arr) {
     return yyjson_mut_is_arr(arr) ? unsafe_yyjson_get_len(arr) : 0;
 }
 
-yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_get(yyjson_mut_val *arr,
+yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_get(const yyjson_mut_val *arr,
                                                      size_t idx) {
     if (yyjson_likely(idx < yyjson_mut_arr_size(arr))) {
         yyjson_mut_val *val = (yyjson_mut_val *)arr->uni.ptr;
@@ -6212,7 +6230,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_get(yyjson_mut_val *arr,
 }
 
 yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_get_first(
-    yyjson_mut_val *arr) {
+    const yyjson_mut_val *arr) {
     if (yyjson_likely(yyjson_mut_arr_size(arr) > 0)) {
         return ((yyjson_mut_val *)arr->uni.ptr)->next;
     }
@@ -6220,7 +6238,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_get_first(
 }
 
 yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_get_last(
-    yyjson_mut_val *arr) {
+    const yyjson_mut_val *arr) {
     if (yyjson_likely(yyjson_mut_arr_size(arr) > 0)) {
         return ((yyjson_mut_val *)arr->uni.ptr);
     }
@@ -6849,16 +6867,16 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_arr_add_obj(yyjson_mut_doc *doc,
  * MARK: - Mutable JSON Object API (Implementation)
  *============================================================================*/
 
-yyjson_api_inline size_t yyjson_mut_obj_size(yyjson_mut_val *obj) {
+yyjson_api_inline size_t yyjson_mut_obj_size(const yyjson_mut_val *obj) {
     return yyjson_mut_is_obj(obj) ? unsafe_yyjson_get_len(obj) : 0;
 }
 
-yyjson_api_inline yyjson_mut_val *yyjson_mut_obj_get(yyjson_mut_val *obj,
+yyjson_api_inline yyjson_mut_val *yyjson_mut_obj_get(const yyjson_mut_val *obj,
                                                      const char *key) {
     return yyjson_mut_obj_getn(obj, key, key ? strlen(key) : 0);
 }
 
-yyjson_api_inline yyjson_mut_val *yyjson_mut_obj_getn(yyjson_mut_val *obj,
+yyjson_api_inline yyjson_mut_val *yyjson_mut_obj_getn(const yyjson_mut_val *obj,
                                                       const char *_key,
                                                       size_t key_len) {
     size_t len = yyjson_mut_obj_size(obj);
@@ -7478,12 +7496,12 @@ yyjson_api_inline bool yyjson_mut_obj_rename_keyn(yyjson_mut_doc *doc,
 } while(false)
 
 /* require: val != NULL, *ptr == '/', len > 0 */
-yyjson_api yyjson_val *unsafe_yyjson_ptr_getx(yyjson_val *val,
+yyjson_api yyjson_val *unsafe_yyjson_ptr_getx(const yyjson_val *val,
                                               const char *ptr, size_t len,
                                               yyjson_ptr_err *err);
 
 /* require: val != NULL, *ptr == '/', len > 0 */
-yyjson_api yyjson_mut_val *unsafe_yyjson_mut_ptr_getx(yyjson_mut_val *val,
+yyjson_api yyjson_mut_val *unsafe_yyjson_mut_ptr_getx(const yyjson_mut_val *val,
                                                       const char *ptr,
                                                       size_t len,
                                                       yyjson_ptr_ctx *ctx,
@@ -7510,18 +7528,18 @@ yyjson_api yyjson_mut_val *unsafe_yyjson_mut_ptr_removex(yyjson_mut_val *val,
                                                          yyjson_ptr_ctx *ctx,
                                                          yyjson_ptr_err *err);
 
-yyjson_api_inline yyjson_val *yyjson_doc_ptr_get(yyjson_doc *doc,
+yyjson_api_inline yyjson_val *yyjson_doc_ptr_get(const yyjson_doc *doc,
                                                  const char *ptr) {
     if (yyjson_unlikely(!ptr)) return NULL;
     return yyjson_doc_ptr_getn(doc, ptr, strlen(ptr));
 }
 
-yyjson_api_inline yyjson_val *yyjson_doc_ptr_getn(yyjson_doc *doc,
+yyjson_api_inline yyjson_val *yyjson_doc_ptr_getn(const yyjson_doc *doc,
                                                   const char *ptr, size_t len) {
     return yyjson_doc_ptr_getx(doc, ptr, len, NULL);
 }
 
-yyjson_api_inline yyjson_val *yyjson_doc_ptr_getx(yyjson_doc *doc,
+yyjson_api_inline yyjson_val *yyjson_doc_ptr_getx(const yyjson_doc *doc,
                                                   const char *ptr, size_t len,
                                                   yyjson_ptr_err *err) {
     yyjson_ptr_set_err(NONE, NULL);
@@ -7543,18 +7561,18 @@ yyjson_api_inline yyjson_val *yyjson_doc_ptr_getx(yyjson_doc *doc,
     return unsafe_yyjson_ptr_getx(doc->root, ptr, len, err);
 }
 
-yyjson_api_inline yyjson_val *yyjson_ptr_get(yyjson_val *val,
+yyjson_api_inline yyjson_val *yyjson_ptr_get(const yyjson_val *val,
                                              const char *ptr) {
     if (yyjson_unlikely(!ptr)) return NULL;
     return yyjson_ptr_getn(val, ptr, strlen(ptr));
 }
 
-yyjson_api_inline yyjson_val *yyjson_ptr_getn(yyjson_val *val,
+yyjson_api_inline yyjson_val *yyjson_ptr_getn(const yyjson_val *val,
                                               const char *ptr, size_t len) {
     return yyjson_ptr_getx(val, ptr, len, NULL);
 }
 
-yyjson_api_inline yyjson_val *yyjson_ptr_getx(yyjson_val *val,
+yyjson_api_inline yyjson_val *yyjson_ptr_getx(const yyjson_val *val,
                                               const char *ptr, size_t len,
                                               yyjson_ptr_err *err) {
     yyjson_ptr_set_err(NONE, NULL);
@@ -7563,7 +7581,7 @@ yyjson_api_inline yyjson_val *yyjson_ptr_getx(yyjson_val *val,
         return NULL;
     }
     if (yyjson_unlikely(len == 0)) {
-        return val;
+        return yyjson_constcast(yyjson_val *)val;
     }
     if (yyjson_unlikely(*ptr != '/')) {
         yyjson_ptr_set_err(SYNTAX, "no prefix '/'");
@@ -7572,23 +7590,20 @@ yyjson_api_inline yyjson_val *yyjson_ptr_getx(yyjson_val *val,
     return unsafe_yyjson_ptr_getx(val, ptr, len, err);
 }
 
-yyjson_api_inline yyjson_mut_val *yyjson_mut_doc_ptr_get(yyjson_mut_doc *doc,
-                                                         const char *ptr) {
+yyjson_api_inline yyjson_mut_val *yyjson_mut_doc_ptr_get(
+    const yyjson_mut_doc *doc, const char *ptr) {
     if (!ptr) return NULL;
     return yyjson_mut_doc_ptr_getn(doc, ptr, strlen(ptr));
 }
 
-yyjson_api_inline yyjson_mut_val *yyjson_mut_doc_ptr_getn(yyjson_mut_doc *doc,
-                                                          const char *ptr,
-                                                          size_t len) {
+yyjson_api_inline yyjson_mut_val *yyjson_mut_doc_ptr_getn(
+    const yyjson_mut_doc *doc, const char *ptr, size_t len) {
     return yyjson_mut_doc_ptr_getx(doc, ptr, len, NULL, NULL);
 }
 
-yyjson_api_inline yyjson_mut_val *yyjson_mut_doc_ptr_getx(yyjson_mut_doc *doc,
-                                                          const char *ptr,
-                                                          size_t len,
-                                                          yyjson_ptr_ctx *ctx,
-                                                          yyjson_ptr_err *err) {
+yyjson_api_inline yyjson_mut_val *yyjson_mut_doc_ptr_getx(
+    const yyjson_mut_doc *doc, const char *ptr, size_t len,
+    yyjson_ptr_ctx *ctx, yyjson_ptr_err *err) {
     yyjson_ptr_set_err(NONE, NULL);
     if (ctx) memset(ctx, 0, sizeof(*ctx));
 
@@ -7610,19 +7625,19 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_doc_ptr_getx(yyjson_mut_doc *doc,
     return unsafe_yyjson_mut_ptr_getx(doc->root, ptr, len, ctx, err);
 }
 
-yyjson_api_inline yyjson_mut_val *yyjson_mut_ptr_get(yyjson_mut_val *val,
+yyjson_api_inline yyjson_mut_val *yyjson_mut_ptr_get(const yyjson_mut_val *val,
                                                      const char *ptr) {
     if (!ptr) return NULL;
     return yyjson_mut_ptr_getn(val, ptr, strlen(ptr));
 }
 
-yyjson_api_inline yyjson_mut_val *yyjson_mut_ptr_getn(yyjson_mut_val *val,
+yyjson_api_inline yyjson_mut_val *yyjson_mut_ptr_getn(const yyjson_mut_val *val,
                                                       const char *ptr,
                                                       size_t len) {
     return yyjson_mut_ptr_getx(val, ptr, len, NULL, NULL);
 }
 
-yyjson_api_inline yyjson_mut_val *yyjson_mut_ptr_getx(yyjson_mut_val *val,
+yyjson_api_inline yyjson_mut_val *yyjson_mut_ptr_getx(const yyjson_mut_val *val,
                                                       const char *ptr,
                                                       size_t len,
                                                       yyjson_ptr_ctx *ctx,
@@ -7635,7 +7650,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_ptr_getx(yyjson_mut_val *val,
         return NULL;
     }
     if (yyjson_unlikely(len == 0)) {
-        return val;
+        return yyjson_constcast(yyjson_mut_val *)val;
     }
     if (yyjson_unlikely(*ptr != '/')) {
         yyjson_ptr_set_err(SYNTAX, "no prefix '/'");
@@ -8133,7 +8148,7 @@ yyjson_api_inline bool yyjson_ptr_ctx_remove(yyjson_ptr_ctx *ctx) {
  Returns true if value at `ptr` exists and is the correct type, otherwise false.
  */
 yyjson_api_inline bool yyjson_ptr_get_bool(
-    yyjson_val *root, const char *ptr, bool *value) {
+    const yyjson_val *root, const char *ptr, bool *value) {
     yyjson_val *val = yyjson_ptr_get(root, ptr);
     if (value && yyjson_is_bool(val)) {
         *value = unsafe_yyjson_get_bool(val);
@@ -8148,7 +8163,7 @@ yyjson_api_inline bool yyjson_ptr_get_bool(
  that fits in `uint64_t`. Returns true if successful, otherwise false.
  */
 yyjson_api_inline bool yyjson_ptr_get_uint(
-    yyjson_val *root, const char *ptr, uint64_t *value) {
+    const yyjson_val *root, const char *ptr, uint64_t *value) {
     yyjson_val *val = yyjson_ptr_get(root, ptr);
     if (value && val) {
         uint64_t ret = val->uni.u64;
@@ -8166,7 +8181,7 @@ yyjson_api_inline bool yyjson_ptr_get_uint(
  that fits in `int64_t`. Returns true if successful, otherwise false.
  */
 yyjson_api_inline bool yyjson_ptr_get_sint(
-    yyjson_val *root, const char *ptr, int64_t *value) {
+    const yyjson_val *root, const char *ptr, int64_t *value) {
     yyjson_val *val = yyjson_ptr_get(root, ptr);
     if (value && val) {
         int64_t ret = val->uni.i64;
@@ -8184,7 +8199,7 @@ yyjson_api_inline bool yyjson_ptr_get_sint(
  Returns true if value at `ptr` exists and is the correct type, otherwise false.
  */
 yyjson_api_inline bool yyjson_ptr_get_real(
-    yyjson_val *root, const char *ptr, double *value) {
+    const yyjson_val *root, const char *ptr, double *value) {
     yyjson_val *val = yyjson_ptr_get(root, ptr);
     if (value && yyjson_is_real(val)) {
         *value = unsafe_yyjson_get_real(val);
@@ -8200,7 +8215,7 @@ yyjson_api_inline bool yyjson_ptr_get_real(
  Returns true if value at `ptr` exists and is the correct type, otherwise false.
  */
 yyjson_api_inline bool yyjson_ptr_get_num(
-    yyjson_val *root, const char *ptr, double *value) {
+    const yyjson_val *root, const char *ptr, double *value) {
     yyjson_val *val = yyjson_ptr_get(root, ptr);
     if (value && yyjson_is_num(val)) {
         *value = unsafe_yyjson_get_num(val);
@@ -8215,7 +8230,7 @@ yyjson_api_inline bool yyjson_ptr_get_num(
  Returns true if value at `ptr` exists and is the correct type, otherwise false.
  */
 yyjson_api_inline bool yyjson_ptr_get_str(
-    yyjson_val *root, const char *ptr, const char **value) {
+    const yyjson_val *root, const char *ptr, const char **value) {
     yyjson_val *val = yyjson_ptr_get(root, ptr);
     if (value && yyjson_is_str(val)) {
         *value = unsafe_yyjson_get_str(val);

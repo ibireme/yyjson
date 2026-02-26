@@ -387,7 +387,7 @@ uint32_t yyjson_version(void) {
 #define U32(hi) ((u32)(hi##UL))
 
 /* Used to cast away (remove) const qualifier. */
-#define constcast(type) (type)(void *)(size_t)(const void *)
+#define constcast yyjson_constcast
 
 /*
  Compiler barriers for single variables.
@@ -2647,7 +2647,8 @@ yyjson_mut_doc *yyjson_mut_doc_new(const yyjson_alc *alc) {
     return doc;
 }
 
-yyjson_mut_doc *yyjson_doc_mut_copy(yyjson_doc *doc, const yyjson_alc *alc) {
+yyjson_mut_doc *yyjson_doc_mut_copy(const yyjson_doc *doc,
+                                    const yyjson_alc *alc) {
     yyjson_mut_doc *m_doc;
     yyjson_mut_val *m_val;
 
@@ -2663,7 +2664,7 @@ yyjson_mut_doc *yyjson_doc_mut_copy(yyjson_doc *doc, const yyjson_alc *alc) {
     return m_doc;
 }
 
-yyjson_mut_doc *yyjson_mut_doc_mut_copy(yyjson_mut_doc *doc,
+yyjson_mut_doc *yyjson_mut_doc_mut_copy(const yyjson_mut_doc *doc,
                                         const yyjson_alc *alc) {
     yyjson_mut_doc *m_doc;
     yyjson_mut_val *m_val;
@@ -2683,7 +2684,7 @@ yyjson_mut_doc *yyjson_mut_doc_mut_copy(yyjson_mut_doc *doc,
 }
 
 yyjson_mut_val *yyjson_val_mut_copy(yyjson_mut_doc *m_doc,
-                                    yyjson_val *i_vals) {
+                                    const yyjson_val *i_vals) {
     /*
      The immutable object or array stores all sub-values in a contiguous memory,
      We copy them to another contiguous memory as mutable values,
@@ -2698,7 +2699,7 @@ yyjson_mut_val *yyjson_val_mut_copy(yyjson_mut_doc *m_doc,
     i_vals_len = (usize)(unsafe_yyjson_get_next(i_vals) - i_vals);
     m_vals = unsafe_yyjson_mut_val(m_doc, i_vals_len);
     if (!m_vals) return NULL;
-    i_val = i_vals;
+    i_val = constcast(yyjson_val *)i_vals;
     m_val = m_vals;
 
     for (; i_val < i_end; i_val++, m_val++) {
@@ -2748,8 +2749,8 @@ yyjson_mut_val *yyjson_val_mut_copy(yyjson_mut_doc *m_doc,
     return m_vals;
 }
 
-static yyjson_mut_val *unsafe_yyjson_mut_val_mut_copy(yyjson_mut_doc *m_doc,
-                                                      yyjson_mut_val *m_vals) {
+static yyjson_mut_val *unsafe_yyjson_mut_val_mut_copy(
+    yyjson_mut_doc *m_doc, const yyjson_mut_val *m_vals) {
     /*
      The mutable object or array stores all sub-values in a circular linked
      list, so we can traverse them in the same loop. The traversal starts from
@@ -2795,13 +2796,13 @@ static yyjson_mut_val *unsafe_yyjson_mut_val_mut_copy(yyjson_mut_doc *m_doc,
 }
 
 yyjson_mut_val *yyjson_mut_val_mut_copy(yyjson_mut_doc *doc,
-                                        yyjson_mut_val *val) {
+                                        const yyjson_mut_val *val) {
     if (doc && val) return unsafe_yyjson_mut_val_mut_copy(doc, val);
     return NULL;
 }
 
 /* Count the number of values and the total length of the strings. */
-static void yyjson_mut_stat(yyjson_mut_val *val,
+static void yyjson_mut_stat(const yyjson_mut_val *val,
                             usize *val_sum, usize *str_sum) {
     yyjson_type type = unsafe_yyjson_get_type(val);
     *val_sum += 1;
@@ -2827,7 +2828,7 @@ static void yyjson_mut_stat(yyjson_mut_val *val,
 
 /* Copy mutable values to immutable value pool. */
 static usize yyjson_imut_copy(yyjson_val **val_ptr, char **buf_ptr,
-                              yyjson_mut_val *mval) {
+                              const yyjson_mut_val *mval) {
     yyjson_val *val = *val_ptr;
     yyjson_type type = unsafe_yyjson_get_type(mval);
     if (type == YYJSON_TYPE_ARR || type == YYJSON_TYPE_OBJ) {
@@ -2866,13 +2867,13 @@ static usize yyjson_imut_copy(yyjson_val **val_ptr, char **buf_ptr,
     }
 }
 
-yyjson_doc *yyjson_mut_doc_imut_copy(yyjson_mut_doc *mdoc,
+yyjson_doc *yyjson_mut_doc_imut_copy(const yyjson_mut_doc *mdoc,
                                      const yyjson_alc *alc) {
     if (!mdoc) return NULL;
     return yyjson_mut_val_imut_copy(mdoc->root, alc);
 }
 
-yyjson_doc *yyjson_mut_val_imut_copy(yyjson_mut_val *mval,
+yyjson_doc *yyjson_mut_val_imut_copy(const yyjson_mut_val *mval,
                                      const yyjson_alc *alc) {
     usize val_num = 0, str_sum = 0, hdr_size, buf_size;
     yyjson_doc *doc = NULL;
@@ -2913,9 +2914,9 @@ yyjson_doc *yyjson_mut_val_imut_copy(yyjson_mut_val *mval,
     return doc;
 }
 
-static_inline bool unsafe_yyjson_num_equals(void *lhs, void *rhs) {
-    yyjson_val_uni *luni = &((yyjson_val *)lhs)->uni;
-    yyjson_val_uni *runi = &((yyjson_val *)rhs)->uni;
+static_inline bool unsafe_yyjson_num_equals(const void *lhs, const void *rhs) {
+    const yyjson_val_uni *luni = &((const yyjson_val *)lhs)->uni;
+    const yyjson_val_uni *runi = &((const yyjson_val *)rhs)->uni;
     yyjson_subtype lt = unsafe_yyjson_get_subtype(lhs);
     yyjson_subtype rt = unsafe_yyjson_get_subtype(rhs);
     if (lt == rt) return luni->u64 == runi->u64;
@@ -2928,14 +2929,14 @@ static_inline bool unsafe_yyjson_num_equals(void *lhs, void *rhs) {
     return false;
 }
 
-static_inline bool unsafe_yyjson_str_equals(void *lhs, void *rhs) {
+static_inline bool unsafe_yyjson_str_equals(const void *lhs, const void *rhs) {
     usize len = unsafe_yyjson_get_len(lhs);
     if (len != unsafe_yyjson_get_len(rhs)) return false;
     return !memcmp(unsafe_yyjson_get_str(lhs),
                    unsafe_yyjson_get_str(rhs), len);
 }
 
-bool unsafe_yyjson_equals(yyjson_val *lhs, yyjson_val *rhs) {
+bool unsafe_yyjson_equals(const yyjson_val *lhs, const yyjson_val *rhs) {
     yyjson_type type = unsafe_yyjson_get_type(lhs);
     if (type != unsafe_yyjson_get_type(rhs)) return false;
 
@@ -2990,7 +2991,8 @@ bool unsafe_yyjson_equals(yyjson_val *lhs, yyjson_val *rhs) {
     }
 }
 
-bool unsafe_yyjson_mut_equals(yyjson_mut_val *lhs, yyjson_mut_val *rhs) {
+bool unsafe_yyjson_mut_equals(const yyjson_mut_val *lhs,
+                              const yyjson_mut_val *rhs) {
     yyjson_type type = unsafe_yyjson_get_type(lhs);
     if (type != unsafe_yyjson_get_type(rhs)) return false;
 
@@ -3000,7 +3002,7 @@ bool unsafe_yyjson_mut_equals(yyjson_mut_val *lhs, yyjson_mut_val *rhs) {
             if (len != unsafe_yyjson_get_len(rhs)) return false;
             if (len > 0) {
                 yyjson_mut_obj_iter iter;
-                yyjson_mut_obj_iter_init(rhs, &iter);
+                yyjson_mut_obj_iter_init(constcast(yyjson_mut_val *)rhs, &iter);
                 lhs = (yyjson_mut_val *)lhs->uni.ptr;
                 while (len-- > 0) {
                     rhs = yyjson_mut_obj_iter_getn(&iter, lhs->uni.str,
@@ -10410,7 +10412,7 @@ static_inline bool ptr_token_eq(void *key,
  @param esc   number of escaped characters in this token
  @return value at index, or NULL if token is not index or index is out of range
  */
-static_inline yyjson_val *ptr_arr_get(yyjson_val *arr, const char *token,
+static_inline yyjson_val *ptr_arr_get(const yyjson_val *arr, const char *token,
                                       usize len, usize esc) {
     yyjson_val *val = unsafe_yyjson_get_first(arr);
     usize num = unsafe_yyjson_get_len(arr), idx = 0;
@@ -10433,7 +10435,7 @@ static_inline yyjson_val *ptr_arr_get(yyjson_val *arr, const char *token,
  @param esc   [in] number of escaped characters in this token
  @return value associated with the token, or NULL if no value
  */
-static_inline yyjson_val *ptr_obj_get(yyjson_val *obj, const char *token,
+static_inline yyjson_val *ptr_obj_get(const yyjson_val *obj, const char *token,
                                       usize len, usize esc) {
     yyjson_val *key = unsafe_yyjson_get_first(obj);
     usize num = unsafe_yyjson_get_len(obj);
@@ -10454,7 +10456,7 @@ static_inline yyjson_val *ptr_obj_get(yyjson_val *obj, const char *token,
  @param last  [out] whether index is last
  @return value at index, or NULL if token is not index or index is out of range
  */
-static_inline yyjson_mut_val *ptr_mut_arr_get(yyjson_mut_val *arr,
+static_inline yyjson_mut_val *ptr_mut_arr_get(const yyjson_mut_val *arr,
                                               const char *token,
                                               usize len, usize esc,
                                               yyjson_mut_val **pre,
@@ -10484,7 +10486,7 @@ static_inline yyjson_mut_val *ptr_mut_arr_get(yyjson_mut_val *arr,
  @param pre   [out] previous (sibling) key of the returned value's key
  @return value associated with the token, or NULL if no value
  */
-static_inline yyjson_mut_val *ptr_mut_obj_get(yyjson_mut_val *obj,
+static_inline yyjson_mut_val *ptr_mut_obj_get(const yyjson_mut_val *obj,
                                               const char *token,
                                               usize len, usize esc,
                                               yyjson_mut_val **pre) {
@@ -10547,7 +10549,7 @@ static_inline yyjson_mut_val *ptr_new_key(const char *token,
 #define return_err_alloc(_ret) \
     return_err(_ret, MEMORY_ALLOCATION, 0, "failed to create value")
 
-yyjson_val *unsafe_yyjson_ptr_getx(yyjson_val *val,
+yyjson_val *unsafe_yyjson_ptr_getx(const yyjson_val *val,
                                    const char *ptr, size_t ptr_len,
                                    yyjson_ptr_err *err) {
 
@@ -10567,12 +10569,12 @@ yyjson_val *unsafe_yyjson_ptr_getx(yyjson_val *val,
             val = NULL;
         }
         if (!val) return_err_resolve(NULL, token - hdr);
-        if (ptr == end) return val;
+        if (ptr == end) return constcast(yyjson_val *)val;
     }
 }
 
 yyjson_mut_val *unsafe_yyjson_mut_ptr_getx(
-    yyjson_mut_val *val, const char *ptr, size_t ptr_len,
+    const yyjson_mut_val *val, const char *ptr, size_t ptr_len,
     yyjson_ptr_ctx *ctx, yyjson_ptr_err *err) {
 
     const char *hdr = ptr, *end = ptr + ptr_len, *token;
@@ -10584,7 +10586,7 @@ yyjson_mut_val *unsafe_yyjson_mut_ptr_getx(
     while (true) {
         token = ptr_next_token(&ptr, end, &len, &esc);
         if (unlikely(!token)) return_err_syntax(NULL, ptr - hdr);
-        ctn = val;
+        ctn = constcast(yyjson_mut_val *)val;
         type = unsafe_yyjson_get_type(val);
         if (type == YYJSON_TYPE_OBJ) {
             val = ptr_mut_obj_get(val, token, len, esc, &pre);
@@ -10601,7 +10603,7 @@ yyjson_mut_val *unsafe_yyjson_mut_ptr_getx(
             }
         }
         if (!val) return_err_resolve(NULL, token - hdr);
-        if (ptr == end) return val;
+        if (ptr == end) return constcast(yyjson_mut_val *)val;
     }
 }
 
@@ -10860,8 +10862,8 @@ static patch_op patch_op_get(yyjson_val *op) {
     root, _ptr->uni.str, _ptr##_len, _val, NULL, &err->ptr)
 
 yyjson_mut_val *yyjson_patch(yyjson_mut_doc *doc,
-                             yyjson_val *orig,
-                             yyjson_val *patch,
+                             const yyjson_val *orig,
+                             const yyjson_val *patch,
                              yyjson_patch_err *err) {
 
     yyjson_mut_val *root;
@@ -10981,8 +10983,8 @@ yyjson_mut_val *yyjson_patch(yyjson_mut_doc *doc,
 }
 
 yyjson_mut_val *yyjson_mut_patch(yyjson_mut_doc *doc,
-                                 yyjson_mut_val *orig,
-                                 yyjson_mut_val *patch,
+                                 const yyjson_mut_val *orig,
+                                 const yyjson_mut_val *patch,
                                  yyjson_patch_err *err) {
     yyjson_mut_val *root, *obj;
     yyjson_mut_arr_iter iter;
@@ -11001,7 +11003,7 @@ yyjson_mut_val *yyjson_mut_patch(yyjson_mut_doc *doc,
     if (unlikely(!root)) return_err_copy();
 
     /* iterate through the patch array */
-    yyjson_mut_arr_iter_init(patch, &iter);
+    yyjson_mut_arr_iter_init(constcast(yyjson_mut_val *)patch, &iter);
     while ((obj = yyjson_mut_arr_iter_next(&iter))) {
         patch_op op_enum;
         yyjson_mut_val *op, *path, *from = NULL, *value;
@@ -11118,8 +11120,8 @@ yyjson_mut_val *yyjson_mut_patch(yyjson_mut_doc *doc,
  *============================================================================*/
 
 yyjson_mut_val *yyjson_merge_patch(yyjson_mut_doc *doc,
-                                   yyjson_val *orig,
-                                   yyjson_val *patch) {
+                                   const yyjson_val *orig,
+                                   const yyjson_val *patch) {
     usize idx, max;
     yyjson_val *key, *orig_val, *patch_val, local_orig;
     yyjson_mut_val *builder, *mut_key, *mut_val, *merged_val;
@@ -11133,9 +11135,9 @@ yyjson_mut_val *yyjson_merge_patch(yyjson_mut_doc *doc,
 
     memset(&local_orig, 0, sizeof(local_orig));
     if (!yyjson_is_obj(orig)) {
+        local_orig.tag = builder->tag;
+        local_orig.uni = builder->uni;
         orig = &local_orig;
-        orig->tag = builder->tag;
-        orig->uni = builder->uni;
     }
 
     /* If orig is contributing, copy any items not modified by the patch */
@@ -11170,8 +11172,8 @@ yyjson_mut_val *yyjson_merge_patch(yyjson_mut_doc *doc,
 }
 
 yyjson_mut_val *yyjson_mut_merge_patch(yyjson_mut_doc *doc,
-                                       yyjson_mut_val *orig,
-                                       yyjson_mut_val *patch) {
+                                       const yyjson_mut_val *orig,
+                                       const yyjson_mut_val *patch) {
     usize idx, max;
     yyjson_mut_val *key, *orig_val, *patch_val, local_orig;
     yyjson_mut_val *builder, *mut_key, *mut_val, *merged_val;
@@ -11185,9 +11187,9 @@ yyjson_mut_val *yyjson_mut_merge_patch(yyjson_mut_doc *doc,
 
     memset(&local_orig, 0, sizeof(local_orig));
     if (!yyjson_mut_is_obj(orig)) {
+        local_orig.tag = builder->tag;
+        local_orig.uni = builder->uni;
         orig = &local_orig;
-        orig->tag = builder->tag;
-        orig->uni = builder->uni;
     }
 
     /* If orig is contributing, copy any items not modified by the patch */

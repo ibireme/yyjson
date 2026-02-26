@@ -408,6 +408,7 @@ if(YYJSON_BUILD_TESTS)
                 -Wstrict-prototypes     # C only
                 -Wdouble-promotion      # Clang
                 -Wcast-align            # Clang
+                -Wcast-qual             # Clang
                 -Wcomma                 # Clang
                 -Wdeprecated            # Clang
                 -Wdocumentation         # Clang
@@ -417,10 +418,13 @@ if(YYJSON_BUILD_TESTS)
                 -Wunreachable-code      # Clang
                 -Wextra-semi            # Clang
                 -Wextra-semi-stmt       # Clang
+
                 # used for finding potential issues, but too noisy for regular testing:
                 # -Weverything                        # enable all warnings
                 # -Wno-reserved-macro-identifier      # disable for stdbool define
                 # -Wno-padded                         # disable for some structs
+                # -Wno-poison-system-directories      # disable for system headers
+                # -Wno-documentation-unknown-command  # disable for "unknown command tag name"
                 # -Wno-old-style-cast                 # disable for C++
                 # -Wno-zero-as-null-pointer-constant  # disable for C++
             )
