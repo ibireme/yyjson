@@ -1408,7 +1408,7 @@ static void test_ptr_get(void) {
     test_ptr_op((ptr_data){
         .op = PTR_OP_GET,
         .src = "{\"a\":1,\"a\":2,\"b\":3}",
-        .ptr = "/a", // duplcated key
+        .ptr = "/a", // duplicated key
         .val = "1",
         .ctn = "{\"a\":1,\"a\":2,\"b\":3}",
         .pre = "\"b\"",
@@ -2646,7 +2646,7 @@ static void test_ptr_put(void) {
     });
     
     // ---------------------------------
-    // duplcated key
+    // duplicated key
     test_ptr_op((ptr_data){
         .op = PTR_OP_ADD,
         .src = "{\"a\":1,\"b\":2,\"a\":3,\"c\":4}",

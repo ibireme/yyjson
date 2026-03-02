@@ -38,7 +38,7 @@ All notable changes to this project will be documented in this file.
 ## 0.11.0 (2025-05-05)
 #### Added
 - Add `YYJSON_READ_ALLOW_BOM` flag to allow UTF-8 BOM.
-- Add `YYJSON_WRITE_FP_TO_FLOAT` flag to write real numbers using single-precison.
+- Add `YYJSON_WRITE_FP_TO_FLOAT` flag to write real numbers using single-precision.
 - Add `YYJSON_WRITE_FP_TO_FIXED(prec)` flag to write real numbers using fix-point notation.
 - Add `set_fp_to_float()` and `set_fp_to_fixed()` functions to control the output format of a specific number.
 - Add `set_str_noesc()` function to skip escaping for a specific string during writing.

@@ -81,7 +81,7 @@ static void validate_json_write_with_flag(yyjson_write_flag flg,
             yy_assert(ret_len == expect_len && memcmp(buf, expect, ret_len + 1) == 0);
         }
         free(buf);
-        buf_suc += (ret_len > 0); // count sucess
+        buf_suc += (ret_len > 0); // count success
         if (buf_suc > 16) break; // enough
     }
     yy_assert(expect ? buf_suc > 0 : buf_suc == 0);
@@ -95,7 +95,7 @@ static void validate_json_write_with_flag(yyjson_write_flag flg,
             yy_assert(ret_len == expect_len && memcmp(buf, expect, ret_len + 1) == 0);
         }
         free(buf);
-        buf_suc += (ret_len > 0); // count sucess
+        buf_suc += (ret_len > 0); // count success
         if (buf_suc > 16) break; // enough
     }
     yy_assert(expect ? buf_suc > 0 : buf_suc == 0);
@@ -114,7 +114,7 @@ static void validate_json_write_with_flag(yyjson_write_flag flg,
             yy_assert(ret_len == expect_len && memcmp(buf, expect, ret_len + 1) == 0);
         }
         free(buf);
-        buf_suc += (ret_len > 0); // count sucess
+        buf_suc += (ret_len > 0); // count success
         if (buf_suc > 16) break; // enough
     }
     yy_assert(expect ? buf_suc > 0 : buf_suc == 0);
@@ -128,7 +128,7 @@ static void validate_json_write_with_flag(yyjson_write_flag flg,
             yy_assert(ret_len == expect_len && memcmp(buf, expect, ret_len + 1) == 0);
         }
         free(buf);
-        buf_suc += (ret_len > 0); // count sucess
+        buf_suc += (ret_len > 0); // count success
         if (buf_suc > 16) break; // enough
     }
     yy_assert(expect ? buf_suc > 0 : buf_suc == 0);

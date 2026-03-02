@@ -6368,7 +6368,7 @@ yyjson_doc *yyjson_read_fp(FILE *file,
         if (fseek(file, 0, SEEK_END) == 0) file_size = ftell(file);
         /* reset to original position, may fail */
         if (fseek(file, file_pos, SEEK_SET) != 0) file_size = 0;
-        /* get file size from current postion to end */
+        /* get file size from current position to end */
         if (file_size > 0) file_size -= file_pos;
     }
 
@@ -7071,7 +7071,7 @@ doc_end:
 
 unexpected_end:
     err->pos = len;
-    /* if no nore data, stop the incr read */
+    /* if no more data, stop the incr read */
     if (unlikely(len >= state->buf_len)) {
         err->code = YYJSON_READ_ERROR_UNEXPECTED_END;
         err->msg = MSG_NOT_END;
@@ -7897,7 +7897,7 @@ static_noinline u8 *write_f32_raw(u8 *buf, u64 raw_f64,
             num_hdr = buf + pre_ofs;
             num_end = write_u32_len_7_to_9_trim(sig_dec, num_hdr);
 
-            /* seperate these digits to leave a space for dot */
+            /* separate these digits to leave a space for dot */
             num_sep_pos = no_pre_zero ? dot_ofs : 0;
             num_sep = num_hdr + num_sep_pos;
             byte_move_8(num_sep + no_pre_zero, num_sep);
@@ -8020,7 +8020,7 @@ static_noinline u8 *write_f64_raw(u8 *buf, u64 raw, yyjson_write_flag flg) {
             num_hdr = buf + pre_ofs;
             num_end = write_u64_len_16_to_17_trim(sig_dec, num_hdr);
 
-            /* seperate these digits to leave a space for dot */
+            /* separate these digits to leave a space for dot */
             num_sep_pos = no_pre_zero ? dot_ofs : 0;
             num_sep = num_hdr + num_sep_pos;
             byte_move_16(num_sep + no_pre_zero, num_sep);
@@ -8180,7 +8180,7 @@ static_noinline u8 *write_f64_raw_fixed(u8 *buf, u64 raw, yyjson_write_flag flg,
             num_hdr = buf + pre_ofs;
             num_end = write_u64_len_1_to_17(sig_dec, num_hdr);
 
-            /* seperate these digits to leave a space for dot */
+            /* separate these digits to leave a space for dot */
             num_sep_pos = no_pre_zero ? dot_ofs : -dot_ofs;
             num_sep = buf + num_sep_pos;
             byte_move_16(num_sep + 1, num_sep);

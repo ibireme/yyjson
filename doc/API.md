@@ -47,7 +47,7 @@ yyjson_doc *yyjson_mut_val_imut_copy(const yyjson_mut_val *val, ...);
 ```
 
 ## API for string
-The library supports strings with or without null-terminator ('\0').<br/>
+The library supports strings with or without null-terminator (`\0`).<br/>
 When you need to use a string without a null-terminator or when you explicitly know the length of the string, you can use the function that ends with `n`, for example:
 ```c
 // null-terminator is required
@@ -263,7 +263,7 @@ yyjson_doc_free(doc);
 
 ## Reader error handling
 
-When reading JSON fails and you need error information, you can pass a `yyjson_read_err` pointer to the `yyjson_read_xxx()` functions to receive the error details.
+When reading JSON fails, and you need error information, you can pass a `yyjson_read_err` pointer to the `yyjson_read_xxx()` functions to receive the error details.
 
 Sample code:
 ```c
@@ -689,10 +689,10 @@ This is the default flag for JSON writer:
 - Does not escape unicode or slashes.
 
 ### **YYJSON_WRITE_PRETTY**
-Writes JSON with a pretty format uing a 4-space indent.
+Writes JSON with a pretty format using a 4-space indent.
 
 ### **YYJSON_WRITE_PRETTY_TWO_SPACES**
-Writes JSON with a pretty format uing a 2-space indent.
+Writes JSON with a pretty format using a 2-space indent.
 This flag will override `YYJSON_WRITE_PRETTY` flag.
 
 ### **YYJSON_WRITE_ESCAPE_UNICODE**
@@ -801,7 +801,7 @@ Each JSON Value has a type and subtype, as specified in the table:
 - `YYJSON_TYPE_RAW` only appears when the corresponding flag `YYJSON_READ_XXX_AS_RAW` is used.
 - `YYJSON_SUBTYPE_NOESC` is used to optimize the writing speed of strings that do not need to be escaped. This subtype is used internally, and the user does not need to handle it.
 
-The following functions can be used to determine the type of a JSON value.
+The following functions can be used to determine the type of JSON value.
 
 ```c
 // Returns the type and subtype of a JSON value.
@@ -863,7 +863,7 @@ double yyjson_get_num(const yyjson_val *val);
 const char *yyjson_get_str(const yyjson_val *val);
 
 // Returns the content length (string length in bytes, array size, 
-// object size), or 0 if the value does not contains length data.
+// object size), or 0 if the value does not contain length data.
 size_t yyjson_get_len(const yyjson_val *val);
 
 // Returns whether the value is equals to a string.
@@ -912,11 +912,11 @@ size_t yyjson_arr_size(const yyjson_val *arr);
 yyjson_val *yyjson_arr_get(const yyjson_val *arr, size_t idx);
 
 // Returns the first element of this array (constant time).
-// Returns NULL if array is empty or intput is not an array.
+// Returns NULL if array is empty or input is not an array.
 yyjson_val *yyjson_arr_get_first(const yyjson_val *arr);
 
 // Returns the last element of this array (linear search time).
-// Returns NULL if array is empty or intput is not an array.
+// Returns NULL if array is empty or input is not an array.
 yyjson_val *yyjson_arr_get_last(const yyjson_val *arr);
 ```
 
@@ -946,7 +946,7 @@ yyjson_arr_foreach(arr, idx, max, val) {
 ```
 <br/>
 
-There's also mutable version API to traverse an mutable array:<br/>
+There's also mutable version API to traverse a mutable array:<br/>
 
 Sample code 1 (mutable iterator API):
 ```c
@@ -1027,7 +1027,7 @@ yyjson_obj_foreach(obj, idx, max, key, val) {
 ```
 <br/>
 
-There's also mutable version API to traverse an mutable object:<br/>
+There's also mutable version API to traverse a mutable object:<br/>
 
 Sample code 1 (mutable iterator API):
 ```c
@@ -1489,7 +1489,7 @@ yyjson_mut_doc_ptr_setx(doc, "/b/99", 4, yyjson_mut_int(doc, 99), true, NULL, &e
 if (err.code) printf("err: %s\n", err.msg); // err: cannot resolve
 
 // get target value's context
-// perform some operations without re-parsing the JSON Pointer
+// perform some operations without reparsing the JSON Pointer
 yyjson_mut_val *val = yyjson_mut_doc_ptr_getx(doc, "/b/0", 4, &ctx, &err);
 if (yyjson_mut_is_null(val)) yyjson_ptr_ctx_remove(&ctx);
 // now: {"a":0,"b":[2,3]}
@@ -1651,7 +1651,7 @@ size_t max_json_size = 64 * 1024;
 size_t buf_size = yyjson_read_max_memory_usage(max_json_size, 0);
 // create a buffer for allocator
 void *buf = malloc(buf_size);
-// setup the allocator with buffer
+// set up the allocator with buffer
 yyjson_alc alc;
 yyjson_alc_pool_init(&alc, buf, buf_size);
 

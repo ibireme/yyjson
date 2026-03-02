@@ -155,7 +155,7 @@
 17976931348623158e292
 17976931348623159e292
 
-# Fast Path Currect
+# Fast Path Correct
 89255e-22
 
 # Some random values.

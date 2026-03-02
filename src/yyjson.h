@@ -4911,7 +4911,7 @@ struct yyjson_doc {
     earlier versions are uncertain.
 
  @param str The C string.
- @param len The returnd value from strlen(str).
+ @param len The returned value from strlen(str).
  */
 yyjson_api_inline bool unsafe_yyjson_is_str_noesc(const char *str, size_t len) {
 #if YYJSON_HAS_CONSTANT_P && \
