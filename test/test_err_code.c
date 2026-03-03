@@ -308,6 +308,17 @@ static void test_read_err_code(void) {
     
     
     // -------------------------------------------------------------------------
+    // Special case: object member is an array with a trailing comma
+    str = "{\"array\":[1,],\"integer\":35}";
+    //                  ^ trailing comma is not allowed
+    memset(&err, -1, sizeof(err));
+    yyjson_doc_free(yyjson_read_opts((char *)str, strlen(str), 0, NULL, &err));
+    yy_assert(err.code == YYJSON_READ_ERROR_JSON_STRUCTURE);
+    yy_assert(err.pos == strlen(str) - 16);
+    
+    
+    
+    // -------------------------------------------------------------------------
     // Invalid comment, such as unclosed multi-line comment.
 #if !YYJSON_DISABLE_NON_STANDARD
     str = "[123]/*";

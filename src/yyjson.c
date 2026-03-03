@@ -5468,7 +5468,7 @@ arr_val_begin:
         cur++;
         if (likely(ctn_len == 0)) goto arr_end;
         if (has_allow(TRAILING_COMMAS)) goto arr_end;
-        while (*cur != ',') cur--;
+        do { cur--; } while (*cur != ',');
         goto fail_trailing_comma;
     }
     if (char_is_space(*cur)) {
@@ -5562,7 +5562,7 @@ obj_key_begin:
         cur++;
         if (likely(ctn_len == 0)) goto obj_end;
         if (has_allow(TRAILING_COMMAS)) goto obj_end;
-        while (*cur != ',') cur--;
+        do { cur--; } while (*cur != ',');
         goto fail_trailing_comma;
     }
     if (char_is_space(*cur)) {
@@ -5910,7 +5910,7 @@ arr_val_begin:
         cur++;
         if (likely(ctn_len == 0)) goto arr_end;
         if (has_allow(TRAILING_COMMAS)) goto arr_end;
-        while (*cur != ',') cur--;
+        do { cur--; } while (*cur != ',');
         goto fail_trailing_comma;
     }
     if (char_is_space(*cur)) {
@@ -6022,7 +6022,7 @@ obj_key_begin:
         cur++;
         if (likely(ctn_len == 0)) goto obj_end;
         if (has_allow(TRAILING_COMMAS)) goto obj_end;
-        while (*cur != ',') cur--;
+        do { cur--; } while (*cur != ',');
         goto fail_trailing_comma;
     }
     if (char_is_space(*cur)) {
@@ -6858,7 +6858,7 @@ arr_val_continue:
     if (*cur == ']') {
         cur++;
         if (likely(ctn_len == 0)) goto arr_end;
-        while (*cur != ',') cur--;
+        do { cur--; } while (*cur != ',');
         goto fail_trailing_comma;
     }
     if (char_is_space(*cur)) {
@@ -6940,7 +6940,7 @@ obj_key_continue:
     if (likely(*cur == '}')) {
         cur++;
         if (likely(ctn_len == 0)) goto obj_end;
-        while (*cur != ',') cur--;
+        do { cur--; } while (*cur != ',');
         goto fail_trailing_comma;
     }
     if (char_is_space(*cur)) {
