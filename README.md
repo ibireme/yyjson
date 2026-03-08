@@ -1,7 +1,7 @@
 
 # Introduction
 
-[![Build](https://img.shields.io/github/actions/workflow/status/ibireme/yyjson/cmake.yml?branch=master&style=flat-square)](https://github.com/ibireme/yyjson/actions/workflows/cmake.yml)
+[![Build](https://img.shields.io/github/actions/workflow/status/ibireme/yyjson/checks.yml?branch=master&style=flat-square)](https://github.com/ibireme/yyjson/actions/workflows/checks.yml)
 [![Codecov](https://img.shields.io/codecov/c/github/ibireme/yyjson/master?style=flat-square)](https://codecov.io/gh/ibireme/yyjson)
 [![License](https://img.shields.io/github/license/ibireme/yyjson?color=blue&style=flat-square)](https://github.com/ibireme/yyjson/blob/master/LICENSE)
 [![Version](https://img.shields.io/github/v/release/ibireme/yyjson?color=orange&style=flat-square)](https://github.com/ibireme/yyjson/releases)
