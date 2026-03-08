@@ -46,40 +46,40 @@ option(YYJSON_DISABLE_UTF8_VALIDATION "Disable UTF-8 validation" OFF)
 option(YYJSON_DISABLE_UNALIGNED_MEMORY_ACCESS "Disable unaligned memory access explicit" OFF)
 option(YYJSON_READER_DEPTH_LIMIT "Set a depth limit for reading nested objects/arrays, 0 for unlimited" 0)
 
-if(YYJSON_DISABLE_READER)
-    add_definitions(-DYYJSON_DISABLE_READER)
-endif()
-if(YYJSON_DISABLE_WRITER)
-    add_definitions(-DYYJSON_DISABLE_WRITER)
-endif()
-if(YYJSON_DISABLE_INCR_READER)
-    add_definitions(-DYYJSON_DISABLE_INCR_READER)
-endif()
-if(YYJSON_DISABLE_UTILS)
-    add_definitions(-DYYJSON_DISABLE_UTILS)
-endif()
-if(YYJSON_DISABLE_FAST_FP_CONV)
-    add_definitions(-DYYJSON_DISABLE_FAST_FP_CONV)
-endif()
-if(YYJSON_DISABLE_NON_STANDARD)
-    add_definitions(-DYYJSON_DISABLE_NON_STANDARD)
-endif()
-if(YYJSON_DISABLE_UTF8_VALIDATION)
-    add_definitions(-DYYJSON_DISABLE_UTF8_VALIDATION)
-endif()
-if(YYJSON_DISABLE_UNALIGNED_MEMORY_ACCESS)
-    add_definitions(-DYYJSON_DISABLE_UNALIGNED_MEMORY_ACCESS)
-endif()
-if(YYJSON_READER_DEPTH_LIMIT GREATER 0)
-    add_definitions(-DYYJSON_READER_DEPTH_LIMIT=${YYJSON_READER_DEPTH_LIMIT})
-endif()
-
 
 # ------------------------------------------------------------------------------
 # Library
 add_library(yyjson src/yyjson.h src/yyjson.c)
 target_include_directories(yyjson PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>)
 set_target_properties(yyjson PROPERTIES VERSION ${PROJECT_VERSION} SOVERSION ${YYJSON_SOVERSION})
+
+if(YYJSON_DISABLE_READER)
+    target_compile_definitions(yyjson PUBLIC YYJSON_DISABLE_READER)
+endif()
+if(YYJSON_DISABLE_WRITER)
+    target_compile_definitions(yyjson PUBLIC YYJSON_DISABLE_WRITER)
+endif()
+if(YYJSON_DISABLE_INCR_READER)
+    target_compile_definitions(yyjson PUBLIC YYJSON_DISABLE_INCR_READER)
+endif()
+if(YYJSON_DISABLE_UTILS)
+    target_compile_definitions(yyjson PUBLIC YYJSON_DISABLE_UTILS)
+endif()
+if(YYJSON_DISABLE_FAST_FP_CONV)
+    target_compile_definitions(yyjson PUBLIC YYJSON_DISABLE_FAST_FP_CONV)
+endif()
+if(YYJSON_DISABLE_NON_STANDARD)
+    target_compile_definitions(yyjson PUBLIC YYJSON_DISABLE_NON_STANDARD)
+endif()
+if(YYJSON_DISABLE_UTF8_VALIDATION)
+    target_compile_definitions(yyjson PUBLIC YYJSON_DISABLE_UTF8_VALIDATION)
+endif()
+if(YYJSON_DISABLE_UNALIGNED_MEMORY_ACCESS)
+    target_compile_definitions(yyjson PUBLIC YYJSON_DISABLE_UNALIGNED_MEMORY_ACCESS)
+endif()
+if(YYJSON_READER_DEPTH_LIMIT GREATER 0)
+    target_compile_definitions(yyjson PUBLIC YYJSON_READER_DEPTH_LIMIT=${YYJSON_READER_DEPTH_LIMIT})
+endif()
 
 
 
@@ -256,13 +256,13 @@ if(YYJSON_BUILD_TESTS)
         if (YYJSON_ENABLE_VALGRIND)
             find_program(MEMORYCHECK_COMMAND valgrind)
             if ("${MEMORYCHECK_COMMAND}" MATCHES "MEMORYCHECK_COMMAND-NOTFOUND")
-                message(WARNING "Valgrind not found")
-                unset(MEMORYCHECK_COMMAND)
+                message(FATAL_ERROR "Valgrind not found")
             else()
-                message(STATUS "Valgrind found")
+                message(STATUS "Valgrind found: ${MEMORYCHECK_COMMAND}")
                 set(MEMORYCHECK_COMMAND_OPTIONS
                     --tool=memcheck
                     --leak-check=full
+                    --show-leak-kinds=all
                     --trace-children=yes
                     --error-exitcode=1
                 )
@@ -271,7 +271,6 @@ if(YYJSON_BUILD_TESTS)
         
         # Copy test data
         file(COPY "${CMAKE_CURRENT_SOURCE_DIR}/test/data" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}")
-        add_definitions(-DYYJSON_TEST_DATA_PATH="${CMAKE_CURRENT_BINARY_DIR}")
         
         # Add dependency
         add_library(yyjson_test_utils
@@ -279,6 +278,8 @@ if(YYJSON_BUILD_TESTS)
             test/util/goo_double_conv.c
         )
         target_include_directories(yyjson_test_utils PUBLIC test/util)
+        target_compile_definitions(yyjson_test_utils PUBLIC
+            YYJSON_TEST_DATA_PATH="${CMAKE_CURRENT_BINARY_DIR}")
         if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
             target_compile_options(yyjson_test_utils PRIVATE $<$<COMPILE_LANGUAGE:C>:-std=c99>)
         endif()
@@ -316,30 +317,41 @@ if(YYJSON_BUILD_TESTS)
         if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
             if (YYJSON_ENABLE_COVERAGE)
                 if(CMAKE_C_COMPILER_ID MATCHES "Clang")
-                    set(COMPILE_FLAGS -fprofile-instr-generate -fcoverage-mapping)
+                    set(COVERAGE_FLAGS -fprofile-instr-generate -fcoverage-mapping)
                 else()
-                    set(COMPILE_FLAGS --coverage)
+                    set(COVERAGE_FLAGS --coverage)
                 endif()
-                target_compile_options(yyjson PRIVATE ${COMPILE_FLAGS})
-                target_link_libraries(yyjson INTERFACE ${COMPILE_FLAGS})
+                target_compile_options(yyjson PRIVATE ${COVERAGE_FLAGS})
+                target_link_options(yyjson INTERFACE ${COVERAGE_FLAGS})
                 foreach(SRC_FILE ${YYJSON_TEST_SOURCE})
                     string(REGEX REPLACE "(^.*/|\\.[^.]*$)" "" SRC_NAME ${SRC_FILE})
-                    target_compile_options(${SRC_NAME} PRIVATE ${COMPILE_FLAGS})
+                    target_compile_options(${SRC_NAME} PRIVATE ${COVERAGE_FLAGS})
                 endforeach()
             endif()
             if (YYJSON_ENABLE_SANITIZE)
-                set(COMPILE_FLAGS
+                set(SANITIZE_FLAGS
                     -fsanitize=address
                     -fsanitize=undefined
-                    -fsanitize=leak
-                    -fsanitize-recover=all
                     -fno-omit-frame-pointer
                     -fno-optimize-sibling-calls
                     -O1
                     -g
                 )
-                target_compile_options(yyjson PRIVATE ${COMPILE_FLAGS})
-                target_link_libraries(yyjson INTERFACE ${COMPILE_FLAGS})
+                set(SANITIZE_LINK_FLAGS
+                    -fsanitize=address
+                    -fsanitize=undefined
+                )
+                if (CMAKE_SYSTEM_NAME MATCHES "Linux")
+                    list(APPEND SANITIZE_FLAGS -fsanitize=leak)
+                    list(APPEND SANITIZE_LINK_FLAGS -fsanitize=leak)
+                endif()
+                target_compile_options(yyjson PRIVATE ${SANITIZE_FLAGS})
+                target_compile_options(yyjson_test_utils PRIVATE ${SANITIZE_FLAGS})
+                target_link_options(yyjson INTERFACE ${SANITIZE_LINK_FLAGS})
+                foreach(SRC_FILE ${YYJSON_TEST_SOURCE})
+                    string(REGEX REPLACE "(^.*/|\\.[^.]*$)" "" SRC_NAME ${SRC_FILE})
+                    target_compile_options(${SRC_NAME} PRIVATE ${SANITIZE_FLAGS})
+                endforeach()
             endif()
         endif()
 

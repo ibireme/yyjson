@@ -417,7 +417,8 @@
         typedef long long           int64_t;
         typedef unsigned long long  uint64_t;
 #   elif (defined(__BORLANDC__) && __BORLANDC__ > 0x460) || \
-        defined(__WATCOM_INT64__) || defined (__alpha) || defined (__DECC)
+        defined(__WATCOM_INT64__) || defined (__alpha) || defined (__DECC) || \
+        defined(__DMC__)
         typedef __int64             int64_t;
         typedef unsigned __int64    uint64_t;
 #   else
@@ -484,11 +485,13 @@ extern "C" {
 #   pragma clang diagnostic ignored "-Wunused-function"
 #   pragma clang diagnostic ignored "-Wunused-parameter"
 #elif YYJSON_IS_REAL_GCC
-#   if (__GNUC__ > 4) || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
+#   if yyjson_gcc_available(4, 6, 0)
 #       pragma GCC diagnostic push
 #   endif
-#   pragma GCC diagnostic ignored "-Wunused-function"
-#   pragma GCC diagnostic ignored "-Wunused-parameter"
+#   if yyjson_gcc_available(4, 2, 0)
+#       pragma GCC diagnostic ignored "-Wunused-function"
+#       pragma GCC diagnostic ignored "-Wunused-parameter"
+#   endif
 #elif defined(_MSC_VER)
 #   pragma warning(push)
 #   pragma warning(disable:4800) /* 'int': forcing value to 'true' or 'false' */
@@ -8332,8 +8335,8 @@ yyjson_api_inline yyjson_mut_val *unsafe_yyjson_mut_get_pointer(
 
 #if defined(__clang__)
 #   pragma clang diagnostic pop
-#elif defined(__GNUC__)
-#   if (__GNUC__ > 4) || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
+#elif YYJSON_IS_REAL_GCC
+#   if yyjson_gcc_available(4, 6, 0)
 #       pragma GCC diagnostic pop
 #   endif
 #elif defined(_MSC_VER)

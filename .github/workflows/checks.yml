@@ -1,0 +1,164 @@
+name: Checks
+
+env:
+  FORCE_COLOR: 1
+  CLICOLOR_FORCE: 1
+
+on:
+  push:
+    paths-ignore:
+      - '**.md'
+      - 'doc/**'
+  pull_request:
+    paths-ignore:
+      - '**.md'
+      - 'doc/**'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+
+  # Sanitizer checks (Ubuntu GCC, Debug build)
+  sanitizer:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        build_flag: [Default, ReduceBinary]
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    - name: Configure CMake
+      shell: bash
+      run: |
+        BUILD_OPTIONS="-DYYJSON_BUILD_TESTS=ON -DYYJSON_ENABLE_SANITIZE=ON"
+        if [ "${{matrix.build_flag}}" == "ReduceBinary" ]; then
+          BUILD_OPTIONS="${BUILD_OPTIONS} -DYYJSON_DISABLE_FAST_FP_CONV=ON"
+          BUILD_OPTIONS="${BUILD_OPTIONS} -DYYJSON_DISABLE_NON_STANDARD=ON"
+        fi
+        cmake -E make_directory ${{runner.workspace}}/build
+        cd ${{runner.workspace}}/build
+        cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=Debug $BUILD_OPTIONS
+
+    - name: Build
+      shell: bash
+      working-directory: ${{runner.workspace}}/build
+      run: cmake --build . --config Debug
+
+    - name: Test
+      shell: bash
+      working-directory: ${{runner.workspace}}/build
+      env:
+        ASAN_OPTIONS: halt_on_error=1:exitcode=1
+        UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1:exitcode=1
+        LSAN_OPTIONS: exitcode=1
+      run: ctest -C Debug --output-on-failure
+
+
+  # Valgrind checks (Ubuntu GCC, RelWithDebInfo build)
+  valgrind:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        build_flag: [Default, ReduceBinary]
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    - name: Install Valgrind
+      shell: bash
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y valgrind
+
+    - name: Configure CMake
+      shell: bash
+      run: |
+        BUILD_OPTIONS="-DYYJSON_BUILD_TESTS=ON -DYYJSON_ENABLE_VALGRIND=ON"
+        if [ "${{matrix.build_flag}}" == "ReduceBinary" ]; then
+          BUILD_OPTIONS="${BUILD_OPTIONS} -DYYJSON_DISABLE_FAST_FP_CONV=ON"
+          BUILD_OPTIONS="${BUILD_OPTIONS} -DYYJSON_DISABLE_NON_STANDARD=ON"
+        fi
+        cmake -E make_directory ${{runner.workspace}}/build
+        cd ${{runner.workspace}}/build
+        cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=RelWithDebInfo $BUILD_OPTIONS
+
+    - name: Build
+      shell: bash
+      working-directory: ${{runner.workspace}}/build
+      run: cmake --build . --config RelWithDebInfo
+
+    - name: Test
+      shell: bash
+      working-directory: ${{runner.workspace}}/build
+      run: ctest -C RelWithDebInfo --output-on-failure
+
+
+  # Check different compile-time flags (Ubuntu GCC/Clang)
+  flag:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        compiler:
+          - gcc
+          - clang
+        opt: 
+          - no_fp
+          - no_reader
+          - no_writer
+          - no_utf8
+          - no_incr
+          - no_unalign
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    - name: Configure CMake
+      shell: bash
+      run: |
+        BUILD_OPTIONS="-DYYJSON_BUILD_TESTS=ON"
+        if [ "${{matrix.compiler}}" == "gcc" ]; then
+          BUILD_OPTIONS="${BUILD_OPTIONS} -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++"
+        fi
+        if [ "${{matrix.compiler}}" == "clang" ]; then
+          BUILD_OPTIONS="${BUILD_OPTIONS} -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++"
+        fi
+        if [ "${{matrix.opt}}" == "no_fp" ]; then
+          BUILD_OPTIONS="${BUILD_OPTIONS} -DYYJSON_DISABLE_FAST_FP_CONV=ON"
+        fi
+        if [ "${{matrix.opt}}" == "no_reader" ]; then
+          BUILD_OPTIONS="${BUILD_OPTIONS} -DYYJSON_DISABLE_READER=ON"
+        fi
+        if [ "${{matrix.opt}}" == "no_writer" ]; then
+          BUILD_OPTIONS="${BUILD_OPTIONS} -DYYJSON_DISABLE_WRITER=ON"
+        fi
+        if [ "${{matrix.opt}}" == "no_utf8" ]; then
+          BUILD_OPTIONS="${BUILD_OPTIONS} -DYYJSON_DISABLE_UTF8_VALIDATION=ON"
+        fi
+        if [ "${{matrix.opt}}" == "no_incr" ]; then
+          BUILD_OPTIONS="${BUILD_OPTIONS} -DYYJSON_DISABLE_INCR_READER=ON"
+        fi
+        if [ "${{matrix.opt}}" == "no_unalign" ]; then
+          BUILD_OPTIONS="${BUILD_OPTIONS} -DYYJSON_DISABLE_UNALIGNED_MEMORY_ACCESS=ON"
+        fi
+        cmake -E make_directory ${{runner.workspace}}/build
+        cd ${{runner.workspace}}/build
+        cmake $GITHUB_WORKSPACE $BUILD_OPTIONS
+
+    - name: Build
+      shell: bash
+      working-directory: ${{runner.workspace}}/build
+      run: cmake --build . --config Release
+    
+    - name: Test
+      shell: bash
+      working-directory: ${{runner.workspace}}/build
+      run: ctest -C Release --output-on-failure

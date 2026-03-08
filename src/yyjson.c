@@ -35,7 +35,7 @@
 #   pragma clang diagnostic ignored "-Wunused-label"
 #   pragma clang diagnostic ignored "-Wunused-macros"
 #   pragma clang diagnostic ignored "-Wunused-variable"
-#elif YYJSON_IS_REAL_GCC
+#elif YYJSON_IS_REAL_GCC && yyjson_gcc_available(4, 2, 0)
 #   pragma GCC diagnostic ignored "-Wunused-function"
 #   pragma GCC diagnostic ignored "-Wunused-parameter"
 #   pragma GCC diagnostic ignored "-Wunused-label"
@@ -4749,7 +4749,6 @@ static_inline bool read_str_opt(u8 quo, u8 **ptr, u8 *eof, yyjson_read_flag flg,
     u8 *hdr = *ptr + 1;
     u8 **end = ptr;
     u8 *src = hdr, *dst = NULL, *pos;
-    u16 hi, lo;
     u32 uni, tmp;
 
     /* Resume incremental parsing. */
@@ -5081,7 +5080,6 @@ static_noinline bool read_str_id(u8 **ptr, u8 *eof, yyjson_read_flag flg,
     u8 *hdr = *ptr;
     u8 **end = ptr;
     u8 *src = hdr, *dst = NULL;
-    u16 hi, lo;
     u32 uni, tmp;
 
     /* add null-terminator for previous raw string */

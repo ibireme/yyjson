@@ -1223,7 +1223,7 @@ static void test_single_quoted_string(void) {
         { "ab\'cd", 5 }
     });
     validate_str_sq((string_set) {
-        { "ab\x00cd", 5 },
+        { "ab\x00" "cd", 5 },
         { NULL, 0 }
     });
     validate_str_sq((string_set) {

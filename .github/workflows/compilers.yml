@@ -1,0 +1,377 @@
+name: Compilers
+
+env:
+  FORCE_COLOR: 1
+  CLICOLOR_FORCE: 1
+
+on:
+  push:
+    paths-ignore:
+      - '**.md'
+      - 'doc/**'
+  pull_request:
+    paths-ignore:
+      - '**.md'
+      - 'doc/**'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+
+  # Check macOS Clang
+  macos_clang:
+    runs-on: macos-latest
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+    - name: Build and Test
+      run: |
+        mkdir build
+        cd build
+        cmake .. -DCMAKE_BUILD_TYPE=Release -DYYJSON_BUILD_TESTS=ON
+        cmake --build . --config Release
+        ctest -C Release --output-on-failure
+
+
+  # Check FreeBSD Clang
+  freebsd_clang:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+    - name: Build and Test
+      uses: vmactions/freebsd-vm@v1
+      with:
+        usesh: true
+        run: |
+          pkg install -y cmake-core
+          mkdir build
+          cd build
+          cmake .. -DCMAKE_BUILD_TYPE=Release -DYYJSON_BUILD_TESTS=ON
+          cmake --build . --config Release
+          ctest -C Release --output-on-failure
+
+
+  # Check latest Clang
+  linux_clang_latest:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    - name: Install Dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y valgrind
+        sudo apt-get install -y lsb-release software-properties-common gnupg
+        wget https://apt.llvm.org/llvm.sh
+        chmod +x ./llvm.sh
+        sudo ./llvm.sh
+        CLANG_PATH=$(ls /usr/bin/clang* | grep "clang-[0-9]" | sort --version-sort | tail -1)
+        CLANGPP_PATH=$(ls /usr/bin/clang* | grep "clang++-[0-9]" | sort --version-sort | tail -1)
+        echo "Latest Clang: $CLANG_PATH"
+        echo "Latest Clang++: $CLANGPP_PATH"
+        echo "CC=$CLANG_PATH" >> $GITHUB_ENV
+        echo "CXX=$CLANGPP_PATH" >> $GITHUB_ENV
+
+    - name: Configure CMake
+      shell: bash
+      run: |
+        cmake -E make_directory ${{runner.workspace}}/build
+        cd ${{runner.workspace}}/build
+        cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=RelWithDebInfo -DYYJSON_BUILD_TESTS=ON -DYYJSON_ENABLE_VALGRIND=ON
+    
+    - name: Build
+      shell: bash
+      working-directory: ${{runner.workspace}}/build
+      run: cmake --build . --config RelWithDebInfo
+    
+    - name: Test
+      shell: bash
+      working-directory: ${{runner.workspace}}/build
+      run: ctest -C RelWithDebInfo --output-on-failure
+
+
+  # Check latest GCC
+  linux_gcc_latest:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    - name: Install Dependencies
+      run: |
+        sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
+        sudo apt-get update
+        GCC_VERSION=$(apt search ^gcc-[0-9]*$ 2>/dev/null | grep -Po 'gcc-(\d+)(?=/)' | sort --version-sort | tail -1)
+        GPP_VERSION=$(apt search ^g\+\+-[0-9]*$ 2>/dev/null | grep -Po 'g\+\+-(\d+)(?=/)' | sort --version-sort | tail -1)
+        echo "Latest GCC: $GCC_VERSION"
+        echo "Latest G++: $GPP_VERSION"
+        sudo apt-get install -y $GCC_VERSION $GPP_VERSION
+        sudo apt-get install -y valgrind
+        echo "CC=$GCC_VERSION" >> $GITHUB_ENV
+        echo "CXX=$GPP_VERSION" >> $GITHUB_ENV
+
+    - name: Configure CMake
+      shell: bash
+      run: |
+        cmake -E make_directory ${{runner.workspace}}/build
+        cd ${{runner.workspace}}/build
+        cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=RelWithDebInfo -DYYJSON_BUILD_TESTS=ON -DYYJSON_ENABLE_VALGRIND=ON
+    
+    - name: Build
+      shell: bash
+      working-directory: ${{runner.workspace}}/build
+      run: cmake --build . --config RelWithDebInfo
+    
+    - name: Test
+      shell: bash
+      working-directory: ${{runner.workspace}}/build
+      run: ctest -C RelWithDebInfo --output-on-failure
+
+
+  # Check old GCC 64-bit
+  linux_gcc4:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    - name: Install GCC 4.8
+      run: |
+        sudo apt-get update
+        wget -q http://mirrors.kernel.org/ubuntu/pool/universe/g/gcc-4.8/gcc-4.8-base_4.8.5-4ubuntu8_amd64.deb
+        wget -q http://mirrors.kernel.org/ubuntu/pool/universe/g/gcc-4.8/cpp-4.8_4.8.5-4ubuntu8_amd64.deb
+        wget -q http://mirrors.kernel.org/ubuntu/pool/universe/g/gcc-4.8/libgcc-4.8-dev_4.8.5-4ubuntu8_amd64.deb
+        wget -q http://mirrors.kernel.org/ubuntu/pool/universe/g/gcc-4.8/libasan0_4.8.5-4ubuntu8_amd64.deb
+        wget -q http://mirrors.kernel.org/ubuntu/pool/universe/g/gcc-4.8/gcc-4.8_4.8.5-4ubuntu8_amd64.deb
+        wget -q http://mirrors.kernel.org/ubuntu/pool/universe/g/gcc-4.8/libstdc++-4.8-dev_4.8.5-4ubuntu8_amd64.deb
+        wget -q http://mirrors.kernel.org/ubuntu/pool/universe/g/gcc-4.8/g++-4.8_4.8.5-4ubuntu8_amd64.deb
+        sudo apt install -y \
+          ./gcc-4.8-base_4.8.5-4ubuntu8_amd64.deb \
+          ./cpp-4.8_4.8.5-4ubuntu8_amd64.deb \
+          ./libgcc-4.8-dev_4.8.5-4ubuntu8_amd64.deb \
+          ./libasan0_4.8.5-4ubuntu8_amd64.deb \
+          ./gcc-4.8_4.8.5-4ubuntu8_amd64.deb \
+          ./libstdc++-4.8-dev_4.8.5-4ubuntu8_amd64.deb \
+          ./g++-4.8_4.8.5-4ubuntu8_amd64.deb
+
+    - name: Build and Test
+      run: |
+        mkdir build
+        cd build
+        cmake .. -DCMAKE_C_COMPILER=gcc-4.8 -DCMAKE_CXX_COMPILER=g++-4.8 -DYYJSON_BUILD_TESTS=ON
+        cmake --build . --config Release
+        ctest -C Release --output-on-failure
+
+
+  # Check old GCC 32-bit
+  linux_gcc5_i386:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    - name: Set Up QEMU
+      uses: docker/setup-qemu-action@v3
+
+    - name: Set Up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Build and Test
+      run: |
+          docker run -v "$PWD:/yyjson" i386/ubuntu:16.04 bash -e -c '
+            FORCE_COLOR=1
+            CLICOLOR_FORCE=1
+            apt-get update
+            apt-get install -y gcc g++ cmake
+            mkdir build
+            cd build
+            cmake ../yyjson -DYYJSON_BUILD_TESTS=ON
+            cmake --build . --config Release
+            ctest -C Release --output-on-failure
+          '
+
+
+  # Check GCC 2.95.4 via QEMU (Debian Woody i386)
+  linux_gcc295:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    - name: Set Up QEMU
+      uses: docker/setup-qemu-action@v3
+
+    - name: Set Up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Download GCC 2.95 Packages
+      run: |
+        mkdir gcc295_pkgs
+        wget -q -O gcc295_pkgs/cpp-2.95.deb \
+          http://archive.debian.org/debian/pool/main/g/gcc-2.95/cpp-2.95_2.95.4-11woody1_i386.deb
+        wget -q -O gcc295_pkgs/gcc-2.95.deb \
+          http://archive.debian.org/debian/pool/main/g/gcc-2.95/gcc-2.95_2.95.4-11woody1_i386.deb
+        wget -q -O gcc295_pkgs/binutils.deb \
+          http://archive.debian.org/debian/pool/main/b/binutils/binutils_2.12.90.0.1-4_i386.deb
+        wget -q -O gcc295_pkgs/libc6-dev.deb \
+          http://archive.debian.org/debian/pool/main/g/glibc/libc6-dev_2.2.5-11.8_i386.deb
+
+    - name: Build and Test
+      run: |
+        docker run --platform linux/386 --rm \
+          -v "$PWD:/project" \
+          -v "$PWD/gcc295_pkgs:/pkgs" \
+          lpenz/debian-woody-i386 bash -c '
+            dpkg-deb -x /pkgs/cpp-2.95.deb /
+            dpkg-deb -x /pkgs/gcc-2.95.deb /
+            dpkg-deb -x /pkgs/binutils.deb /
+            dpkg-deb -x /pkgs/libc6-dev.deb /
+            gcc-2.95 -Wall \
+              -I/project/src \
+              /project/src/yyjson.c /project/test/compile_smoke.c \
+              -o /tmp/test_smoke -lm
+            /tmp/test_smoke
+          '
+
+
+  # Check TinyCC (tcc)
+  linux_tinycc:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+    
+    - name: Install Dependencies
+      shell: bash
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y tcc
+
+    - name: Build and Test
+      run: |
+        mkdir build
+        cd build
+        cmake .. -DCMAKE_C_COMPILER=tcc -DYYJSON_BUILD_TESTS=ON
+        cmake --build . --config Release
+        ctest -C Release --output-on-failure
+
+
+  # Check Windows MSVC
+  windows_msvc:
+    runs-on: windows-latest
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+    - name: Build and Test
+      run: |
+        mkdir build
+        cd build
+        cmake .. -DCMAKE_BUILD_TYPE=Release -DYYJSON_BUILD_TESTS=ON
+        cmake --build . --config Release
+        ctest -C Release --output-on-failure
+
+
+  # Check VC6 via Wine32 (itsmattkc/MSVC600)
+  windows_vc6:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    - name: Install Wine
+      run: |
+        sudo dpkg --add-architecture i386
+        sudo apt-get update -q
+        sudo apt-get install -y wine wine32
+
+    - name: Get VC6 Tools
+      run: |
+        git clone --depth 1 https://github.com/itsmattkc/MSVC600 vc6
+        cp vc6/Common/MSDev98/Bin/MSPDB60.DLL vc6/VC98/Bin/
+        (cd vc6/VC98/Bin && for f in *.DLL *.EXE; do \
+          lower="$(echo "$f" | tr '[:upper:]' '[:lower:]')"; \
+          [ "$f" != "$lower" ] && ln -sf "$f" "$lower" || true; \
+        done)
+
+    - name: Init Wine Prefix
+      run: |
+        export WINEPREFIX="$HOME/.wine_vc6"
+        export WINEARCH=win32
+        wine wineboot -u 2>/dev/null || true
+
+    - name: Build and Test
+      run: |
+        export WINEPREFIX="$HOME/.wine_vc6"
+        CWD_WIN="Z:$(echo "$PWD" | tr '/' '\\')"
+        VC6_WIN="${CWD_WIN}\\vc6\\VC98"
+        env INCLUDE="${VC6_WIN}\\Include" \
+            LIB="${VC6_WIN}\\Lib" \
+          wine vc6/VC98/Bin/CL.EXE \
+            /W3 \
+            /I "${CWD_WIN}\\src" \
+            "${CWD_WIN}\\src\\yyjson.c" \
+            "${CWD_WIN}\\test\\compile_smoke.c" \
+            /Fetest_smoke.exe
+        wine test_smoke.exe
+
+
+  # Check Open Watcom 2.0
+  windows_watcom:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    - uses: open-watcom/setup-watcom@v0
+      with:
+        version: "2.0"
+
+    - name: Build and Test
+      run: |
+        wcc386 -w3 -I./src ./src/yyjson.c      -fo=/tmp/yyjson.obj
+        wcc386 -w3 -I./src ./test/compile_smoke.c -fo=/tmp/main.obj
+        wlink \
+          sys linux \
+          file /tmp/yyjson.obj,/tmp/main.obj \
+          name /tmp/test_smoke
+        /tmp/test_smoke
+
+
+  # Check Digital Mars C (DMC)
+  windows_dmc:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    - name: Install Wine
+      run: |
+        sudo dpkg --add-architecture i386
+        sudo apt-get update -q
+        sudo apt-get install -y wine wine32
+
+    - name: Download DMC
+      run: |
+        wget -q -O dmc.zip https://ftp.digitalmars.com/dmc.zip
+        unzip -q dmc.zip -d dmc
+
+    - name: Init Wine Prefix
+      run: |
+        export WINEPREFIX="$HOME/.wine_dmc"
+        export WINEARCH=win32
+        wine wineboot -u 2>/dev/null
+
+    - name: Build and Test
+      run: |
+        export WINEPREFIX="$HOME/.wine_dmc"
+        cd dmc/dm
+        wine bin/dmc.exe \
+          -I../../src \
+          ../../src/yyjson.c \
+          ../../test/compile_smoke.c \
+          -otest_smoke.exe
+        wine test_smoke.exe
