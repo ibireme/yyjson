@@ -342,36 +342,42 @@ jobs:
 
 
   # Check Digital Mars C (DMC)
-  windows_dmc:
-    runs-on: ubuntu-latest
-    steps:
-    - name: Checkout Repository
-      uses: actions/checkout@v4
+  #
+  # Disabled due to a compiler codegen bug:
+  # DMC miscompiles 64-bit unsigned integer multiplication when one operand is constant.
+  # For example, `uint64_t res = val * 100;` produces a completely incorrect high 32-bit value.
+  # This causes massive calculation errors in yyjson library.
+  #
+  # windows_dmc:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #   - name: Checkout Repository
+  #     uses: actions/checkout@v4
 
-    - name: Install Wine
-      run: |
-        sudo dpkg --add-architecture i386
-        sudo apt-get update -q
-        sudo apt-get install -y wine wine32
+  #   - name: Install Wine
+  #     run: |
+  #       sudo dpkg --add-architecture i386
+  #       sudo apt-get update -q
+  #       sudo apt-get install -y wine wine32
 
-    - name: Download DMC
-      run: |
-        wget -q -O dmc.zip https://ftp.digitalmars.com/dmc.zip
-        unzip -q dmc.zip -d dmc
+  #   - name: Download DMC
+  #     run: |
+  #       wget -q -O dmc.zip https://ftp.digitalmars.com/dmc.zip
+  #       unzip -q dmc.zip -d dmc
 
-    - name: Init Wine Prefix
-      run: |
-        export WINEPREFIX="$HOME/.wine_dmc"
-        export WINEARCH=win32
-        wine wineboot -u 2>/dev/null
+  #   - name: Init Wine Prefix
+  #     run: |
+  #       export WINEPREFIX="$HOME/.wine_dmc"
+  #       export WINEARCH=win32
+  #       wine wineboot -u 2>/dev/null
 
-    - name: Build and Test
-      run: |
-        export WINEPREFIX="$HOME/.wine_dmc"
-        cd dmc/dm
-        wine bin/dmc.exe \
-          -I../../src \
-          ../../src/yyjson.c \
-          ../../test/compile_smoke.c \
-          -otest_smoke.exe
-        wine test_smoke.exe
+  #   - name: Build and Test
+  #     run: |
+  #       export WINEPREFIX="$HOME/.wine_dmc"
+  #       cd dmc/dm
+  #       wine bin/dmc.exe \
+  #         -I../../src \
+  #         ../../src/yyjson.c \
+  #         ../../test/compile_smoke.c \
+  #         -otest_smoke.exe
+  #       wine test_smoke.exe
