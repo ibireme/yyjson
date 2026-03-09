@@ -417,8 +417,7 @@
         typedef long long           int64_t;
         typedef unsigned long long  uint64_t;
 #   elif (defined(__BORLANDC__) && __BORLANDC__ > 0x460) || \
-        defined(__WATCOM_INT64__) || defined (__alpha) || defined (__DECC) || \
-        defined(__DMC__)
+        defined(__WATCOM_INT64__) || defined (__alpha) || defined (__DECC)
         typedef __int64             int64_t;
         typedef unsigned __int64    uint64_t;
 #   else

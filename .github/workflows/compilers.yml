@@ -133,7 +133,7 @@ jobs:
 
 
   # Check old GCC 64-bit
-  linux_gcc4:
+  linux_gcc4_x64:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout Repository
@@ -168,7 +168,7 @@ jobs:
 
 
   # Check old GCC 32-bit
-  linux_gcc5_i386:
+  linux_gcc5_x86:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout Repository
@@ -183,8 +183,6 @@ jobs:
     - name: Build and Test
       run: |
           docker run -v "$PWD:/yyjson" i386/ubuntu:16.04 bash -e -c '
-            FORCE_COLOR=1
-            CLICOLOR_FORCE=1
             apt-get update
             apt-get install -y gcc g++ cmake
             mkdir build
@@ -196,7 +194,7 @@ jobs:
 
 
   # Check GCC 2.95.4 via QEMU (Debian Woody i386)
-  linux_gcc295:
+  linux_gcc295_x86:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout Repository
@@ -260,6 +258,27 @@ jobs:
         ctest -C Release --output-on-failure
 
 
+  # Check Musl libc (Alpine Linux)
+  linux_musl:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+      
+    - name: Build and Test
+      uses: addnab/docker-run-action@v3
+      with:
+        image: alpine:latest
+        options: -v ${{ github.workspace }}:/yyjson
+        run: |
+          apk add build-base cmake valgrind
+          cd /yyjson
+          mkdir build && cd build
+          cmake .. -DCMAKE_BUILD_TYPE=Release -DYYJSON_BUILD_TESTS=ON -DYYJSON_ENABLE_VALGRIND=ON
+          cmake --build . --config Release
+          ctest -C Release --output-on-failure
+
+
   # Check Windows MSVC
   windows_msvc:
     runs-on: windows-latest
@@ -319,6 +338,57 @@ jobs:
         wine test_smoke.exe
 
 
+  # Check MinGW-w64 (Windows GCC)
+  windows_mingw:
+    runs-on: windows-latest
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    - name: Setup MSYS2
+      uses: msys2/setup-msys2@v2
+      with:
+        msystem: mingw64
+        update: true
+        install: >-
+          mingw-w64-x86_64-gcc
+          mingw-w64-x86_64-cmake
+          make
+
+    - name: Build and Test
+      shell: msys2 {0}
+      run: |
+        mkdir build && cd build
+        cmake .. -DCMAKE_BUILD_TYPE=Release -DYYJSON_BUILD_TESTS=ON -G "MSYS Makefiles"
+        cmake --build . --config Release
+        ctest -C Release --output-on-failure
+
+
+  # Check Cygwin (Windows POSIX Environment)
+  windows_cygwin:
+    runs-on: windows-latest
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    - name: Setup Cygwin
+      uses: egor-tensin/setup-cygwin@v4
+      with:
+        platform: x64
+        packages: gcc-core gcc-g++ cmake make
+
+    - name: Build and Test
+      shell: C:\tools\cygwin\bin\bash.exe --login --norc -eo pipefail -o igncr '{0}'
+      run: |
+        export PATH="/usr/bin:$PATH"
+        WORKSPACE=$(cygpath "$GITHUB_WORKSPACE")
+        cd "$WORKSPACE"
+        mkdir -p build && cd build
+        cmake .. -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release -DYYJSON_BUILD_TESTS=ON
+        make VERBOSE=1
+        ctest -C Release --output-on-failure
+
+
   # Check Open Watcom 2.0
   windows_watcom:
     runs-on: ubuntu-latest
@@ -341,43 +411,17 @@ jobs:
         /tmp/test_smoke
 
 
-  # Check Digital Mars C (DMC)
-  #
-  # Disabled due to a compiler codegen bug:
-  # DMC miscompiles 64-bit unsigned integer multiplication when one operand is constant.
-  # For example, `uint64_t res = val * 100;` produces a completely incorrect high 32-bit value.
-  # This causes massive calculation errors in yyjson library.
-  #
-  # windows_dmc:
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #   - name: Checkout Repository
-  #     uses: actions/checkout@v4
+  # Check Emscripten (WASM)
+  wasm_emscripten:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+      
+    - name: Setup Emscripten
+      uses: mymindstorm/setup-emsdk@v14
 
-  #   - name: Install Wine
-  #     run: |
-  #       sudo dpkg --add-architecture i386
-  #       sudo apt-get update -q
-  #       sudo apt-get install -y wine wine32
-
-  #   - name: Download DMC
-  #     run: |
-  #       wget -q -O dmc.zip https://ftp.digitalmars.com/dmc.zip
-  #       unzip -q dmc.zip -d dmc
-
-  #   - name: Init Wine Prefix
-  #     run: |
-  #       export WINEPREFIX="$HOME/.wine_dmc"
-  #       export WINEARCH=win32
-  #       wine wineboot -u 2>/dev/null
-
-  #   - name: Build and Test
-  #     run: |
-  #       export WINEPREFIX="$HOME/.wine_dmc"
-  #       cd dmc/dm
-  #       wine bin/dmc.exe \
-  #         -I../../src \
-  #         ../../src/yyjson.c \
-  #         ../../test/compile_smoke.c \
-  #         -otest_smoke.exe
-  #       wine test_smoke.exe
+    - name: Build and Test
+      run: |
+        emcc -I./src ./src/yyjson.c ./test/compile_smoke.c -o test_smoke.js
+        node test_smoke.js

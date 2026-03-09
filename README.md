@@ -11,7 +11,7 @@ A high performance JSON library written in ANSI C.
 
 # Features
 - **Fast**: can read or write gigabytes of JSON data per second on modern CPUs.
-- **Portable**: complies with ANSI C (C89) for cross-platform compatibility.
+- **Portable**: complies with ANSI C (C89), no explicit SIMD.
 - **Strict**: complies with [RFC 8259](https://datatracker.ietf.org/doc/html/rfc8259) JSON standard, ensuring strict number formats and UTF-8 validation.
 - **Extendable**: offers options to enable individual [JSON5](https://json5.org) features and custom allocator.
 - **Accuracy**: can accurately read and write `int64`, `uint64`, and `double` numbers.

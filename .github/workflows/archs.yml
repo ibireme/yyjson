@@ -20,25 +20,13 @@ concurrency:
 
 jobs:
 
-  # Check different architectures (QEMU, Ubuntu GCC)
+  # Check different architectures (QEMU, Debian GCC)
   arch:
     runs-on: ubuntu-22.04
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - arch: i386
-            plat: 386
-          - arch: arm32v7
-            plat: arm/v7
-          - arch: arm64v8
-            plat: arm64
-          - arch: ppc64le
-            plat: ppc64le
-          - arch: s390x
-            plat: s390x
-          - arch: riscv64
-            plat: riscv64
+        plat: [386, arm/v5, arm/v7, arm64, ppc64le, s390x, riscv64]
     
     steps:
     - name: Checkout Repository
@@ -52,9 +40,7 @@ jobs:
 
     - name: Build and Test
       run: |
-          docker run --platform linux/${{ matrix.plat }} -v "$PWD:/yyjson" ${{ matrix.arch }}/ubuntu bash -e -c '
-            FORCE_COLOR=1
-            CLICOLOR_FORCE=1
+          docker run --platform linux/${{ matrix.plat }} -v "$PWD:/yyjson" debian:trixie bash -e -c '
             apt-get update
             apt-get install -y gcc g++ cmake
             mkdir build

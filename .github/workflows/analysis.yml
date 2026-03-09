@@ -74,4 +74,3 @@ jobs:
         flags: unittests
         name: llvm-cov-coverage
         fail_ci_if_error: true
-        threshold: 1%
