@@ -60,9 +60,9 @@ Supported CMake options (default OFF):
 - `-DYYJSON_BUILD_DOC=ON` Build documentation with doxygen.
 - `-DYYJSON_ENABLE_COVERAGE=ON` Enable code coverage for tests.
 - `-DYYJSON_ENABLE_VALGRIND=ON` Enable valgrind memory checker for tests.
-- `-DYYJSON_ENABLE_SANITIZE=ON` Enable sanitizer for tests.
 - `-DYYJSON_ENABLE_FASTMATH=ON` Enable fast-math for tests.
 - `-DYYJSON_FORCE_32_BIT=ON` Force 32-bit for tests (gcc/clang/icc).
+- `-DYYJSON_SANITIZER=<name>` Enable sanitizer for tests (`address`, `undefined`, or `memory`).
 
 - `-DYYJSON_DISABLE_READER=ON` Disable JSON reader if you don't need it.
 - `-DYYJSON_DISABLE_WRITER=ON` Disable JSON writer if you don't need it.
@@ -176,10 +176,18 @@ cmake --build .
 ctest --output-on-failure
 ```
 
-Build and run tests with sanitizer (compiler should be `gcc` or `clang`):
+Build and run tests with sanitizer (`address`, `undefined`, or `memory`) using `-DYYJSON_SANITIZER=<name>`.
+For `memory`, use `Clang` on Linux x86_64:
 ```shell
 cmake -E make_directory build; cd build
-cmake .. -DYYJSON_BUILD_TESTS=ON -DYYJSON_ENABLE_SANITIZE=ON
+# address / undefined
+cmake .. -DYYJSON_BUILD_TESTS=ON -DYYJSON_SANITIZER=address
+cmake .. -DYYJSON_BUILD_TESTS=ON -DYYJSON_SANITIZER=undefined
+
+# memory (Linux x86_64 + Clang)
+cmake .. -DYYJSON_BUILD_TESTS=ON -DYYJSON_SANITIZER=memory \
+  -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
+
 cmake --build .
 ctest --output-on-failure
 ```

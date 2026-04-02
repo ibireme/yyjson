@@ -4168,6 +4168,7 @@ digi_finish:
         return_f64(dbl);
     }
 #endif
+    if (unlikely(sig == 0)) return_f64_bin(0);
 
     /*
      Fast path 2:

@@ -27,10 +27,11 @@ option(YYJSON_BUILD_MISC "Build misc" OFF)
 option(YYJSON_BUILD_DOC "Build documentation with doxygen" OFF)
 option(YYJSON_ENABLE_COVERAGE "Enable code coverage for tests" OFF)
 option(YYJSON_ENABLE_VALGRIND "Enable valgrind memory checker for tests" OFF)
-option(YYJSON_ENABLE_SANITIZE "Enable sanitizer for tests" OFF)
 option(YYJSON_ENABLE_FASTMATH "Enable fast-math for tests" OFF)
 option(YYJSON_FORCE_32_BIT "Force 32-bit for tests" OFF)
 option(YYJSON_INSTALL "Generate installation target" ON)
+set(YYJSON_SANITIZER "" CACHE STRING "Sanitizer for tests: address, undefined, memory")
+set_property(CACHE YYJSON_SANITIZER PROPERTY STRINGS "" address undefined memory)
 
 
 
@@ -328,23 +329,42 @@ if(YYJSON_BUILD_TESTS)
                     target_compile_options(${SRC_NAME} PRIVATE ${COVERAGE_FLAGS})
                 endforeach()
             endif()
-            if (YYJSON_ENABLE_SANITIZE)
-                set(SANITIZE_FLAGS
-                    -fsanitize=address
-                    -fsanitize=undefined
+            set(SANITIZE_FLAGS)
+            set(SANITIZE_LINK_FLAGS)
+
+            string(TOLOWER "${YYJSON_SANITIZER}" YYJSON_SANITIZER_LOWER)
+            if (YYJSON_SANITIZER_LOWER STREQUAL "")
+                # Sanitizer disabled.
+            elseif (YYJSON_SANITIZER_LOWER STREQUAL "address")
+                list(APPEND SANITIZE_FLAGS -fsanitize=address)
+                list(APPEND SANITIZE_LINK_FLAGS -fsanitize=address)
+                if (CMAKE_SYSTEM_NAME MATCHES "Linux")
+                    list(APPEND SANITIZE_FLAGS -fsanitize=leak)
+                    list(APPEND SANITIZE_LINK_FLAGS -fsanitize=leak)
+                endif()
+            elseif (YYJSON_SANITIZER_LOWER STREQUAL "undefined")
+                list(APPEND SANITIZE_FLAGS -fsanitize=undefined)
+                list(APPEND SANITIZE_LINK_FLAGS -fsanitize=undefined)
+            elseif (YYJSON_SANITIZER_LOWER STREQUAL "memory")
+                if (NOT CMAKE_C_COMPILER_ID STREQUAL "Clang")
+                    message(FATAL_ERROR "YYJSON_SANITIZER=memory requires Clang")
+                endif()
+                if (NOT CMAKE_SYSTEM_NAME MATCHES "Linux")
+                    message(FATAL_ERROR "YYJSON_SANITIZER=memory requires Linux")
+                endif()
+                list(APPEND SANITIZE_FLAGS -fsanitize=memory -fsanitize-memory-track-origins=2)
+                list(APPEND SANITIZE_LINK_FLAGS -fsanitize=memory -fsanitize-memory-track-origins=2)
+            else()
+                message(FATAL_ERROR "Invalid YYJSON_SANITIZER value: '${YYJSON_SANITIZER}'. Valid values: address, undefined, memory")
+            endif()
+
+            if (SANITIZE_FLAGS)
+                list(APPEND SANITIZE_FLAGS
                     -fno-omit-frame-pointer
                     -fno-optimize-sibling-calls
                     -O1
                     -g
                 )
-                set(SANITIZE_LINK_FLAGS
-                    -fsanitize=address
-                    -fsanitize=undefined
-                )
-                if (CMAKE_SYSTEM_NAME MATCHES "Linux")
-                    list(APPEND SANITIZE_FLAGS -fsanitize=leak)
-                    list(APPEND SANITIZE_LINK_FLAGS -fsanitize=leak)
-                endif()
                 target_compile_options(yyjson PRIVATE ${SANITIZE_FLAGS})
                 target_compile_options(yyjson_test_utils PRIVATE ${SANITIZE_FLAGS})
                 target_link_options(yyjson INTERFACE ${SANITIZE_LINK_FLAGS})

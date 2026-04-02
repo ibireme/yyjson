@@ -23,12 +23,13 @@ permissions:
 
 jobs:
 
-  # Sanitizer checks (Ubuntu GCC, Debug build)
+  # Sanitizer checks (Ubuntu, Debug build)
   sanitizer:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
+        sanitizer: [address, undefined, memory]
         build_flag: [Default, ReduceBinary]
 
     steps:
@@ -38,7 +39,10 @@ jobs:
     - name: Configure CMake
       shell: bash
       run: |
-        BUILD_OPTIONS="-DYYJSON_BUILD_TESTS=ON -DYYJSON_ENABLE_SANITIZE=ON"
+        BUILD_OPTIONS="-DYYJSON_BUILD_TESTS=ON -DYYJSON_SANITIZER=${{matrix.sanitizer}}"
+        if [ "${{matrix.sanitizer}}" == "memory" ]; then
+          BUILD_OPTIONS="${BUILD_OPTIONS} -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++"
+        fi
         if [ "${{matrix.build_flag}}" == "ReduceBinary" ]; then
           BUILD_OPTIONS="${BUILD_OPTIONS} -DYYJSON_DISABLE_FAST_FP_CONV=ON"
           BUILD_OPTIONS="${BUILD_OPTIONS} -DYYJSON_DISABLE_NON_STANDARD=ON"
@@ -55,11 +59,18 @@ jobs:
     - name: Test
       shell: bash
       working-directory: ${{runner.workspace}}/build
-      env:
-        ASAN_OPTIONS: halt_on_error=1:exitcode=1
-        UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1:exitcode=1
-        LSAN_OPTIONS: exitcode=1
-      run: ctest -C Debug --output-on-failure
+      run: |
+        if [ "${{matrix.sanitizer}}" == "address" ]; then
+          export ASAN_OPTIONS=halt_on_error=1:exitcode=1
+          export LSAN_OPTIONS=exitcode=1
+        fi
+        if [ "${{matrix.sanitizer}}" == "undefined" ]; then
+          export UBSAN_OPTIONS=halt_on_error=1:print_stacktrace=1:exitcode=1
+        fi
+        if [ "${{matrix.sanitizer}}" == "memory" ]; then
+          export MSAN_OPTIONS=halt_on_error=1:exitcode=1
+        fi
+        ctest -C Debug --output-on-failure
 
 
   # Valgrind checks (Ubuntu GCC, RelWithDebInfo build)
