@@ -2150,7 +2150,57 @@ static void test_json_mut_doc_api_one(const char *json_str) {
 }
 #endif
 
+static void test_json_mut_doc_imut_copy_invalid(void) {
+    yyjson_mut_val arr, obj, key, str;
+
+    memset(&arr, 0, sizeof(arr));
+    memset(&obj, 0, sizeof(obj));
+    memset(&key, 0, sizeof(key));
+    memset(&str, 0, sizeof(str));
+
+    unsafe_yyjson_set_arr(&arr, 1);
+    arr.uni.ptr = NULL;
+    yy_assert(!yyjson_mut_val_imut_copy(&arr, NULL));
+
+    unsafe_yyjson_set_obj(&obj, 1);
+    unsafe_yyjson_set_str(&key, "k");
+    key.next = NULL;
+    obj.uni.ptr = &key;
+    yy_assert(!yyjson_mut_val_imut_copy(&obj, NULL));
+
+    unsafe_yyjson_set_strn(&str, NULL, 1);
+    yy_assert(!yyjson_mut_val_imut_copy(&str, NULL));
+}
+
+static void test_json_mut_doc_imut_copy_deep_nesting(void) {
+    yyjson_mut_doc *doc = yyjson_mut_doc_new(NULL);
+    yyjson_mut_val *root;
+    yyjson_mut_val *cur;
+    yyjson_doc *idoc;
+
+    yy_assert(doc);
+    root = yyjson_mut_arr(doc);
+    yy_assert(root);
+    cur = root;
+
+    /* Depth 2000 exceeds YYJSON_MAX_DEPTH and should fail safely. */
+    for (int i = 0; i < 2000; i++) {
+        yyjson_mut_val *child = yyjson_mut_arr(doc);
+        yy_assert(child);
+        yy_assert(yyjson_mut_arr_append(cur, child));
+        cur = child;
+    }
+
+    idoc = yyjson_mut_val_imut_copy(root, NULL);
+    yy_assert(!idoc);
+
+    yyjson_mut_doc_free(doc);
+}
+
 static void test_json_mut_doc_api(void) {
+    test_json_mut_doc_imut_copy_invalid();
+    test_json_mut_doc_imut_copy_deep_nesting();
+
     {
         yyjson_mut_doc_set_root(NULL, NULL);
         yy_assert(yyjson_mut_doc_get_root(NULL) == NULL);
