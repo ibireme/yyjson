@@ -521,12 +521,6 @@ uint32_t yyjson_version(void) {
 /* maximum length of a number in incremental parsing */
 #define INCR_NUM_MAX_LEN 1024
 
-/*
- Maximum recursion depth for mutable value traversal and copy.
- This prevents stack overflow when processing deeply nested or malicious inputs.
- */
-#define YYJSON_MAX_DEPTH 1024
-
 
 
 /*==============================================================================
@@ -2815,14 +2809,11 @@ yyjson_mut_val *yyjson_mut_val_mut_copy(yyjson_mut_doc *doc,
     return NULL;
 }
 
-/* Count value and string pool sizes; return false on malformed structure or overflow. */
+/* Count value and string pool sizes; return false on overflow. */
 static bool yyjson_mut_stat(const yyjson_mut_val *val,
-                            usize *val_sum, usize *str_sum,
-                            usize depth) {
+                            usize *val_sum, usize *str_sum) {
     yyjson_type type;
 
-    if (unlikely(depth >= YYJSON_MAX_DEPTH)) return false;
-    if (unlikely(!val)) return false;
     type = unsafe_yyjson_get_type(val);
     if (unlikely(size_add_is_overflow(*val_sum, 1))) return false;
     *val_sum += 1;
@@ -2836,7 +2827,6 @@ static bool yyjson_mut_stat(const yyjson_mut_val *val,
             len <<= 1;
         }
 
-        if (unlikely(len > 0 && !child)) return false;
         if (unlikely(size_add_is_overflow(*val_sum, len))) return false;
         *val_sum += len;
 
@@ -2850,17 +2840,12 @@ static bool yyjson_mut_stat(const yyjson_mut_val *val,
                 }
                 *str_sum += str_len + 1;
             } else if (stype == YYJSON_TYPE_ARR || stype == YYJSON_TYPE_OBJ) {
-                if (unlikely(!yyjson_mut_stat(child, val_sum, str_sum,
-                                              depth + 1))) {
+                if (unlikely(!yyjson_mut_stat(child, val_sum, str_sum))) {
                     return false;
                 }
                 *val_sum -= 1;
             }
-
-            if (likely(i + 1 < len)) {
-                child = child->next;
-                if (unlikely(!child)) return false;
-            }
+            child = child->next;
         }
     } else if (type == YYJSON_TYPE_STR || type == YYJSON_TYPE_RAW) {
         usize len = unsafe_yyjson_get_len(val);
@@ -2876,13 +2861,10 @@ static bool yyjson_mut_stat(const yyjson_mut_val *val,
 
 /* Copy mutable values to immutable value pool. */
 static usize yyjson_imut_copy(yyjson_val **val_ptr, char **buf_ptr,
-                              const yyjson_mut_val *mval,
-                              usize depth) {
+                              const yyjson_mut_val *mval) {
     yyjson_val *val = *val_ptr;
     yyjson_type type;
 
-    if (unlikely(depth >= YYJSON_MAX_DEPTH)) return 0;
-    if (unlikely(!mval)) return 0;
     type = unsafe_yyjson_get_type(mval);
 
     if (type == YYJSON_TYPE_ARR || type == YYJSON_TYPE_OBJ) {
@@ -2892,32 +2874,21 @@ static usize yyjson_imut_copy(yyjson_val **val_ptr, char **buf_ptr,
 
         if (type == YYJSON_TYPE_OBJ) {
             if (unlikely(len > USIZE_MAX / 2)) return 0;
-            if (len) {
-                if (unlikely(!child || !child->next)) return 0;
-                child = child->next->next;
-            }
+            if (len) child = child->next->next;
             len <<= 1;
         } else {
-            if (len) {
-                if (unlikely(!child || !child->next)) return 0;
-                child = child->next;
-            }
+            if (len) child = child->next;
         }
 
         *val_ptr = val + 1;
         for (i = 0; i < len; i++) {
-            usize child_sum = yyjson_imut_copy(val_ptr, buf_ptr, child,
-                                               depth + 1);
+            usize child_sum = yyjson_imut_copy(val_ptr, buf_ptr, child);
             if (unlikely(child_sum == 0 ||
                          size_add_is_overflow(val_sum, child_sum))) {
                 return 0;
             }
             val_sum += child_sum;
-
-            if (likely(i + 1 < len)) {
-                child = child->next;
-                if (unlikely(!child)) return 0;
-            }
+            child = child->next;
         }
         val->tag = mval->tag;
         if (unlikely(size_mul_is_overflow(val_sum, sizeof(yyjson_val)))) {
@@ -2929,8 +2900,7 @@ static usize yyjson_imut_copy(yyjson_val **val_ptr, char **buf_ptr,
         char *buf = *buf_ptr;
         usize len = unsafe_yyjson_get_len(mval);
 
-        if (unlikely(!buf || (len > 0 && !mval->uni.str))) return 0;
-        if (len > 0) memcpy((void *)buf, (const void *)mval->uni.str, len);
+        memcpy((void *)buf, (const void *)mval->uni.str, len);
         buf[len] = '\0';
         val->tag = mval->tag;
         val->uni.str = buf;
@@ -2952,11 +2922,6 @@ yyjson_doc *yyjson_mut_doc_imut_copy(const yyjson_mut_doc *mdoc,
     return yyjson_mut_val_imut_copy(mdoc->root, alc);
 }
 
-/*
- Convert a mutable value tree to immutable document.
- Returns NULL if the input structure is malformed, memory size arithmetic
- overflows are detected, or the recursion depth limit is exceeded.
- */
 yyjson_doc *yyjson_mut_val_imut_copy(const yyjson_mut_val *mval,
                                      const yyjson_alc *alc) {
     usize val_num = 0, str_sum = 0, hdr_size, val_size, buf_size;
@@ -2970,7 +2935,7 @@ yyjson_doc *yyjson_mut_val_imut_copy(const yyjson_mut_val *mval,
     if (!alc) alc = &YYJSON_DEFAULT_ALC;
 
     /* traverse the input value to get pool size */
-    if (unlikely(!yyjson_mut_stat(mval, &val_num, &str_sum, 0))) return NULL;
+    if (unlikely(!yyjson_mut_stat(mval, &val_num, &str_sum))) return NULL;
     if (unlikely(size_add_is_overflow(str_sum, 1))) return NULL;
 
     /* create doc and val pool */
@@ -2997,7 +2962,7 @@ yyjson_doc *yyjson_mut_val_imut_copy(const yyjson_mut_val *mval,
     }
 
     /* copy vals and strs */
-    doc->val_read = yyjson_imut_copy(&val_hdr, &str_hdr, mval, 0);
+    doc->val_read = yyjson_imut_copy(&val_hdr, &str_hdr, mval);
     if (unlikely(doc->val_read == 0)) {
         if (doc->str_pool) alc->free(alc->ctx, doc->str_pool);
         alc->free(alc->ctx, (void *)doc);
