@@ -1823,6 +1823,34 @@ yyjson_api_inline char *yyjson_mut_write_number(const yyjson_mut_val *val,
     return yyjson_write_number((const yyjson_val *)val, buf);
 }
 
+/**
+ Write a JSON-quoted, escaped string into a caller-provided buffer.
+
+ Companion to `yyjson_write_number()`. Useful for callers that
+ maintain their own value tree (e.g. a language binding's native
+ type) and want to emit JSON one-stage into their own buffer without
+ going through the `yyjson_mut_doc` construction overhead.
+
+ @param cur The buffer cursor; output is written starting here.
+        The buffer MUST have at least `str_len * 6 + 2` bytes
+        of capacity to fit the worst-case `\uXXXX` expansion
+        plus the surrounding double quotes.
+ @param str The UTF-8 source string. Null-terminator not required.
+ @param str_len Length of `str` in bytes.
+ @param flg Write flags. Honors:
+        - `YYJSON_WRITE_ESCAPE_UNICODE`
+        - `YYJSON_WRITE_ESCAPE_SLASHES`
+        - `YYJSON_WRITE_ALLOW_INVALID_UNICODE`
+        - `YYJSON_WRITE_LOWERCASE_HEX`
+        Other flags are ignored.
+ @return The buffer cursor advanced past the closing quote, or NULL
+         on invalid UTF-8 when `ALLOW_INVALID_UNICODE` is unset.
+ */
+yyjson_api char *yyjson_write_string_to_buf(char *cur,
+                                            const char *str,
+                                            size_t str_len,
+                                            yyjson_write_flag flg);
+
 #endif /* YYJSON_DISABLE_WRITER */
 
 

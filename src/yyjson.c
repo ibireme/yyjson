@@ -10392,6 +10392,22 @@ size_t yyjson_mut_write_buf(char *buf, size_t buf_len,
     return yyjson_mut_val_write_buf(buf, buf_len, root, flg, err);
 }
 
+/*==============================================================================
+ * MARK: - Public single-string writer
+ *============================================================================*/
+/* Thin wrapper exposing the internal write_str() to callers building
+ * JSON one-stage from their own value tree. See header docstring. */
+char *yyjson_write_string_to_buf(char *cur, const char *str, size_t str_len,
+                                 yyjson_write_flag flg) {
+    bool esc = has_flg(ESCAPE_UNICODE) != 0;
+    bool inv = has_flg(ALLOW_INVALID_UNICODE) != 0;
+    const char_enc_type *enc_table = get_enc_table_with_flag(flg);
+    const u8 *hex_table = get_hex_table_with_flag(flg);
+    return (char *)write_str((u8 *)cur, esc, inv,
+                             (const u8 *)str, (usize)str_len,
+                             enc_table, hex_table);
+}
+
 #undef has_flg
 #undef has_allow
 #endif /* YYJSON_DISABLE_WRITER */
