@@ -5790,6 +5790,10 @@ yyjson_api_inline char *unsafe_yyjson_mut_str_alc(yyjson_mut_doc *doc,
     char *mem;
     const yyjson_alc *alc = &doc->alc;
     yyjson_str_pool *pool = &doc->str_pool;
+    /* `len + 1` is used below to reserve space for a null terminator;
+       reject the value that would wrap it to 0 and produce an under-sized
+       allocation with an out-of-bounds memcpy at the call sites. */
+    if (yyjson_unlikely(len == (size_t)-1)) return NULL;
     if (yyjson_unlikely((size_t)(pool->end - pool->cur) <= len)) {
         if (yyjson_unlikely(!unsafe_yyjson_str_pool_grow(pool, alc, len + 1))) {
             return NULL;
