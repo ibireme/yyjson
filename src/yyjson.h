@@ -7020,7 +7020,9 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_obj_with_str(yyjson_mut_doc *doc,
                                                           const char **keys,
                                                           const char **vals,
                                                           size_t count) {
-    if (yyjson_likely(doc && ((count > 0 && keys && vals) || (count == 0)))) {
+    if (yyjson_likely(doc && ((count > 0 && count <
+        (~(size_t)0) / sizeof(yyjson_mut_val) / 2 &&
+        keys && vals) || (count == 0)))) {
         yyjson_mut_val *obj = unsafe_yyjson_mut_val(doc, 1 + count * 2);
         if (yyjson_likely(obj)) {
             obj->tag = ((uint64_t)count << YYJSON_TAG_BIT) | YYJSON_TYPE_OBJ;
@@ -7050,7 +7052,9 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_obj_with_str(yyjson_mut_doc *doc,
 yyjson_api_inline yyjson_mut_val *yyjson_mut_obj_with_kv(yyjson_mut_doc *doc,
                                                          const char **pairs,
                                                          size_t count) {
-    if (yyjson_likely(doc && ((count > 0 && pairs) || (count == 0)))) {
+    if (yyjson_likely(doc && ((count > 0 && count <
+        (~(size_t)0) / sizeof(yyjson_mut_val) / 2 &&
+        pairs) || (count == 0)))) {
         yyjson_mut_val *obj = unsafe_yyjson_mut_val(doc, 1 + count * 2);
         if (yyjson_likely(obj)) {
             obj->tag = ((uint64_t)count << YYJSON_TAG_BIT) | YYJSON_TYPE_OBJ;
