@@ -6677,7 +6677,7 @@ yyjson_api_inline bool yyjson_mut_arr_remove_range(yyjson_mut_val *arr,
         yyjson_mut_val *prev, *next;
         bool tail_removed;
         size_t len = unsafe_yyjson_get_len(arr);
-        if (yyjson_unlikely(_idx + _len > len)) return false;
+        if (yyjson_unlikely(_len > len || _idx > len - _len)) return false;
         if (yyjson_unlikely(_len == 0)) return true;
         unsafe_yyjson_set_len(arr, len - _len);
         if (yyjson_unlikely(len == _len)) return true;
