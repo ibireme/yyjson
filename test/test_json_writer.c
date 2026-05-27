@@ -933,6 +933,11 @@ yy_test_case(test_json_writer) {
         ret = yyjson_write(doc, 0, NULL);
         yy_assert(strcmp(ret, "[aaa]") == 0);
         free(ret);
+
+        yy_assert(!yyjson_set_raw(val, NULL, 3));
+        ret = yyjson_write(doc, 0, NULL);
+        yy_assert(strcmp(ret, "[aaa]") == 0);
+        free(ret);
         
         yyjson_set_null(val);
         ret = yyjson_write(doc, 0, NULL);
