@@ -686,8 +686,48 @@ error:
     return NULL;
 }
 
+/* Raw numbers parsed across incremental chunks must stay null-terminated,
+   matching the contract that yyjson_get_raw() returns a C string. */
+static void test_incr_raw_number_terminator(void) {
+    /* numbers wider than 64-bit so each one is raw under both flags */
+    const char *json = "[11111111111111111111111,22222222222222222222222,"
+                       "33333333333333333333333,44444444444444444444444]";
+    yyjson_read_flag flags[2] = {YYJSON_READ_NUMBER_AS_RAW,
+                                 YYJSON_READ_BIGNUM_AS_RAW};
+    usize f;
+    for (f = 0; f < 2; f++) {
+        usize len = strlen(json);
+        char *buf = malloc(len);
+        yyjson_incr_state *state;
+        yyjson_doc *doc = NULL;
+        usize read_len, idx, max;
+        yyjson_val *root, *val;
+        memcpy(buf, json, len);
+        state = yyjson_incr_new(buf, len, flags[f], NULL);
+        for (read_len = 1; read_len <= len; read_len++) {
+            yyjson_read_err err;
+            doc = yyjson_incr_read(state, read_len, &err);
+            if (doc) break;
+            yy_assert(err.code == YYJSON_READ_ERROR_MORE);
+        }
+        yy_assert(doc != NULL);
+        root = yyjson_doc_get_root(doc);
+        yyjson_arr_foreach(root, idx, max, val) {
+            const char *str = yyjson_get_raw(val);
+            usize slen = yyjson_get_len(val);
+            yy_assertf(str[slen] == '\0',
+                       "raw value '%.*s' is not null-terminated\n",
+                       (int)slen, str);
+        }
+        yyjson_doc_free(doc);
+        yyjson_incr_free(state);
+        free(buf);
+    }
+}
+
 // yyjson incremental with insitu
 static void test_json_incremental(void) {
+    test_incr_raw_number_terminator();
     char *dat = create_json(3, 10);
     usize len = strlen(dat);
     char *dat_dup = yy_str_copy(dat);

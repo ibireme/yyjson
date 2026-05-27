@@ -6534,6 +6534,8 @@ struct yyjson_incr_state {
     yyjson_val *val; /* current JSON value */
     yyjson_val *ctn; /* current container */
     u8 *str_con[2]; /* string parser incremental state */
+    u8 *raw_ptr; /* pending position for a deferred raw null-terminator */
+    u8 raw_end[1]; /* dummy target for the first deferred null-terminator */
 };
 
 yyjson_incr_state *yyjson_incr_new(char *buf, size_t buf_len,
@@ -6569,6 +6571,7 @@ yyjson_incr_state *yyjson_incr_new(char *buf, size_t buf_len,
     }
     memset(state->hdr + buf_len, 0, YYJSON_PADDING_SIZE);
     state->cur = state->hdr;
+    state->raw_ptr = state->raw_end;
     state->label = LABEL_doc_begin;
     return state;
 }
@@ -6633,6 +6636,7 @@ yyjson_doc *yyjson_incr_read(yyjson_incr_state *state, size_t len,
     state->val = val; \
     state->ctn_len = ctn_len; \
     state->hdr_len = hdr_len; \
+    state->raw_ptr = raw_ptr; \
     if (unlikely(cur >= end)) goto unexpected_end; \
 } while (false)
 
@@ -6664,8 +6668,7 @@ yyjson_doc *yyjson_incr_read(yyjson_incr_state *state, size_t len,
     const char *msg; /* error message */
 
     yyjson_read_err tmp_err;
-    u8 raw_end[1]; /* raw end for null-terminator */
-    u8 *raw_ptr = raw_end;
+    u8 *raw_ptr; /* deferred raw null-terminator position, committed at save */
     u8 **pre = &raw_ptr; /* previous raw end pointer */
     u8 **con = NULL; /* for incremental string parsing */
     u8 saved_end = '\0'; /* saved end char */
@@ -6700,6 +6703,7 @@ yyjson_doc *yyjson_incr_read(yyjson_incr_state *state, size_t len,
     val_end = state->val_end;
     ctn = state->ctn;
     con = state->str_con;
+    raw_ptr = state->raw_ptr;
     alc_max = USIZE_MAX / sizeof(yyjson_val);
 
     /* insert null terminator to make us stop at the specified end, even if
