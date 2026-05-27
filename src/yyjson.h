@@ -5427,6 +5427,7 @@ yyjson_api_inline bool yyjson_equals(const yyjson_val *lhs,
 yyjson_api_inline bool yyjson_set_raw(yyjson_val *val,
                                       const char *raw, size_t len) {
     if (yyjson_unlikely(!val || unsafe_yyjson_is_ctn(val))) return false;
+    if (yyjson_unlikely(!raw)) return false;
     unsafe_yyjson_set_raw(val, raw, len);
     return true;
 }
