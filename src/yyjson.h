@@ -7031,8 +7031,10 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_obj_with_str(yyjson_mut_doc *doc,
                 for (i = 0; i < count; i++) {
                     yyjson_mut_val *key = obj + (i * 2 + 1);
                     yyjson_mut_val *val = obj + (i * 2 + 2);
-                    uint64_t key_len = (uint64_t)strlen(keys[i]);
-                    uint64_t val_len = (uint64_t)strlen(vals[i]);
+                    uint64_t key_len, val_len;
+                    if (yyjson_unlikely(!keys[i] || !vals[i])) return NULL;
+                    key_len = (uint64_t)strlen(keys[i]);
+                    val_len = (uint64_t)strlen(vals[i]);
                     key->tag = (key_len << YYJSON_TAG_BIT) | YYJSON_TYPE_STR;
                     val->tag = (val_len << YYJSON_TAG_BIT) | YYJSON_TYPE_STR;
                     key->uni.str = keys[i];
@@ -7065,8 +7067,10 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_obj_with_kv(yyjson_mut_doc *doc,
                     yyjson_mut_val *val = obj + (i * 2 + 2);
                     const char *key_str = pairs[i * 2 + 0];
                     const char *val_str = pairs[i * 2 + 1];
-                    uint64_t key_len = (uint64_t)strlen(key_str);
-                    uint64_t val_len = (uint64_t)strlen(val_str);
+                    uint64_t key_len, val_len;
+                    if (yyjson_unlikely(!key_str || !val_str)) return NULL;
+                    key_len = (uint64_t)strlen(key_str);
+                    val_len = (uint64_t)strlen(val_str);
                     key->tag = (key_len << YYJSON_TAG_BIT) | YYJSON_TYPE_STR;
                     val->tag = (val_len << YYJSON_TAG_BIT) | YYJSON_TYPE_STR;
                     key->uni.str = key_str;

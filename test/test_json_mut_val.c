@@ -1830,6 +1830,11 @@ static void test_json_mut_obj_api(void) {
         val = yyjson_mut_obj_get(obj, "c");
         yy_assert(yyjson_mut_equals_str(val, "z"));
         yyjson_mut_obj_clear(obj);
+
+        const char *keys_nul[3] = {"a", NULL, "c"};
+        yy_assert(!yyjson_mut_obj_with_str(doc, keys_nul, vals_str, 3));
+        const char *vals_nul[3] = {"x", "y", NULL};
+        yy_assert(!yyjson_mut_obj_with_str(doc, keys_str, vals_nul, 3));
     }
     {
         const char *pairs[6] = {"a", "x", "b", "y", "c", "z"};
@@ -1845,6 +1850,9 @@ static void test_json_mut_obj_api(void) {
         val = yyjson_mut_obj_get(obj, "c");
         yy_assert(yyjson_mut_equals_str(val, "z"));
         yyjson_mut_obj_clear(obj);
+
+        const char *pairs_nul[6] = {"a", "x", "b", NULL, "c", "z"};
+        yy_assert(!yyjson_mut_obj_with_kv(doc, pairs_nul, 3));
     }
     
     
