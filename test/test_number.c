@@ -1433,6 +1433,10 @@ static void test_write_flags(void) {
         yyjson_set_fp_to_fixed(&val, 12);
         yy_assert(yyjson_is_real(&val));
         yy_assert((val.tag >> 32) == YYJSON_WRITE_FP_TO_FIXED(12));
+        yy_assert(!yyjson_set_fp_to_fixed(&val, -1));
+        yy_assert(!yyjson_set_fp_to_fixed(&val, 16));
+        yy_assert(!yyjson_set_fp_to_fixed(&val, 17));
+        yy_assert((val.tag >> 32) == YYJSON_WRITE_FP_TO_FIXED(12));
         yyjson_set_fp_to_fixed(&val, 0);
         yy_assert(yyjson_is_real(&val));
         yy_assert((val.tag >> 32) == YYJSON_WRITE_FP_TO_FIXED(0));
@@ -1461,6 +1465,10 @@ static void test_write_flags(void) {
         /// set to fixed
         yyjson_mut_set_fp_to_fixed(&val, 12);
         yy_assert(yyjson_mut_is_real(&val));
+        yy_assert((val.tag >> 32) == YYJSON_WRITE_FP_TO_FIXED(12));
+        yy_assert(!yyjson_mut_set_fp_to_fixed(&val, -1));
+        yy_assert(!yyjson_mut_set_fp_to_fixed(&val, 16));
+        yy_assert(!yyjson_mut_set_fp_to_fixed(&val, 17));
         yy_assert((val.tag >> 32) == YYJSON_WRITE_FP_TO_FIXED(12));
         yyjson_mut_set_fp_to_fixed(&val, 0);
         yy_assert(yyjson_mut_is_real(&val));

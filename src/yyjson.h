@@ -5481,6 +5481,7 @@ yyjson_api_inline bool yyjson_set_real(yyjson_val *val, double num) {
 
 yyjson_api_inline bool yyjson_set_fp_to_fixed(yyjson_val *val, int prec) {
     if (yyjson_unlikely(!yyjson_is_real(val))) return false;
+    if (yyjson_unlikely((unsigned)prec > 15)) return false;
     unsafe_yyjson_set_fp_to_fixed(val, prec);
     return true;
 }
@@ -6042,6 +6043,7 @@ yyjson_api_inline bool yyjson_mut_set_real(yyjson_mut_val *val, double num) {
 yyjson_api_inline bool yyjson_mut_set_fp_to_fixed(yyjson_mut_val *val,
                                                   int prec) {
     if (yyjson_unlikely(!yyjson_mut_is_real(val))) return false;
+    if (yyjson_unlikely((unsigned)prec > 15)) return false;
     unsafe_yyjson_set_fp_to_fixed(val, prec);
     return true;
 }
