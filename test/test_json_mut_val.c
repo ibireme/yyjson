@@ -1944,8 +1944,22 @@ static void test_json_mut_obj_api(void) {
     yy_assert(yyjson_mut_get_int(yyjson_mut_obj_iter_get(&iter, "b")) == 11);
     yy_assert(yyjson_mut_get_int(yyjson_mut_obj_iter_get(&iter, "a")) == 10);
     yy_assert(!yyjson_mut_obj_iter_get(&iter, "x"));
-    
-    
+
+    // keyed lookup that wraps past the end must keep iter->idx in sync so a
+    // following remove updates the obj tail; otherwise the tail key is left
+    // dangling.
+    yyjson_mut_obj_iter_init(obj, &iter);
+    while (yyjson_mut_obj_iter_next(&iter)) {}
+    yy_assert(yyjson_mut_get_int(yyjson_mut_obj_iter_get(&iter, "c")) == 12);
+    yy_assert(yyjson_mut_obj_iter_remove(&iter));
+    set_validate(0, "a", 1, 10);
+    set_validate(1, "b", 1, 11);
+    validate_mut_obj(obj, keys, key_lens, vals, 2);
+    yy_assert(yyjson_mut_obj_add_int(doc, obj, "d", 13));
+    set_validate(2, "d", 1, 13);
+    validate_mut_obj(obj, keys, key_lens, vals, 3);
+
+
     yyjson_mut_obj_clear(obj);
     
     

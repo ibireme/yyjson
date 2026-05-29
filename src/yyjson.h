@@ -6989,7 +6989,7 @@ yyjson_api_inline yyjson_mut_val *yyjson_mut_obj_iter_getn(
             cur = cur->next->next;
             if (unsafe_yyjson_equals_strn(cur, key, key_len)) {
                 iter->idx += idx;
-                if (iter->idx > max) iter->idx -= max + 1;
+                if (iter->idx > max) iter->idx -= max;
                 iter->pre = pre;
                 iter->cur = cur;
                 return cur->next;
