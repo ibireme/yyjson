@@ -6769,7 +6769,11 @@ doc_begin:
         goto arr_val_begin;
     }
     if (char_is_num(*cur)) {
-        if (likely(read_num(&cur, pre, flg, val, &msg))) goto doc_end;
+        if (likely(read_num(&cur, pre, flg, val, &msg))) {
+            /* a root number may continue with more digits in a later chunk */
+            if (unlikely(len < state->buf_len)) check_maybe_truncated_number();
+            goto doc_end;
+        }
         goto fail_number;
     }
     if (*cur == '"') {
