@@ -725,9 +725,38 @@ static void test_incr_raw_number_terminator(void) {
     }
 }
 
+/* A root-level number must not be finalized while more data is still pending;
+   it may continue with more digits in a later chunk (same as numbers inside a
+   container). Feeding "743" one byte at a time must yield 743, not 7. */
+static void test_incr_root_number_truncation(void) {
+    const char *json = "743";
+    usize len = strlen(json);
+    char *buf = malloc(len);
+    yyjson_incr_state *state;
+    yyjson_doc *doc = NULL;
+    usize read_len;
+    memcpy(buf, json, len);
+    state = yyjson_incr_new(buf, len, 0, NULL);
+    for (read_len = 1; read_len <= len; read_len++) {
+        yyjson_read_err err;
+        doc = yyjson_incr_read(state, read_len, &err);
+        if (doc) {
+            yy_assert(read_len == len);
+            break;
+        }
+        yy_assert(err.code == YYJSON_READ_ERROR_MORE);
+    }
+    yy_assert(doc != NULL);
+    yy_assert(yyjson_get_sint(yyjson_doc_get_root(doc)) == 743);
+    yyjson_doc_free(doc);
+    yyjson_incr_free(state);
+    free(buf);
+}
+
 // yyjson incremental with insitu
 static void test_json_incremental(void) {
     test_incr_raw_number_terminator();
+    test_incr_root_number_truncation();
     char *dat = create_json(3, 10);
     usize len = strlen(dat);
     char *dat_dup = yy_str_copy(dat);
