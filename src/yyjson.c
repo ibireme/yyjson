@@ -10761,7 +10761,7 @@ bool unsafe_yyjson_mut_ptr_putx(
             val = NULL;
             ctn_type = YYJSON_TYPE_OBJ;
             token = ptr_next_token(&ptr, end, &token_len, &esc);
-            if (unlikely(!token)) return_err_resolve(false, token - hdr);
+            if (unlikely(!token)) return_err_syntax(false, ptr - hdr);
         }
 
         /* container is object, create parent nodes */

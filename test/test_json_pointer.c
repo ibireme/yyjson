@@ -2077,7 +2077,17 @@ static void test_ptr_put(void) {
         .err = YYJSON_PTR_ERR_RESOLVE,
         .pos = 1,
     });
-    
+    test_ptr_op((ptr_data){
+        .op = PTR_OP_ADD,
+        .src = "[1,2]",
+        .ptr = "/-/~2", // invalid escape after array append slot
+        .val = "1",
+        .dst = "[1,2]",
+        .create_parent = true,
+        .err = YYJSON_PTR_ERR_SYNTAX,
+        .pos = 3,
+    });
+
     // ---------------------------------
     // parent type not matched (not container)
     test_ptr_op((ptr_data){
