@@ -232,6 +232,7 @@ yyjson, feel free to open a PR to add it to this list.
 | [bemorehuman][]  | C            | Recommendation engine with a focus on uniqueness of the person receiving the rec                     |
 | [mruby-yyjson][] | mruby        | Efficient JSON parsing and serialization library for mruby using yyjson                              |
 | [YYJSON.jl][]    | Julia        | Julia bindings for yyjson                                                                            |
+| [yyjson][]       | Go           | yyjson for Go, transpiled, CGo-free, 2-4x faster.                                                    |
 
 # TODO for v1.0
 * [x] Add documentation page.
