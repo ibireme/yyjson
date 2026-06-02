@@ -9515,6 +9515,8 @@ val_begin:
         str_len = unsafe_yyjson_get_len(val);
         str_ptr = (const u8 *)unsafe_yyjson_get_str(val);
         check_str_len(str_len);
+        if ((sizeof(usize) < 8) && !no_indent &&
+            level > (USIZE_MAX - 16 - str_len * 6) / 4) goto fail_alloc;
         incr_len(str_len * 6 + 16 + (no_indent ? 0 : level * 4));
         cur = write_indent(cur, no_indent ? 0 : level, spaces);
         if (likely(cpy) && unsafe_yyjson_get_subtype(val)) {
@@ -10121,6 +10123,8 @@ val_begin:
         str_len = unsafe_yyjson_get_len(val);
         str_ptr = (const u8 *)unsafe_yyjson_get_str(val);
         check_str_len(str_len);
+        if ((sizeof(usize) < 8) && !no_indent &&
+            level > (USIZE_MAX - 16 - str_len * 6) / 4) goto fail_alloc;
         incr_len(str_len * 6 + 16 + (no_indent ? 0 : level * 4));
         cur = write_indent(cur, no_indent ? 0 : level, spaces);
         if (likely(cpy) && unsafe_yyjson_get_subtype(val)) {
