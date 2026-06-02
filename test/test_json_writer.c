@@ -854,7 +854,36 @@ yy_test_case(test_json_writer) {
         yyjson_mut_write_file("", NULL, 0, NULL, NULL);
         yyjson_mut_write_file("tmp.json", NULL, 0, NULL, NULL);
     }
-    
+
+    // test zero-length output (empty raw root) to file
+    {
+        const char *tmp_file_path = "__yyjson_test_empty__.json";
+        u8 *dat;
+        usize dat_len;
+        FILE *tmp_fp;
+        yyjson_mut_doc *doc = yyjson_mut_doc_new(NULL);
+        yyjson_mut_doc_set_root(doc, yyjson_mut_rawn(doc, "", 0));
+
+        usize len;
+        char *ret = yyjson_mut_write(doc, 0, &len);
+        yy_assert(ret && len == 0);
+        free(ret);
+
+        yy_file_delete(tmp_file_path);
+        yy_assert(yyjson_mut_write_file(tmp_file_path, doc, 0, NULL, NULL));
+        yy_assert(yy_file_read(tmp_file_path, &dat, &dat_len));
+        yy_assert(dat_len == 0);
+        free(dat);
+        yy_file_delete(tmp_file_path);
+
+        tmp_fp = yy_file_open(tmp_file_path, "wb");
+        yy_assert(yyjson_mut_write_fp(tmp_fp, doc, 0, NULL, NULL));
+        fclose(tmp_fp);
+        yy_file_delete(tmp_file_path);
+
+        yyjson_mut_doc_free(doc);
+    }
+
 #if !YYJSON_DISABLE_READER
     // test invalid immutable doc
     {

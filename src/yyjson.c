@@ -9071,7 +9071,7 @@ static_inline u8 *write_indent(u8 *cur, usize level, usize spaces) {
 /** Write data to file pointer. */
 static bool write_dat_to_fp(FILE *fp, u8 *dat, usize len,
                             yyjson_write_err *err) {
-    if (fwrite(dat, len, 1, fp) != 1) {
+    if (fwrite(dat, 1, len, fp) != len) {
         err->msg = "file writing failed";
         err->code = YYJSON_WRITE_ERROR_FILE_WRITE;
         return false;
@@ -9093,7 +9093,7 @@ static bool write_dat_to_file(const char *path, u8 *dat, usize len,
     if (file == NULL) {
         return_err(FILE_OPEN, MSG_FOPEN);
     }
-    if (fwrite(dat, len, 1, file) != 1) {
+    if (fwrite(dat, 1, len, file) != len) {
         return_err(FILE_WRITE, MSG_FWRITE);
     }
     if (fclose(file) != 0) {
