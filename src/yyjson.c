@@ -7064,10 +7064,15 @@ obj_end:
 
 doc_end:
     /* check invalid contents after json document */
-    if (unlikely(cur < end) && !has_flg(STOP_WHEN_DONE)) {
+    if (unlikely(cur < end || len < state->buf_len) &&
+        !has_flg(STOP_WHEN_DONE)) {
         save_incr_state(doc_end);
         while (char_is_space(*cur)) cur++;
         if (unlikely(cur < end)) goto fail_garbage;
+        /* the document is complete for the bytes seen so far, but more input
+           is still pending; it may hold trailing content that has to be
+           rejected, so request the remaining data before finalizing */
+        if (unlikely(len < state->buf_len)) goto unexpected_end;
     }
 
     **pre = '\0';

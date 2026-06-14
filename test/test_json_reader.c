@@ -753,10 +753,78 @@ static void test_incr_root_number_truncation(void) {
     free(buf);
 }
 
+/* Without STOP_WHEN_DONE the reader rejects content after a complete document.
+   The incremental reader must apply the same rule to bytes that are still
+   pending in the buffer: it must not finalize a document early and accept
+   trailing content that yyjson_read() would reject. */
+static void test_incr_trailing_content(void) {
+    const char *bad[] = {"1 2", "[1] x", "{} x", "true false", "\"a\" b"};
+    usize n = sizeof(bad) / sizeof(bad[0]);
+    usize i;
+    for (i = 0; i < n; i++) {
+        usize len = strlen(bad[i]);
+        char *buf = malloc(len);
+        yyjson_incr_state *state;
+        yyjson_doc *doc = NULL;
+        yyjson_read_err err;
+        usize read_len;
+        memcpy(buf, bad[i], len);
+
+        /* default: must report the trailing content as an error */
+        state = yyjson_incr_new(buf, len, 0, NULL);
+        for (read_len = 1; read_len <= len; read_len++) {
+            doc = yyjson_incr_read(state, read_len, &err);
+            if (doc) break;
+            if (err.code != YYJSON_READ_ERROR_MORE) break;
+        }
+        yy_assertf(doc == NULL,
+                   "trailing content should fail but passed: %s\n", bad[i]);
+        yy_assert(err.code == YYJSON_READ_ERROR_UNEXPECTED_CONTENT);
+        yyjson_incr_free(state);
+
+        /* STOP_WHEN_DONE: the first complete value is returned as usual */
+        state = yyjson_incr_new(buf, len, YYJSON_READ_STOP_WHEN_DONE, NULL);
+        for (read_len = 1; read_len <= len; read_len++) {
+            doc = yyjson_incr_read(state, read_len, &err);
+            if (doc) break;
+            if (err.code != YYJSON_READ_ERROR_MORE) break;
+        }
+        yy_assertf(doc != NULL,
+                   "STOP_WHEN_DONE should return the first value: %s\n", bad[i]);
+        yyjson_doc_free(doc);
+        yyjson_incr_free(state);
+        free(buf);
+    }
+
+    /* a complete document followed only by whitespace is still valid */
+    {
+        const char *json = "[1,2,3]  \n";
+        usize len = strlen(json);
+        char *buf = malloc(len);
+        yyjson_incr_state *state;
+        yyjson_doc *doc = NULL;
+        yyjson_read_err err;
+        usize read_len;
+        memcpy(buf, json, len);
+        state = yyjson_incr_new(buf, len, 0, NULL);
+        for (read_len = 1; read_len <= len; read_len++) {
+            doc = yyjson_incr_read(state, read_len, &err);
+            if (doc) break;
+            yy_assert(err.code == YYJSON_READ_ERROR_MORE);
+        }
+        yy_assert(doc != NULL);
+        yy_assert(yyjson_arr_size(yyjson_doc_get_root(doc)) == 3);
+        yyjson_doc_free(doc);
+        yyjson_incr_free(state);
+        free(buf);
+    }
+}
+
 // yyjson incremental with insitu
 static void test_json_incremental(void) {
     test_incr_raw_number_terminator();
     test_incr_root_number_truncation();
+    test_incr_trailing_content();
     char *dat = create_json(3, 10);
     usize len = strlen(dat);
     char *dat_dup = yy_str_copy(dat);
