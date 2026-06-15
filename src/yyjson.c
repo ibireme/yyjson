@@ -9259,7 +9259,8 @@ static_inline u8 *write_root_minify(const yyjson_val *root,
     if (unlikely((u8 *)(cur + ext_len) >= (u8 *)ctx)) { \
         usize ctx_pos = (usize)((u8 *)ctx - hdr); \
         usize cur_pos = (usize)(cur - hdr); \
-        ctx_len = (usize)(end - (u8 *)ctx); \
+        yyjson_assume((u8 *)ctx <= (u8 *)end); \
+        ctx_len = (usize)((u8 *)end - (u8 *)ctx); \
         alc_inc = yyjson_max(alc_len / 2, ext_len); \
         alc_inc = size_align_up(alc_inc, sizeof(yyjson_write_ctx)); \
         if ((sizeof(usize) < 8) && size_add_is_overflow(alc_len, alc_inc)) \
@@ -9448,7 +9449,8 @@ static_inline u8 *write_root_pretty(const yyjson_val *root,
     if (unlikely((u8 *)(cur + ext_len) >= (u8 *)ctx)) { \
         usize ctx_pos = (usize)((u8 *)ctx - hdr); \
         usize cur_pos = (usize)(cur - hdr); \
-        ctx_len = (usize)(end - (u8 *)ctx); \
+        yyjson_assume((u8 *)ctx <= (u8 *)end); \
+        ctx_len = (usize)((u8 *)end - (u8 *)ctx); \
         alc_inc = yyjson_max(alc_len / 2, ext_len); \
         alc_inc = size_align_up(alc_inc, sizeof(yyjson_write_ctx)); \
         if ((sizeof(usize) < 8) && size_add_is_overflow(alc_len, alc_inc)) \
@@ -9860,7 +9862,8 @@ static_inline u8 *mut_write_root_minify(const yyjson_mut_val *root,
     if (unlikely((u8 *)(cur + ext_len) >= (u8 *)ctx)) { \
         usize ctx_pos = (usize)((u8 *)ctx - hdr); \
         usize cur_pos = (usize)(cur - hdr); \
-        ctx_len = (usize)(end - (u8 *)ctx); \
+        yyjson_assume((u8 *)ctx <= (u8 *)end); \
+        ctx_len = (usize)((u8 *)end - (u8 *)ctx); \
         alc_inc = yyjson_max(alc_len / 2, ext_len); \
         alc_inc = size_align_up(alc_inc, sizeof(yyjson_mut_write_ctx)); \
         if ((sizeof(usize) < 8) && size_add_is_overflow(alc_len, alc_inc)) \
@@ -10055,7 +10058,8 @@ static_inline u8 *mut_write_root_pretty(const yyjson_mut_val *root,
     if (unlikely((u8 *)(cur + ext_len) >= (u8 *)ctx)) { \
         usize ctx_pos = (usize)((u8 *)ctx - hdr); \
         usize cur_pos = (usize)(cur - hdr); \
-        ctx_len = (usize)(end - (u8 *)ctx); \
+        yyjson_assume((u8 *)ctx <= (u8 *)end); \
+        ctx_len = (usize)((u8 *)end - (u8 *)ctx); \
         alc_inc = yyjson_max(alc_len / 2, ext_len); \
         alc_inc = size_align_up(alc_inc, sizeof(yyjson_mut_write_ctx)); \
         if ((sizeof(usize) < 8) && size_add_is_overflow(alc_len, alc_inc)) \

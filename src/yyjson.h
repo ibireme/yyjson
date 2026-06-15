@@ -297,6 +297,16 @@
 #   endif
 #endif
 
+/** assume for compiler */
+#undef  yyjson_assume
+#if yyjson_has_builtin(__builtin_unreachable) || yyjson_gcc_available(4, 5, 0)
+#   define yyjson_assume(expr) ((expr) ? (void)0 : __builtin_unreachable())
+#elif YYJSON_MSC_VER >= 1300
+#   define yyjson_assume(expr) __assume(expr)
+#else
+#   define yyjson_assume(expr) ((void)0)
+#endif
+
 /** compile-time constant check for compiler */
 #ifndef yyjson_constant_p
 #   if yyjson_has_builtin(__builtin_constant_p) || (YYJSON_GCC_VER >= 3)
