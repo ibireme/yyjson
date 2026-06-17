@@ -6358,6 +6358,7 @@ yyjson_doc *yyjson_read_fp(FILE *file,
     long file_size = 0, file_pos;
     void *buf = NULL;
     usize buf_size = 0;
+    usize dat_size = 0;
 
     /* validate input parameters */
     if (!err) err = &tmp_err;
@@ -6380,12 +6381,13 @@ yyjson_doc *yyjson_read_fp(FILE *file,
     /* read file */
     if (file_size > 0) {
         /* read the entire file in one call */
-        buf_size = (usize)file_size + YYJSON_PADDING_SIZE;
+        dat_size = (usize)file_size;
+        buf_size = dat_size + YYJSON_PADDING_SIZE;
         buf = alc.malloc(alc.ctx, buf_size);
         if (buf == NULL) {
             return_err(MEMORY_ALLOCATION, MSG_MALLOC);
         }
-        if (fread_safe(buf, (usize)file_size, file) != (usize)file_size) {
+        if (fread_safe(buf, dat_size, file) != dat_size) {
             return_err(FILE_READ, MSG_FREAD);
         }
     } else {
@@ -6412,7 +6414,7 @@ yyjson_doc *yyjson_read_fp(FILE *file,
             }
             tmp = ((u8 *)buf) + buf_size - YYJSON_PADDING_SIZE - chunk_now;
             read_size = fread_safe(tmp, chunk_now, file);
-            file_size += (long)read_size;
+            dat_size += read_size;
             if (read_size != chunk_now) break;
 
             chunk_now *= 2;
@@ -6421,9 +6423,9 @@ yyjson_doc *yyjson_read_fp(FILE *file,
     }
 
     /* read JSON */
-    memset((u8 *)buf + file_size, 0, YYJSON_PADDING_SIZE);
+    memset((u8 *)buf + dat_size, 0, YYJSON_PADDING_SIZE);
     flg |= YYJSON_READ_INSITU;
-    doc = yyjson_read_opts((char *)buf, (usize)file_size, flg, &alc, err);
+    doc = yyjson_read_opts((char *)buf, dat_size, flg, &alc, err);
     if (doc) {
         doc->str_pool = (char *)buf;
         return doc;
