@@ -477,7 +477,7 @@ jobs:
 
     - name: Hosted (compile + run)
       run: |
-        emcc -std=c17 -I./src src/yyjson.c test/compile_smoke.c -o test_smoke.js
+        emcc -O2 -std=c17 -I./src src/yyjson.c test/compile_smoke.c -o test_smoke.js
         node test_smoke.js
 
     - name: FREESTANDING (object symbol check)
@@ -494,7 +494,7 @@ jobs:
 
     - name: FREESTANDING (compile + run)
       run: |
-        emcc -DYYJSON_FREESTANDING=1 -I./src \
+        emcc -O2 -DYYJSON_FREESTANDING=1 -I./src \
           src/yyjson.c test/compile_smoke.c -o test_smoke.js
         node test_smoke.js
 
