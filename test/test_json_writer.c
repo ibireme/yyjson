@@ -150,6 +150,8 @@ static void validate_json_write_with_flag(yyjson_write_flag flg,
     yy_assertf(memcmp(ret, expect, len) == 0, "write with flag 0x%x\nexpect:\n%s\noutput:\n%s\n", flg, expect, ret);
     
     
+#if !YYJSON_DISABLE_FILE
+    
     // ---------------------------
     // temp file path
     const char *tmp_file_path = "__yyjson_test_tmp__.json";
@@ -295,6 +297,7 @@ static void validate_json_write_with_flag(yyjson_write_flag flg,
     yyjson_doc_free(idoc);
     yyjson_mut_doc_free(mdoc);
     
+#endif
     
     if (alc) alc->free(alc->ctx, (void *)ret);
     else free((void *)ret);
@@ -846,6 +849,7 @@ yy_test_case(test_json_writer) {
     }
     
     // test invalid parameters
+#if !YYJSON_DISABLE_FILE
     {
         yyjson_write_file(NULL, NULL, 0, NULL, NULL);
         yyjson_write_file("", NULL, 0, NULL, NULL);
@@ -854,8 +858,10 @@ yy_test_case(test_json_writer) {
         yyjson_mut_write_file("", NULL, 0, NULL, NULL);
         yyjson_mut_write_file("tmp.json", NULL, 0, NULL, NULL);
     }
+#endif
 
     // test zero-length output (empty raw root) to file
+#if !YYJSON_DISABLE_FILE
     {
         const char *tmp_file_path = "__yyjson_test_empty__.json";
         u8 *dat;
@@ -883,6 +889,7 @@ yy_test_case(test_json_writer) {
 
         yyjson_mut_doc_free(doc);
     }
+#endif
 
 #if !YYJSON_DISABLE_READER
     // test invalid immutable doc
@@ -904,6 +911,7 @@ yy_test_case(test_json_writer) {
     }
     
     // test fail
+#if !YYJSON_DISABLE_FILE
     {
         char path[4100];
         memset(path, 'a', sizeof(path));
@@ -917,6 +925,7 @@ yy_test_case(test_json_writer) {
         yy_assert(!yyjson_mut_write_file(path, mdoc, 0, NULL, NULL));
         yyjson_mut_doc_free(mdoc);
     }
+#endif
     
     // test raw
     {

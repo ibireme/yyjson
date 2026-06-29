@@ -292,6 +292,7 @@ static void test_json_yyjson(void) {
     yy_assert(!yyjson_read_opts("1", 0, 0, NULL, NULL));
     yy_assert(!yyjson_read_opts("1", SIZE_MAX, 0, NULL, NULL));
     
+#if !YYJSON_DISABLE_FILE
     // test read file
     yy_path_combine(dir, YYJSON_TEST_DATA_PATH, "data", "json", "test_yyjson", "blns.json", NULL);
     yyjson_doc *doc = yyjson_read_file(dir, 0, NULL, NULL);
@@ -303,6 +304,7 @@ static void test_json_yyjson(void) {
     yy_assert(!yyjson_read_file(NULL, 0, NULL, NULL));
     yy_assert(!yyjson_read_file("...not a valid file...", 0, NULL, &err));
     yy_assert(err.code == YYJSON_READ_ERROR_FILE_OPEN);
+#endif
     
     // test alloc fail
     yyjson_alc alc_small;
@@ -311,7 +313,9 @@ static void test_json_yyjson(void) {
     yy_assert(!yyjson_read_opts("[]", 2, 0, &alc_small, NULL));
     yy_assert(!yyjson_read_opts("[  ]", 4, 0, &alc_small, NULL));
     yy_assert(!yyjson_read_opts("123", 3, 0, &alc_small, NULL));
+#if !YYJSON_DISABLE_FILE
     yy_assert(!yyjson_read_file(dir, 0, &alc_small, NULL));
+#endif
 }
 
 

@@ -414,17 +414,102 @@ jobs:
         /tmp/test_smoke
 
 
-  # Check Emscripten (WASM)
+  # Check Clang FREESTANDING (hosted + wasm32)
+  linux_clang_freestanding:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v6
+
+    - name: Install Toolchain
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y clang llvm
+
+    - name: Hosted FREESTANDING (compile + run)
+      run: |
+        clang -std=c17 -Wall -Wextra -DYYJSON_FREESTANDING=1 \
+          -I./src src/yyjson.c test/compile_smoke.c -o test_smoke
+        ./test_smoke
+
+    - name: wasm32 FREESTANDING (compile + symbol check)
+      run: |
+        clang -std=c17 --target=wasm32 -ffreestanding -nostdlib \
+          -DYYJSON_FREESTANDING=1 -I./src -c src/yyjson.c -o yyjson.o
+
+        llvm-nm -u yyjson.o | tee yyjson_undef.txt
+        if grep -E ' (fopen|fread|fwrite|fclose|malloc|free|realloc|strlen|memcmp|memcpy|memset|memmove)$' \
+          yyjson_undef.txt; then
+          echo "unexpected undefined libc symbol(s) in yyjson.o"
+          exit 1
+        fi
+        echo "wasm32 freestanding object OK (no libc UND symbols)"
+
+
+  # Check GCC FREESTANDING (hosted)
+  linux_gcc_freestanding:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v6
+
+    - name: Install Toolchain
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y gcc
+
+    - name: Hosted FREESTANDING (compile + run)
+      run: |
+        gcc -std=c17 -Wall -Wextra -DYYJSON_FREESTANDING=1 \
+          -I./src src/yyjson.c test/compile_smoke.c -o test_smoke
+        ./test_smoke
+
+
+  # Check Emscripten (hosted + FREESTANDING)
   wasm_emscripten:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout Repository
       uses: actions/checkout@v6
-      
+
     - name: Setup Emscripten
       uses: mymindstorm/setup-emsdk@v16
 
-    - name: Build and Test
+    - name: Hosted (compile + run)
       run: |
-        emcc -I./src ./src/yyjson.c ./test/compile_smoke.c -o test_smoke.js
+        emcc -std=c17 -I./src src/yyjson.c test/compile_smoke.c -o test_smoke.js
         node test_smoke.js
+
+    - name: FREESTANDING (object symbol check)
+      run: |
+        emcc -c -DYYJSON_FREESTANDING=1 -I./src src/yyjson.c -o yyjson.o
+
+        llvm-nm -u yyjson.o | tee yyjson_undef.txt
+        if grep -E ' (fopen|fread|fwrite|fclose|malloc|free|realloc|strlen|memcmp|memcpy|memset|memmove)$' \
+          yyjson_undef.txt; then
+          echo "unexpected undefined libc symbol(s) in yyjson.o"
+          exit 1
+        fi
+        echo "freestanding object symbols OK"
+
+    - name: FREESTANDING (compile + run)
+      run: |
+        emcc -DYYJSON_FREESTANDING=1 -I./src \
+          src/yyjson.c test/compile_smoke.c -o test_smoke.js
+        node test_smoke.js
+
+    - name: FREESTANDING (bare wasm-ld + import check)
+      run: |
+        emcc -c -DYYJSON_FREESTANDING=1 -I./src src/yyjson.c -o yyjson.o
+        emcc -c -DYYJSON_FREESTANDING=1 -I./src test/compile_smoke.c -o smoke.o
+
+        wasm-ld --export-all --no-entry --lto-O3 --allow-undefined \
+          smoke.o yyjson.o -o guest.wasm
+        wasm-dis guest.wasm > guest.dis
+
+        if grep import guest.dis | grep -Ei \
+          'fopen|fread|fwrite|fclose|ftell|fseek|__multi3|wasi_snapshot|fd_|malloc|free|realloc|memcmp|strlen|memcpy|memset|memmove'; then
+          echo "unexpected forbidden import(s) in guest.wasm"
+          exit 1
+        fi
+        echo "freestanding bare link OK (no forbidden imports)"

@@ -51,12 +51,14 @@ static void test_read_err_code(void) {
     yy_assert(err.code == YYJSON_READ_ERROR_INVALID_PARAMETER);
     yy_assert(err.pos == 0);
     
+#if !YYJSON_DISABLE_FILE
     str = NULL;
     //    ^ input path is NULL
     memset(&err, -1, sizeof(err));
     yyjson_doc_free(yyjson_read_file(str, 0, NULL, &err));
     yy_assert(err.code == YYJSON_READ_ERROR_INVALID_PARAMETER);
     yy_assert(err.pos == 0);
+#endif
     
     
     
@@ -564,6 +566,7 @@ static void test_read_err_code(void) {
     
     
     
+#if !YYJSON_DISABLE_FILE
     // -------------------------------------------------------------------------
     // Failed to open a file.
     str = "/yyjson/no_such_file.test";
@@ -579,6 +582,7 @@ static void test_read_err_code(void) {
     yyjson_doc_free(yyjson_read_file(dir, 0, NULL, &err));
     yy_assert(err.code == YYJSON_READ_ERROR_UNEXPECTED_CHARACTER);
     yy_assert(err.pos == 0);
+#endif
     
 #endif
 }

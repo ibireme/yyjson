@@ -21,7 +21,6 @@
  *============================================================================*/
 
 #include "yyjson.h"
-#include <math.h> /* for `HUGE_VAL/INFINIY/NAN` macros, no libm required */
 
 
 
@@ -110,28 +109,49 @@ uint32_t yyjson_version(void) {
 #endif
 
 /* int128 type */
-#if defined(__SIZEOF_INT128__) && (__SIZEOF_INT128__ == 16) && \
-    (defined(__GNUC__) || defined(__clang__) || defined(__INTEL_COMPILER))
-#    define YYJSON_HAS_INT128 1
-#else
-#    define YYJSON_HAS_INT128 0
+#ifndef YYJSON_HAS_INT128
+#   if defined(__SIZEOF_INT128__) && (__SIZEOF_INT128__ == 16) && \
+    (defined(__GNUC__) || defined(__clang__) || defined(__INTEL_COMPILER)) && \
+    (!defined(__EMSCRIPTEN__) && !defined(__wasm__))
+#       define YYJSON_HAS_INT128 1
+#   else
+#       define YYJSON_HAS_INT128 0
+#   endif
 #endif
 
 /* IEEE 754 floating-point binary representation */
-#if defined(__STDC_IEC_559__) || defined(__STDC_IEC_60559_BFP__)
-#   define YYJSON_HAS_IEEE_754 1
-#elif FLT_RADIX == 2 && \
+#ifndef YYJSON_HAS_IEEE_754
+#   if defined(__STDC_IEC_559__) || defined(__STDC_IEC_60559_BFP__)
+#       define YYJSON_HAS_IEEE_754 1
+#   elif FLT_RADIX == 2 && \
     FLT_MANT_DIG == 24 && FLT_DIG == 6 && \
     FLT_MIN_EXP == -125 && FLT_MAX_EXP == 128 && \
     FLT_MIN_10_EXP == -37 && FLT_MAX_10_EXP == 38 && \
     DBL_MANT_DIG == 53 && DBL_DIG == 15 && \
     DBL_MIN_EXP == -1021 && DBL_MAX_EXP == 1024 && \
     DBL_MIN_10_EXP == -307 && DBL_MAX_10_EXP == 308
-#   define YYJSON_HAS_IEEE_754 1
-#else
-#   define YYJSON_HAS_IEEE_754 0
-#   undef  YYJSON_DISABLE_FAST_FP_CONV
-#   define YYJSON_DISABLE_FAST_FP_CONV 1
+#       define YYJSON_HAS_IEEE_754 1
+#   else
+#       define YYJSON_HAS_IEEE_754 0
+#       undef  YYJSON_DISABLE_FAST_FP_CONV
+#       define YYJSON_DISABLE_FAST_FP_CONV 1
+#   endif
+#endif
+
+#if YYJSON_DISABLE_FAST_FP_CONV && YYJSON_FREESTANDING
+#   error DISABLE_FAST_FP_CONV and FREESTANDING cannot be used together
+#endif
+
+/* Inf and NaN */
+#ifndef INFINITY
+#    ifndef HUGE_VAL
+#        define INFINITY ((double)(1.0 / 0.0))
+#    else
+#        define INFINITY HUGE_VAL
+#    endif
+#endif
+#ifndef NAN
+#    define NAN ((double)(0.0 / 0.0))
 #endif
 
 /*
@@ -318,27 +338,7 @@ uint32_t yyjson_version(void) {
 #define YYJSON_ALC_DYN_MIN_SIZE             0x1000
 
 /* Default value for compile-time options. */
-#ifndef YYJSON_DISABLE_READER
-#define YYJSON_DISABLE_READER 0
-#endif
-#ifndef YYJSON_DISABLE_WRITER
-#define YYJSON_DISABLE_WRITER 0
-#endif
-#ifndef YYJSON_DISABLE_INCR_READER
-#define YYJSON_DISABLE_INCR_READER 0
-#endif
-#ifndef YYJSON_DISABLE_UTILS
-#define YYJSON_DISABLE_UTILS 0
-#endif
-#ifndef YYJSON_DISABLE_FAST_FP_CONV
-#define YYJSON_DISABLE_FAST_FP_CONV 0
-#endif
-#ifndef YYJSON_DISABLE_NON_STANDARD
-#define YYJSON_DISABLE_NON_STANDARD 0
-#endif
-#ifndef YYJSON_DISABLE_UTF8_VALIDATION
-#define YYJSON_DISABLE_UTF8_VALIDATION 0
-#endif
+
 #ifndef YYJSON_READER_DEPTH_LIMIT
 #define YYJSON_READER_DEPTH_LIMIT 0
 #endif
@@ -1956,10 +1956,17 @@ static_inline u32 f32_to_bits(f32 f) {
 static_inline u64 f64_bits_inf(bool sign) {
 #if YYJSON_HAS_IEEE_754
     return F64_BITS_INF | ((u64)sign << 63);
-#elif defined(INFINITY)
-    return f64_to_bits(sign ? -INFINITY : INFINITY);
 #else
-    return f64_to_bits(sign ? -HUGE_VAL : HUGE_VAL);
+    return f64_to_bits(sign ? (f64)-INFINITY : (f64)INFINITY);
+#endif
+}
+
+/** Returns whether the double value is infinity (not NaN). */
+static_inline bool f64_is_inf(f64 val) {
+#if YYJSON_HAS_IEEE_754
+    return (f64_to_bits(val) & F64_EXP_MASK) == F64_BITS_INF;
+#else
+    return val >= (f64)INFINITY || val <= (f64)-INFINITY;
 #endif
 }
 
@@ -1967,10 +1974,8 @@ static_inline u64 f64_bits_inf(bool sign) {
 static_inline u64 f64_bits_nan(bool sign) {
 #if YYJSON_HAS_IEEE_754
     return F64_BITS_NAN | ((u64)sign << 63);
-#elif defined(NAN)
-    return f64_to_bits(sign ? (f64)-NAN : (f64)NAN);
 #else
-    return f64_to_bits((sign ? -0.0 : 0.0) / 0.0);
+    return f64_to_bits(sign ? (f64)-NAN : (f64)NAN);
 #endif
 }
 
@@ -2091,6 +2096,8 @@ static_inline void u128_mul_add(u64 a, u64 b, u64 c, u64 *hi, u64 *lo) {
  * These functions are used to read and write JSON files.
  *============================================================================*/
 
+#if !YYJSON_FREESTANDING && !YYJSON_DISABLE_FILE
+
 #define YYJSON_FOPEN_E
 #if !defined(_MSC_VER) && defined(__GLIBC__) && defined(__GLIBC_PREREQ)
 #   if __GLIBC_PREREQ(2, 7)
@@ -2124,6 +2131,8 @@ static_inline usize fread_safe(void *buf, usize size, FILE *file) {
     return fread(buf, 1, size, file);
 #endif
 }
+
+#endif /* !YYJSON_FREESTANDING && !YYJSON_DISABLE_FILE */
 
 
 
@@ -2172,29 +2181,6 @@ static_inline void *mem_align_up(void *mem, usize align) {
 
 
 /*==============================================================================
- * MARK: - Default Memory Allocator (Private)
- * This is a simple libc memory allocator wrapper.
- *============================================================================*/
-
-static void *default_malloc(void *ctx, usize size) {
-    return malloc(size);
-}
-
-static void *default_realloc(void *ctx, void *ptr, usize old_size, usize size) {
-    return realloc(ptr, size);
-}
-
-static void default_free(void *ctx, void *ptr) {
-    free(ptr);
-}
-
-static const yyjson_alc YYJSON_DEFAULT_ALC = {
-    default_malloc, default_realloc, default_free, NULL
-};
-
-
-
-/*==============================================================================
  * MARK: - Null Memory Allocator (Private)
  * This allocator is just a placeholder to ensure that the internal
  * malloc/realloc/free function pointers are not null.
@@ -2215,6 +2201,44 @@ static void null_free(void *ctx, void *ptr) {
 static const yyjson_alc YYJSON_NULL_ALC = {
     null_malloc, null_realloc, null_free, NULL
 };
+
+
+
+/*==============================================================================
+ * MARK: - Default Memory Allocator (Private)
+ * This is a simple libc memory allocator wrapper.
+ *============================================================================*/
+
+#if defined(YYJSON_CUSTOM_ALC)
+
+/* user-provided via macro */
+extern const yyjson_alc YYJSON_CUSTOM_ALC;
+#define YYJSON_DEFAULT_ALC YYJSON_CUSTOM_ALC
+
+#elif YYJSON_FREESTANDING
+
+/* null allocator */
+static const yyjson_alc YYJSON_DEFAULT_ALC = {
+    null_malloc, null_realloc, null_free, NULL
+};
+
+#else /* YYJSON_FREESTANDING */
+
+/* default libc allocator */
+static void *default_malloc(void *ctx, usize size) {
+    return malloc(size);
+}
+static void *default_realloc(void *ctx, void *ptr, usize old_size, usize size) {
+    return realloc(ptr, size);
+}
+static void default_free(void *ctx, void *ptr) {
+    free(ptr);
+}
+static const yyjson_alc YYJSON_DEFAULT_ALC = {
+    default_malloc, default_realloc, default_free, NULL
+};
+
+#endif /* YYJSON_FREESTANDING */
 
 
 
@@ -4643,7 +4667,7 @@ read_double:
             return_err(hdr, "strtod() failed to parse the number");
         }
     }
-    if (unlikely(val->uni.f64 >= HUGE_VAL || val->uni.f64 <= -HUGE_VAL)) {
+    if (unlikely(f64_is_inf(val->uni.f64))) {
         return_inf();
     }
     val->tag = YYJSON_TYPE_NUM | YYJSON_SUBTYPE_REAL;
@@ -6311,6 +6335,8 @@ yyjson_doc *yyjson_read_opts(char *dat, usize len,
 #undef return_err
 }
 
+#if !YYJSON_FREESTANDING && !YYJSON_DISABLE_FILE
+
 yyjson_doc *yyjson_read_file(const char *path,
                              yyjson_read_flag flg,
                              const yyjson_alc *alc_ptr,
@@ -6436,6 +6462,8 @@ yyjson_doc *yyjson_read_fp(FILE *file,
 
 #undef return_err
 }
+
+#endif /* !YYJSON_FREESTANDING && !YYJSON_DISABLE_FILE */
 
 const char *yyjson_read_number(const char *dat,
                                yyjson_val *val,
@@ -9075,6 +9103,8 @@ static_inline u8 *write_indent(u8 *cur, usize level, usize spaces) {
     return cur;
 }
 
+#if !YYJSON_FREESTANDING && !YYJSON_DISABLE_FILE
+
 /** Write data to file pointer. */
 static bool write_dat_to_fp(FILE *fp, u8 *dat, usize len,
                             yyjson_write_err *err) {
@@ -9111,6 +9141,8 @@ static bool write_dat_to_file(const char *path, u8 *dat, usize len,
 
 #undef return_err
 }
+
+#endif /* !YYJSON_FREESTANDING && !YYJSON_DISABLE_FILE */
 
 
 
@@ -9700,6 +9732,8 @@ char *yyjson_write_opts(const yyjson_doc *doc,
     return write_root(root, flg, alc_ptr, NULL, dat_len, err);
 }
 
+#if !YYJSON_FREESTANDING && !YYJSON_DISABLE_FILE
+
 bool yyjson_val_write_file(const char *path,
                            const yyjson_val *val,
                            yyjson_write_flag flg,
@@ -9752,20 +9786,6 @@ bool yyjson_val_write_fp(FILE *fp,
     return suc;
 }
 
-size_t yyjson_val_write_buf(char *buf, size_t buf_len,
-                            const yyjson_val *val,
-                            yyjson_write_flag flg,
-                            yyjson_write_err *err) {
-    if (unlikely(!buf || !buf_len)) {
-        if (err) err->code = YYJSON_WRITE_ERROR_INVALID_PARAMETER;
-        if (err) err->msg = "input buf or buf_len is invalid";
-        return 0;
-    } else {
-        write_root(val, flg, &YYJSON_NULL_ALC, buf, &buf_len, err);
-        return buf_len;
-    }
-}
-
 bool yyjson_write_file(const char *path,
                        const yyjson_doc *doc,
                        yyjson_write_flag flg,
@@ -9782,6 +9802,22 @@ bool yyjson_write_fp(FILE *fp,
                      yyjson_write_err *err) {
     yyjson_val *root = doc ? doc->root : NULL;
     return yyjson_val_write_fp(fp, root, flg, alc_ptr, err);
+}
+
+#endif /* !YYJSON_FREESTANDING && !YYJSON_DISABLE_FILE */
+
+size_t yyjson_val_write_buf(char *buf, size_t buf_len,
+                            const yyjson_val *val,
+                            yyjson_write_flag flg,
+                            yyjson_write_err *err) {
+    if (unlikely(!buf || !buf_len)) {
+        if (err) err->code = YYJSON_WRITE_ERROR_INVALID_PARAMETER;
+        if (err) err->msg = "input buf or buf_len is invalid";
+        return 0;
+    } else {
+        write_root(val, flg, &YYJSON_NULL_ALC, buf, &buf_len, err);
+        return buf_len;
+    }
 }
 
 size_t yyjson_write_buf(char *buf, size_t buf_len,
@@ -10326,6 +10362,30 @@ char *yyjson_mut_write_opts(const yyjson_mut_doc *doc,
                           flg, alc_ptr, NULL, dat_len, err);
 }
 
+size_t yyjson_mut_val_write_buf(char *buf, size_t buf_len,
+                                const yyjson_mut_val *val,
+                                yyjson_write_flag flg,
+                                yyjson_write_err *err) {
+    if (unlikely(!buf || !buf_len)) {
+        if (err) err->code = YYJSON_WRITE_ERROR_INVALID_PARAMETER;
+        if (err) err->msg = "input buf or buf_len is invalid";
+        return 0;
+    } else {
+        mut_write_root(val, 0, flg, &YYJSON_NULL_ALC, buf, &buf_len, err);
+        return buf_len;
+    }
+}
+
+size_t yyjson_mut_write_buf(char *buf, size_t buf_len,
+                            const yyjson_mut_doc *doc,
+                            yyjson_write_flag flg,
+                            yyjson_write_err *err) {
+    yyjson_mut_val *root = doc ? doc->root : NULL;
+    return yyjson_mut_val_write_buf(buf, buf_len, root, flg, err);
+}
+
+#if !YYJSON_FREESTANDING && !YYJSON_DISABLE_FILE
+
 bool yyjson_mut_val_write_file(const char *path,
                                const yyjson_mut_val *val,
                                yyjson_write_flag flg,
@@ -10378,20 +10438,6 @@ bool yyjson_mut_val_write_fp(FILE *fp,
     return suc;
 }
 
-size_t yyjson_mut_val_write_buf(char *buf, size_t buf_len,
-                                const yyjson_mut_val *val,
-                                yyjson_write_flag flg,
-                                yyjson_write_err *err) {
-    if (unlikely(!buf || !buf_len)) {
-        if (err) err->code = YYJSON_WRITE_ERROR_INVALID_PARAMETER;
-        if (err) err->msg = "input buf or buf_len is invalid";
-        return 0;
-    } else {
-        mut_write_root(val, 0, flg, &YYJSON_NULL_ALC, buf, &buf_len, err);
-        return buf_len;
-    }
-}
-
 bool yyjson_mut_write_file(const char *path,
                            const yyjson_mut_doc *doc,
                            yyjson_write_flag flg,
@@ -10410,13 +10456,7 @@ bool yyjson_mut_write_fp(FILE *fp,
     return yyjson_mut_val_write_fp(fp, root, flg, alc_ptr, err);
 }
 
-size_t yyjson_mut_write_buf(char *buf, size_t buf_len,
-                            const yyjson_mut_doc *doc,
-                            yyjson_write_flag flg,
-                            yyjson_write_err *err) {
-    yyjson_mut_val *root = doc ? doc->root : NULL;
-    return yyjson_mut_val_write_buf(buf, buf_len, root, flg, err);
-}
+#endif /* !YYJSON_FREESTANDING && !YYJSON_DISABLE_FILE */
 
 #undef has_flg
 #undef has_allow

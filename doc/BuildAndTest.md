@@ -67,11 +67,13 @@ Supported CMake options (default OFF):
 - `-DYYJSON_DISABLE_READER=ON` Disable JSON reader if you don't need it.
 - `-DYYJSON_DISABLE_WRITER=ON` Disable JSON writer if you don't need it.
 - `-DYYJSON_DISABLE_INCR_READER=ON` Disable incremental reader if you don't need it.
+- `-DYYJSON_DISABLE_FILE=ON` Disable file/fp read and write APIs.
 - `-DYYJSON_DISABLE_UTILS=ON` Disable JSON Pointer, JSON Patch and JSON Merge Patch.
 - `-DYYJSON_DISABLE_FAST_FP_CONV=ON` Disable builtin fast floating point number conversion.
 - `-DYYJSON_DISABLE_NON_STANDARD=ON` Disable non-standard JSON support at compile-time.
 - `-DYYJSON_DISABLE_UTF8_VALIDATION=ON` Disable UTF-8 validation at compile-time.
 - `-DYYJSON_DISABLE_UNALIGNED_MEMORY_ACCESS=ON` Disable unaligned memory access support at compile-time.
+- `-DYYJSON_FREESTANDING=ON` Build without libc (see `YYJSON_FREESTANDING` below).
 
 
 ## Use CMake as a dependency
@@ -253,6 +255,10 @@ Define as 1 to disable JSON incremental reader at compile-time.<br/>
 This disables functions with `incr` in their name.<br/>
 It is recommended when JSON incremental reader is not required.<br/>
 
+## YYJSON_DISABLE_FILE
+Define as 1 to disable file and `FILE` pointer APIs at compile-time.<br/>
+`stdio.h` is not included by `yyjson.h` when this is set.<br/>
+
 ## YYJSON_DISABLE_UTILS
 Define as 1 to disable JSON Pointer, JSON Patch and JSON Merge Patch supports.<br/>
 This disables functions with `ptr` or `patch` in their name.<br/>
@@ -296,6 +302,18 @@ Note: If this flag is enabled while passing illegal UTF-8 strings, the following
 - Escaped characters may be ignored when parsing JSON strings.
 - Ending quotes may be ignored when parsing JSON strings, causing the string to merge with the next value.
 - When serializing with `yyjson_mut_val`, the string's end may be accessed out of bounds, potentially causing a segmentation fault.
+
+## YYJSON_FREESTANDING
+Define as 1 to build yyjson without depending on libc (`stdlib.h`, `string.h`, `math.h`, and `stdio.h`).
+
+Inline fallbacks are provided for string and memory operations.
+File/fp APIs are also disabled (same effect as `YYJSON_DISABLE_FILE`).
+
+You must pass a custom `yyjson_alc` allocator to API functions, or define `YYJSON_CUSTOM_ALC` at compile time.
+
+Optionally define `YYJSON_FREESTANDING_HEADER` to a custom header path to replace the built-in string fallbacks.
+
+It is recommended for freestanding targets such as WebAssembly modules built without a libc sysroot.
 
 ## YYJSON_EXPORTS
 Define as 1 to export symbols when building the library as a Windows DLL.

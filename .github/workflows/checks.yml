@@ -124,7 +124,8 @@ jobs:
           - gcc
           - clang
         opt: 
-          - no_fp
+          - no_conv
+          - no_file
           - no_reader
           - no_writer
           - no_utf8
@@ -145,8 +146,11 @@ jobs:
         if [ "${{matrix.compiler}}" == "clang" ]; then
           BUILD_OPTIONS="${BUILD_OPTIONS} -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++"
         fi
-        if [ "${{matrix.opt}}" == "no_fp" ]; then
+        if [ "${{matrix.opt}}" == "no_conv" ]; then
           BUILD_OPTIONS="${BUILD_OPTIONS} -DYYJSON_DISABLE_FAST_FP_CONV=ON"
+        fi
+        if [ "${{matrix.opt}}" == "no_file" ]; then
+          BUILD_OPTIONS="${BUILD_OPTIONS} -DYYJSON_DISABLE_FILE=ON"
         fi
         if [ "${{matrix.opt}}" == "no_reader" ]; then
           BUILD_OPTIONS="${BUILD_OPTIONS} -DYYJSON_DISABLE_READER=ON"

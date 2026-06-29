@@ -6,14 +6,20 @@ All notable changes to this project will be documented in this file.
 ## Unreleased
 #### Added 
 - Add a set of `write_buf()` functions for writing JSON to a buffer without allocation.
-- Add optional compile-time JSON depth limit via `YYJSON_READER_DEPTH_LIMIT`.
+- Add `YYJSON_FREESTANDING` compile-time option to build without libc (e.g. wasm).
+- Add `YYJSON_DISABLE_FILE` compile-time option to disable file/fp read and write APIs.
+- Add `YYJSON_READER_DEPTH_LIMIT` compile-time option to limit JSON nesting depth.
+- Add `YYJSON_WRITE_LOWERCASE_HEX` flag to write `\uXXXX` escapes in lowercase.
+- Add Swift Package Manager traits for compile-time configuration.
 
 #### Changed
-- Change `set_int()` parameter type from `int` to `int64_t`.
+- Change `set_int()` parameter type from `int` to `int64_t`: #240
 - Add `const` qualifier to parameters of read-only functions: #248
 
 #### Fixed
 - Fix `tinycc` preprocessor error.
+- Fix an uninitialized read when parsing numbers (OSS-Fuzz #498706935).
+- Fix various edge cases in the reader and writer APIs.
 
 
 ## 0.12.0 (2025-08-18)

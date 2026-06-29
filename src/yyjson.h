@@ -32,98 +32,99 @@
 
 
 /*==============================================================================
- * MARK: - Header Files
- *============================================================================*/
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <stddef.h>
-#include <limits.h>
-#include <string.h>
-#include <float.h>
-
-
-
-/*==============================================================================
  * MARK: - Compile-time Options
  *============================================================================*/
 
-/*
- Define as 1 to disable JSON reader at compile-time.
- This disables functions with "read" in their name.
- Reduces binary size by about 60%.
- */
+/* Define as 1 to disable JSON reader at compile-time.
+   This disables functions with "read" in their name.
+   Reduces binary size by about 60%. */
 #ifndef YYJSON_DISABLE_READER
+#define YYJSON_DISABLE_READER 0
 #endif
 
-/*
- Define as 1 to disable JSON writer at compile-time.
- This disables functions with "write" in their name.
- Reduces binary size by about 30%.
- */
+/* Define as 1 to disable JSON writer at compile-time.
+   This disables functions with "write" in their name.
+   Reduces binary size by about 30%. */
 #ifndef YYJSON_DISABLE_WRITER
+#define YYJSON_DISABLE_WRITER 0
 #endif
 
-/*
- Define as 1 to disable JSON incremental reader at compile-time.
- This disables functions with "incr" in their name.
- */
+/* Define as 1 to disable JSON incremental reader at compile-time.
+   This disables functions with "incr" in their name. */
 #ifndef YYJSON_DISABLE_INCR_READER
+#define YYJSON_DISABLE_INCR_READER 0
 #endif
 
-/*
- Define as 1 to disable JSON Pointer, JSON Patch and JSON Merge Patch supports.
- This disables functions with "ptr" or "patch" in their name.
- */
+/* Define as 1 to disable file/fp read and write APIs. */
+#ifndef YYJSON_DISABLE_FILE
+#define YYJSON_DISABLE_FILE 0
+#endif
+
+/* Define as 1 to disable JSON Pointer, JSON Patch and JSON Merge Patch.
+   This disables functions with "ptr" or "patch" in their name. */
 #ifndef YYJSON_DISABLE_UTILS
+#define YYJSON_DISABLE_UTILS 0
 #endif
 
-/*
- Define as 1 to disable the fast floating-point number conversion in yyjson.
- Libc's `strtod/snprintf` will be used instead.
+/* Define as 1 to disable the fast floating-point number conversion in yyjson.
+   Libc's `strtod/snprintf` will be used instead.
 
- This reduces binary size by about 30%, but significantly slows down the
- floating-point read/write speed.
- */
+   This reduces binary size by about 30%, but significantly slows down the
+   floating-point read/write speed. */
 #ifndef YYJSON_DISABLE_FAST_FP_CONV
+#define YYJSON_DISABLE_FAST_FP_CONV 0
 #endif
 
-/*
- Define as 1 to disable non-standard JSON features support at compile-time,
- such as YYJSON_READ_ALLOW_XXX and YYJSON_WRITE_ALLOW_XXX.
+/* Define as 1 to disable non-standard JSON features support at compile-time,
+   such as YYJSON_READ_ALLOW_XXX and YYJSON_WRITE_ALLOW_XXX.
 
- This reduces binary size by about 10%, and slightly improves performance.
- */
+   This reduces binary size by about 10%, and slightly improves performance. */
 #ifndef YYJSON_DISABLE_NON_STANDARD
+#define YYJSON_DISABLE_NON_STANDARD 0
 #endif
 
-/*
- Define as 1 to disable UTF-8 validation at compile-time.
+/* Define as 1 to disable UTF-8 validation at compile-time.
 
- Use this if all input strings are guaranteed to be valid UTF-8
- (e.g. language-level String types are already validated).
+   Use this if all input strings are guaranteed to be valid UTF-8
+   (e.g. language-level String types are already validated).
 
- Disabling UTF-8 validation improves performance for non-ASCII strings by about
- 3% to 7%.
+   Disabling UTF-8 validation improves performance for non-ASCII strings by
+   about 3% to 7%.
 
- Note: If this flag is enabled while passing illegal UTF-8 strings,
- the following errors may occur:
- - Escaped characters may be ignored when parsing JSON strings.
- - Ending quotes may be ignored when parsing JSON strings, causing the
-   string to merge with the next value.
- - When serializing with `yyjson_mut_val`, the string's end may be accessed
-   out of bounds, potentially causing a segmentation fault.
- */
+   Note: If this flag is enabled while passing illegal UTF-8 strings,
+   the following errors may occur:
+   - Escaped characters may be ignored when parsing JSON strings.
+   - Ending quotes may be ignored when parsing JSON strings, causing the
+     string to merge with the next value.
+   - When serializing with `yyjson_mut_val`, the string's end may be accessed
+     out of bounds, potentially causing a segmentation fault. */
 #ifndef YYJSON_DISABLE_UTF8_VALIDATION
+#define YYJSON_DISABLE_UTF8_VALIDATION 0
 #endif
 
-/*
- Define as 1 to improve performance on architectures that do not support
- unaligned memory access.
+/* Define as 1 to improve performance on architectures that do not support
+   unaligned memory access.
 
- Normally, this does not need to be set manually. See the C file for details.
- */
+   Normally, this does not need to be set manually. */
 #ifndef YYJSON_DISABLE_UNALIGNED_MEMORY_ACCESS
+/* auto detected in yyjson.c */
+#endif
+
+/* Define to an integer to set a depth limit for containers (arrays/objects). */
+#ifndef YYJSON_READER_DEPTH_LIMIT
+#define YYJSON_READER_DEPTH_LIMIT 0
+#endif
+
+/* Define as 1 to build without libc (stdlib/string/math headers).
+   Inline fallbacks are provided for string and memory operations.
+
+   You must pass a custom `yyjson_alc` to each API call, or define
+   `YYJSON_CUSTOM_ALC` at compile time. Also disables file/fp APIs.
+   
+   Optional: define `YYJSON_FREESTANDING_HEADER` to a custom header that
+   replaces `string.h` instead of using the built-in fallbacks. */
+#ifndef YYJSON_FREESTANDING
+#define YYJSON_FREESTANDING 0
 #endif
 
 /* Define as 1 to export symbols when building this library as a Windows DLL. */
@@ -140,10 +141,6 @@
 
 /* Define as 1 to include <stdbool.h> for compilers without C99 support. */
 #ifndef YYJSON_HAS_STDBOOL_H
-#endif
-
-/* Define to an integer to set a depth limit for containers (arrays/objects). */
-#ifndef YYJSON_READER_DEPTH_LIMIT
 #endif
 
 
@@ -359,6 +356,83 @@
 #   define yyjson_constcast(type) (type)(void *)(size_t)(const void *)
 #endif
 
+/** Microsoft Visual C++ 6.0 doesn't support converting number from u64 to f64:
+    error C2520: conversion from unsigned __int64 to double not implemented. */
+#ifndef YYJSON_U64_TO_F64_NO_IMPL
+#   if (0 < YYJSON_MSC_VER) && (YYJSON_MSC_VER <= 1200)
+#       define YYJSON_U64_TO_F64_NO_IMPL 1
+#   else
+#       define YYJSON_U64_TO_F64_NO_IMPL 0
+#   endif
+#endif
+
+
+
+/*==============================================================================
+ * MARK: - Header Files
+ *============================================================================*/
+
+#include <stddef.h> /* for size_t, NULL */
+#include <limits.h> /* for CHAR_BIT, *_MAX */
+#include <float.h>  /* for floating-point limit macros */
+
+/** freestanding */
+#if !YYJSON_FREESTANDING && !YYJSON_DISABLE_FILE
+#include <stdio.h>  /* for FILE, fopen, fread, fwrite, sprintf */
+#endif
+#if !YYJSON_FREESTANDING
+#include <stdlib.h> /* for malloc, realloc, free, strtod */
+#include <string.h> /* for memcpy, memmove, memset, memcmp, strlen */
+#include <math.h>   /* for HUGE_VAL, INFINITY, NAN (no libm required) */
+#elif defined(YYJSON_FREESTANDING_HEADER)
+#   include YYJSON_FREESTANDING_HEADER /* custom replacement for string.h */
+#else
+#   if !defined(memcpy) && defined(__clang__)
+#       define memcpy(d,s,n)  __builtin_memcpy(d,s,n)
+#   elif !defined(memcpy)
+#       define memcpy(d,s,n)  yyjson_memcpy(d,s,n)
+#   endif
+#   if !defined(memmove) && defined(__clang__)
+#       define memmove(d,s,n) __builtin_memmove(d,s,n)
+#   elif !defined(memmove)
+#       define memmove(d,s,n) yyjson_memmove(d,s,n)
+#   endif
+#   if !defined(memset) && defined(__clang__)
+#       define memset(d,v,n)  __builtin_memset(d,v,n)
+#   elif !defined(memset)
+#       define memset(d,v,n)  yyjson_memset(d,v,n)
+#   endif
+#   ifndef memcmp
+#       define memcmp(a,b,n)  yyjson_memcmp(a,b,n)
+#   endif
+#   ifndef strlen
+#       define strlen(s)      yyjson_strlen(s)
+#   endif
+yyjson_api_inline void *yyjson_memcpy(void *d, const void *s, size_t n) {
+    char *p = (char *)d; const char *q = (const char *)s;
+    while (n--) *p++ = *q++; return d;
+}
+yyjson_api_inline void *yyjson_memmove(void *d, const void *s, size_t n) {
+    char *p = (char *)d; const char *q = (const char *)s;
+    if (p == q || !n) return d;
+    if (p < q) { while (n--) *p++ = *q++; }
+    else { p += n; q += n; while (n--) *--p = *--q; }
+    return d;
+}
+yyjson_api_inline void *yyjson_memset(void *d, int v, size_t n) {
+    char *p = (char *)d, x = (char)v;
+    while (n--) *p++ = x; return d;
+}
+yyjson_api_inline int yyjson_memcmp(const void *a, const void *b, size_t n) {
+    const unsigned char *p = (const unsigned char *)a;
+    const unsigned char *q = (const unsigned char *)b;
+    while (n--) { if (*p != *q) return (int)(*p - *q); p++; q++; } return 0;
+}
+yyjson_api_inline size_t yyjson_strlen(const char *s) {
+    const char *p = s; while (*p) p++; return (size_t)(p - s);
+}
+#endif
+
 /** stdint (C89 compatible) */
 #if (defined(YYJSON_HAS_STDINT_H) && YYJSON_HAS_STDINT_H) || \
     YYJSON_MSC_VER >= 1600 || YYJSON_STDC_VER >= 199901L || \
@@ -462,18 +536,6 @@
 #if defined(CHAR_BIT)
 #   if CHAR_BIT != 8
 #       error non 8-bit char is not supported
-#   endif
-#endif
-
-/**
- Microsoft Visual C++ 6.0 doesn't support converting number from u64 to f64:
- error C2520: conversion from unsigned __int64 to double not implemented.
- */
-#ifndef YYJSON_U64_TO_F64_NO_IMPL
-#   if (0 < YYJSON_MSC_VER) && (YYJSON_MSC_VER <= 1200)
-#       define YYJSON_U64_TO_F64_NO_IMPL 1
-#   else
-#       define YYJSON_U64_TO_F64_NO_IMPL 0
 #   endif
 #endif
 
@@ -942,6 +1004,8 @@ yyjson_api yyjson_doc *yyjson_read_opts(char *dat,
                                         const yyjson_alc *alc,
                                         yyjson_read_err *err);
 
+#if !YYJSON_FREESTANDING && !YYJSON_DISABLE_FILE
+
 /**
  Read a JSON file.
 
@@ -989,6 +1053,8 @@ yyjson_api yyjson_doc *yyjson_read_fp(FILE *fp,
                                       yyjson_read_flag flg,
                                       const yyjson_alc *alc,
                                       yyjson_read_err *err);
+
+#endif /* !YYJSON_FREESTANDING && !YYJSON_DISABLE_FILE */
 
 /**
  Read a JSON string.
@@ -1321,6 +1387,8 @@ yyjson_api char *yyjson_write_opts(const yyjson_doc *doc,
                                    size_t *len,
                                    yyjson_write_err *err);
 
+#if !YYJSON_FREESTANDING && !YYJSON_DISABLE_FILE
+
 /**
  Write a document to JSON file with options.
 
@@ -1373,6 +1441,8 @@ yyjson_api bool yyjson_write_fp(FILE *fp,
                                 yyjson_write_flag flg,
                                 const yyjson_alc *alc,
                                 yyjson_write_err *err);
+
+#endif /* !YYJSON_FREESTANDING && !YYJSON_DISABLE_FILE */
 
 /**
  Write a document into a buffer.
@@ -1448,6 +1518,8 @@ yyjson_api char *yyjson_mut_write_opts(const yyjson_mut_doc *doc,
                                        size_t *len,
                                        yyjson_write_err *err);
 
+#if !YYJSON_FREESTANDING && !YYJSON_DISABLE_FILE
+
 /**
  Write a document to JSON file with options.
 
@@ -1501,6 +1573,8 @@ yyjson_api bool yyjson_mut_write_fp(FILE *fp,
                                     yyjson_write_flag flg,
                                     const yyjson_alc *alc,
                                     yyjson_write_err *err);
+
+#endif /* !YYJSON_FREESTANDING && !YYJSON_DISABLE_FILE */
 
 /**
  Write a document into a buffer.
@@ -1580,6 +1654,8 @@ yyjson_api char *yyjson_val_write_opts(const yyjson_val *val,
                                        size_t *len,
                                        yyjson_write_err *err);
 
+#if !YYJSON_FREESTANDING && !YYJSON_DISABLE_FILE
+
 /**
  Write a value to JSON file with options.
 
@@ -1632,6 +1708,8 @@ yyjson_api bool yyjson_val_write_fp(FILE *fp,
                                     yyjson_write_flag flg,
                                     const yyjson_alc *alc,
                                     yyjson_write_err *err);
+
+#endif /* !YYJSON_FREESTANDING && !YYJSON_DISABLE_FILE */
 
 /**
  Write a value into a buffer.
@@ -1705,6 +1783,8 @@ yyjson_api char *yyjson_mut_val_write_opts(const yyjson_mut_val *val,
                                            size_t *len,
                                            yyjson_write_err *err);
 
+#if !YYJSON_FREESTANDING && !YYJSON_DISABLE_FILE
+
 /**
  Write a value to JSON file with options.
 
@@ -1758,6 +1838,8 @@ yyjson_api bool yyjson_mut_val_write_fp(FILE *fp,
                                         yyjson_write_flag flg,
                                         const yyjson_alc *alc,
                                         yyjson_write_err *err);
+
+#endif /* !YYJSON_FREESTANDING && !YYJSON_DISABLE_FILE */
 
 /**
  Write a value into a buffer.
