@@ -115,14 +115,13 @@
 #define YYJSON_READER_DEPTH_LIMIT 0
 #endif
 
-/* Define as 1 to build without libc (stdlib/string/math headers).
-   Inline fallbacks are provided for string and memory operations.
+/* Define as 1 to build without libc (stdlib, string, math, stdio).
+   Inline fallbacks for memcpy/memmove/memset/memcmp/strlen are provided.
+   Optional `YYJSON_FREESTANDING_HEADER` for custom replacements.
 
-   You must pass a custom `yyjson_alc` to each API call, or define
-   `YYJSON_CUSTOM_ALC` at compile time. Also disables file/fp APIs.
-   
-   Optional: define `YYJSON_FREESTANDING_HEADER` to a custom header that
-   replaces `string.h` instead of using the built-in fallbacks. */
+   `malloc`/`free` are unavailable; pass `yyjson_alc` per call or define
+   `YYJSON_CUSTOM_ALC`. Also disables file/fp APIs. Cannot be used with
+   `YYJSON_DISABLE_FAST_FP_CONV`. */
 #ifndef YYJSON_FREESTANDING
 #define YYJSON_FREESTANDING 0
 #endif
@@ -387,19 +386,13 @@
 #elif defined(YYJSON_FREESTANDING_HEADER)
 #   include YYJSON_FREESTANDING_HEADER /* custom replacement for string.h */
 #else
-#   if !defined(memcpy) && defined(__clang__)
-#       define memcpy(d,s,n)  __builtin_memcpy(d,s,n)
-#   elif !defined(memcpy)
+#   ifndef memcpy
 #       define memcpy(d,s,n)  yyjson_memcpy(d,s,n)
 #   endif
-#   if !defined(memmove) && defined(__clang__)
-#       define memmove(d,s,n) __builtin_memmove(d,s,n)
-#   elif !defined(memmove)
+#   ifndef memmove
 #       define memmove(d,s,n) yyjson_memmove(d,s,n)
 #   endif
-#   if !defined(memset) && defined(__clang__)
-#       define memset(d,v,n)  __builtin_memset(d,v,n)
-#   elif !defined(memset)
+#   ifndef memset
 #       define memset(d,v,n)  yyjson_memset(d,v,n)
 #   endif
 #   ifndef memcmp

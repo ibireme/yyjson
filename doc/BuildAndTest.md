@@ -304,16 +304,15 @@ Note: If this flag is enabled while passing illegal UTF-8 strings, the following
 - When serializing with `yyjson_mut_val`, the string's end may be accessed out of bounds, potentially causing a segmentation fault.
 
 ## YYJSON_FREESTANDING
-Define as 1 to build yyjson without depending on libc (`stdlib.h`, `string.h`, `math.h`, and `stdio.h`).
+Define as 1 to build yyjson without libc (`stdlib.h`, `string.h`, `math.h`, and `stdio.h`).
 
-Inline fallbacks are provided for string and memory operations.
-File/fp APIs are also disabled (same effect as `YYJSON_DISABLE_FILE`).
+When `string.h` is unavailable, yyjson provides built-in inline fallbacks for `memcpy`, `memmove`, `memset`, `memcmp`, and `strlen`. On modern GCC and Clang at `-O2`/`-O3`, these are typically inlined with little impact on throughput. Alternatively, define `YYJSON_FREESTANDING_HEADER` to a custom header that supplies your own implementations.
 
-You must pass a custom `yyjson_alc` allocator to API functions, or define `YYJSON_CUSTOM_ALC` at compile time.
+`malloc` and `free` are not available. Pass a `yyjson_alc` allocator to each API that accepts one, or define a global default at compile time, for example `-DYYJSON_CUSTOM_ALC=my_alc`.
 
-Optionally define `YYJSON_FREESTANDING_HEADER` to a custom header path to replace the built-in string fallbacks.
+File and `FILE` pointer APIs are also disabled (same effect as `YYJSON_DISABLE_FILE`). This macro cannot be used together with `YYJSON_DISABLE_FAST_FP_CONV`.
 
-It is recommended for freestanding targets such as WebAssembly modules built without a libc sysroot.
+Intended for freestanding targets such as WebAssembly without a libc sysroot.
 
 ## YYJSON_EXPORTS
 Define as 1 to export symbols when building the library as a Windows DLL.

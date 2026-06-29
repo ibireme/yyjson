@@ -503,9 +503,11 @@ jobs:
         emcc -c -DYYJSON_FREESTANDING=1 -I./src src/yyjson.c -o yyjson.o
         emcc -c -DYYJSON_FREESTANDING=1 -I./src test/compile_smoke.c -o smoke.o
 
-        wasm-ld --export-all --no-entry --lto-O3 --allow-undefined \
+        WASM_LD="$EMSDK/upstream/bin/wasm-ld"
+        WASM_DIS="$EMSDK/upstream/bin/wasm-dis"
+        "$WASM_LD" --export-all --no-entry --lto-O3 --allow-undefined \
           smoke.o yyjson.o -o guest.wasm
-        wasm-dis guest.wasm > guest.dis
+        "$WASM_DIS" guest.wasm > guest.dis
 
         if grep import guest.dis | grep -Ei \
           'fopen|fread|fwrite|fclose|ftell|fseek|__multi3|wasi_snapshot|fd_|malloc|free|realloc|memcmp|strlen|memcpy|memset|memmove'; then
