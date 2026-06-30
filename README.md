@@ -233,6 +233,7 @@ yyjson, feel free to open a PR to add it to this list.
 | [mruby-yyjson][] | mruby        | Efficient JSON parsing and serialization library for mruby using yyjson                              |
 | [YYJSON.jl][]    | Julia        | Julia bindings for yyjson                                                                            |
 | [yyjson-go][]    | Go           | yyjson for Go, transpiled, CGo-free, 2-4x faster.                                                    |
+| [nim-yyjson][]   | Nim          | Thin Nim bindings for yyjson                                                                         |
 
 # TODO for v1.0
 * [x] Add documentation page.
@@ -267,3 +268,4 @@ This project is released under the MIT license.
 [mruby-yyjson]: https://github.com/buty4649/mruby-yyjson
 [YYJSON.jl]: https://github.com/bhftbootcamp/YYJSON.jl
 [yyjson-go]: https://github.com/dwisiswant0/yyjson
+[nim-yyjson]: https://github.com/zystem/nim-yyjson
