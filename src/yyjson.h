@@ -2020,15 +2020,15 @@ yyjson_api_inline const char *yyjson_get_raw(const yyjson_val *val);
     Returns false if `val` is NULL or type is not bool. */
 yyjson_api_inline bool yyjson_get_bool(const yyjson_val *val);
 
-/** Returns the content and cast to uint64_t.
+/** Returns the content cast to uint64_t.
     Returns 0 if `val` is NULL or type is not integer(sint/uint). */
 yyjson_api_inline uint64_t yyjson_get_uint(const yyjson_val *val);
 
-/** Returns the content and cast to int64_t.
+/** Returns the content cast to int64_t.
     Returns 0 if `val` is NULL or type is not integer(sint/uint). */
 yyjson_api_inline int64_t yyjson_get_sint(const yyjson_val *val);
 
-/** Returns the content and cast to int.
+/** Returns the content cast to int (may overflow).
     Returns 0 if `val` is NULL or type is not integer(sint/uint). */
 yyjson_api_inline int yyjson_get_int(const yyjson_val *val);
 

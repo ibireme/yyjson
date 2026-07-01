@@ -74,6 +74,7 @@ Supported CMake options (default OFF):
 - `-DYYJSON_DISABLE_UTF8_VALIDATION=ON` Disable UTF-8 validation at compile-time.
 - `-DYYJSON_DISABLE_UNALIGNED_MEMORY_ACCESS=ON` Disable unaligned memory access support at compile-time.
 - `-DYYJSON_FREESTANDING=ON` Build without libc (see `YYJSON_FREESTANDING` below).
+- `-DYYJSON_READER_DEPTH_LIMIT=<n>` Set a maximum nesting depth for JSON containers (see `YYJSON_READER_DEPTH_LIMIT` below).
 
 
 ## Use CMake as a dependency
@@ -313,6 +314,13 @@ When `string.h` is unavailable, yyjson provides built-in inline fallbacks for `m
 File and `FILE` pointer APIs are also disabled (same effect as `YYJSON_DISABLE_FILE`). This macro cannot be used together with `YYJSON_DISABLE_FAST_FP_CONV`.
 
 Intended for freestanding targets such as WebAssembly without a libc sysroot.
+
+## YYJSON_READER_DEPTH_LIMIT
+Define as a positive integer to set the maximum allowed nesting depth for JSON arrays and objects.
+
+When the parser encounters a container whose depth exceeds this value, it stops and returns the error code `YYJSON_READ_ERROR_DEPTH`.
+
+The default value is `0`, which means unlimited depth is supported. The parser does not use stack recursion, so nesting depth is only bounded by available memory.
 
 ## YYJSON_EXPORTS
 Define as 1 to export symbols when building the library as a Windows DLL.

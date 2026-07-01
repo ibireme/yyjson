@@ -299,6 +299,27 @@ if (yyjson_locate_pos(dat, dat_len, err.pos, &line, &col, &chr)) {
 }
 ```
 
+The complete list of error codes (`yyjson_read_code`):
+
+| Code | Name | Description |
+|------|------|-------------|
+| 0 | `YYJSON_READ_SUCCESS` | Success, no error. |
+| 1 | `YYJSON_READ_ERROR_INVALID_PARAMETER` | Invalid parameter, such as NULL input string or 0 input length. |
+| 2 | `YYJSON_READ_ERROR_MEMORY_ALLOCATION` | Memory allocation failure. |
+| 3 | `YYJSON_READ_ERROR_EMPTY_CONTENT` | Input JSON string is empty. |
+| 4 | `YYJSON_READ_ERROR_UNEXPECTED_CONTENT` | Unexpected content after document end, such as `[123]abc`. |
+| 5 | `YYJSON_READ_ERROR_UNEXPECTED_END` | Unexpected end of input; the parsed part is valid, such as `[123`. |
+| 6 | `YYJSON_READ_ERROR_UNEXPECTED_CHARACTER` | Unexpected character inside the document, such as `[abc]`. |
+| 7 | `YYJSON_READ_ERROR_JSON_STRUCTURE` | Invalid JSON structure, such as `[1,]`. |
+| 8 | `YYJSON_READ_ERROR_INVALID_COMMENT` | Invalid comment (deprecated, mapped to `UNEXPECTED_END`). |
+| 9 | `YYJSON_READ_ERROR_INVALID_NUMBER` | Invalid number, such as `123.e12` or `000`. |
+| 10 | `YYJSON_READ_ERROR_INVALID_STRING` | Invalid string, such as an invalid escape sequence. |
+| 11 | `YYJSON_READ_ERROR_LITERAL` | Invalid JSON literal, such as `truu`. |
+| 12 | `YYJSON_READ_ERROR_FILE_OPEN` | Failed to open a file. |
+| 13 | `YYJSON_READ_ERROR_FILE_READ` | Failed to read a file. |
+| 14 | `YYJSON_READ_ERROR_MORE` | Incomplete input during incremental parsing; state is preserved for continuation. |
+| 15 | `YYJSON_READ_ERROR_DEPTH` | Nesting depth exceeded `YYJSON_READER_DEPTH_LIMIT`. |
+
 ## Reader flag
 The library provides a set of flags for JSON reader.<br/>
 
@@ -329,7 +350,7 @@ Sample code:
 size_t dat_len = ...;
 char *buf = malloc(dat_len + YYJSON_PADDING_SIZE); // create a buffer larger than (len + 4)
 read_from_socket(buf, ...);
-memset(buf + file_size, 0, YYJSON_PADDING_SIZE); // set 4-byte padding after data
+memset(buf + dat_len, 0, YYJSON_PADDING_SIZE); // set 4-byte padding after data
 
 yyjson_doc *doc = yyjson_read_opts(buf, dat_len, YYJSON_READ_INSITU, NULL, NULL);
 if (doc) {...}
@@ -349,9 +370,9 @@ Sample code:
 // [1,2,3] [4,5,6] {"a":"b"}
 
 size_t file_size = ...;
-char *dat = malloc(file_size + 4);
+char *dat = malloc(file_size + YYJSON_PADDING_SIZE);
 your_read_file(dat, file);
-memset(dat + file_size, 0, 4); // add padding
+memset(dat + file_size, 0, YYJSON_PADDING_SIZE); // add padding
     
 char *hdr = dat;
 char *end = dat + file_size;
@@ -849,13 +870,13 @@ const char *yyjson_get_raw(const yyjson_val *val);
 // Returns bool value, or false if `val` is not bool type.
 bool yyjson_get_bool(const yyjson_val *val);
 
-// Returns uint64_t value, or 0 if `val` is not uint type.
+// Returns uint64_t value (cast), or 0 if `val` is not uint/sint type.
 uint64_t yyjson_get_uint(const yyjson_val *val);
 
-// Returns int64_t value, or 0 if `val` is not sint type.
+// Returns int64_t value (cast), or 0 if `val` is not uint/sint type.
 int64_t yyjson_get_sint(const yyjson_val *val);
 
-// Returns int value (may overflow), or 0 if `val` is not uint/sint type.
+// Returns int value (cast, may overflow), or 0 if `val` is not uint/sint type.
 int yyjson_get_int(const yyjson_val *val);
 
 // Returns double value, or 0 if `val` is not real type.
@@ -875,6 +896,14 @@ size_t yyjson_get_len(const yyjson_val *val);
 // Returns false if `val` is NULL or is not string.
 bool yyjson_equals_str(const yyjson_val *val, const char *str);
 bool yyjson_equals_strn(const yyjson_val *val, const char *str, size_t len);
+
+// Returns whether two JSON values are equal (deep compare).
+// Returns false if `lhs` or `rhs` is NULL.
+// Note: result may be inaccurate if an object has duplicate keys.
+// Warning: this function is recursive and may cause a stack overflow
+//          if the object/array nesting level is too deep.
+bool yyjson_equals(const yyjson_val *lhs, const yyjson_val *rhs);
+bool yyjson_mut_equals(const yyjson_mut_val *lhs, const yyjson_mut_val *rhs);
 ```
 
 
@@ -1121,7 +1150,7 @@ The following functions are used to create, modify, copy, and destroy a JSON doc
 // Creates and returns a new mutable JSON document.
 // Returns NULL on error (e.g. memory allocation failure).
 // If `alc` is NULL, the default allocator will be used.
-yyjson_mut_doc *yyjson_mut_doc_new(yyjson_alc *alc);
+yyjson_mut_doc *yyjson_mut_doc_new(const yyjson_alc *alc);
 
 // Delete the JSON document, free the memory of this doc
 // and all values created from this doc
