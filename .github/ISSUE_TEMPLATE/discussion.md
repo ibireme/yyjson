@@ -1,6 +1,6 @@
 ---
 name: Discussion
-about: Add discussion
+about: Start a discussion
 title: ''
 labels: ''
 assignees: ''

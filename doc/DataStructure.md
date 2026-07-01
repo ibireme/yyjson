@@ -87,9 +87,9 @@ For example:
 ---------------
 ## Memory Management
 
-A JSON document (`yyjson_doc`, `yyjson_mut_doc`) is responsible for managing the memory of all its JSON values and strings. When a document it is no longer needed, it is important for the user to call `yyjson_doc_free()` or `yyjson_mut_doc_free()` to free the memory associated with it.
+A JSON document (`yyjson_doc`, `yyjson_mut_doc`) is responsible for managing the memory of all its JSON values and strings. When a document is no longer needed, it is important for the user to call `yyjson_doc_free()` or `yyjson_mut_doc_free()` to free the memory associated with it.
 
 A JSON value (`yyjson_val`, `yyjson_mut_val`) has the same lifetime as its document. The memory is managed by its
- document and and cannot be freed independently.
+document and cannot be freed independently.
 
 For more information, refer to the API documentation.

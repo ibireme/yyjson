@@ -158,9 +158,9 @@ uint32_t yyjson_version(void) {
  Correct rounding in double number computations.
 
  On the x86 architecture, some compilers may use x87 FPU instructions for
- floating-point arithmetic. The x87 FPU loads all floating point number as
- 80-bit double-extended precision internally, then rounds the result to original
- precision, which may produce inaccurate results. For a more detailed
+ floating-point arithmetic. The x87 FPU loads all floating-point numbers as
+ 80-bit double-extended precision internally, then rounds the result to the
+ original precision, which may produce inaccurate results. For a more detailed
  explanation, see the paper: https://arxiv.org/abs/cs/0701192
 
  Here are some examples of double precision calculation error:
@@ -176,7 +176,7 @@ uint32_t yyjson_version(void) {
 
  If we are sure that there's no similar error described above, we can define the
  YYJSON_DOUBLE_MATH_CORRECT as 1 to enable the fast path calculation. This is
- not an accurate detection, it's just try to avoid the error at compile-time.
+ not an accurate detection; it just tries to avoid the error at compile-time.
  An accurate detection can be done at run-time:
 
      bool is_double_math_correct(void) {
@@ -347,7 +347,7 @@ uint32_t yyjson_version(void) {
  * MARK: - Macros (Private)
  *============================================================================*/
 
-/* Macros used for loop unrolling and other purpose. */
+/* Macros used for loop unrolling and other purposes. */
 #define repeat2(x)  { x x }
 #define repeat4(x)  { x x x x }
 #define repeat8(x)  { x x x x x x x x }
@@ -527,7 +527,7 @@ uint32_t yyjson_version(void) {
  * MARK: - Types (Private)
  *============================================================================*/
 
-/** Type define for primitive types. */
+/** Type aliases for primitive types. */
 typedef float       f32;
 typedef double      f64;
 typedef int8_t      i8;
@@ -932,7 +932,7 @@ static_inline bool char_is_sign(u8 d) {
     return !!(char_table3[d] & CHAR_TYPE_SIGN);
 }
 
-/** Match a none-zero digit: [1-9] */
+/** Match a non-zero digit: [1-9] */
 static_inline bool char_is_nonzero(u8 d) {
     return !!(char_table3[d] & CHAR_TYPE_NONZERO);
 }
@@ -942,7 +942,7 @@ static_inline bool char_is_digit(u8 d) {
     return !!(char_table3[d] & CHAR_TYPE_DIGIT);
 }
 
-/** Match an exponent sign: [eE]. */
+/** Match an exponent character: [eE]. */
 static_inline bool char_is_exp(u8 d) {
     return !!(char_table3[d] & CHAR_TYPE_EXP);
 }
@@ -1019,10 +1019,10 @@ static_inline usize ext_space_len(const u8 *cur) {
  *============================================================================*/
 
 /**
- This table is used to convert 4 hex character sequence to a number.
- A valid hex character [0-9A-Fa-f] will mapped to it's raw number [0x00, 0x0F],
- an invalid hex character will mapped to [0xF0].
- (generate with misc/make_tables.c)
+ This table is used to convert a 4-hex-character sequence to a number.
+ A valid hex character [0-9A-Fa-f] is mapped to its raw value [0x00, 0x0F];
+ an invalid hex character is mapped to [0xF0].
+ (generated with misc/make_tables.c)
  */
 static const u8 hex_conv_table[256] = {
     0xF0, 0xF0, 0xF0, 0xF0, 0xF0, 0xF0, 0xF0, 0xF0,
@@ -1201,7 +1201,7 @@ static const f64 f64_pow10_table[F64_POW10_MAX_EXACT_EXP + 1] = {
 /** Maximum pow10 exponent that can be represented exactly as a uint64. */
 #define U64_POW10_MAX_EXACT_EXP 19
 
-/** Table: [ 10^0, ..., 10^19 ] (generate with misc/make_tables.c) */
+/** Table: [ 10^0, ..., 10^19 ] (generated with misc/make_tables.c) */
 static const u64 u64_pow10_table[U64_POW10_MAX_EXACT_EXP + 1] = {
     U64(0x00000000, 0x00000001), U64(0x00000000, 0x0000000A),
     U64(0x00000000, 0x00000064), U64(0x00000000, 0x000003E8),
@@ -1227,9 +1227,9 @@ static const u64 u64_pow10_table[U64_POW10_MAX_EXACT_EXP + 1] = {
 /** Maximum exact decimal exponent in pow10_sig_table */
 #define POW10_SIG_TABLE_MAX_EXACT_EXP 55
 
-/** Normalized significant 128 bits of pow10, no rounded up (size: 10.4KB).
+/** Normalized significant 128 bits of pow10, not rounded up (size: 10.4KB).
     This lookup table is used by both the double number reader and writer.
-    (generate with misc/make_tables.c) */
+    (generated with misc/make_tables.c) */
 static const u64 pow10_sig_table[] = {
     U64(0xBF29DCAB, 0xA82FDEAE), U64(0x7432EE87, 0x3880FC33), /* ~= 10^-343 */
     U64(0xEEF453D6, 0x923BD65A), U64(0x113FAA29, 0x06A13B3F), /* ~= 10^-342 */
@@ -1903,7 +1903,7 @@ static const u64 pow10_sig_table[] = {
 
 /**
  Get the cached pow10 value from `pow10_sig_table`.
- @param exp10 The exponent of pow(10, e). This value must in range
+ @param exp10 The exponent of pow(10, e). This value must be in the range
               `POW10_SIG_TABLE_MIN_EXP` to `POW10_SIG_TABLE_MAX_EXP`.
  @param hi    The highest 64 bits of pow(10, e).
  @param lo    The lower 64 bits after `hi`.
@@ -1915,7 +1915,8 @@ static_inline void pow10_table_get_sig(i32 exp10, u64 *hi, u64 *lo) {
 }
 
 /**
- Get the exponent (base 2) for highest 64 bits significand in `pow10_sig_table`.
+ Get the exponent (base 2) for the highest 64-bit significand in
+ `pow10_sig_table`.
  */
 static_inline void pow10_table_get_exp(i32 exp10, i32 *exp2) {
     /* e2 = floor(log2(pow(10, e))) - 64 + 1 */
@@ -1945,7 +1946,7 @@ static_inline u64 f64_to_bits(f64 f) {
     return u;
 }
 
-/** Convert double to bits. */
+/** Convert float to bits. */
 static_inline u32 f32_to_bits(f32 f) {
     u32 u;
     memcpy(&u, &f, sizeof(u));
@@ -2250,14 +2251,14 @@ static const yyjson_alc YYJSON_DEFAULT_ALC = {
 
 /** memory chunk header */
 typedef struct pool_chunk {
-    usize size; /* chunk memory size, include chunk header */
+    usize size; /* chunk memory size, including chunk header */
     struct pool_chunk *next; /* linked list, nullable */
     /* char mem[]; flexible array member */
 } pool_chunk;
 
 /** allocator ctx header */
 typedef struct pool_ctx {
-    usize size; /* total memory size, include ctx header */
+    usize size; /* total memory size, including ctx header */
     pool_chunk *free_list; /* linked list, nullable */
     /* pool_chunk chunks[]; flexible array member */
 } pool_ctx;
@@ -2409,7 +2410,7 @@ bool yyjson_alc_pool_init(yyjson_alc *alc, void *buf, usize size) {
 
 /** memory chunk header */
 typedef struct dyn_chunk {
-    usize size; /* chunk size, include header */
+    usize size; /* chunk size, including header */
     struct dyn_chunk *next;
     /* char mem[]; flexible array member */
 } dyn_chunk;
@@ -3782,8 +3783,8 @@ typedef struct diy_fp {
     i32 pad; /* padding, useless */
 } diy_fp;
 
-/** Get cached rounded diy_fp with pow(10, e) The input value must in range
-    [POW10_SIG_TABLE_MIN_EXP, POW10_SIG_TABLE_MAX_EXP]. */
+/** Get cached rounded diy_fp for pow(10, e). The input value must be in the
+    range [POW10_SIG_TABLE_MIN_EXP, POW10_SIG_TABLE_MAX_EXP]. */
 static_inline diy_fp diy_fp_get_cached_pow10(i32 exp10) {
     diy_fp fp;
     u64 sig_ext;
@@ -4176,7 +4177,7 @@ digi_finish:
      1. The floating-point number calculation should be accurate, see the
         comments of macro `YYJSON_DOUBLE_MATH_CORRECT`.
      2. Correct rounding should be performed (fegetround() == FE_TONEAREST).
-     3. The input of floating point number calculation does not lose precision,
+     3. The input to floating-point calculations does not lose precision,
         which means: 64 - leading_zero(input) - trailing_zero(input) < 53.
 
      We don't check all available inputs here, because that would make the code
@@ -4201,7 +4202,7 @@ digi_finish:
      Fast path 2:
 
      To keep it simple, we only accept normal number here,
-     let the slow path to handle subnormal and infinity number.
+     let the slow path handle subnormal and infinite numbers.
      */
     if (likely(!sig_cut &&
                exp > -F64_MAX_DEC_EXP + 1 &&
@@ -7360,7 +7361,7 @@ static_inline u8 *write_u64(u64 val, u8 *buf) {
 #if !YYJSON_DISABLE_FAST_FP_CONV  /* FP_WRITER */
 
 /** Trailing zero count table for number 0 to 99.
-    (generate with misc/make_tables.c) */
+    (generated with misc/make_tables.c) */
 static const u8 dec_trailing_zero_table[] = {
     2, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     1, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -7872,7 +7873,7 @@ static_inline u8 *write_inf_or_nan(u8 *buf, yyjson_write_flag flg,
  We follow the ECMAScript specification for printing floating-point numbers,
  similar to `Number.prototype.toString()`, but with the following changes:
  1. Keep the negative sign of `-0.0` to preserve input information.
- 2. Keep decimal point to indicate the number is floating point.
+ 2. Keep the decimal point to indicate that the number is floating-point.
  3. Remove positive sign in the exponent part.
  */
 static_noinline u8 *write_f32_raw(u8 *buf, u64 raw_f64,
@@ -7999,7 +8000,7 @@ static_noinline u8 *write_f32_raw(u8 *buf, u64 raw_f64,
  We follow the ECMAScript specification for printing floating-point numbers,
  similar to `Number.prototype.toString()`, but with the following changes:
  1. Keep the negative sign of `-0.0` to preserve input information.
- 2. Keep decimal point to indicate the number is floating point.
+ 2. Keep the decimal point to indicate that the number is floating-point.
  3. Remove positive sign in the exponent part.
  */
 static_noinline u8 *write_f64_raw(u8 *buf, u64 raw, yyjson_write_flag flg) {
@@ -8123,7 +8124,7 @@ static_noinline u8 *write_f64_raw(u8 *buf, u64 raw, yyjson_write_flag flg) {
  We follow the ECMAScript specification for printing floating-point numbers,
  similar to `Number.prototype.toFixed(prec)`, but with the following changes:
  1. Keep the negative sign of `-0.0` to preserve input information.
- 2. Keep decimal point to indicate the number is floating point.
+ 2. Keep the decimal point to indicate that the number is floating-point.
  3. Remove positive sign in the exponent part.
  4. Remove trailing zeros and reduce unnecessary precision.
  */
@@ -8483,7 +8484,7 @@ typedef u8 char_enc_type;
 #define CHAR_ENC_ESC_4  9 /* 4-byte UTF-8, escaped as '\uXXXX\uXXXX'. */
 
 /** Character encode type table: don't escape unicode, don't escape '/'.
-    (generate with misc/make_tables.c) */
+    (generated with misc/make_tables.c) */
 static const char_enc_type enc_table_cpy[256] = {
     3, 3, 3, 3, 3, 3, 3, 3, 2, 2, 2, 3, 2, 2, 3, 3,
     3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
@@ -8504,7 +8505,7 @@ static const char_enc_type enc_table_cpy[256] = {
 };
 
 /** Character encode type table: don't escape unicode, escape '/'.
-    (generate with misc/make_tables.c) */
+    (generated with misc/make_tables.c) */
 static const char_enc_type enc_table_cpy_slash[256] = {
     3, 3, 3, 3, 3, 3, 3, 3, 2, 2, 2, 3, 2, 2, 3, 3,
     3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
@@ -8525,7 +8526,7 @@ static const char_enc_type enc_table_cpy_slash[256] = {
 };
 
 /** Character encode type table: escape unicode, don't escape '/'.
-    (generate with misc/make_tables.c) */
+    (generated with misc/make_tables.c) */
 static const char_enc_type enc_table_esc[256] = {
     3, 3, 3, 3, 3, 3, 3, 3, 2, 2, 2, 3, 2, 2, 3, 3,
     3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
@@ -8546,7 +8547,7 @@ static const char_enc_type enc_table_esc[256] = {
 };
 
 /** Character encode type table: escape unicode, escape '/'.
-    (generate with misc/make_tables.c) */
+    (generated with misc/make_tables.c) */
 static const char_enc_type enc_table_esc_slash[256] = {
     3, 3, 3, 3, 3, 3, 3, 3, 2, 2, 2, 3, 2, 2, 3, 3,
     3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
@@ -8567,7 +8568,7 @@ static const char_enc_type enc_table_esc_slash[256] = {
 };
 
 /** Escaped hex character table: ["00" "01" "02" ... "FD" "FE" "FF"].
-    (generate with misc/make_tables.c) */
+    (generated with misc/make_tables.c) */
 yyjson_align(2)
 static const u8 esc_hex_char_table[512] = {
     '0', '0', '0', '1', '0', '2', '0', '3',
@@ -8705,7 +8706,7 @@ static const u8 esc_hex_char_table_lower[512] = {
     'f', 'c', 'f', 'd', 'f', 'e', 'f', 'f'
 };
 
-/** Escaped single character table. (generate with misc/make_tables.c) */
+/** Escaped single character table. (generated with misc/make_tables.c) */
 yyjson_align(2)
 static const u8 esc_single_char_table[512] = {
     ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ',
@@ -10544,7 +10545,7 @@ static_inline bool ptr_token_to_idx(const char *cur, usize len, usize *idx) {
  @param token a JSON pointer token
  @param len unescaped token length
  @param esc number of escaped characters in this token
- @return true if `str` is equals to `token`
+ @return true if `str` is equal to `token`
  */
 static_inline bool ptr_token_eq(void *key,
                                 const char *token, usize len, usize esc) {

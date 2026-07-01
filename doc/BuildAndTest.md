@@ -23,7 +23,7 @@ You can build and install yyjson using [vcpkg](https://github.com/Microsoft/vcpk
 ```shell
 git clone https://github.com/Microsoft/vcpkg.git
 cd vcpkg
-./bootstrap-vcpkg.sh  # ./bootstrap-vcpkg.bat for Powershell
+./bootstrap-vcpkg.sh  # ./bootstrap-vcpkg.bat for PowerShell
 ./vcpkg integrate install
 ./vcpkg install yyjson
 ```
@@ -55,7 +55,7 @@ cmake --build .
 Supported CMake options (default OFF):
 
 - `-DYYJSON_BUILD_TESTS=ON` Build all tests.
-- `-DYYJSON_BUILD_FUZZER=ON` Build fuzzer with LibFuzzing.
+- `-DYYJSON_BUILD_FUZZER=ON` Build fuzzer with LibFuzzer.
 - `-DYYJSON_BUILD_MISC=ON` Build misc.
 - `-DYYJSON_BUILD_DOC=ON` Build documentation with doxygen.
 - `-DYYJSON_ENABLE_COVERAGE=ON` Enable code coverage for tests.
@@ -69,7 +69,7 @@ Supported CMake options (default OFF):
 - `-DYYJSON_DISABLE_INCR_READER=ON` Disable incremental reader if you don't need it.
 - `-DYYJSON_DISABLE_FILE=ON` Disable file/fp read and write APIs.
 - `-DYYJSON_DISABLE_UTILS=ON` Disable JSON Pointer, JSON Patch and JSON Merge Patch.
-- `-DYYJSON_DISABLE_FAST_FP_CONV=ON` Disable builtin fast floating point number conversion.
+- `-DYYJSON_DISABLE_FAST_FP_CONV=ON` Disable built-in fast floating-point number conversion.
 - `-DYYJSON_DISABLE_NON_STANDARD=ON` Disable non-standard JSON support at compile-time.
 - `-DYYJSON_DISABLE_UTF8_VALIDATION=ON` Disable UTF-8 validation at compile-time.
 - `-DYYJSON_DISABLE_UNALIGNED_MEMORY_ACCESS=ON` Disable unaligned memory access support at compile-time.
@@ -122,7 +122,7 @@ cmake .. -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
 # Intel ICC for Linux/Unix:
 cmake .. -DCMAKE_C_COMPILER=icc -DCMAKE_CXX_COMPILER=icpc
 
-# Other version of GCC:
+# Another version of GCC:
 cmake .. -DCMAKE_C_COMPILER=/usr/local/gcc-8.2/bin/gcc -DCMAKE_CXX_COMPILER=/usr/local/gcc-8.2/bin/g++
 
 # Microsoft Visual Studio for Windows:
@@ -260,7 +260,7 @@ Define as 1 to disable file and `FILE` pointer APIs at compile-time.<br/>
 `stdio.h` is not included by `yyjson.h` when this is set.<br/>
 
 ## YYJSON_DISABLE_UTILS
-Define as 1 to disable JSON Pointer, JSON Patch and JSON Merge Patch supports.<br/>
+Define as 1 to disable JSON Pointer, JSON Patch and JSON Merge Patch support.<br/>
 This disables functions with `ptr` or `patch` in their name.<br/>
 It is recommended when these functions are not required.<br/>
 

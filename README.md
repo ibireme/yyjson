@@ -13,7 +13,7 @@ A high performance JSON library written in ANSI C.
 - **Fast**: can read or write gigabytes of JSON data per second on modern CPUs.
 - **Portable**: complies with ANSI C (C89), no explicit SIMD.
 - **Strict**: complies with [RFC 8259](https://datatracker.ietf.org/doc/html/rfc8259) JSON standard, ensuring strict number formats and UTF-8 validation.
-- **Extendable**: offers options to enable individual [JSON5](https://json5.org) features and custom allocator.
+- **Extendable**: offers options to enable individual [JSON5](https://json5.org) features and a custom allocator.
 - **Accuracy**: can accurately read and write `int64`, `uint64`, and `double` numbers.
 - **Flexible**: supports unlimited JSON nesting levels, `\u0000` characters, and non-null-terminated strings.
 - **Manipulation**: supports querying and modifying with [JSON Pointer](https://datatracker.ietf.org/doc/html/rfc6901), [JSON Patch](https://datatracker.ietf.org/doc/html/rfc6902), and [JSON Merge Patch](https://datatracker.ietf.org/doc/html/rfc7386).
@@ -22,7 +22,7 @@ A high performance JSON library written in ANSI C.
 # Limitations
 - An array or object is stored as a [data structure](https://ibireme.github.io/yyjson/doc/doxygen/html/data-structures.html) such as linked list, which makes accessing elements by index or key slower than using an iterator.
 - Duplicate keys are allowed in an object, and the order of the keys is preserved.
-- JSON parsing result is immutable, requiring a `mutable copy` for modification.
+- JSON parsing results are immutable, requiring a mutable copy for modification.
 
 # Performance
 Benchmark project and dataset: [yyjson_benchmark](https://github.com/ibireme/yyjson_benchmark)
@@ -59,7 +59,7 @@ This benchmark project only checks the DOM API, a new benchmark will be added la
 |cjson|0.48|0.33|
 |jansson|0.09|0.24|
 
-More benchmark reports with interactive charts (update 2020-12-12)
+More benchmark reports with interactive charts (last updated 2020-12-12)
 
 |Platform|CPU|Compiler|OS|Report|
 |---|---|---|---|---|
@@ -181,7 +181,7 @@ while ((key = yyjson_mut_obj_iter_next(&iter))) {
     }
 }
 
-// Write the json pretty, escape unicode
+// Write the JSON with pretty printing, escape unicode
 yyjson_write_flag flg = YYJSON_WRITE_PRETTY | YYJSON_WRITE_ESCAPE_UNICODE;
 yyjson_write_err err;
 yyjson_mut_write_file("/tmp/config.json", doc, flg, NULL, &err);
@@ -218,7 +218,7 @@ yyjson, feel free to open a PR to add it to this list.
 | [ssrJSON][]      | Python       | A SIMD boosted high-performance and correct Python JSON parsing library, built on top of yyjson      |
 | [py_yyjson][]    | Python       | Python bindings for yyjson                                                                           |
 | [orjson][]       | Python       | JSON library for Python with an optional yyjson backend                                              |
-| [serin][]        | C++ / Python | a C++ and Python serialization library supporting TOON, JSON, and YAML with cross-format conversion. |
+| [serin][]        | C++ / Python | A C++ and Python serialization library supporting TOON, JSON, and YAML with cross-format conversion. |
 | [cpp-yyjson][]   | C++          | C++ JSON library with a yyjson backend                                                               |
 | [reflect-cpp][]  | C++          | C++ library for serialization through automated field name retrieval from structs                    |
 | [xyjson][]       | C++          | C++ proxy and wrapper for yyjson with convenient operator overloading                                |
@@ -227,7 +227,7 @@ yyjson, feel free to open a PR to add it to this list.
 | [ReerJSON][]     | Swift        | A faster version of JSONDecoder based on yyjson                                                      |
 | [swift-yyjson][] | Swift        | A fast JSON library for Swift, powered by yyjson                                                     |
 | [duckdb][]       | C++          | DuckDB is an in-process SQL OLAP Database Management System                                          |
-| [fastfetch][]    | C            | A neofetch-like tool for fetching system information and displaying them in a pretty way             |
+| [fastfetch][]    | C            | A neofetch-like tool for fetching system information and displaying it in a pretty way             |
 | [Zrythm][]       | C            | Digital Audio Workstation that uses yyjson to serialize JSON project files                           |
 | [bemorehuman][]  | C            | Recommendation engine with a focus on uniqueness of the person receiving the rec                     |
 | [mruby-yyjson][] | mruby        | Efficient JSON parsing and serialization library for mruby using yyjson                              |

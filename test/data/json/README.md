@@ -5,7 +5,7 @@
 Source: <https://github.com/nst/JSONTestSuite>
 
 A comprehensive test suite for RFC 8259 compliant JSON parsers.
-The name of these files tell if their contents should be accepted or rejected.
+The names of these files indicate whether their contents should be accepted or rejected.
 
 - `y_` content must be accepted by parsers
 - `n_` content must be rejected by parsers
@@ -34,13 +34,13 @@ Source: <https://github.com/miloyip/nativejson-benchmark>
 
 27 condensed JSONs are parsed and stringified. The results are compared to the original JSONs.
 
-yyjson add more test case in this directory.
+yyjson adds more test cases in this directory.
 
 ## test_encoding
 Source: <https://github.com/miloyip/nativejson-benchmark>
 
 Same JSON encoded as UTF-8/UTF-16/UTF-32 with or without BOM. 
-RFC 8259 only accept UTF-8 without BOM.
+RFC 8259 only accepts UTF-8 without BOM.
 
 
 ## test_yyjson
@@ -56,7 +56,7 @@ JSON files used for yyjson testing.
 - `(bighex)` content has large hex number (u64/i64 overflow)
 - `(garbage)` content has garbage after document
 - `(str_err)` content has invalid unicode
-- `(bom)` content has byte order mask (BOM)
+- `(bom)` content has a byte order mark (BOM)
 - `(ext_num)` content has extended number format
 - `(ext_esc)` content has extended escape sequence
 - `(ext_ws)` content has extended whitespace

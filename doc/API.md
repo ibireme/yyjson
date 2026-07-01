@@ -76,13 +76,13 @@ yyjson_mut_val *yyjson_mut_strncpy(yyjson_mut_doc *doc, const char *str, size_t 
 # Reading JSON
 The library provides 5 functions for reading JSON.<br/>
 Each function accepts an input of UTF-8 data or a file,<br/>
-returns a document if it successful or `NULL` if it fails.
+returns a document if successful or `NULL` if it fails.
 
 ## Read JSON from string
 The `dat` should be a UTF-8 string, null-terminator is not required.<br/>
 The `len` is the byte length of `dat`.<br/>
 The `flg` is reader flag, pass 0 if you don't need it, see `reader flag` for details.<br/>
-If input is invalid, `NULL` is returned.
+Returns `NULL` if `dat` is NULL or `len` is 0.
 
 ```c
 yyjson_doc *yyjson_read(const char *dat, 
@@ -100,11 +100,11 @@ yyjson_doc_free(doc);
 
 ## Read JSON from file
 
-The `path` is JSON file path. This should be a null-terminated string using the system's native encoding.<br/>
+The `path` is the JSON file path. This should be a null-terminated string using the system's native encoding.<br/>
 The `flg` is reader flag, pass 0 if you don't need it, see `reader flag` for details.<br/>
 The `alc` is memory allocator, pass NULL if you don't need it, see `memory allocator` for details.<br/>
 The `err` is a pointer to receive error message, pass NULL if you don't need it.<br/>
-If input is invalid, `NULL` is returned.
+Returns `NULL` if `path` is NULL or invalid.
 
 ```c
 yyjson_doc *yyjson_read_file(const char *path,
@@ -127,7 +127,7 @@ The `fp` is file pointer. The data will be read from the current position of the
 The `flg` is reader flag, pass 0 if you don't need it, see `reader flag` for details.<br/>
 The `alc` is memory allocator, pass NULL if you don't need it, see `memory allocator` for details.<br/>
 The `err` is a pointer to receive error message, pass NULL if you don't need it.<br/>
-If input is invalid, `NULL` is returned.
+Returns `NULL` if `fp` is NULL or invalid.
 
 ```c
 yyjson_doc *yyjson_read_fp(FILE *fp,
@@ -201,7 +201,7 @@ The `buf_len` is the length of `buf` in bytes.
 The `flg` is reader flag. Pass 0 if you don't need it. See reader flag for details.
 The `alc` is memory allocator, pass NULL if you don't need it. See `memory allocator` for details.<br/>
 
-The function returns a new state, or NULL if `flg` is invalid or if a memory allocation error occurs.
+The function returns a new state, or NULL if memory allocation fails.
 
 ```c
 yyjson_incr_state *yyjson_incr_new(char *buf, size_t buf_len, yyjson_read_flag flg, const yyjson_alc *alc);
@@ -334,7 +334,7 @@ memset(buf + file_size, 0, YYJSON_PADDING_SIZE); // set 4-byte padding after dat
 yyjson_doc *doc = yyjson_read_opts(buf, dat_len, YYJSON_READ_INSITU, NULL, NULL);
 if (doc) {...}
 yyjson_doc_free(doc);
-free(buf); // the input dat should free after document.
+free(buf); // the input data should be freed after the document.
 ```
 
 ### **YYJSON_READ_STOP_WHEN_DONE**
@@ -413,7 +413,7 @@ You can use the following functions to extract raw strings:
 ```c
 bool yyjson_is_raw(const yyjson_val *val);
 const char *yyjson_get_raw(const yyjson_val *val);
-size_t yyjson_get_len(const yyjson_val *val)
+size_t yyjson_get_len(const yyjson_val *val);
 ```
 
 ### **YYJSON_READ_BIGNUM_AS_RAW**
@@ -474,7 +474,7 @@ Allow JSON5 format, see: https://json5.org.
 
 This flag supports all JSON5 features with some additional extensions:
 - Accepts more escape sequences than JSON5 (e.g. `\a`, `\e`).
-- Unquoted keys are and not limited to ECMAScript IdentifierName.
+- Unquoted keys are not limited to ECMAScript IdentifierName.
 - Allow case-insensitive `NaN`, `Inf` and `Infinity` literals.
 
 For example:
@@ -496,11 +496,11 @@ The library provides 5 sets of functions for writing JSON.<br/>
 Each function accepts an input of JSON document or root value, and returns a UTF-8 string or file.
 
 ## Write JSON to string
-The `doc/val` is JSON document or root value, if you pass NULL, you will get NULL result.<br/>
+The `doc/val` is the JSON document or root value. If it is NULL, returns NULL.<br/>
 The `flg` is writer flag, pass 0 if you don't need it, see `writer flag` for details.<br/>
 The `len` is a pointer to receive output length (not including the
     null-terminator), pass NULL if you don't need it.<br/>
-This function returns a new JSON string, or NULL if error occurs.<br/>
+This function returns a new JSON string, or NULL if an error occurs.<br/>
 The string is encoded as UTF-8 with a null-terminator. <br/>
 You should use `free()` or `alc->free()` to release it when it's no longer needed.
 
@@ -539,12 +539,12 @@ free(json);
 ```
 
 ## Write JSON to file
-The `path` is output JSON file path. This should be a null-terminated string using the system's native encoding. If the path is invalid, you will get an error. If the file is not empty, the content will be discarded. <br/>
-The `doc/val` is JSON document or root value, if you pass NULL, you will get an error.<br/>
+The `path` is the output JSON file path. This should be a null-terminated string using the system's native encoding. If `path` is NULL or invalid, returns false. If the file is not empty, its content is discarded.<br/>
+The `doc/val` is the JSON document or root value. If it is NULL, returns false.<br/>
 The `flg` is writer flag, pass 0 if you don't need it, see `writer flag` for details.<br/>
 The `alc` is memory allocator, pass NULL if you don't need it, see `memory allocator` for details.<br/>
 The `err` is a pointer to receive error message, pass NULL if you don't need it.<br/>
-This function returns true on success, or false if error occurs.<br/>
+This function returns true on success, or false if an error occurs.<br/>
 
 ```c
 // doc -> file
@@ -566,12 +566,13 @@ if (suc) printf("OK");
 ```
 
 ## Write JSON to file pointer
-The `fp` is output file pointer, The data will be written to the current position of the file.<br/>
-The `doc/val` is JSON document or root value, if you pass NULL, you will get an error.<br/>
+The `fp` is the output file pointer. The data will be written to the current position of the file.<br/>
+If `fp` is NULL or invalid, returns false.<br/>
+The `doc/val` is the JSON document or root value. If it is NULL, returns false.<br/>
 The `flg` is writer flag, pass 0 if you don't need it, see `writer flag` for details.<br/>
 The `alc` is memory allocator, pass NULL if you don't need it, see `memory allocator` for details.<br/>
 The `err` is a pointer to receive error message, pass NULL if you don't need it.<br/>
-This function returns true on success, or false if error occurs.<br/>
+This function returns true on success, or false if an error occurs.<br/>
 
 ```c
 // doc -> file
@@ -594,9 +595,9 @@ if (suc) printf("OK");
 ```
 
 ## Write JSON to buffer
-The `buf` is output buffer, if you pass NULL, the function will return 0.<br/>
-The `buf_len` is the length of output buffer. If the length is too small, the function will fail and return 0.<br/>
-The `doc/val` is JSON document or root value, if you pass NULL, you will get an error.<br/>
+The `buf` is the output buffer. If `buf` is NULL, returns 0.<br/>
+The `buf_len` is the buffer length. If `buf_len` is too small, returns 0.<br/>
+The `doc/val` is the JSON document or root value. If it is NULL, returns 0.<br/>
 The `flg` is writer flag, pass 0 if you don't need it, see `writer flag` for details.<br/>
 The `err` is a pointer to receive error message, pass NULL if you don't need it.<br/>
 This function returns the number of bytes written (excluding the null terminator), or 0 on failure.<br/>
@@ -630,14 +631,14 @@ if (len > 0) printf("OK, output:\n%s\n", buf);
 
 
 ## Write JSON with options
-The `doc/val` is JSON document or root value, if you pass NULL, you will get NULL result.<br/>
+The `doc/val` is the JSON document or root value. If it is NULL, returns NULL.<br/>
 The `flg` is writer flag, pass 0 if you don't need it, see `writer flag` for details.<br/>
 The `alc` is memory allocator, pass NULL if you don't need it, see `memory allocator` for details.<br/>
 The `len` is a pointer to receive output length (not including the
     null-terminator), pass NULL if you don't need it.<br/>
 The `err` is a pointer to receive error message, pass NULL if you don't need it.<br/>
 
-This function returns a new JSON string, or NULL if error occurs.<br/>
+This function returns a new JSON string, or NULL if an error occurs.<br/>
 The string is encoded as UTF-8 with a null-terminator. <br/>
 You should use free() or alc->free() to release it when it's no longer needed.
 
@@ -737,7 +738,7 @@ Allows invalid unicode when encoding string values.
 
 Invalid characters within string values will be copied byte by byte. If `YYJSON_WRITE_ESCAPE_UNICODE` flag is also set, invalid characters will be escaped as `\uFFFD` (replacement character).
 
-This flag does not affect the performance of correctly encoded string.
+This flag does not affect the performance of correctly encoded strings.
 
 ### **YYJSON_WRITE_NEWLINE_AT_END**
 Adds a newline character `\n` at the end of the JSON.
@@ -809,7 +810,7 @@ The following functions can be used to determine the type of JSON value.
 
 ```c
 // Returns the type and subtype of a JSON value.
-// Returns 0 if the input is NULL.
+// Returns 0 if `val` is NULL.
 yyjson_type yyjson_get_type(const yyjson_val *val);
 yyjson_subtype yyjson_get_subtype(const yyjson_val *val);
 
@@ -822,7 +823,7 @@ uint8_t yyjson_get_tag(const yyjson_val *val);
 const char *yyjson_get_type_desc(const yyjson_val *val);
 
 // Returns true if the JSON value is specified type.
-// Returns false if the input is NULL or not the specified type.
+// Returns false if `val` is NULL or type does not match.
 bool yyjson_is_null(const yyjson_val *val);  // null
 bool yyjson_is_true(const yyjson_val *val);  // true
 bool yyjson_is_false(const yyjson_val *val); // false
@@ -860,7 +861,7 @@ int yyjson_get_int(const yyjson_val *val);
 // Returns double value, or 0 if `val` is not real type.
 double yyjson_get_real(const yyjson_val *val);
 
-// Returns double value (typecast), or 0 if `val` is not uint/sint/real type.
+// Returns double value (cast), or 0 if `val` is not uint/sint/real type.
 double yyjson_get_num(const yyjson_val *val);
 
 // Returns the string value, or NULL if `val` is not string type.
@@ -870,8 +871,8 @@ const char *yyjson_get_str(const yyjson_val *val);
 // object size), or 0 if the value does not contain length data.
 size_t yyjson_get_len(const yyjson_val *val);
 
-// Returns whether the value is equals to a string.
-// Returns false if input is NULL or `val` is not string.
+// Returns whether the value is equal to a string.
+// Returns false if `val` is NULL or is not string.
 bool yyjson_equals_str(const yyjson_val *val, const char *str);
 bool yyjson_equals_strn(const yyjson_val *val, const char *str, size_t len);
 ```
@@ -883,7 +884,7 @@ Warning: For immutable documents, these functions will break the `immutable` con
 
 ```c
 // Set the value to new type and content.
-// Returns false if input is NULL or `val` is object or array.
+// Returns false if `val` is NULL or is object or array.
 bool yyjson_set_raw(yyjson_val *val, const char *raw, size_t len);
 bool yyjson_set_null(yyjson_val *val);
 bool yyjson_set_bool(yyjson_val *val, bool num);
@@ -908,19 +909,19 @@ Note that accessing elements by index may take a linear search time. Therefore, 
 
 ```c
 // Returns the number of elements in this array.
-// Returns 0 if the input is not an array.
+// Returns 0 if `arr` is NULL or is not an array.
 size_t yyjson_arr_size(const yyjson_val *arr);
 
 // Returns the element at the specified position (linear search time).
-// Returns NULL if the index is out of bounds, or input is not an array.
+// Returns NULL if `arr` is NULL, is not an array, or `idx` is out of bounds.
 yyjson_val *yyjson_arr_get(const yyjson_val *arr, size_t idx);
 
 // Returns the first element of this array (constant time).
-// Returns NULL if array is empty or input is not an array.
+// Returns NULL if `arr` is NULL, is not an array, or is empty.
 yyjson_val *yyjson_arr_get_first(const yyjson_val *arr);
 
 // Returns the last element of this array (linear search time).
-// Returns NULL if array is empty or input is not an array.
+// Returns NULL if `arr` is NULL, is not an array, or is empty.
 yyjson_val *yyjson_arr_get_last(const yyjson_val *arr);
 ```
 
@@ -950,7 +951,7 @@ yyjson_arr_foreach(arr, idx, max, val) {
 ```
 <br/>
 
-There's also mutable version API to traverse a mutable array:<br/>
+There's also a mutable version of the API to traverse a mutable array:<br/>
 
 Sample code 1 (mutable iterator API):
 ```c
@@ -986,7 +987,7 @@ Note that accessing elements by key may take a linear search time. Therefore, if
 
 ```c
 // Returns the number of key-value pairs in this object.
-// Returns 0 if input is not an object.
+// Returns 0 if `obj` is NULL or is not an object.
 size_t yyjson_obj_size(const yyjson_val *obj);
 
 // Returns the value to which the specified key is mapped.
@@ -994,7 +995,7 @@ size_t yyjson_obj_size(const yyjson_val *obj);
 yyjson_val *yyjson_obj_get(const yyjson_val *obj, const char *key);
 yyjson_val *yyjson_obj_getn(const yyjson_val *obj, const char *key, size_t key_len);
 
-// If the order of object's key is known at compile-time,
+// If the order of the object's keys is known at compile-time,
 // you can use this method to avoid searching the entire object.
 // e.g. { "x":1, "y":2, "z":3 }
 yyjson_val *obj = ...;
@@ -1031,7 +1032,7 @@ yyjson_obj_foreach(obj, idx, max, key, val) {
 ```
 <br/>
 
-There's also mutable version API to traverse a mutable object:<br/>
+There's also a mutable version of the API to traverse a mutable object:<br/>
 
 Sample code 1 (mutable iterator API):
 ```c
@@ -1053,8 +1054,8 @@ Sample code 2 (mutable foreach macro):
 yyjson_mut_val *obj; // the object to be traversed
 
 size_t idx, max;
-yyjson_val *key, *val;
-yyjson_obj_foreach(obj, idx, max, key, val) {
+yyjson_mut_val *key, *val;
+yyjson_mut_obj_foreach(obj, idx, max, key, val) {
     your_func(key, val);
 }
 ```
@@ -1088,7 +1089,7 @@ yyjson_mut_val *key = yyjson_mut_str(doc, "page");
 yyjson_mut_val *num = yyjson_mut_int(doc, 123);
 yyjson_mut_obj_add(root, key, num);
 
-// Create 3 string value, add to the array object.
+// Create 3 string values, add to the array object.
 yyjson_mut_val *names = yyjson_mut_arr(doc);
 yyjson_mut_val *name1 = yyjson_mut_str(doc, "Harry");
 yyjson_mut_val *name2 = yyjson_mut_str(doc, "Ron");
@@ -1107,7 +1108,7 @@ yyjson_mut_doc_set_root(doc, root);
 // Write to JSON string
 const char *json = yyjson_mut_write(doc, 0, NULL);
 
-// Free the memory of doc and all values which is created from this doc.
+// Free the memory of doc and all values created from this doc.
 yyjson_mut_doc_free(doc);
 ```
 
@@ -1186,7 +1187,7 @@ The following functions are used to create mutable JSON array.<br/>
 // Creates and returns an empty mutable array, returns NULL on error.
 yyjson_mut_val *yyjson_mut_arr(yyjson_mut_doc *doc);
 
-// Creates and returns a mutable array with c array.
+// Creates and returns a mutable array with a C array.
 yyjson_mut_val *yyjson_mut_arr_with_bool(yyjson_mut_doc *doc, bool *vals, size_t count);
 yyjson_mut_val *yyjson_mut_arr_with_sint(yyjson_mut_doc *doc, int64_t *vals, size_t count);
 yyjson_mut_val *yyjson_mut_arr_with_uint(yyjson_mut_doc *doc, uint64_t *vals, size_t count);
@@ -1202,7 +1203,7 @@ yyjson_mut_val *yyjson_mut_arr_with_uint64(yyjson_mut_doc *doc, uint64_t *vals, 
 yyjson_mut_val *yyjson_mut_arr_with_float(yyjson_mut_doc *doc, float *vals, size_t count);
 yyjson_mut_val *yyjson_mut_arr_with_double(yyjson_mut_doc *doc, double *vals, size_t count);
 // sample code:
-int vals[3] = {-1, 0, 1};
+int32_t vals[3] = {-1, 0, 1};
 yyjson_mut_val *arr = yyjson_mut_arr_with_sint32(doc, vals, 3);
 
 // Creates and returns a mutable array with strings,
@@ -1212,7 +1213,7 @@ yyjson_mut_val *yyjson_mut_arr_with_strn(yyjson_mut_doc *doc, const char **vals,
 yyjson_mut_val *yyjson_mut_arr_with_strcpy(yyjson_mut_doc *doc, const char **vals, size_t count);
 yyjson_mut_val *yyjson_mut_arr_with_strncpy(yyjson_mut_doc *doc, const char **vals, const size_t *lens, size_t count);
 // sample code:
-const char strs[3] = {"Jan", "Feb", "Mar"};
+const char *strs[3] = {"Jan", "Feb", "Mar"};
 yyjson_mut_val *arr = yyjson_mut_arr_with_str(doc, strs, 3);
 ```
 
@@ -1297,7 +1298,7 @@ yyjson_mut_val *yyjson_mut_obj_with_str(yyjson_mut_doc *doc,
                                         const char **vals,
                                         size_t count);
 // sample code:
-const char keys[] = {"name", "type", "id"};
+const char *keys[] = {"name", "type", "id"};
 const char *vals[] = {"Harry", "student", "123456"};
 yyjson_mut_obj_with_str(doc, keys, vals, 3);
 
@@ -1318,16 +1319,16 @@ The following functions are used to modify the contents of a JSON object.<br/>
 ```c
 // Adds a key-value pair at the end of the object. 
 // The key must be a string value.
-// This function allows duplicated key in one object.
-bool yyjson_mut_obj_add(yyjson_mut_val *obj, yyjson_mut_val *key,yyjson_mut_val *val);
+// This function allows duplicate keys in one object.
+bool yyjson_mut_obj_add(yyjson_mut_val *obj, yyjson_mut_val *key, yyjson_mut_val *val);
 
 // Adds a key-value pair to the object.
 // The key must be a string value.
-// This function may remove all key-value pairs for the given key before add.
+// This function may remove all key-value pairs for the given key before adding.
 // Note that this function takes a linear search time.
 bool yyjson_mut_obj_put(yyjson_mut_val *obj, yyjson_mut_val *key, yyjson_mut_val *val);
 
-// Removes key-value pair from the object with a given key.
+// Removes a key-value pair from the object with a given key.
 // Note that this function takes a linear search time.
 bool yyjson_mut_obj_remove(yyjson_mut_val *obj, yyjson_mut_val *key);
 
@@ -1336,7 +1337,7 @@ bool yyjson_mut_obj_clear(yyjson_mut_val *obj);
 
 // Convenience API:
 // Adds a key-value pair at the end of the object. The key is not copied.
-// Note that these functions allow duplicated key in one object.
+// Note that these functions allow duplicate keys in one object.
 bool yyjson_mut_obj_add_null(yyjson_mut_doc *doc, yyjson_mut_val *obj, const char *key);
 bool yyjson_mut_obj_add_true(yyjson_mut_doc *doc, yyjson_mut_val *obj, const char *key);
 bool yyjson_mut_obj_add_false(yyjson_mut_doc *doc, yyjson_mut_val *obj, const char *key);
@@ -1545,7 +1546,7 @@ it will read numbers according to these rules by default:<br/>
 * Positive integers are read as `uint64_t`. If an overflow occurs, it is converted to `double`.
 * Negative integers are read as `int64_t`. If an overflow occurs, it is converted to `double`.
 * Floating-point numbers are read as `double` with correct rounding.
-* If a `double` number overflow (reaches infinity), an error is reported.
+* If a `double` number overflows (reaches infinity), an error is reported.
 * If a number does not conform to the [JSON](https://www.json.org) standard, an error is reported.
 
 There are 3 flags that can be used to adjust the number parsing strategy:
@@ -1583,7 +1584,7 @@ There are also some helper functions to control the output format of individual 
 
 ## Number conversion function
 
-There are also two utility functions provide direct access to the library's internal number conversion logic.  
+There are also two utility functions that provide direct access to the library's internal number conversion logic.  
 They are intended for standalone use and typically do not allocate memory.
 ```c
 // parse a number from string
@@ -1660,7 +1661,7 @@ yyjson_alc alc;
 yyjson_alc_pool_init(&alc, buf, buf_size);
 
 // read multiple JSON using one allocator
-for(int i = 0, i < your_json_file_count; i++) {
+for (int i = 0; i < your_json_file_count; i++) {
     const char *your_json_file_path = ...;
     yyjson_doc *doc = yyjson_read_file(your_json_file_path, 0, &alc, NULL);
     ...
@@ -1677,7 +1678,7 @@ If you are not sure about the amount of memory required to process JSON, you can
 yyjson_alc *alc = yyjson_alc_dyn_new();
 
 // read multiple JSON using one allocator
-for(int i = 0, i < your_json_file_count; i++) {
+for (int i = 0; i < your_json_file_count; i++) {
     const char *your_json_file_path = ...;
     yyjson_doc *doc = yyjson_read_file(your_json_file_path, 0, alc, NULL);
     ...
@@ -1738,13 +1739,13 @@ static const yyjson_alc PRIV_ALC = {
 };
 
 // Read with custom allocator
-yyjson_doc *doc = yyjson_doc_read_opts(dat, len, 0, &PRIV_ALC, NULL);
+yyjson_doc *doc = yyjson_read_opts(dat, len, 0, &PRIV_ALC, NULL);
 ...
 yyjson_doc_free(doc);
 
 // Write with custom allocator
 yyjson_alc *alc = &PRIV_ALC;
-char *json = yyjson_doc_write(doc, 0, alc, NULL, NULL);
+char *json = yyjson_write_opts(doc, 0, alc, NULL, NULL);
 ...
 alc->free(alc->ctx, json);
 
@@ -1805,6 +1806,6 @@ The library is designed to be locale-independent.
 However, there are certain conditions that you should be aware of:
 
 1. You use libc's `setlocale()` function to change the locale.
-2. Your environment does not adhere the IEEE 754 floating-point standard (e.g. some IBM mainframes), or you explicitly set `YYJSON_DISABLE_FAST_FP_CONV` during build, in such case yyjson will use `strtod()` to parse floating-point numbers.
+2. Your environment does not adhere to the IEEE 754 floating-point standard (e.g. some IBM mainframes), or you explicitly set `YYJSON_DISABLE_FAST_FP_CONV` during build, in which case yyjson will use `strtod()` to parse floating-point numbers.
 
 If **both** of these conditions are met, it is recommended to avoid calling `setlocale()` while another thread is parsing JSON. Otherwise, an error may be returned during JSON floating-point number parsing.
