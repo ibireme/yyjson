@@ -703,6 +703,10 @@ Escape unicode as `\uXXXX`, making the output ASCII-only, for example:
 ["Aliz\\u00E9e, \\uD83D\\uDE0A"]
 ```
 
+### **YYJSON_WRITE_LOWERCASE_HEX**
+Use lowercase hex digits in `\uXXXX` escape sequences instead of the default uppercase. 
+Only effective when `YYJSON_WRITE_ESCAPE_UNICODE` is also set.
+
 ### **YYJSON_WRITE_ESCAPE_SLASHES**
 Escapes the forward slash character `/` as `\/`, for example:
 
