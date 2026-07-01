@@ -8636,10 +8636,7 @@ static const u8 esc_hex_char_table[512] = {
     'F', 'C', 'F', 'D', 'F', 'E', 'F', 'F'
 };
 
-/** Lowercase variant of esc_hex_char_table. Selected at write time
-    when the caller passes YYJSON_WRITE_LOWERCASE_HEX. Matches the
-    \uXXXX case used by ext/json (PHP), Python json, Node.js
-    JSON.stringify, Go encoding/json, Ruby json. */
+/** Lowercase variant of esc_hex_char_table. */
 yyjson_align(2)
 static const u8 esc_hex_char_table_lower[512] = {
     '0', '0', '0', '1', '0', '2', '0', '3',
@@ -8777,10 +8774,7 @@ static const u8 esc_single_char_table[512] = {
     ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '
 };
 
-/** Returns the hex digit table to use for \uXXXX escapes. The
-    LOWERCASE_HEX flag selects lowercase 'a'..'f' to match the
-    ext/json / Python json / Node.js JSON.stringify / Go encoding/json
-    convention; default is uppercase 'A'..'F'. */
+/** Returns the hex digit table to use for \uXXXX escapes. */
 static_inline const u8 *get_hex_table_with_flag(yyjson_write_flag flg) {
     return has_flg(LOWERCASE_HEX)
         ? esc_hex_char_table_lower
@@ -9220,7 +9214,8 @@ static_inline u8 *write_root_single(yyjson_val *val,
             if (likely(cpy) && unsafe_yyjson_get_subtype(val)) {
                 cur = write_str_noesc(cur, str_ptr, str_len);
             } else {
-                cur = write_str(cur, esc, inv, str_ptr, str_len, enc_table, hex_table);
+                cur = write_str(cur, esc, inv, str_ptr, str_len,
+                                enc_table, hex_table);
                 if (unlikely(!cur)) goto fail_str;
             }
             break;
@@ -9366,7 +9361,8 @@ val_begin:
         if (likely(cpy) && unsafe_yyjson_get_subtype(val)) {
             cur = write_str_noesc(cur, str_ptr, str_len);
         } else {
-            cur = write_str(cur, esc, inv, str_ptr, str_len, enc_table, hex_table);
+            cur = write_str(cur, esc, inv, str_ptr, str_len,
+                            enc_table, hex_table);
             if (unlikely(!cur)) goto fail_str;
         }
         *cur++ = is_key ? ':' : ',';
@@ -9563,7 +9559,8 @@ val_begin:
         if (likely(cpy) && unsafe_yyjson_get_subtype(val)) {
             cur = write_str_noesc(cur, str_ptr, str_len);
         } else {
-            cur = write_str(cur, esc, inv, str_ptr, str_len, enc_table, hex_table);
+            cur = write_str(cur, esc, inv, str_ptr, str_len,
+                            enc_table, hex_table);
             if (unlikely(!cur)) goto fail_str;
         }
         *cur++ = is_key ? ':' : ',';
@@ -9974,7 +9971,8 @@ val_begin:
         if (likely(cpy) && unsafe_yyjson_get_subtype(val)) {
             cur = write_str_noesc(cur, str_ptr, str_len);
         } else {
-            cur = write_str(cur, esc, inv, str_ptr, str_len, enc_table, hex_table);
+            cur = write_str(cur, esc, inv, str_ptr, str_len,
+                            enc_table, hex_table);
             if (unlikely(!cur)) goto fail_str;
         }
         *cur++ = is_key ? ':' : ',';
@@ -10177,7 +10175,8 @@ val_begin:
         if (likely(cpy) && unsafe_yyjson_get_subtype(val)) {
             cur = write_str_noesc(cur, str_ptr, str_len);
         } else {
-            cur = write_str(cur, esc, inv, str_ptr, str_len, enc_table, hex_table);
+            cur = write_str(cur, esc, inv, str_ptr, str_len,
+                            enc_table, hex_table);
             if (unlikely(!cur)) goto fail_str;
         }
         *cur++ = is_key ? ':' : ',';
