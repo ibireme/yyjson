@@ -261,6 +261,117 @@ if (doc != NULL) { ... }
 yyjson_doc_free(doc);
 ```
 
+## Read JSON as a stream (SAX)
+
+The readers above hold the whole input and the parsed document in memory. When
+the input is too large for that — or only a small part of it is needed — the
+streaming (SAX) reader can be used instead. It pulls bytes from a source
+callback through a fixed-size sliding window and invokes a handler callback for
+each JSON token, so peak memory is bounded by the window size plus the nesting
+depth, independent of the document size.
+
+The one constraint is that a single string or number token cannot be larger
+than the window; such an input fails with `YYJSON_READ_ERROR_TOKEN_TOO_LARGE`.
+
+Note: The streaming JSON reader only supports standard JSON.
+`YYJSON_READ_NUMBER_AS_RAW`, `YYJSON_READ_BIGNUM_AS_RAW` and
+`YYJSON_READ_STOP_WHEN_DONE` are honored; other non-standard flags are ignored.
+
+### Provide a byte source
+
+The reader calls this function to refill its window. Copy up to `len` bytes
+into `buf` and return the number of bytes copied. Return `0` to signal a clean
+end-of-input, or `YYJSON_SAX_SOURCE_ERROR` to signal an I/O error (reported to
+the caller as `YYJSON_READ_ERROR_SOURCE`).
+
+```c
+typedef size_t (*yyjson_sax_source)(void *ctx, void *buf, size_t len);
+```
+
+### Provide an event handler
+
+Each callback is invoked as the corresponding token is parsed, and returns
+`true` to continue parsing or `false` to abort (reported to the caller as
+`YYJSON_READ_ERROR_ABORTED`). Any callback may be NULL, in which case that
+event is ignored.
+
+The `str`/`len` passed to `key` and `str` point into the reader's internal
+window and are only valid for the duration of the callback; copy the bytes if
+you need to retain them. The pointer is not null-terminated; always use `len`.
+The `num` callback receives a temporary `yyjson_val`; use the `yyjson_get_*`
+accessors on it.
+
+```c
+typedef struct yyjson_sax_handler {
+    bool (*obj_begin)(void *ctx);
+    bool (*obj_end)(void *ctx, size_t count);
+    bool (*arr_begin)(void *ctx);
+    bool (*arr_end)(void *ctx, size_t count);
+    bool (*key)(void *ctx, const char *str, size_t len);
+    bool (*str)(void *ctx, const char *str, size_t len);
+    bool (*num)(void *ctx, const yyjson_val *num);
+    bool (*bool_val)(void *ctx, bool value);
+    bool (*null_val)(void *ctx);
+} yyjson_sax_handler;
+```
+
+### Perform the streaming read
+
+The `source` is the byte source callback, and `source_ctx` is passed to it. Required.<br/>
+The `handler` is the event handler, and `handler_ctx` is passed to each callback. Required.<br/>
+The `flg` is reader flag. Pass 0 if you don't need it.<br/>
+The `opts` sets the window size and the depth limit. Pass NULL for the defaults (a 256 KiB window and a depth limit of 1024).<br/>
+The `alc` is memory allocator, pass NULL if you don't need it. See `memory allocator` for details.<br/>
+The `err` is a pointer to receive the error information, pass NULL if you don't need it.<br/>
+
+The function returns true on success, or false if the JSON is invalid, the
+source reports an error, or a handler callback aborts.
+
+```c
+typedef struct yyjson_sax_opts {
+    size_t window;    /* sliding window size in bytes, 0 for default (256 KiB) */
+    size_t max_depth; /* max container nesting depth, 0 for default (1024) */
+} yyjson_sax_opts;
+
+bool yyjson_sax_read(yyjson_sax_source source, void *source_ctx,
+                     const yyjson_sax_handler *handler, void *handler_ctx,
+                     yyjson_read_flag flg, const yyjson_sax_opts *opts,
+                     const yyjson_alc *alc, yyjson_read_err *err);
+```
+
+`yyjson_sax_read_fp()` is a convenience wrapper that reads from an open
+`FILE *` (the file is not closed by the function):
+
+```c
+bool yyjson_sax_read_fp(FILE *fp,
+                        const yyjson_sax_handler *handler, void *handler_ctx,
+                        yyjson_read_flag flg, const yyjson_sax_opts *opts,
+                        const yyjson_alc *alc, yyjson_read_err *err);
+```
+
+### Sample code
+
+Print every object key of an arbitrarily large JSON file:
+
+```c
+static bool on_key(void *ctx, const char *str, size_t len) {
+    printf("key: %.*s\n", (int)len, str);
+    return true;
+}
+
+FILE *fp = fopen("huge.json", "rb");
+yyjson_sax_handler handler;
+memset(&handler, 0, sizeof(handler));
+handler.key = on_key;
+
+yyjson_read_err err;
+if (!yyjson_sax_read_fp(fp, &handler, NULL, 0, NULL, NULL, &err)) {
+    printf("read error: %s, code: %u at byte position: %lu\n",
+           err.msg, err.code, err.pos);
+}
+fclose(fp);
+```
+
 ## Reader error handling
 
 When reading JSON fails, and you need error information, you can pass a `yyjson_read_err` pointer to the `yyjson_read_xxx()` functions to receive the error details.

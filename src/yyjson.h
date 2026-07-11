@@ -55,6 +55,12 @@
 #define YYJSON_DISABLE_INCR_READER 0
 #endif
 
+/* Define as 1 to disable the bounded-memory streaming (SAX) reader at
+   compile-time. This disables functions with "sax" in their name. */
+#ifndef YYJSON_DISABLE_SAX_READER
+#define YYJSON_DISABLE_SAX_READER 0
+#endif
+
 /* Define as 1 to disable file/fp read and write APIs. */
 #ifndef YYJSON_DISABLE_FILE
 #define YYJSON_DISABLE_FILE 0
@@ -954,6 +960,15 @@ static const yyjson_read_code YYJSON_READ_ERROR_MORE                    = 14;
 /** Read depth limit exceeded. */
 static const yyjson_read_code YYJSON_READ_ERROR_DEPTH                   = 15;
 
+/** The streaming (SAX) source callback reported an I/O error. */
+static const yyjson_read_code YYJSON_READ_ERROR_SOURCE                  = 16;
+
+/** A single token was larger than the streaming (SAX) reader's window. */
+static const yyjson_read_code YYJSON_READ_ERROR_TOKEN_TOO_LARGE         = 17;
+
+/** Parsing was aborted because a SAX handler callback returned false. */
+static const yyjson_read_code YYJSON_READ_ERROR_ABORTED                 = 18;
+
 /** Error information for JSON reader. */
 typedef struct yyjson_read_err {
     /** Error code, see `yyjson_read_code` for all possible values. */
@@ -1132,6 +1147,149 @@ yyjson_api yyjson_doc *yyjson_incr_read(yyjson_incr_state *state, size_t len,
 yyjson_api void yyjson_incr_free(yyjson_incr_state *state);
 
 #endif /* YYJSON_DISABLE_INCR_READER */
+
+
+
+/*==============================================================================
+ * JSON Streaming (SAX) Reader API
+ *============================================================================*/
+
+#if !defined(YYJSON_DISABLE_SAX_READER) || !YYJSON_DISABLE_SAX_READER
+
+/**
+ Sentinel returned by a `yyjson_sax_source` callback to signal a read error
+ (as opposed to `0`, which means a clean end-of-input).
+ */
+#define YYJSON_SAX_SOURCE_ERROR ((size_t)~(size_t)0)
+
+/**
+ A pull-based byte source for the streaming reader.
+
+ The reader calls this to fill its window. Copy up to `len` bytes into `buf`
+ and return the number of bytes written. Return `0` to signal a clean
+ end-of-input, or `YYJSON_SAX_SOURCE_ERROR` to signal an I/O error (which is
+ reported to the caller as `YYJSON_READ_ERROR_SOURCE`).
+
+ @param ctx The opaque context passed to `yyjson_sax_read()`.
+ @param buf The destination buffer to copy bytes into.
+ @param len The maximum number of bytes to copy.
+ @return The number of bytes copied, `0` for end-of-input, or
+    `YYJSON_SAX_SOURCE_ERROR` on error.
+ */
+typedef size_t (*yyjson_sax_source)(void *ctx, void *buf, size_t len);
+
+/**
+ Streaming (SAX) event handler.
+
+ Each callback is invoked as the corresponding JSON token is parsed and returns
+ `true` to continue parsing or `false` to abort (reported to the caller as
+ `YYJSON_READ_ERROR_ABORTED`). Any callback may be `NULL`, in which case that
+ event is ignored with no overhead.
+
+ The `str`/`len` passed to `str` and `key` point directly into the reader's
+ internal window and are only valid for the duration of the callback. If you
+ need to retain the data, copy it. The pointer is not null-terminated; always
+ use `len`.
+
+ The `num` callback receives a temporary `yyjson_val` valid only for the
+ duration of the call. Use the `yyjson_get_*` accessors on it. With
+ `YYJSON_READ_NUMBER_AS_RAW` / `YYJSON_READ_BIGNUM_AS_RAW` it may be a RAW
+ value; use `yyjson_get_raw()` + `yyjson_get_len()` (it is not
+ null-terminated).
+ */
+typedef struct yyjson_sax_handler {
+    /** Called at the start of an object (`{`). */
+    bool (*obj_begin)(void *ctx);
+    /** Called at the end of an object (`}`). `count` is the member count. */
+    bool (*obj_end)(void *ctx, size_t count);
+    /** Called at the start of an array (`[`). */
+    bool (*arr_begin)(void *ctx);
+    /** Called at the end of an array (`]`). `count` is the element count. */
+    bool (*arr_end)(void *ctx, size_t count);
+    /** Called for an object member key (a string). */
+    bool (*key)(void *ctx, const char *str, size_t len);
+    /** Called for a string value. */
+    bool (*str)(void *ctx, const char *str, size_t len);
+    /** Called for a number value (see note above about RAW numbers). */
+    bool (*num)(void *ctx, const yyjson_val *num);
+    /** Called for a boolean value. */
+    bool (*bool_val)(void *ctx, bool value);
+    /** Called for a `null` value. */
+    bool (*null_val)(void *ctx);
+} yyjson_sax_handler;
+
+/** Options for the streaming (SAX) reader. */
+typedef struct yyjson_sax_opts {
+    /** Size in bytes of the sliding window buffer. This is the hard cap on peak
+        memory (plus O(depth) for the container stack); it must also be large
+        enough to hold the largest single string/number token in the input.
+        Pass `0` for a default (currently 256 KiB). Values below a small floor
+        are raised to it. */
+    size_t window;
+    /** Maximum container nesting depth before `YYJSON_READ_ERROR_DEPTH`.
+        Pass `0` for a default (currently 1024). */
+    size_t max_depth;
+} yyjson_sax_opts;
+
+/**
+ Parse JSON from a pull-based byte source using bounded memory, invoking the
+ handler for each token (a SAX-style parser).
+
+ Peak memory is bounded by the window size plus O(nesting depth), independent
+ of the total input size, so this can process inputs far larger than RAM. The
+ one constraint is that no single string or number token may exceed the window
+ size; such an input fails with `YYJSON_READ_ERROR_TOKEN_TOO_LARGE`.
+
+ Only standard JSON is supported. `YYJSON_READ_NUMBER_AS_RAW`,
+ `YYJSON_READ_BIGNUM_AS_RAW` and `YYJSON_READ_STOP_WHEN_DONE` are honored; other
+ non-standard flags are ignored.
+
+ @param source The byte source callback. Must not be NULL.
+ @param source_ctx An opaque context passed to `source`.
+ @param handler The event handler. Must not be NULL (individual callbacks may
+    be NULL).
+ @param handler_ctx An opaque context passed to each handler callback.
+ @param flg The JSON read options.
+ @param opts Window/depth options, or NULL for defaults.
+ @param alc The allocator used for the window and stack, or NULL for the
+    default allocator.
+ @param err A pointer to receive error information, or NULL.
+ @return true on success, false on error (see `err`).
+ */
+yyjson_api bool yyjson_sax_read(yyjson_sax_source source, void *source_ctx,
+                                const yyjson_sax_handler *handler,
+                                void *handler_ctx,
+                                yyjson_read_flag flg,
+                                const yyjson_sax_opts *opts,
+                                const yyjson_alc *alc,
+                                yyjson_read_err *err);
+
+#if !YYJSON_FREESTANDING && !YYJSON_DISABLE_FILE
+
+/**
+ Like `yyjson_sax_read()`, but reads from a `FILE *` stream.
+
+ @param fp An open `FILE *` positioned at the JSON data. Not closed by this
+    function.
+ @param handler The event handler (must not be NULL).
+ @param handler_ctx An opaque context passed to each handler callback.
+ @param flg The JSON read options.
+ @param opts Window/depth options, or NULL for defaults.
+ @param alc The allocator, or NULL for the default allocator.
+ @param err A pointer to receive error information, or NULL.
+ @return true on success, false on error (see `err`).
+ */
+yyjson_api bool yyjson_sax_read_fp(FILE *fp,
+                                   const yyjson_sax_handler *handler,
+                                   void *handler_ctx,
+                                   yyjson_read_flag flg,
+                                   const yyjson_sax_opts *opts,
+                                   const yyjson_alc *alc,
+                                   yyjson_read_err *err);
+
+#endif /* !YYJSON_FREESTANDING && !YYJSON_DISABLE_FILE */
+
+#endif /* YYJSON_DISABLE_SAX_READER */
 
 /**
  Returns the maximum memory usage to read a JSON document.

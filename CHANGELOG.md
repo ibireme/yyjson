@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 
 ## Unreleased
 #### Added 
+- Add a bounded-memory streaming (SAX) reader: `yyjson_sax_read()` and
+  `yyjson_sax_read_fp()`. It parses from a pull-based byte source through a
+  fixed sliding window, invoking a handler per token, so peak memory is bounded
+  by the window plus nesting depth rather than the document size (the one limit
+  being that a single string/number token must fit the window). Can be disabled
+  with the `YYJSON_DISABLE_SAX_READER` compile-time option.
 - Add a set of `write_buf()` functions for writing JSON to a buffer without allocation.
 - Add `YYJSON_FREESTANDING` compile-time option to build without libc (e.g. wasm).
 - Add `YYJSON_DISABLE_FILE` compile-time option to disable file/fp read and write APIs.

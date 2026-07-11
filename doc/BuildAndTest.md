@@ -67,6 +67,7 @@ Supported CMake options (default OFF):
 - `-DYYJSON_DISABLE_READER=ON` Disable JSON reader if you don't need it.
 - `-DYYJSON_DISABLE_WRITER=ON` Disable JSON writer if you don't need it.
 - `-DYYJSON_DISABLE_INCR_READER=ON` Disable incremental reader if you don't need it.
+- `-DYYJSON_DISABLE_SAX_READER=ON` Disable streaming (SAX) reader if you don't need it.
 - `-DYYJSON_DISABLE_FILE=ON` Disable file/fp read and write APIs.
 - `-DYYJSON_DISABLE_UTILS=ON` Disable JSON Pointer, JSON Patch and JSON Merge Patch.
 - `-DYYJSON_DISABLE_FAST_FP_CONV=ON` Disable built-in fast floating-point number conversion.
@@ -255,6 +256,11 @@ It is recommended when JSON serialization is not required.<br/>
 Define as 1 to disable JSON incremental reader at compile-time.<br/>
 This disables functions with `incr` in their name.<br/>
 It is recommended when JSON incremental reader is not required.<br/>
+
+## YYJSON_DISABLE_SAX_READER
+Define as 1 to disable the bounded-memory streaming (SAX) reader at compile-time.<br/>
+This disables functions with `sax` in their name.<br/>
+It is recommended when the streaming reader is not required.<br/>
 
 ## YYJSON_DISABLE_FILE
 Define as 1 to disable file and `FILE` pointer APIs at compile-time.<br/>
