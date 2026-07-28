@@ -108,6 +108,23 @@ uint32_t yyjson_version(void) {
 #   define GCC_HAS_CTZLL 0
 #endif
 
+/* SIMD support: enabled only when the compiler targets an available ISA. */
+#undef YYJSON_HAS_SIMD_SSE2
+#if !YYJSON_FREESTANDING && \
+    (!defined(YYJSON_DISABLE_SIMD) || !YYJSON_DISABLE_SIMD) && \
+    (!defined(YYJSON_DISABLE_UNALIGNED_MEMORY_ACCESS) || \
+    !YYJSON_DISABLE_UNALIGNED_MEMORY_ACCESS) && \
+    (defined(__SSE2__) || defined(_M_X64) || \
+    (defined(_M_IX86_FP) && _M_IX86_FP >= 2))
+#   define YYJSON_HAS_SIMD_SSE2 1
+#else
+#   define YYJSON_HAS_SIMD_SSE2 0
+#endif
+
+#if YYJSON_HAS_SIMD_SSE2
+#   include <emmintrin.h>
+#endif
+
 /* int128 type */
 #ifndef YYJSON_HAS_INT128
 #   if defined(__SIZEOF_INT128__) && (__SIZEOF_INT128__ == 16) && \
@@ -2049,6 +2066,84 @@ static_inline u32 u64_tz_bits(u64 v) {
     return table[((v & (~v + 1)) * U64(0x022FDD63, 0xCC95386D)) >> 58];
 #endif
 }
+
+#if YYJSON_HAS_SIMD_SSE2
+/** Scans the remaining chunks after the first one, see str_ascii_skip_sse2(). */
+static_noinline u8 *str_ascii_skip_sse2_loop(u8 *src, u8 *eof) {
+    __m128i quote = _mm_set1_epi8('"');
+    __m128i slash = _mm_set1_epi8('\\');
+    __m128i limit = _mm_set1_epi8(0x20);
+    while (src <= eof && (usize)(eof - src) >= 16 - YYJSON_PADDING_SIZE) {
+        __m128i chunk = _mm_loadu_si128((const __m128i *)(const void *)src);
+        __m128i quote_mask = _mm_cmpeq_epi8(chunk, quote);
+        __m128i slash_mask = _mm_cmpeq_epi8(chunk, slash);
+        __m128i ctrl_or_non_ascii = _mm_cmplt_epi8(chunk, limit);
+        u32 mask = (u32)_mm_movemask_epi8(_mm_or_si128(
+            _mm_or_si128(quote_mask, slash_mask), ctrl_or_non_ascii));
+        if (mask) return src + u64_tz_bits((u64)mask);
+        src += 16;
+    }
+    /* the padding is zeroed, so this loop always stops */
+    while (char_is_ascii_skip(*src)) src++;
+    return src;
+}
+
+/** Skips ASCII characters in a double-quoted string, returns the position of
+    the quote, backslash, control character or non-ASCII byte that stopped it.
+    The first chunk is handled here so that short strings never pay for a call. */
+static_inline u8 *str_ascii_skip_sse2(u8 *src, u8 *eof) {
+    if (likely(src <= eof && (usize)(eof - src) >= 16 - YYJSON_PADDING_SIZE)) {
+        __m128i quote = _mm_set1_epi8('"');
+        __m128i slash = _mm_set1_epi8('\\');
+        __m128i limit = _mm_set1_epi8(0x20);
+        __m128i chunk = _mm_loadu_si128((const __m128i *)(const void *)src);
+        __m128i quote_mask = _mm_cmpeq_epi8(chunk, quote);
+        __m128i slash_mask = _mm_cmpeq_epi8(chunk, slash);
+        __m128i ctrl_or_non_ascii = _mm_cmplt_epi8(chunk, limit);
+        u32 mask = (u32)_mm_movemask_epi8(_mm_or_si128(
+            _mm_or_si128(quote_mask, slash_mask), ctrl_or_non_ascii));
+        if (likely(mask)) return src + u64_tz_bits((u64)mask);
+        src += 16;
+    }
+    return str_ascii_skip_sse2_loop(src, eof);
+}
+
+/** A pair of read/write positions in a string. */
+typedef struct { u8 *src; u8 *dst; } str_pos_pair;
+
+/** Copies ASCII characters in a double-quoted string, returns the positions of
+    the quote, backslash, control character or non-ASCII byte that stopped it.
+    The positions are passed by value to keep them in the caller's registers. */
+static_noinline str_pos_pair str_ascii_copy_sse2(u8 *src, u8 *dst, u8 *eof) {
+    str_pos_pair pos;
+    __m128i quote = _mm_set1_epi8('"');
+    __m128i slash = _mm_set1_epi8('\\');
+    __m128i limit = _mm_set1_epi8(0x20);
+    while (src <= eof && (usize)(eof - src) >= 16 - YYJSON_PADDING_SIZE) {
+        __m128i chunk = _mm_loadu_si128((const __m128i *)(const void *)src);
+        __m128i quote_mask = _mm_cmpeq_epi8(chunk, quote);
+        __m128i slash_mask = _mm_cmpeq_epi8(chunk, slash);
+        __m128i ctrl_or_non_ascii = _mm_cmplt_epi8(chunk, limit);
+        u32 mask = (u32)_mm_movemask_epi8(_mm_or_si128(
+            _mm_or_si128(quote_mask, slash_mask), ctrl_or_non_ascii));
+        if (mask) {
+            u32 len = u64_tz_bits((u64)mask);
+            byte_move_forward(dst, src, len);
+            pos.src = src + len;
+            pos.dst = dst + len;
+            return pos;
+        }
+        _mm_storeu_si128((__m128i *)(void *)dst, chunk);
+        src += 16;
+        dst += 16;
+    }
+    /* the padding is zeroed, so this loop always stops */
+    while (char_is_ascii_skip(*src)) *dst++ = *src++;
+    pos.src = src;
+    pos.dst = dst;
+    return pos;
+}
+#endif
 
 /** Multiplies two 64-bit unsigned integers (a * b),
     returns the 128-bit result as 'hi' and 'lo'. */
@@ -4746,6 +4841,13 @@ static_inline bool read_uni_esc(u8 **src_ptr, u8 **dst_ptr, const char **msg) {
 #undef return_err
 }
 
+#if YYJSON_HAS_SIMD_SSE2
+static_inline bool read_str_copy(u8 quo, u8 *hdr, u8 **end, u8 *src,
+                                 u8 *dst, u8 *eof, yyjson_read_flag flg,
+                                 yyjson_val *val, const char **msg,
+                                 u8 *con[2]);
+#endif
+
 /**
  Read a JSON string.
  @param quo The quote character (single quote or double quote).
@@ -4784,7 +4886,12 @@ static_inline bool read_str_opt(u8 quo, u8 **ptr, u8 *eof, yyjson_read_flag flg,
     if (con && unlikely(con[0])) {
         src = con[0];
         dst = con[1];
+#if YYJSON_HAS_SIMD_SSE2
+        if (dst) return read_str_copy(quo, hdr, end, src, dst, eof, flg,
+                                      val, msg, con);
+#else
         if (dst) goto copy_ascii;
+#endif
     }
 
 skip_ascii:
@@ -4813,7 +4920,12 @@ skip_ascii:
 
     repeat16_incr(expr_jump)
     src += 16;
+#if YYJSON_HAS_SIMD_SSE2
+    src = str_ascii_skip_sse2(src, eof);
+    goto skip_ascii_end;
+#else
     goto skip_ascii;
+#endif
     repeat16_incr(expr_stop)
 
 #undef expr_jump
@@ -4896,8 +5008,34 @@ skip_utf8:
         goto skip_ascii;
     }
 
-    /* The escape character appears, we need to copy it. */
+#if YYJSON_HAS_SIMD_SSE2
+    return read_str_copy(quo, hdr, end, src, src, eof, flg, val, msg, con);
+#undef return_err
+}
+
+/** Read the remainder of a JSON string that contains escaped characters. */
+static_inline bool read_str_copy(u8 quo, u8 *hdr, u8 **end, u8 *src,
+                                 u8 *dst, u8 *eof, yyjson_read_flag flg,
+                                 yyjson_val *val, const char **msg,
+                                 u8 *con[2]) {
+#define return_err(_end, _msg) do { \
+    *msg = _msg; \
+    *end = _end; \
+    if (con) { con[0] = _end; con[1] = dst; } \
+    return false; \
+} while (false)
+
+    u8 *pos;
+    u32 uni, tmp;
+#else
     dst = src;
+#endif
+
+#if YYJSON_HAS_SIMD_SSE2
+#define copy_ascii_after_escape goto copy_ascii_sse2
+#else
+#define copy_ascii_after_escape break
+#endif
 copy_escape:
     if (likely(*src == '\\')) {
         switch (*++src) {
@@ -4906,9 +5044,9 @@ copy_escape:
             case '/':  *dst++ = '/';  src++; break;
             case 'b':  *dst++ = '\b'; src++; break;
             case 'f':  *dst++ = '\f'; src++; break;
-            case 'n':  *dst++ = '\n'; src++; break;
-            case 'r':  *dst++ = '\r'; src++; break;
-            case 't':  *dst++ = '\t'; src++; break;
+            case 'n':  *dst++ = '\n'; src++; copy_ascii_after_escape;
+            case 'r':  *dst++ = '\r'; src++; copy_ascii_after_escape;
+            case 't':  *dst++ = '\t'; src++; copy_ascii_after_escape;
             case 'u':
                 src--;
                 if (!read_uni_esc(&src, &dst, msg)) return_err(src, *msg);
@@ -4976,7 +5114,18 @@ copy_escape:
         if (src >= eof) return_err(src, "unclosed string");
         *dst++ = *src++;
     }
+#undef copy_ascii_after_escape
 
+    goto copy_ascii;
+#if YYJSON_HAS_SIMD_SSE2
+copy_ascii_sse2:
+    if (quo == '"') {
+        str_pos_pair simd_pos = str_ascii_copy_sse2(src, dst, eof);
+        src = simd_pos.src;
+        dst = simd_pos.dst;
+        goto copy_utf8;
+    }
+#endif
 copy_ascii:
     /*
      Copy continuous ASCII, loop unrolling, same as the following code:
@@ -5002,7 +5151,11 @@ copy_ascii:
 
     byte_move_16(dst, src);
     dst += 16; src += 16;
+#if YYJSON_HAS_SIMD_SSE2
+    goto copy_ascii_sse2;
+#else
     goto copy_ascii;
+#endif
 
     /*
      The memory is copied forward since `dst < src`.

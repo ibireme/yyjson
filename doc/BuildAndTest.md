@@ -73,6 +73,7 @@ Supported CMake options (default OFF):
 - `-DYYJSON_DISABLE_NON_STANDARD=ON` Disable non-standard JSON support at compile-time.
 - `-DYYJSON_DISABLE_UTF8_VALIDATION=ON` Disable UTF-8 validation at compile-time.
 - `-DYYJSON_DISABLE_UNALIGNED_MEMORY_ACCESS=ON` Disable unaligned memory access support at compile-time.
+- `-DYYJSON_DISABLE_SIMD=ON` Disable SIMD optimizations at compile-time.
 - `-DYYJSON_FREESTANDING=ON` Build without libc (see `YYJSON_FREESTANDING` below).
 - `-DYYJSON_READER_DEPTH_LIMIT=<n>` Set a maximum nesting depth for JSON containers (see `YYJSON_READER_DEPTH_LIMIT` below).
 
@@ -303,6 +304,11 @@ Note: If this flag is enabled while passing illegal UTF-8 strings, the following
 - Escaped characters may be ignored when parsing JSON strings.
 - Ending quotes may be ignored when parsing JSON strings, causing the string to merge with the next value.
 - When serializing with `yyjson_mut_val`, the string's end may be accessed out of bounds, potentially causing a segmentation fault.
+
+## YYJSON_DISABLE_SIMD
+Define as 1 to disable SIMD optimizations at compile-time.<br/>
+By default, SIMD paths are enabled only when supported by the target compiler and architecture.<br/>
+It is recommended when reproducible scalar code generation is required.
 
 ## YYJSON_FREESTANDING
 Define as 1 to build yyjson without libc (`stdlib.h`, `string.h`, `math.h`, and `stdio.h`).
