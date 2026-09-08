@@ -7181,6 +7181,557 @@ fail_depth:             return_err(cur, DEPTH, MSG_DEPTH);
 
 #endif /* YYJSON_DISABLE_INCR_READER */
 
+
+
+/*==============================================================================
+ * MARK: - Streaming (SAX) JSON Reader (Public)
+ *============================================================================*/
+
+#if !YYJSON_DISABLE_SAX_READER
+
+/* Default window size (bytes) if the caller passes 0. */
+#define SAX_DEFAULT_WINDOW ((usize)256 * 1024)
+/* Floor on the window size: it must comfortably hold the longest bounded token
+   (a number, capped at INCR_NUM_MAX_LEN) plus padding and slack. */
+#define SAX_MIN_WINDOW ((usize)8192)
+/* Default maximum container nesting depth. */
+#define SAX_DEFAULT_DEPTH ((usize)1024)
+/* Bytes of lookahead guaranteed before dispatching on a value's first byte;
+   covers the longest fixed-size read (a literal). */
+#define SAX_DISPATCH_LOOKAHEAD ((usize)8)
+
+/* Result of an internal window fill. */
+#define SAX_FILL_ERR  (-1) /* the source callback reported an I/O error */
+#define SAX_FILL_EOF  (0)  /* the source is exhausted                   */
+#define SAX_FILL_OK   (1)  /* more bytes were read                      */
+#define SAX_FILL_FULL (2)  /* the window is full and cannot be grown    */
+
+/* Parser states for the streaming reader's pushdown automaton. */
+enum {
+    SAX_ST_VALUE,     /* expect a value (root, array element, member value) */
+    SAX_ST_ARR_FIRST, /* just after `[` */
+    SAX_ST_ARR_COMMA, /* after an array element: expect `,` or `]` */
+    SAX_ST_OBJ_FIRST, /* just after `{` */
+    SAX_ST_OBJ_KEY,   /* expect a key (after `,`) */
+    SAX_ST_OBJ_COLON, /* after a key: expect `:` */
+    SAX_ST_OBJ_COMMA, /* after a member value: expect `,` or `}` */
+    SAX_ST_DONE       /* the root value is complete */
+};
+
+/* One entry of the container stack. */
+typedef struct {
+    usize count; /* number of elements/members seen so far */
+    bool is_obj; /* true for an object, false for an array */
+} sax_frame;
+
+/* Internal state for a single streaming parse. */
+typedef struct {
+    yyjson_alc alc;             /* allocator */
+    yyjson_read_flag flg;       /* sanitized read flags */
+    yyjson_sax_source src;      /* byte source callback */
+    void *src_ctx;              /* context for the source */
+    const yyjson_sax_handler *h;/* event handler */
+    void *hctx;                 /* context for the handler */
+
+    u8 *buf;                    /* window base (owned) */
+    usize cap;                  /* total window capacity in bytes */
+    usize usable;               /* max live bytes (cap - padding) */
+    u8 *cur;                    /* scan cursor */
+    u8 *end;                    /* one past the last valid byte */
+    u8 *anchor;                 /* earliest byte still needed (reclaim front) */
+    usize consumed;             /* bytes dropped from the window front */
+    bool eof;                   /* source exhausted */
+    bool src_err;               /* source reported an error */
+
+    u8 *raw_ptr;                /* pending position for a deferred raw '\0' */
+    u8 raw_end[1];              /* dummy target for the deferred '\0' */
+
+    sax_frame *stack;           /* container stack (owned) */
+    usize depth;                /* current nesting depth */
+    usize stack_cap;            /* allocated stack frames */
+    usize max_depth;            /* configured depth limit */
+} sax_ctx;
+
+/** True if `c` cannot be part of a (standard JSON) number, i.e. terminates it. */
+static_inline bool sax_num_end(u8 c) {
+    return !(char_is_num(c) || c == 'e' || c == 'E');
+}
+
+/**
+ Compact the window (dropping everything before `anchor`) and pull more bytes
+ from the source into the tail. Rebases `cur`, `end`, `anchor` on compaction.
+ See SAX_FILL_* for the return values.
+ */
+static int sax_fill(sax_ctx *c) {
+    usize shift, used, space;
+    size_t got;
+
+    if (c->src_err) return SAX_FILL_ERR;
+    if (c->eof) return SAX_FILL_EOF;
+
+    shift = (usize)(c->anchor - c->buf);
+    if (shift) {
+        usize live = (usize)(c->end - c->anchor);
+        memmove(c->buf, c->anchor, live);
+        c->cur -= shift;
+        c->end -= shift;
+        c->anchor = c->buf;
+        c->consumed += shift;
+    }
+
+    used = (usize)(c->end - c->buf);
+    space = c->usable - used;
+    if (space == 0) return SAX_FILL_FULL;
+
+    got = c->src(c->src_ctx, c->end, space);
+    if (got == YYJSON_SAX_SOURCE_ERROR) {
+        c->src_err = true;
+        return SAX_FILL_ERR;
+    }
+    c->end += got;
+    /* maintain the null-terminator + zero padding the token readers rely on */
+    memset(c->end, 0, YYJSON_PADDING_SIZE);
+    if (got == 0) {
+        c->eof = true;
+        return SAX_FILL_EOF;
+    }
+    return SAX_FILL_OK;
+}
+
+/** Skip whitespace, refilling as needed. Returns false only on source error. */
+static bool sax_skip_ws(sax_ctx *c) {
+    for (;;) {
+        while (c->cur < c->end && char_is_space(*c->cur)) c->cur++;
+        if (c->cur < c->end) return true;
+        c->anchor = c->cur; /* leading whitespace is fully consumed */
+        {
+            int r = sax_fill(c);
+            if (r == SAX_FILL_ERR) return false;
+            if (r == SAX_FILL_EOF || r == SAX_FILL_FULL) return true;
+        }
+    }
+}
+
+/** Ensure at least `need` bytes are available at `cur`, or EOF is reached.
+    `need` must be <= usable. Returns false only on source error. */
+static bool sax_ensure(sax_ctx *c, usize need) {
+    while ((usize)(c->end - c->cur) < need && !c->eof) {
+        c->anchor = c->cur;
+        {
+            int r = sax_fill(c);
+            if (r == SAX_FILL_ERR) return false;
+            if (r == SAX_FILL_EOF || r == SAX_FILL_FULL) break;
+        }
+    }
+    return true;
+}
+
+/** Absolute stream offset of the cursor, for error reporting. */
+static_inline usize sax_pos(sax_ctx *c) {
+    return c->consumed + (usize)(c->cur - c->buf);
+}
+
+/** Grow the container stack to hold at least `need` frames. */
+static bool sax_stack_reserve(sax_ctx *c, usize need) {
+    sax_frame *tmp;
+    usize new_cap = c->stack_cap ? c->stack_cap : 16;
+    if (need <= c->stack_cap) return true;
+    while (new_cap < need) new_cap *= 2;
+    tmp = (sax_frame *)c->alc.realloc(c->alc.ctx, c->stack,
+                                      c->stack_cap * sizeof(sax_frame),
+                                      new_cap * sizeof(sax_frame));
+    if (!tmp) return false;
+    c->stack = tmp;
+    c->stack_cap = new_cap;
+    return true;
+}
+
+/** Map an internal SAX error code to a constant message. */
+static const char *sax_err_msg(yyjson_read_code code) {
+    if (code == YYJSON_READ_ERROR_SOURCE) return "source read error";
+    if (code == YYJSON_READ_ERROR_TOKEN_TOO_LARGE)
+        return "a single token was larger than the streaming window";
+    if (code == YYJSON_READ_ERROR_MEMORY_ALLOCATION)
+        return "memory allocation failed";
+    return "read error";
+}
+
+/**
+ Ensure the whole number token starting at `cur` is resident: a terminating
+ byte is present after the digits, or EOF is reached. Returns 0 on success or a
+ `yyjson_read_code` on failure.
+ */
+static yyjson_read_code sax_num_ready(sax_ctx *c) {
+    usize off = 0; /* scan progress, kept across refills (cur may be rebased) */
+    c->anchor = c->cur;
+    for (;;) {
+        u8 *p = c->cur + off;
+        while (p < c->end) {
+            if (sax_num_end(*p)) return YYJSON_READ_SUCCESS; /* terminator */
+            p++;
+        }
+        off = (usize)(p - c->cur);
+        if (c->eof) return YYJSON_READ_SUCCESS; /* the '\0' terminates it */
+        {
+            int r = sax_fill(c);
+            if (r == SAX_FILL_ERR) return YYJSON_READ_ERROR_SOURCE;
+            if (r == SAX_FILL_EOF) return YYJSON_READ_SUCCESS;
+            if (r == SAX_FILL_FULL) return YYJSON_READ_ERROR_TOKEN_TOO_LARGE;
+        }
+    }
+}
+
+/**
+ Ensure the whole string token starting at `cur` (the opening quote) is
+ resident: the closing quote is present, or EOF is reached (in which case the
+ string reader will report the unterminated string). Returns 0 on success or a
+ `yyjson_read_code` on failure.
+ */
+static yyjson_read_code sax_str_ready(sax_ctx *c) {
+    usize off = 1; /* scan progress past the opening quote, kept across
+                      refills (cur may be rebased) */
+    bool esc = false;
+    c->anchor = c->cur;
+    for (;;) {
+        u8 *p = c->cur + off;
+        while (p < c->end) {
+            u8 ch = *p;
+            if (esc) esc = false;
+            else if (ch == '\\') esc = true;
+            else if (ch == '"') return YYJSON_READ_SUCCESS; /* closing quote */
+            p++;
+        }
+        off = (usize)(p - c->cur);
+        if (c->eof) return YYJSON_READ_SUCCESS;
+        {
+            int r = sax_fill(c);
+            if (r == SAX_FILL_ERR) return YYJSON_READ_ERROR_SOURCE;
+            if (r == SAX_FILL_EOF) return YYJSON_READ_SUCCESS;
+            if (r == SAX_FILL_FULL) return YYJSON_READ_ERROR_TOKEN_TOO_LARGE;
+        }
+    }
+}
+
+/**
+ Probe for a complete string then parse it with the shared string reader.
+ Returns 0 on success (result in `val`), `YYJSON_READ_ERROR_INVALID_STRING`
+ (with `*msg` set) on a malformed string, or another `yyjson_read_code`.
+ */
+static yyjson_read_code sax_scan_string(sax_ctx *c, yyjson_val *val,
+                                        const char **msg) {
+    yyjson_read_code s = sax_str_ready(c);
+    if (s) return s;
+    if (!read_str(&c->cur, c->end, c->flg, val, msg))
+        return YYJSON_READ_ERROR_INVALID_STRING;
+    return YYJSON_READ_SUCCESS;
+}
+
+/** Determine the next state after a value completes, from the container stack. */
+static int sax_resolve(sax_ctx *c) {
+    if (c->depth == 0) return SAX_ST_DONE;
+    return c->stack[c->depth - 1].is_obj ? SAX_ST_OBJ_COMMA : SAX_ST_ARR_COMMA;
+}
+
+bool yyjson_sax_read(yyjson_sax_source source, void *source_ctx,
+                     const yyjson_sax_handler *handler, void *handler_ctx,
+                     yyjson_read_flag flg,
+                     const yyjson_sax_opts *opts,
+                     const yyjson_alc *alc_ptr,
+                     yyjson_read_err *err) {
+
+#define return_err(_code, _msg) do { \
+    err->code = YYJSON_READ_ERROR_##_code; \
+    err->msg = _msg; \
+    err->pos = sax_pos(&c); \
+    goto cleanup; \
+} while (false)
+
+    /* fail with an internal `yyjson_read_code` produced by a probe helper */
+#define return_err_code(_c) do { \
+    err->code = (_c); \
+    err->msg = sax_err_msg(_c); \
+    err->pos = sax_pos(&c); \
+    goto cleanup; \
+} while (false)
+
+    /* invoke a handler callback, aborting on a false return */
+#define EMIT0(cb) do { \
+    if (c.h->cb && !c.h->cb(c.hctx)) return_err(ABORTED, "aborted by handler"); \
+} while (false)
+#define EMIT1(cb, a) do { \
+    if (c.h->cb && !c.h->cb(c.hctx, a)) return_err(ABORTED, "aborted by handler"); \
+} while (false)
+#define EMIT2(cb, a, b) do { \
+    if (c.h->cb && !c.h->cb(c.hctx, a, b)) return_err(ABORTED, "aborted by handler"); \
+} while (false)
+
+    sax_ctx c;
+    yyjson_read_err tmp_err;
+    int state = SAX_ST_VALUE;
+    bool ok = false;
+    usize window, max_depth;
+    yyjson_val scratch;
+    const char *msg;
+
+    if (!err) err = &tmp_err;
+    memset(err, 0, sizeof(*err));
+    memset(&c, 0, sizeof(c));
+
+    if (unlikely(!source || !handler)) {
+        err->code = YYJSON_READ_ERROR_INVALID_PARAMETER;
+        err->msg = "source and handler must not be NULL";
+        err->pos = 0;
+        return false;
+    }
+
+    c.alc = alc_ptr ? *alc_ptr : YYJSON_DEFAULT_ALC;
+    /* only standard JSON plus raw-number and stop-when-done are honored */
+    c.flg = flg & (YYJSON_READ_NUMBER_AS_RAW |
+                   YYJSON_READ_BIGNUM_AS_RAW |
+                   YYJSON_READ_STOP_WHEN_DONE);
+    c.src = source;
+    c.src_ctx = source_ctx;
+    c.h = handler;
+    c.hctx = handler_ctx;
+
+    window = (opts && opts->window) ? opts->window : SAX_DEFAULT_WINDOW;
+    if (window < SAX_MIN_WINDOW) window = SAX_MIN_WINDOW;
+    max_depth = (opts && opts->max_depth) ? opts->max_depth : SAX_DEFAULT_DEPTH;
+    c.max_depth = max_depth;
+    c.cap = window;
+    c.usable = window - YYJSON_PADDING_SIZE;
+
+    c.buf = (u8 *)c.alc.malloc(c.alc.ctx, c.cap);
+    if (unlikely(!c.buf)) {
+        err->code = YYJSON_READ_ERROR_MEMORY_ALLOCATION;
+        err->msg = "failed to allocate the streaming window";
+        err->pos = 0;
+        return false;
+    }
+    c.cur = c.end = c.anchor = c.buf;
+    memset(c.buf, 0, YYJSON_PADDING_SIZE);
+    c.raw_ptr = c.raw_end;
+
+    /* prime the window and reject empty input */
+    if (!sax_skip_ws(&c)) return_err(SOURCE, "source read error");
+    if (c.cur >= c.end) return_err(EMPTY_CONTENT, "empty content");
+
+    for (;;) {
+        u8 ch;
+
+        if (!sax_skip_ws(&c)) return_err(SOURCE, "source read error");
+
+        switch (state) {
+        case SAX_ST_DONE:
+            goto finished;
+
+        case SAX_ST_VALUE:
+            if (!sax_ensure(&c, SAX_DISPATCH_LOOKAHEAD))
+                return_err(SOURCE, "source read error");
+            if (c.cur >= c.end) return_err(UNEXPECTED_END, "unexpected end");
+            ch = *c.cur;
+            if (ch == '{') {
+                c.cur++;
+                if (unlikely(c.depth >= c.max_depth))
+                    return_err(DEPTH, "exceeded max depth");
+                if (!sax_stack_reserve(&c, c.depth + 1))
+                    return_err_code(YYJSON_READ_ERROR_MEMORY_ALLOCATION);
+                EMIT0(obj_begin);
+                c.stack[c.depth].is_obj = true;
+                c.stack[c.depth].count = 0;
+                c.depth++;
+                state = SAX_ST_OBJ_FIRST;
+            } else if (ch == '[') {
+                c.cur++;
+                if (unlikely(c.depth >= c.max_depth))
+                    return_err(DEPTH, "exceeded max depth");
+                if (!sax_stack_reserve(&c, c.depth + 1))
+                    return_err_code(YYJSON_READ_ERROR_MEMORY_ALLOCATION);
+                EMIT0(arr_begin);
+                c.stack[c.depth].is_obj = false;
+                c.stack[c.depth].count = 0;
+                c.depth++;
+                state = SAX_ST_ARR_FIRST;
+            } else if (ch == '"') {
+                yyjson_read_code s = sax_scan_string(&c, &scratch, &msg);
+                if (s == YYJSON_READ_ERROR_INVALID_STRING)
+                    return_err(INVALID_STRING, msg);
+                if (s) return_err_code(s);
+                EMIT2(str, unsafe_yyjson_get_str(&scratch),
+                      unsafe_yyjson_get_len(&scratch));
+                state = sax_resolve(&c);
+            } else if (char_is_num(ch)) {
+                yyjson_read_code s = sax_num_ready(&c);
+                if (s) return_err_code(s);
+                /* re-aim the deferred raw '\0' at the dummy: a position from
+                   a previous number may dangle after window compaction */
+                c.raw_ptr = c.raw_end;
+                if (!read_num(&c.cur, &c.raw_ptr, c.flg, &scratch, &msg))
+                    return_err(INVALID_NUMBER, msg);
+                EMIT1(num, &scratch);
+                state = sax_resolve(&c);
+            } else if (ch == 't') {
+                if (!read_true(&c.cur, &scratch))
+                    return_err(LITERAL, "invalid literal, expected `true`");
+                EMIT1(bool_val, true);
+                state = sax_resolve(&c);
+            } else if (ch == 'f') {
+                if (!read_false(&c.cur, &scratch))
+                    return_err(LITERAL, "invalid literal, expected `false`");
+                EMIT1(bool_val, false);
+                state = sax_resolve(&c);
+            } else if (ch == 'n') {
+                if (!read_null(&c.cur, &scratch))
+                    return_err(LITERAL, "invalid literal, expected `null`");
+                EMIT0(null_val);
+                state = sax_resolve(&c);
+            } else {
+                return_err(UNEXPECTED_CHARACTER, "unexpected character");
+            }
+            break;
+
+        case SAX_ST_ARR_FIRST:
+            if (c.cur >= c.end) return_err(UNEXPECTED_END, "unexpected end");
+            if (*c.cur == ']') {
+                c.cur++;
+                c.depth--;
+                EMIT1(arr_end, (size_t)0);
+                state = sax_resolve(&c);
+            } else {
+                c.stack[c.depth - 1].count = 1;
+                state = SAX_ST_VALUE;
+            }
+            break;
+
+        case SAX_ST_ARR_COMMA:
+            if (c.cur >= c.end) return_err(UNEXPECTED_END, "unexpected end");
+            if (*c.cur == ']') {
+                usize n = c.stack[c.depth - 1].count;
+                c.cur++;
+                c.depth--;
+                EMIT1(arr_end, (size_t)n);
+                state = sax_resolve(&c);
+            } else if (*c.cur == ',') {
+                c.cur++;
+                c.stack[c.depth - 1].count++;
+                state = SAX_ST_VALUE;
+            } else {
+                return_err(UNEXPECTED_CHARACTER, "expected `,` or `]`");
+            }
+            break;
+
+        case SAX_ST_OBJ_FIRST:
+            if (c.cur >= c.end) return_err(UNEXPECTED_END, "unexpected end");
+            if (*c.cur == '}') {
+                c.cur++;
+                c.depth--;
+                EMIT1(obj_end, (size_t)0);
+                state = sax_resolve(&c);
+            } else if (*c.cur == '"') {
+                yyjson_read_code s = sax_scan_string(&c, &scratch, &msg);
+                if (s == YYJSON_READ_ERROR_INVALID_STRING)
+                    return_err(INVALID_STRING, msg);
+                if (s) return_err_code(s);
+                c.stack[c.depth - 1].count = 1;
+                EMIT2(key, unsafe_yyjson_get_str(&scratch),
+                      unsafe_yyjson_get_len(&scratch));
+                state = SAX_ST_OBJ_COLON;
+            } else {
+                return_err(UNEXPECTED_CHARACTER, "expected a string key");
+            }
+            break;
+
+        case SAX_ST_OBJ_KEY:
+            if (c.cur >= c.end) return_err(UNEXPECTED_END, "unexpected end");
+            if (*c.cur != '"')
+                return_err(UNEXPECTED_CHARACTER, "expected a string key");
+            {
+                yyjson_read_code s = sax_scan_string(&c, &scratch, &msg);
+                if (s == YYJSON_READ_ERROR_INVALID_STRING)
+                    return_err(INVALID_STRING, msg);
+                if (s) return_err_code(s);
+                EMIT2(key, unsafe_yyjson_get_str(&scratch),
+                      unsafe_yyjson_get_len(&scratch));
+                state = SAX_ST_OBJ_COLON;
+            }
+            break;
+
+        case SAX_ST_OBJ_COLON:
+            if (c.cur >= c.end) return_err(UNEXPECTED_END, "unexpected end");
+            if (*c.cur != ':')
+                return_err(UNEXPECTED_CHARACTER, "expected `:`");
+            c.cur++;
+            state = SAX_ST_VALUE;
+            break;
+
+        case SAX_ST_OBJ_COMMA:
+            if (c.cur >= c.end) return_err(UNEXPECTED_END, "unexpected end");
+            if (*c.cur == '}') {
+                usize n = c.stack[c.depth - 1].count;
+                c.cur++;
+                c.depth--;
+                EMIT1(obj_end, (size_t)n);
+                state = sax_resolve(&c);
+            } else if (*c.cur == ',') {
+                c.cur++;
+                c.stack[c.depth - 1].count++;
+                state = SAX_ST_OBJ_KEY;
+            } else {
+                return_err(UNEXPECTED_CHARACTER, "expected `,` or `}`");
+            }
+            break;
+        }
+    }
+
+finished:
+    /* reject trailing non-whitespace content unless STOP_WHEN_DONE */
+    if (!has_flg(STOP_WHEN_DONE)) {
+        if (!sax_skip_ws(&c)) return_err(SOURCE, "source read error");
+        if (c.cur < c.end) return_err(UNEXPECTED_CONTENT, "unexpected content");
+    }
+    ok = true;
+
+cleanup:
+    if (c.buf) c.alc.free(c.alc.ctx, c.buf);
+    if (c.stack) c.alc.free(c.alc.ctx, c.stack);
+    return ok;
+
+#undef return_err
+#undef return_err_code
+#undef EMIT0
+#undef EMIT1
+#undef EMIT2
+}
+
+#if !YYJSON_FREESTANDING && !YYJSON_DISABLE_FILE
+static size_t sax_fp_source(void *ctx, void *buf, size_t len) {
+    FILE *fp = (FILE *)ctx;
+    size_t got = fread(buf, 1, len, fp);
+    if (got < len && ferror(fp)) return YYJSON_SAX_SOURCE_ERROR;
+    return got;
+}
+
+bool yyjson_sax_read_fp(FILE *fp,
+                        const yyjson_sax_handler *handler, void *handler_ctx,
+                        yyjson_read_flag flg,
+                        const yyjson_sax_opts *opts,
+                        const yyjson_alc *alc,
+                        yyjson_read_err *err) {
+    if (unlikely(!fp)) {
+        if (err) {
+            err->code = YYJSON_READ_ERROR_INVALID_PARAMETER;
+            err->msg = "input fp is NULL";
+            err->pos = 0;
+        }
+        return false;
+    }
+    return yyjson_sax_read(sax_fp_source, fp, handler, handler_ctx,
+                           flg, opts, alc, err);
+}
+#endif /* !YYJSON_FREESTANDING && !YYJSON_DISABLE_FILE */
+
+#endif /* YYJSON_DISABLE_SAX_READER */
+
 #undef has_flg
 #undef has_allow
 #endif /* YYJSON_DISABLE_READER */
