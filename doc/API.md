@@ -452,7 +452,7 @@ for example:
 "\x80xyz"
 "\xF0\x81\x81\x81"
 ```
-This flag permits invalid characters to appear in the string values, but it still reports errors for invalid escape sequences. It does not impact the performance of correctly encoded strings.
+This flag permits invalid characters to appear in the string values, but it still reports errors for invalid escape sequences. It does not impact the performance of correctly encoded strings. An unescaped byte below 0x20 is still an error.
 
 ***Warning***: when using this option, be aware that strings within JSON values may contain incorrect encoding, so you need to handle these strings carefully to avoid security risks.
 
