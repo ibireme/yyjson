@@ -9110,7 +9110,11 @@ static_inline u8 *write_bool(u8 *cur, bool val) {
 
 /** Write indent (requires level x 4 bytes buffer).
     Param spaces should not larger than 4. */
-static_inline u8 *write_indent(u8 *cur, usize level, usize spaces) {
+static_inline u8 *write_indent(u8 *cur, usize level, usize spaces, bool tabs) {
+    if (tabs) {
+        memset(cur, '\t', level);
+        return cur + level;
+    }
     while (level-- > 0) {
         byte_copy_4(cur, "    ");
         cur += spaces;
@@ -9557,7 +9561,8 @@ static_inline u8 *write_root_pretty(const yyjson_val *root,
     bool cpy = (enc_table == enc_table_cpy);
     bool esc = has_flg(ESCAPE_UNICODE) != 0;
     bool inv = has_allow(INVALID_UNICODE) != 0;
-    usize spaces = has_flg(PRETTY_TWO_SPACES) ? 2 : 4;
+    bool tabs = has_flg(PRETTY_TABS) != 0;
+    usize spaces = tabs ? 1 : has_flg(PRETTY_TWO_SPACES) ? 2 : 4;
     bool newline = has_flg(NEWLINE_AT_END) != 0;
 
     if (buf) {
@@ -9597,7 +9602,7 @@ val_begin:
         if ((sizeof(usize) < 8) && !no_indent &&
             level > (USIZE_MAX - 16 - str_len * 6) / 4) goto fail_alloc;
         incr_len(str_len * 6 + 16 + (no_indent ? 0 : level * 4));
-        cur = write_indent(cur, no_indent ? 0 : level, spaces);
+        cur = write_indent(cur, no_indent ? 0 : level, spaces, tabs);
         if (likely(cpy) && unsafe_yyjson_get_subtype(val)) {
             cur = write_str_noesc(cur, str_ptr, str_len);
         } else {
@@ -9612,7 +9617,7 @@ val_begin:
     if (val_type == YYJSON_TYPE_NUM) {
         no_indent = (bool)((u8)ctn_obj & (u8)ctn_len);
         incr_len(FP_BUF_LEN + (no_indent ? 0 : level * 4));
-        cur = write_indent(cur, no_indent ? 0 : level, spaces);
+        cur = write_indent(cur, no_indent ? 0 : level, spaces, tabs);
         cur = write_num(cur, val, flg);
         if (unlikely(!cur)) goto fail_num;
         *cur++ = ',';
@@ -9636,7 +9641,7 @@ val_begin:
             ctn_depth--;
 #endif
             /* write empty container */
-            cur = write_indent(cur, no_indent ? 0 : level, spaces);
+            cur = write_indent(cur, no_indent ? 0 : level, spaces, tabs);
             *cur++ = (u8)('[' | ((u8)ctn_obj_tmp << 5));
             *cur++ = (u8)(']' | ((u8)ctn_obj_tmp << 5));
             *cur++ = ',';
@@ -9647,7 +9652,7 @@ val_begin:
             yyjson_write_ctx_set(--ctx, ctn_len, ctn_obj);
             ctn_len = ctn_len_tmp << (u8)ctn_obj_tmp;
             ctn_obj = ctn_obj_tmp;
-            cur = write_indent(cur, no_indent ? 0 : level, spaces);
+            cur = write_indent(cur, no_indent ? 0 : level, spaces, tabs);
             level++;
             *cur++ = (u8)('[' | ((u8)ctn_obj << 5));
             *cur++ = '\n';
@@ -9658,7 +9663,7 @@ val_begin:
     if (val_type == YYJSON_TYPE_BOOL) {
         no_indent = (bool)((u8)ctn_obj & (u8)ctn_len);
         incr_len(16 + (no_indent ? 0 : level * 4));
-        cur = write_indent(cur, no_indent ? 0 : level, spaces);
+        cur = write_indent(cur, no_indent ? 0 : level, spaces, tabs);
         cur = write_bool(cur, unsafe_yyjson_get_bool(val));
         cur += 2;
         goto val_end;
@@ -9666,7 +9671,7 @@ val_begin:
     if (val_type == YYJSON_TYPE_NULL) {
         no_indent = (bool)((u8)ctn_obj & (u8)ctn_len);
         incr_len(16 + (no_indent ? 0 : level * 4));
-        cur = write_indent(cur, no_indent ? 0 : level, spaces);
+        cur = write_indent(cur, no_indent ? 0 : level, spaces, tabs);
         cur = write_null(cur);
         cur += 2;
         goto val_end;
@@ -9677,7 +9682,7 @@ val_begin:
         str_ptr = (const u8 *)unsafe_yyjson_get_str(val);
         check_str_len(str_len);
         incr_len(str_len + 3 + (no_indent ? 0 : level * 4));
-        cur = write_indent(cur, no_indent ? 0 : level, spaces);
+        cur = write_indent(cur, no_indent ? 0 : level, spaces, tabs);
         cur = write_raw(cur, str_ptr, str_len);
         *cur++ = ',';
         *cur++ = '\n';
@@ -9698,7 +9703,7 @@ ctn_end:
     cur -= 2;
     *cur++ = '\n';
     incr_len(level * 4);
-    cur = write_indent(cur, --level, spaces);
+    cur = write_indent(cur, --level, spaces, tabs);
     *cur++ = (u8)(']' | ((u8)ctn_obj << 5));
     if (unlikely((u8 *)ctx >= end)) goto doc_end;
     yyjson_write_ctx_get(ctx++, &ctn_len, &ctn_obj);
@@ -9756,7 +9761,8 @@ static char *write_root(const yyjson_val *val,
 
     if (!unsafe_yyjson_is_ctn(root) || unsafe_yyjson_get_len(root) == 0) {
         return (char *)write_root_single(root, flg, alc, buf, dat_len, err);
-    } else if (flg & (YYJSON_WRITE_PRETTY | YYJSON_WRITE_PRETTY_TWO_SPACES)) {
+    } else if (flg & (YYJSON_WRITE_PRETTY | YYJSON_WRITE_PRETTY_TWO_SPACES |
+                      YYJSON_WRITE_PRETTY_TABS)) {
         return (char *)write_root_pretty(root, flg, alc, buf, dat_len, err);
     } else {
         return (char *)write_root_minify(root, flg, alc, buf, dat_len, err);
@@ -10208,7 +10214,8 @@ static_inline u8 *mut_write_root_pretty(const yyjson_mut_val *root,
     bool cpy = (enc_table == enc_table_cpy);
     bool esc = has_flg(ESCAPE_UNICODE) != 0;
     bool inv = has_allow(INVALID_UNICODE) != 0;
-    usize spaces = has_flg(PRETTY_TWO_SPACES) ? 2 : 4;
+    bool tabs = has_flg(PRETTY_TABS) != 0;
+    usize spaces = tabs ? 1 : has_flg(PRETTY_TWO_SPACES) ? 2 : 4;
     bool newline = has_flg(NEWLINE_AT_END) != 0;
 
     if (buf) {
@@ -10249,7 +10256,7 @@ val_begin:
         if ((sizeof(usize) < 8) && !no_indent &&
             level > (USIZE_MAX - 16 - str_len * 6) / 4) goto fail_alloc;
         incr_len(str_len * 6 + 16 + (no_indent ? 0 : level * 4));
-        cur = write_indent(cur, no_indent ? 0 : level, spaces);
+        cur = write_indent(cur, no_indent ? 0 : level, spaces, tabs);
         if (likely(cpy) && unsafe_yyjson_get_subtype(val)) {
             cur = write_str_noesc(cur, str_ptr, str_len);
         } else {
@@ -10264,7 +10271,7 @@ val_begin:
     if (val_type == YYJSON_TYPE_NUM) {
         no_indent = (bool)((u8)ctn_obj & (u8)ctn_len);
         incr_len(FP_BUF_LEN + (no_indent ? 0 : level * 4));
-        cur = write_indent(cur, no_indent ? 0 : level, spaces);
+        cur = write_indent(cur, no_indent ? 0 : level, spaces, tabs);
         cur = write_num(cur, (yyjson_val *)val, flg);
         if (unlikely(!cur)) goto fail_num;
         *cur++ = ',';
@@ -10288,7 +10295,7 @@ val_begin:
             ctn_depth--;
 #endif
             /* write empty container */
-            cur = write_indent(cur, no_indent ? 0 : level, spaces);
+            cur = write_indent(cur, no_indent ? 0 : level, spaces, tabs);
             *cur++ = (u8)('[' | ((u8)ctn_obj_tmp << 5));
             *cur++ = (u8)(']' | ((u8)ctn_obj_tmp << 5));
             *cur++ = ',';
@@ -10299,7 +10306,7 @@ val_begin:
             yyjson_mut_write_ctx_set(--ctx, ctn, ctn_len, ctn_obj);
             ctn_len = ctn_len_tmp << (u8)ctn_obj_tmp;
             ctn_obj = ctn_obj_tmp;
-            cur = write_indent(cur, no_indent ? 0 : level, spaces);
+            cur = write_indent(cur, no_indent ? 0 : level, spaces, tabs);
             level++;
             *cur++ = (u8)('[' | ((u8)ctn_obj << 5));
             *cur++ = '\n';
@@ -10312,7 +10319,7 @@ val_begin:
     if (val_type == YYJSON_TYPE_BOOL) {
         no_indent = (bool)((u8)ctn_obj & (u8)ctn_len);
         incr_len(16 + (no_indent ? 0 : level * 4));
-        cur = write_indent(cur, no_indent ? 0 : level, spaces);
+        cur = write_indent(cur, no_indent ? 0 : level, spaces, tabs);
         cur = write_bool(cur, unsafe_yyjson_get_bool(val));
         cur += 2;
         goto val_end;
@@ -10320,7 +10327,7 @@ val_begin:
     if (val_type == YYJSON_TYPE_NULL) {
         no_indent = (bool)((u8)ctn_obj & (u8)ctn_len);
         incr_len(16 + (no_indent ? 0 : level * 4));
-        cur = write_indent(cur, no_indent ? 0 : level, spaces);
+        cur = write_indent(cur, no_indent ? 0 : level, spaces, tabs);
         cur = write_null(cur);
         cur += 2;
         goto val_end;
@@ -10331,7 +10338,7 @@ val_begin:
         str_ptr = (const u8 *)unsafe_yyjson_get_str(val);
         check_str_len(str_len);
         incr_len(str_len + 3 + (no_indent ? 0 : level * 4));
-        cur = write_indent(cur, no_indent ? 0 : level, spaces);
+        cur = write_indent(cur, no_indent ? 0 : level, spaces, tabs);
         cur = write_raw(cur, str_ptr, str_len);
         *cur++ = ',';
         *cur++ = '\n';
@@ -10352,7 +10359,7 @@ ctn_end:
     cur -= 2;
     *cur++ = '\n';
     incr_len(level * 4);
-    cur = write_indent(cur, --level, spaces);
+    cur = write_indent(cur, --level, spaces, tabs);
     *cur++ = (u8)(']' | ((u8)ctn_obj << 5));
     if (unlikely((u8 *)ctx >= end)) goto doc_end;
     val = ctn->next;
@@ -10413,7 +10420,8 @@ static char *mut_write_root(const yyjson_mut_val *val,
 
     if (!unsafe_yyjson_is_ctn(root) || unsafe_yyjson_get_len(root) == 0) {
         return (char *)mut_write_root_single(root, flg, alc, buf, dat_len, err);
-    } else if (flg & (YYJSON_WRITE_PRETTY | YYJSON_WRITE_PRETTY_TWO_SPACES)) {
+    } else if (flg & (YYJSON_WRITE_PRETTY | YYJSON_WRITE_PRETTY_TWO_SPACES |
+                      YYJSON_WRITE_PRETTY_TABS)) {
         return (char *)mut_write_root_pretty(root, estimated_val_num,
                                              flg, alc, buf, dat_len, err);
     } else {
