@@ -1051,6 +1051,44 @@ yy_test_case(test_json_writer) {
         yyjson_doc_free(doc);
         yyjson_mut_doc_free(mdoc);
     }
+
+    // test tab indent and roundtrip
+    {
+        const char *input = "{\"a\":[1,{\"b\":true}]}";
+        const char *expected =
+            "{\n"
+            "\t\"a\": [\n"
+            "\t\t1,\n"
+            "\t\t{\n"
+            "\t\t\t\"b\": true\n"
+            "\t\t}\n"
+            "\t]\n"
+            "}";
+        yyjson_doc *doc = yyjson_read(input, strlen(input), 0);
+        yyjson_mut_doc *mdoc = yyjson_doc_mut_copy(doc, NULL);
+        yyjson_doc *parsed;
+        char *ret;
+
+        validate_json_write_with_flag(YYJSON_WRITE_PRETTY_TABS,
+                                      mdoc, NULL, false, expected);
+
+        ret = yyjson_write(doc, YYJSON_WRITE_PRETTY_TABS, NULL);
+        yy_assert(ret && strcmp(ret, expected) == 0);
+        parsed = yyjson_read(ret, strlen(ret), 0);
+        yy_assert(parsed && yyjson_equals(yyjson_doc_get_root(doc),
+                                          yyjson_doc_get_root(parsed)));
+        yyjson_doc_free(parsed);
+        free(ret);
+
+        ret = yyjson_mut_write(mdoc, YYJSON_WRITE_PRETTY_TABS |
+                                    YYJSON_WRITE_PRETTY_TWO_SPACES |
+                                    YYJSON_WRITE_PRETTY, NULL);
+        yy_assert(ret && strcmp(ret, expected) == 0);
+        free(ret);
+
+        yyjson_doc_free(doc);
+        yyjson_mut_doc_free(mdoc);
+    }
     
     
     // test newline at end
