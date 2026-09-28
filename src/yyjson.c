@@ -6255,7 +6255,8 @@ fail_depth:             return_err(cur, DEPTH, MSG_DEPTH);
  * whole input. This one only looks, and it does not read past eof. */
 static bool yy_hex4(const u8 *s, u32 *out) {
     u32 u = 0;
-    for (int k = 0; k < 4; k++) {
+    int k;
+    for (k = 0; k < 4; k++) {
         u8 h = s[k];
         u32 d;
         if (h >= '0' && h <= '9') d = (u32)(h - '0');
@@ -6397,7 +6398,8 @@ vskip_cont:
 /* Bytes read_num / read_inf may consume. A byte outside this set stops
  * the token, so the one-byte lookahead stays inside the caller buffer. */
 static bool yy_num_token_has_stop(const u8 *cur, const u8 *eof) {
-    for (const u8 *p = cur; p < eof; p++) {
+    const u8 *p;
+    for (p = cur; p < eof; p++) {
         u8 c = *p;
         if (c >= '0' && c <= '9') continue;
         switch (c) {
@@ -6418,14 +6420,19 @@ static bool read_num_bounded(u8 **cur, u8 *eof, u8 **pre,
                              yyjson_read_flag flg, yyjson_val *val,
                              const char **msg, yyjson_alc *alc) {
     usize n = (usize)(eof - *cur);
+    u8 stack[256 + YYJSON_PADDING_SIZE];
+    u8 *tmp = stack;
+    bool heap = false;
+    u8 *t;
+    u8 sink = 0;
+    u8 *sinkp = &sink;
+    bool ok;
+    usize used;
     /* 32 covers read_num's unrolled digit window and read_inf's 9-byte
      * literal. A token that runs to eof still looks one byte past it. */
     if (n >= 32 && yy_num_token_has_stop(*cur, eof)) {
         return read_num(cur, pre, flg, val, msg);
     }
-    u8 stack[256 + YYJSON_PADDING_SIZE];
-    u8 *tmp = stack;
-    bool heap = false;
     if (n > 256) {
         if (n > USIZE_MAX - YYJSON_PADDING_SIZE) {
             *msg = MSG_MALLOC;
@@ -6440,11 +6447,9 @@ static bool read_num_bounded(u8 **cur, u8 *eof, u8 **pre,
     }
     memcpy(tmp, *cur, n);
     memset(tmp + n, 0, YYJSON_PADDING_SIZE);
-    u8 *t = tmp;
-    u8 sink = 0;
-    u8 *sinkp = &sink;
-    bool ok = read_num(&t, &sinkp, flg, val, msg);
-    usize used = (usize)(t - tmp);
+    t = tmp;
+    ok = read_num(&t, &sinkp, flg, val, msg);
+    used = (usize)(t - tmp);
     if (used > n) used = n;
     *cur += used;
     if (heap) alc->free(alc->ctx, tmp);
@@ -6455,15 +6460,16 @@ static bool read_num_bounded(u8 **cur, u8 *eof, u8 **pre,
 static bool read_inf_or_nan_bounded(u8 **cur, u8 *eof, u8 **pre,
                                     yyjson_read_flag flg, yyjson_val *val) {
     usize n = (usize)(eof - *cur);
-    if (n >= 9) return read_inf_or_nan(cur, pre, flg, val);
     u8 tmp[16];
     u8 *t = tmp;
     u8 sink = 0;
     u8 *sinkp = &sink;
+    usize used;
+    if (n >= 9) return read_inf_or_nan(cur, pre, flg, val);
     memcpy(tmp, *cur, n);
     memset(tmp + n, 0, sizeof(tmp) - n);
     if (!read_inf_or_nan(&t, &sinkp, flg, val)) return false;
-    usize used = (usize)(t - tmp);
+    used = (usize)(t - tmp);
     if (used > n) used = n;
     *cur += used;
     return true;
@@ -6472,15 +6478,16 @@ static bool read_inf_or_nan_bounded(u8 **cur, u8 *eof, u8 **pre,
 static bool read_nan_bounded(u8 **cur, u8 *eof, u8 **pre,
                              yyjson_read_flag flg, yyjson_val *val) {
     usize n = (usize)(eof - *cur);
-    if (n >= 4) return read_nan(cur, pre, flg, val);
     u8 tmp[8];
     u8 *t = tmp;
     u8 sink = 0;
     u8 *sinkp = &sink;
+    usize used;
+    if (n >= 4) return read_nan(cur, pre, flg, val);
     memcpy(tmp, *cur, n);
     memset(tmp + n, 0, sizeof(tmp) - n);
     if (!read_nan(&t, &sinkp, flg, val)) return false;
-    usize used = (usize)(t - tmp);
+    used = (usize)(t - tmp);
     if (used > n) used = n;
     *cur += used;
     return true;
