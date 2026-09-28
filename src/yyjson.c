@@ -6416,6 +6416,10 @@ static bool yy_num_token_has_stop(const u8 *cur, const u8 *eof) {
     return false;
 }
 
+/* Same text as MSG_MALLOC, one object so the check does not need strcmp.
+ * Freestanding builds have no string.h. */
+static const char yy_num_oom[] = "failed to allocate memory";
+
 static bool read_num_bounded(u8 **cur, u8 *eof, u8 **pre,
                              yyjson_read_flag flg, yyjson_val *val,
                              const char **msg, yyjson_alc *alc) {
@@ -6435,12 +6439,12 @@ static bool read_num_bounded(u8 **cur, u8 *eof, u8 **pre,
     }
     if (n > 256) {
         if (n > USIZE_MAX - YYJSON_PADDING_SIZE) {
-            *msg = MSG_MALLOC;
+            *msg = yy_num_oom;
             return false;
         }
         tmp = (u8 *)alc->malloc(alc->ctx, n + YYJSON_PADDING_SIZE);
         if (!tmp) {
-            *msg = MSG_MALLOC;
+            *msg = yy_num_oom;
             return false;
         }
         heap = true;
@@ -6615,7 +6619,7 @@ static yyjson_doc *read_root_validate(u8 *hdr, u8 *cur, u8 *eof,
         }
         if (char_is_num(*cur)) {
             if (likely(read_num_bounded(&cur, eof, pre, flg, val, &msg, &alc))) goto doc_end;
-            if (msg != NULL && strcmp(msg, MSG_MALLOC) == 0) goto fail_alloc;
+            if (msg == yy_num_oom) goto fail_alloc;
             goto fail_number;
         }
         if (*cur == 't') {
@@ -6640,7 +6644,7 @@ arr_val_begin:
     if (char_is_num(*cur)) {
         ctn_len++;
         if (likely(read_num_bounded(&cur, eof, pre, flg, val, &msg, &alc))) goto arr_val_end;
-        if (msg != NULL && strcmp(msg, MSG_MALLOC) == 0) goto fail_alloc;
+        if (msg == yy_num_oom) goto fail_alloc;
         goto fail_number;
     }
     if (*cur == '"') {
@@ -6769,7 +6773,7 @@ obj_val_begin:
     }
     if (char_is_num(*cur)) {
         if (likely(read_num_bounded(&cur, eof, pre, flg, val, &msg, &alc))) goto obj_val_end;
-        if (msg != NULL && strcmp(msg, MSG_MALLOC) == 0) goto fail_alloc;
+        if (msg == yy_num_oom) goto fail_alloc;
         goto fail_number;
     }
     if (*cur == '{') { cur++; push_ctn(1); goto obj_key_begin; }
