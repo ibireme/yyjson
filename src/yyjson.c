@@ -6504,20 +6504,17 @@ static bool read_null_bounded(u8 **cur, u8 *eof, yyjson_val *val) {
 /*==============================================================================
  * MARK: - JSON Reader (validate-only, no value tree)
  *
- * Forks the read_root_minify state machine but uses an auxiliary stack
- * for container-type tracking instead of slot-based parent-offset
- * tracking, eliminating the O(N values) val_hdr buffer. Memory peak
- * drops from ~3x input size to ~1x input size (the input copy yyjson
- * already makes when YYJSON_READ_INSITU is not set, plus a ~256 B
- * inline depth stack that grows on demand).
+ * Forks the read_root_minify state machine but tracks container type
+ * on an auxiliary stack instead of a value array. The input is not
+ * copied unless INSITU is set. The stack starts at 32 entries and
+ * grows by doubling. Both the new capacity and its byte size are
+ * checked against USIZE_MAX before the allocator is called.
  *
- * The shared `dummy` yyjson_val is the sink for read_str / read_num /
- * read_true / read_false / read_null / read_inf_or_nan. Their writes
- * to `val->tag` and `val->uni.*` get clobbered repeatedly; we only
- * care about their boolean return value (well-formed or not).
+ * String, number, and literal readers report well-formedness only.
  *
  * Caller passes YYJSON_READ_VALIDATE_ONLY. The returned doc is a stub
- * sentinel; do not walk it. yyjson_doc_free() works normally.
+ * and must not be walked. yyjson_doc_free() releases the stub. The
+ * stub does not own the input.
  *============================================================================*/
 
 static yyjson_doc *read_root_validate(u8 *hdr, u8 *cur, u8 *eof,
@@ -6834,17 +6831,13 @@ doc_end:
         }
         if (cur < eof) goto fail_garbage;
     }
-    /* Successful validation. Allocate a stub doc (~64 bytes total).
-     * yyjson_doc_free() needs:
-     *   - doc->alc (set to the alc used to malloc this stub)
-     *   - doc->str_pool (set to hdr, the input copy yyjson_read_opts
-     *     malloc'd when INSITU was not set; doc_free will alc.free it
-     *     and otherwise we'd leak ~input-size bytes per validate call). */
+    /* Stub only. It does not own the input, so str_pool stays NULL
+     * and yyjson_doc_free() releases just this allocation. */
     doc = (yyjson_doc *)alc.malloc(alc.ctx, sizeof(yyjson_doc));
     if (unlikely(!doc)) goto fail_alloc;
     memset(doc, 0, sizeof(yyjson_doc));
     doc->alc = alc;
-    doc->str_pool = has_flg(INSITU) ? NULL : (char *)hdr;
+    doc->str_pool = NULL;
     if (stack_buf != stack_inline) alc.free(alc.ctx, stack_buf);
     return doc;
 
