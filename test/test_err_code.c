@@ -402,13 +402,16 @@ static void test_read_err_code(void) {
                                     YYJSON_READ_ALLOW_INVALID_UNICODE,
                                     NULL, &err));
     yy_assert(err.code == YYJSON_READ_ERROR_INVALID_STRING);
-    /* An invalid UTF-8 byte after an escape is still accepted. */
+#if !YYJSON_DISABLE_NON_STANDARD
+    /* An invalid UTF-8 byte after an escape is still accepted.
+     * ReduceBinary builds compile this flag out, so the byte is rejected. */
     memcpy(buf, "\"\\/\xFF" "e\"", 6);
     memset(&err, -1, sizeof(err));
     yyjson_doc_free(yyjson_read_opts((char *)buf, 6,
                                     YYJSON_READ_ALLOW_INVALID_UNICODE,
                                     NULL, &err));
     yy_assert(err.code == YYJSON_READ_SUCCESS);
+#endif
     buf[1] = 0xA0;
     for (len = 2; len < 10; len++) {
         memset(&err, -1, sizeof(err));
