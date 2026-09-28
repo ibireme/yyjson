@@ -908,6 +908,14 @@ static const yyjson_read_flag YYJSON_READ_JSON5 =
     (1 << 12) | /* YYJSON_READ_ALLOW_SINGLE_QUOTED_STR */
     (1 << 13);  /* YYJSON_READ_ALLOW_UNQUOTED_KEY */
 
+/** Validate JSON without building a value tree.
+    The reader checks well-formedness and returns a stub `yyjson_doc`.
+    The stub carries no values and must not be walked. `yyjson_doc_free()`
+    releases it. Unless `YYJSON_READ_INSITU` is also set, the input is not
+    copied. Other `YYJSON_READ_*` flags are honored. `NUMBER_AS_RAW` and
+    `BIGNUM_AS_RAW` do not store raw text in this mode. */
+static const yyjson_read_flag YYJSON_READ_VALIDATE_ONLY            = 1 << 14;
+
 
 
 /** Result code for JSON reader. */

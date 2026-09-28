@@ -863,7 +863,46 @@ static void test_json_incremental(void) {
 static void test_json_incremental() {}
 #endif
 
+static void test_json_validate(void) {
+#if !YYJSON_DISABLE_READER
+    yyjson_read_err err;
+    yyjson_doc *doc;
+    char buf[64];
+    const char *ok = "{\"a\":[1,true,null,\"z\"]}";
+    usize ok_len = strlen(ok);
+    memcpy(buf, ok, ok_len);
+    memset(&err, 0, sizeof(err));
+    doc = yyjson_read_opts(buf, ok_len, YYJSON_READ_VALIDATE_ONLY, NULL, &err);
+    yy_assert(doc != NULL);
+    yy_assert(err.code == YYJSON_READ_SUCCESS);
+    yy_assert(yyjson_doc_get_root(doc) == NULL);
+    yyjson_doc_free(doc);
+    yy_assert(memcmp(buf, ok, ok_len) == 0);
 
+    const char *bad = "{\"a\":";
+    memset(&err, -1, sizeof(err));
+    doc = yyjson_read_opts((char *)bad, strlen(bad), YYJSON_READ_VALIDATE_ONLY,
+                           NULL, &err);
+    yy_assert(doc == NULL);
+    yy_assert(err.code == YYJSON_READ_ERROR_UNEXPECTED_END);
+
+    char one[] = "x";
+    memset(&err, -1, sizeof(err));
+    doc = yyjson_read_opts(one, 1, YYJSON_READ_VALIDATE_ONLY, NULL, &err);
+    yy_assert(doc == NULL);
+    yy_assert(err.code != YYJSON_READ_SUCCESS);
+
+    char num[40];
+    memset(num, '1', sizeof(num));
+    memset(&err, 0, sizeof(err));
+    doc = yyjson_read_opts(num, sizeof(num), YYJSON_READ_VALIDATE_ONLY, NULL, &err);
+    yy_assert(doc != NULL);
+    yyjson_doc_free(doc);
+    yy_assert(num[0] == '1' && num[39] == '1');
+#else
+    (void)0;
+#endif
+}
 
 /*==============================================================================
  * MARK: - Entry
@@ -877,6 +916,7 @@ yy_test_case(test_json_reader) {
     test_json_encoding();
     test_json_whitespace();
     test_json_incremental();
+    test_json_validate();
 }
 
 #else
