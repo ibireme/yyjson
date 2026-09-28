@@ -394,6 +394,21 @@ static void test_read_err_code(void) {
         yy_assert(err.code == YYJSON_READ_ERROR_INVALID_STRING);
         yy_assert(err.pos == 1);
     }
+    /* A raw control byte stays invalid when invalid UTF-8 is allowed. */
+    memcpy(buf, "\"ab\"", 4);
+    buf[1] = 0x01;
+    memset(&err, -1, sizeof(err));
+    yyjson_doc_free(yyjson_read_opts((char *)buf, 4,
+                                    YYJSON_READ_ALLOW_INVALID_UNICODE,
+                                    NULL, &err));
+    yy_assert(err.code == YYJSON_READ_ERROR_INVALID_STRING);
+    /* An invalid UTF-8 byte after an escape is still accepted. */
+    memcpy(buf, "\"\\/\xFF" "e\"", 6);
+    memset(&err, -1, sizeof(err));
+    yyjson_doc_free(yyjson_read_opts((char *)buf, 6,
+                                    YYJSON_READ_ALLOW_INVALID_UNICODE,
+                                    NULL, &err));
+    yy_assert(err.code == YYJSON_READ_SUCCESS);
     buf[1] = 0xA0;
     for (len = 2; len < 10; len++) {
         memset(&err, -1, sizeof(err));

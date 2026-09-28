@@ -4974,10 +4974,16 @@ copy_escape:
         if (con) con[0] = con[1] = NULL;
         return true;
     } else {
-        if (!has_allow(INVALID_UNICODE)) {
+        /* ALLOW_INVALID_UNICODE relaxes UTF-8 checks, not JSON grammar.
+         * An unescaped byte below 0x20 is still illegal (RFC 8259).
+         * This arm is also reached for a normal byte after a tolerated
+         * invalid sequence: copy_utf8 jumps to copy_ascii_stop_1, which
+         * copies that byte and returns here. Reject only the control
+         * range, or that following byte is reported as a control. */
+        if (src >= eof) return_err(src, "unclosed string");
+        if (unlikely(*src < 0x20)) {
             return_err(src, "unexpected control character in string");
         }
-        if (src >= eof) return_err(src, "unclosed string");
         *dst++ = *src++;
     }
 
