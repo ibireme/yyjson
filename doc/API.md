@@ -511,6 +511,20 @@ For example:
 }
 ```
 
+### **YYJSON_READ_VALIDATE_ONLY**
+Check that the input is well-formed JSON and return a stub document.
+The stub has no values and must not be walked. `yyjson_doc_free()` releases it.
+
+The input is not copied unless `YYJSON_READ_INSITU` is also set. Other reader flags are honored. `YYJSON_READ_NUMBER_AS_RAW` and `YYJSON_READ_BIGNUM_AS_RAW` do not store raw text in this mode.
+
+```c
+yyjson_read_err err;
+yyjson_doc *doc = yyjson_read_opts(dat, len, YYJSON_READ_VALIDATE_ONLY, NULL, &err);
+if (doc) {
+    yyjson_doc_free(doc); /* success; do not read doc->root */
+}
+```
+
 ---------------
 # Writing JSON
 The library provides 5 sets of functions for writing JSON.<br/>
