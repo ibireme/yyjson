@@ -517,9 +517,14 @@ static void test_read_write(void) {
             { "\\uFFFD\\tqwerty", 8 + len },
             true
         });
+        /* A raw control byte stays invalid when invalid UTF-8 is allowed. */
+        {
+            string_val raw = { "\xC0\tqwerty", 2 + len };
+            validate_str_read(&raw, NULL, YYJSON_READ_ALLOW_INVALID_UNICODE);
+        }
         validate_read((string_set) {
             { "\xC0\tqwerty", 2 + len },
-            { "\xC0\tqwerty", 2 + len },
+            { "\xC0\\tqwerty", 3 + len },
             { "\xC0\\tqwerty", 3 + len },
             { NULL, 0 },
             { NULL, 0 },
@@ -604,7 +609,7 @@ static void test_read_write(void) {
     
     // special case
     validate_read((string_set) {
-        { "qwerty\0", 7 },
+        { NULL, 0 },
         { "qwerty\0", 7 },
         { "qwerty\0", 7 },
         { NULL, 0 },
@@ -612,7 +617,7 @@ static void test_read_write(void) {
         true
     });
     validate_read((string_set) {
-        { "qwerty\0abc", 10 },
+        { NULL, 0 },
         { "qwerty\0abc", 10 },
         { "qwerty\0abc", 10 },
         { NULL, 0 },
@@ -620,7 +625,7 @@ static void test_read_write(void) {
         true
     });
     validate_read((string_set) {
-        { "\tqwerty\0", 8 },
+        { NULL, 0 },
         { "\\tqwerty\0", 9 },
         { "\\tqwerty\0", 9 },
         { NULL, 0 },
@@ -628,7 +633,7 @@ static void test_read_write(void) {
         true
     });
     validate_read((string_set) {
-        { "\tqwerty\0abc", 11 },
+        { NULL, 0 },
         { "\\tqwerty\0abc", 12 },
         { "\\tqwerty\0abc", 12 },
         { NULL, 0 },
