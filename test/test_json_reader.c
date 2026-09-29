@@ -1042,9 +1042,11 @@ static void test_json_validate(void) {
         yy_assert(doc == NULL);
         memcpy(bad, "{x:1}", 5);
         bad[1] = (char)0xFF;
+#if !YYJSON_DISABLE_UTF8_VALIDATION
         memset(&err, -1, sizeof(err));
         doc = yyjson_read_opts(bad, 5, uq, NULL, &err);
         yy_assert(doc == NULL);
+#endif
         memset(&err, 0, sizeof(err));
         doc = yyjson_read_opts(bad, 5, uq | YYJSON_READ_ALLOW_INVALID_UNICODE, NULL, &err);
         yy_assert(doc != NULL);
