@@ -37,12 +37,43 @@ static const yyjson_read_flag ALL_FLAGS[] = {
  * MARK: - Helper
  *============================================================================*/
 
+static void test_validate_data(const char *path, char *dat, usize len,
+                               yyjson_read_flag flg, expect_type expect) {
+    char *copy;
+    yyjson_read_err err;
+    yyjson_doc *doc;
+    flg = (flg & (yyjson_read_flag)~YYJSON_READ_INSITU) | YYJSON_READ_VALIDATE_ONLY;
+    copy = (char *)malloc(len + YYJSON_PADDING_SIZE);
+    yy_assert(copy);
+    if (len) memcpy(copy, dat, len);
+    memset(copy + len, 0, YYJSON_PADDING_SIZE);
+    memset(&err, 0, sizeof(err));
+    doc = yyjson_read_opts(copy, len, flg, NULL, &err);
+    if (expect == EXPECT_PASS) {
+        yy_assertf(doc != NULL, "validate should pass but fail (0x%X): %s", flg, path);
+        yy_assert(yyjson_doc_get_root(doc) == NULL);
+        yy_assert(err.code == YYJSON_READ_SUCCESS);
+        yy_assert(err.msg == NULL);
+    }
+    if (expect == EXPECT_FAIL) {
+        yy_assertf(doc == NULL, "validate should fail but pass (0x%X): %s", flg, path);
+        yy_assert(err.code != YYJSON_READ_SUCCESS);
+        yy_assert(err.msg != NULL);
+    }
+    if (len) yy_assertf(memcmp(copy, dat, len) == 0,
+                        "validate mutated the input (0x%X): %s", flg, path);
+    yyjson_doc_free(doc);
+    free(copy);
+}
+
 static void test_read_data(const char *path, char *dat, usize len,
                            yyjson_read_flag flg, expect_type expect) {
 #if YYJSON_DISABLE_UTF8_VALIDATION
     bool is_utf8 = yy_str_is_utf8(dat, len);
     if (!is_utf8) return;
 #endif
+
+    test_validate_data(path, dat, len, flg, expect);
 
     // test read
     yyjson_read_err err;
@@ -899,6 +930,49 @@ static void test_json_validate(void) {
     yy_assert(doc != NULL);
     yyjson_doc_free(doc);
     yy_assert(num[0] == '1' && num[39] == '1');
+
+    {
+        char deep[82];
+        int i;
+        for (i = 0; i < 40; i++) deep[i] = '[';
+        deep[40] = '1';
+        for (i = 0; i < 40; i++) deep[41 + i] = ']';
+        memset(&err, 0, sizeof(err));
+        doc = yyjson_read_opts(deep, 81, YYJSON_READ_VALIDATE_ONLY, NULL, &err);
+        yy_assert(doc != NULL);
+        yyjson_doc_free(doc);
+    }
+    {
+        char big[300];
+        memset(big, '9', sizeof(big));
+        memset(&err, 0, sizeof(err));
+        doc = yyjson_read_opts(big, sizeof(big), YYJSON_READ_VALIDATE_ONLY, NULL, &err);
+        yy_assert(doc != NULL);
+        yyjson_doc_free(doc);
+        yy_assert(big[0] == '9' && big[299] == '9');
+    }
+    {
+        char raw[8];
+        memcpy(raw, "[1]", 3);
+        memset(raw + 3, 0, 4);
+        memset(&err, 0, sizeof(err));
+        doc = yyjson_read_opts(raw, 3,
+                               YYJSON_READ_VALIDATE_ONLY | YYJSON_READ_INSITU,
+                               NULL, &err);
+        yy_assert(doc != NULL);
+        yyjson_doc_free(doc);
+    }
+#if !YYJSON_DISABLE_NON_STANDARD
+    {
+        const char *inf = "[-Infinity,nan]";
+        memset(&err, 0, sizeof(err));
+        doc = yyjson_read_opts((char *)inf, strlen(inf),
+                               YYJSON_READ_VALIDATE_ONLY | YYJSON_READ_ALLOW_INF_AND_NAN,
+                               NULL, &err);
+        yy_assert(doc != NULL);
+        yyjson_doc_free(doc);
+    }
+#endif
 #else
     (void)0;
 #endif

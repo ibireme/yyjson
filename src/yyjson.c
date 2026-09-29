@@ -6269,17 +6269,77 @@ static bool yy_hex4(const u8 *s, u32 *out) {
     return true;
 }
 
-static bool read_str_validate(u8 **ptr, u8 *eof, yyjson_read_flag flg,
+static bool read_id_validate(u8 **ptr, u8 *eof, yyjson_read_flag flg,
+                             const char **msg) {
+    u8 *src = *ptr;
+#if YYJSON_DISABLE_UTF8_VALIDATION
+    (void)flg;
+#endif
+    if (src >= eof || !char_is_id_start(*src)) {
+        *msg = "unexpected character in key";
+        return false;
+    }
+    while (src < eof) {
+        if (*src == '\\') {
+            u32 u, u2;
+            if ((usize)(eof - src) < 6 || src[1] != 'u' || !yy_hex4(src + 2, &u)) {
+                *ptr = src;
+                *msg = "invalid escaped sequence in string";
+                return false;
+            }
+            src += 6;
+            if (u >= 0xD800 && u <= 0xDBFF) {
+                if ((usize)(eof - src) < 6 || src[0] != '\\' || src[1] != 'u' ||
+                    !yy_hex4(src + 2, &u2) || u2 < 0xDC00 || u2 > 0xDFFF) {
+                    *ptr = src;
+                    *msg = MSG_ERR_UTF8;
+                    return false;
+                }
+                src += 6;
+            } else if (u >= 0xDC00 && u <= 0xDFFF) {
+                *ptr = src;
+                *msg = MSG_ERR_UTF8;
+                return false;
+            }
+            continue;
+        }
+        if (char_is_id_ascii(*src)) {
+            src++;
+            continue;
+        }
+        if (*src < 0x80) break;
+        {
+            u8 c = *src;
+            usize need = c < 0xE0 ? 2 : (c < 0xF0 ? 3 : 4);
+            if (c >= 0xC2 && c <= 0xF4 && (usize)(eof - src) >= need) {
+                src += need;
+                continue;
+            }
+#if !YYJSON_DISABLE_UTF8_VALIDATION
+            if (!has_allow(INVALID_UNICODE)) {
+                *ptr = src;
+                *msg = MSG_ERR_UTF8;
+                return false;
+            }
+#endif
+            src++;
+        }
+    }
+    *ptr = src;
+    return true;
+}
+
+static bool read_str_validate(u8 **ptr, u8 *eof, u8 quo, yyjson_read_flag flg,
                               yyjson_val *val, const char **msg) {
     u8 *src = *ptr;
     (void)val;
-    if (src >= eof || *src != '"') {
+    if (src >= eof || *src != quo) {
         *msg = "unexpected character, expected a string";
         return false;
     }
     src++;
     while (src < eof) {
-        if (src + 16 <= eof) {
+        if (quo == '"' && src + 16 <= eof) {
 #define expr_vjump(i) \
             if (likely(char_is_ascii_skip(src[i]))) {} \
             else goto vskip_stop##i;
@@ -6298,7 +6358,7 @@ vskip_end:
         if (src >= eof) break;
 vskip_cont:
         if (src >= eof) break;
-        if (*src == '"') {
+        if (*src == quo) {
             *ptr = src + 1;
             return true;
         }
@@ -6340,17 +6400,73 @@ vskip_cont:
                 }
                 break;
             }
-            default:
+            default: {
+                if (has_allow(EXT_ESCAPE)) {
+                    switch (*src) {
+                    case '\'': case 'a': case 'v': case '?': case 'e':
+                        src++;
+                        break;
+                    case '0':
+                        if (src + 1 < eof && char_is_digit(src[1])) {
+                            *ptr = esc;
+                            *msg = "octal escape is not allowed";
+                            return false;
+                        }
+                        src++;
+                        break;
+                    case '1': case '2': case '3': case '4':
+                    case '5': case '6': case '7': case '8': case '9':
+                        *ptr = esc;
+                        *msg = "invalid number escape";
+                        return false;
+                    case 'x': {
+                        u8 hex;
+                        if ((usize)(eof - src) >= 3 && hex_load_2(src + 1, &hex)) {
+                            src += 3;
+                            break;
+                        }
+                        *ptr = esc;
+                        *msg = "invalid hex escape";
+                        return false;
+                    }
+                    case '\n':
+                        src++;
+                        break;
+                    case '\r':
+                        src++;
+                        if (src < eof && *src == '\n') src++;
+                        break;
+                    case 0xE2:
+                        if ((usize)(eof - src) >= 3 &&
+                            ((src[1] == 0x80 && src[2] == 0xA8) ||
+                             (src[1] == 0x80 && src[2] == 0xA9))) {
+                            src += 3;
+                        }
+                        break;
+                    default:
+                        break;
+                    }
+                    break;
+                }
+                if (quo == '\'' && *src == '\'') {
+                    src++;
+                    break;
+                }
                 *ptr = esc;
                 *msg = "invalid escaped sequence in string";
                 return false;
             }
+            }
             continue;
         }
         if (*src < 0x20) {
-            *ptr = src;
-            *msg = "unexpected control character in string";
-            return false;
+            if (!has_allow(INVALID_UNICODE)) {
+                *ptr = src;
+                *msg = "unexpected control character in string";
+                return false;
+            }
+            src++;
+            continue;
         }
         if (*src < 0x80) {
             src++;
@@ -6395,9 +6511,9 @@ vskip_cont:
     return false;
 }
 
-/* Bytes read_num / read_inf may consume. A byte outside this set stops
- * the token, so the one-byte lookahead stays inside the caller buffer. */
-static bool yy_num_token_has_stop(const u8 *cur, const u8 *eof) {
+/* Length of a number or inf/nan token. The real readers overwrite the
+ * byte after the token, so validate copies that span and parses the copy. */
+static usize yy_num_token_len(const u8 *cur, const u8 *eof) {
     const u8 *p;
     for (p = cur; p < eof; p++) {
         u8 c = *p;
@@ -6407,13 +6523,14 @@ static bool yy_num_token_has_stop(const u8 *cur, const u8 *eof) {
             case 'e': case 'E': case 'x': case 'X':
             case 'a': case 'A': case 'b': case 'B': case 'c': case 'C':
             case 'd': case 'D': case 'f': case 'F':
-            case 'i': case 'I': case 'n': case 'N': case 'y': case 'Y':
+            case 'i': case 'I': case 'n': case 'N': case 't': case 'T':
+            case 'y': case 'Y':
                 continue;
             default:
-                return true;
+                return (usize)(p - cur);
         }
     }
-    return false;
+    return (usize)(eof - cur);
 }
 
 /* Same text as MSG_MALLOC, one object so the check does not need strcmp.
@@ -6424,35 +6541,35 @@ static bool read_num_bounded(u8 **cur, u8 *eof, u8 **pre,
                              yyjson_read_flag flg, yyjson_val *val,
                              const char **msg, yyjson_alc *alc) {
     usize n = (usize)(eof - *cur);
+    usize tok = yy_num_token_len(*cur, eof);
+    usize copy_n = tok < n ? tok + 1 : tok;
     u8 stack[256 + YYJSON_PADDING_SIZE];
     u8 *tmp = stack;
     bool heap = false;
     u8 *t;
     u8 sink = 0;
     u8 *sinkp = &sink;
+    yyjson_val scratch;
     bool ok;
     usize used;
-    /* 32 covers read_num's unrolled digit window and read_inf's 9-byte
-     * literal. A token that runs to eof still looks one byte past it. */
-    if (n >= 32 && yy_num_token_has_stop(*cur, eof)) {
-        return read_num(cur, pre, flg, val, msg);
-    }
-    if (n > 256) {
-        if (n > USIZE_MAX - YYJSON_PADDING_SIZE) {
+    (void)pre;
+    (void)val;
+    if (copy_n > 256) {
+        if (copy_n > USIZE_MAX - YYJSON_PADDING_SIZE) {
             *msg = yy_num_oom;
             return false;
         }
-        tmp = (u8 *)alc->malloc(alc->ctx, n + YYJSON_PADDING_SIZE);
+        tmp = (u8 *)alc->malloc(alc->ctx, copy_n + YYJSON_PADDING_SIZE);
         if (!tmp) {
             *msg = yy_num_oom;
             return false;
         }
         heap = true;
     }
-    memcpy(tmp, *cur, n);
-    memset(tmp + n, 0, YYJSON_PADDING_SIZE);
+    memcpy(tmp, *cur, copy_n);
+    memset(tmp + copy_n, 0, YYJSON_PADDING_SIZE);
     t = tmp;
-    ok = read_num(&t, &sinkp, flg, val, msg);
+    ok = read_num(&t, &sinkp, flg, &scratch, msg);
     used = (usize)(t - tmp);
     if (used > n) used = n;
     *cur += used;
@@ -6464,15 +6581,18 @@ static bool read_num_bounded(u8 **cur, u8 *eof, u8 **pre,
 static bool read_inf_or_nan_bounded(u8 **cur, u8 *eof, u8 **pre,
                                     yyjson_read_flag flg, yyjson_val *val) {
     usize n = (usize)(eof - *cur);
+    usize copy_n = n > 15 ? 15 : n;
     u8 tmp[16];
     u8 *t = tmp;
     u8 sink = 0;
     u8 *sinkp = &sink;
+    yyjson_val scratch;
     usize used;
-    if (n >= 9) return read_inf_or_nan(cur, pre, flg, val);
-    memcpy(tmp, *cur, n);
-    memset(tmp + n, 0, sizeof(tmp) - n);
-    if (!read_inf_or_nan(&t, &sinkp, flg, val)) return false;
+    (void)pre;
+    (void)val;
+    memcpy(tmp, *cur, copy_n);
+    memset(tmp + copy_n, 0, sizeof(tmp) - copy_n);
+    if (!read_inf_or_nan(&t, &sinkp, flg, &scratch)) return false;
     used = (usize)(t - tmp);
     if (used > n) used = n;
     *cur += used;
@@ -6482,15 +6602,18 @@ static bool read_inf_or_nan_bounded(u8 **cur, u8 *eof, u8 **pre,
 static bool read_nan_bounded(u8 **cur, u8 *eof, u8 **pre,
                              yyjson_read_flag flg, yyjson_val *val) {
     usize n = (usize)(eof - *cur);
+    usize copy_n = n > 7 ? 7 : n;
     u8 tmp[8];
     u8 *t = tmp;
     u8 sink = 0;
     u8 *sinkp = &sink;
+    yyjson_val scratch;
     usize used;
-    if (n >= 4) return read_nan(cur, pre, flg, val);
-    memcpy(tmp, *cur, n);
-    memset(tmp + n, 0, sizeof(tmp) - n);
-    if (!read_nan(&t, &sinkp, flg, val)) return false;
+    (void)pre;
+    (void)val;
+    memcpy(tmp, *cur, copy_n);
+    memset(tmp + copy_n, 0, sizeof(tmp) - copy_n);
+    if (!read_nan(&t, &sinkp, flg, &scratch)) return false;
     used = (usize)(t - tmp);
     if (used > n) used = n;
     *cur += used;
@@ -6614,7 +6737,7 @@ static yyjson_doc *read_root_validate(u8 *hdr, u8 *cur, u8 *eof,
          * NUL into the buffer, and validate may be reading the caller. */
         if (unlikely(cur >= eof)) goto fail_character_val;
         if (*cur == '"') {
-            if (likely(read_str_validate(&cur, eof, flg, val, &msg))) goto doc_end;
+            if (likely(read_str_validate(&cur, eof, '"', flg, val, &msg))) goto doc_end;
             goto fail_string;
         }
         if (char_is_num(*cur)) {
@@ -6649,7 +6772,7 @@ arr_val_begin:
     }
     if (*cur == '"') {
         ctn_len++;
-        if (likely(read_str_validate(&cur, eof, flg, val, &msg))) goto arr_val_end;
+        if (likely(read_str_validate(&cur, eof, '"', flg, val, &msg))) goto arr_val_end;
         goto fail_string;
     }
     if (*cur == 't') {
@@ -6689,7 +6812,7 @@ arr_val_begin:
     }
     if (has_allow(SINGLE_QUOTED_STR) && *cur == '\'') {
         ctn_len++;
-        if (likely(read_str_sq(&cur, eof, flg, val, &msg))) goto arr_val_end;
+        if (likely(read_str_validate(&cur, eof, '\'', flg, val, &msg))) goto arr_val_end;
         goto fail_string;
     }
     if (has_allow(TRIVIA) && char_is_trivia(*cur)) {
@@ -6722,7 +6845,7 @@ obj_key_begin:
     if (unlikely(cur >= eof)) goto fail_character_obj_key;
     if (likely(*cur == '"')) {
         ctn_len++;
-        if (likely(read_str_validate(&cur, eof, flg, val, &msg))) goto obj_key_end;
+        if (likely(read_str_validate(&cur, eof, '"', flg, val, &msg))) goto obj_key_end;
         goto fail_string;
     }
     if (likely(*cur == '}')) {
@@ -6738,12 +6861,12 @@ obj_key_begin:
     }
     if (has_allow(SINGLE_QUOTED_STR) && *cur == '\'') {
         ctn_len++;
-        if (likely(read_str_sq(&cur, eof, flg, val, &msg))) goto obj_key_end;
+        if (likely(read_str_validate(&cur, eof, '\'', flg, val, &msg))) goto obj_key_end;
         goto fail_string;
     }
     if (has_allow(UNQUOTED_KEY) && char_is_id_start(*cur)) {
         ctn_len++;
-        if (read_str_id(&cur, eof, flg, pre, val, &msg)) goto obj_key_end;
+        if (read_id_validate(&cur, eof, flg, &msg)) goto obj_key_end;
         goto fail_string;
     }
     if (has_allow(TRIVIA) && char_is_trivia(*cur)) {
@@ -6768,7 +6891,7 @@ obj_key_end:
 obj_val_begin:
     if (unlikely(cur >= eof)) goto fail_character_val;
     if (*cur == '"') {
-        if (likely(read_str_validate(&cur, eof, flg, val, &msg))) goto obj_val_end;
+        if (likely(read_str_validate(&cur, eof, '"', flg, val, &msg))) goto obj_val_end;
         goto fail_string;
     }
     if (char_is_num(*cur)) {
@@ -6803,7 +6926,7 @@ obj_val_begin:
         goto fail_character_val;
     }
     if (has_allow(SINGLE_QUOTED_STR) && *cur == '\'') {
-        if (likely(read_str_sq(&cur, eof, flg, val, &msg))) goto obj_val_end;
+        if (likely(read_str_validate(&cur, eof, '\'', flg, val, &msg))) goto obj_val_end;
         goto fail_string;
     }
     if (has_allow(TRIVIA) && char_is_trivia(*cur)) {
@@ -6836,7 +6959,7 @@ doc_end:
     if (unlikely(cur < eof) && !has_flg(STOP_WHEN_DONE)) {
         while (cur < eof && char_is_space(*cur)) cur++;
         if (cur < eof && has_allow(TRIVIA) && char_is_trivia(*cur)) {
-            if (!skip_trivia(&cur, eof, flg) && cur != eof) {
+            if (!skip_trivia(&cur, eof, flg) && cur == eof) {
                 goto fail_comment;
             }
         }
