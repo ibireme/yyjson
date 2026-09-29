@@ -894,6 +894,25 @@ static void test_json_incremental(void) {
 static void test_json_incremental() {}
 #endif
 
+#if !YYJSON_DISABLE_READER
+static void *yy_fail_malloc(void *ctx, usize size) {
+    (void)ctx;
+    (void)size;
+    return NULL;
+}
+static void *yy_fail_realloc(void *ctx, void *ptr, usize old_size, usize size) {
+    (void)ctx;
+    (void)ptr;
+    (void)old_size;
+    (void)size;
+    return NULL;
+}
+static void yy_fail_free(void *ctx, void *ptr) {
+    (void)ctx;
+    (void)ptr;
+}
+#endif
+
 static void test_json_validate(void) {
 #if !YYJSON_DISABLE_READER
     yyjson_read_err err;
@@ -972,7 +991,85 @@ static void test_json_validate(void) {
         yy_assert(doc != NULL);
         yyjson_doc_free(doc);
     }
+    {
+        const char *oct = "[\"\\01\"]";
+        memset(&err, -1, sizeof(err));
+        doc = yyjson_read_opts((char *)oct, strlen(oct),
+                               YYJSON_READ_VALIDATE_ONLY | YYJSON_READ_ALLOW_EXT_ESCAPE,
+                               NULL, &err);
+        yy_assert(doc == NULL);
+    }
+    {
+        const char *crlf = "[\"a\\\r\nb\"]";
+        const char *cr = "[\"a\\\rb\"]";
+        char ls[8];
+        memset(&err, 0, sizeof(err));
+        doc = yyjson_read_opts((char *)crlf, strlen(crlf),
+                               YYJSON_READ_VALIDATE_ONLY | YYJSON_READ_ALLOW_EXT_ESCAPE,
+                               NULL, &err);
+        yy_assert(doc != NULL);
+        yyjson_doc_free(doc);
+        memset(&err, 0, sizeof(err));
+        doc = yyjson_read_opts((char *)cr, strlen(cr),
+                               YYJSON_READ_VALIDATE_ONLY | YYJSON_READ_ALLOW_EXT_ESCAPE,
+                               NULL, &err);
+        yy_assert(doc != NULL);
+        yyjson_doc_free(doc);
+        /* backslash followed by U+2028 */
+        memcpy(ls, "[\"\\", 3);
+        ls[3] = (char)0xE2;
+        ls[4] = (char)0x80;
+        ls[5] = (char)0xA8;
+        ls[6] = '"';
+        ls[7] = ']';
+        memset(&err, 0, sizeof(err));
+        doc = yyjson_read_opts(ls, 8,
+                               YYJSON_READ_VALIDATE_ONLY | YYJSON_READ_ALLOW_EXT_ESCAPE,
+                               NULL, &err);
+        yy_assert(doc != NULL);
+        yyjson_doc_free(doc);
+    }
+    {
+        const char *hi = "{\\uD800:1}";
+        const char *lo = "{\\uDE0A:1}";
+        char bad[8];
+        yyjson_read_flag uq = YYJSON_READ_VALIDATE_ONLY | YYJSON_READ_ALLOW_UNQUOTED_KEY;
+        memset(&err, -1, sizeof(err));
+        doc = yyjson_read_opts((char *)hi, strlen(hi), uq, NULL, &err);
+        yy_assert(doc == NULL);
+        memset(&err, -1, sizeof(err));
+        doc = yyjson_read_opts((char *)lo, strlen(lo), uq, NULL, &err);
+        yy_assert(doc == NULL);
+        memcpy(bad, "{x:1}", 5);
+        bad[1] = (char)0xFF;
+        memset(&err, -1, sizeof(err));
+        doc = yyjson_read_opts(bad, 5, uq, NULL, &err);
+        yy_assert(doc == NULL);
+        memset(&err, 0, sizeof(err));
+        doc = yyjson_read_opts(bad, 5, uq | YYJSON_READ_ALLOW_INVALID_UNICODE, NULL, &err);
+        yy_assert(doc != NULL);
+        yyjson_doc_free(doc);
+    }
 #endif
+    {
+        memset(&err, -1, sizeof(err));
+        doc = yyjson_read_opts((char *)"nul", 3, YYJSON_READ_VALIDATE_ONLY, NULL, &err);
+        yy_assert(doc == NULL);
+        yy_assert(err.code == YYJSON_READ_ERROR_UNEXPECTED_END);
+    }
+    {
+        yyjson_alc alc;
+        char big[300];
+        memset(&alc, 0, sizeof(alc));
+        alc.malloc = yy_fail_malloc;
+        alc.realloc = yy_fail_realloc;
+        alc.free = yy_fail_free;
+        memset(big, '9', sizeof(big));
+        memset(&err, -1, sizeof(err));
+        doc = yyjson_read_opts(big, sizeof(big), YYJSON_READ_VALIDATE_ONLY, &alc, &err);
+        yy_assert(doc == NULL);
+        yy_assert(err.code == YYJSON_READ_ERROR_MEMORY_ALLOCATION);
+    }
 #else
     (void)0;
 #endif
