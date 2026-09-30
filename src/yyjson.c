@@ -2961,6 +2961,52 @@ static_inline bool unsafe_yyjson_num_equals(const void *lhs, const void *rhs) {
     return false;
 }
 
+static_inline bool unsafe_yyjson_num_equals_numeric(const void *lhs,
+                                                    const void *rhs) {
+    const yyjson_val_uni *luni = &((const yyjson_val *)lhs)->uni;
+    const yyjson_val_uni *runi = &((const yyjson_val *)rhs)->uni;
+    yyjson_subtype lt = unsafe_yyjson_get_subtype(lhs);
+    yyjson_subtype rt = unsafe_yyjson_get_subtype(rhs);
+    f64 real;
+    if (lt != YYJSON_SUBTYPE_REAL && rt != YYJSON_SUBTYPE_REAL) {
+        return unsafe_yyjson_num_equals(lhs, rhs);
+    }
+    if (lt == rt) {
+        /* Preserve bitwise equality for non-finite values and allow +/-0. */
+#if YYJSON_HAS_IEEE_754
+        return luni->u64 == runi->u64 ||
+               ((luni->u64 << 1) == 0 && (runi->u64 << 1) == 0);
+#else
+        return luni->u64 == runi->u64 ||
+               (luni->f64 <= 0.0 && luni->f64 >= 0.0 &&
+                runi->f64 <= 0.0 && runi->f64 >= 0.0);
+#endif
+    }
+    if (lt != YYJSON_SUBTYPE_REAL) {
+        const yyjson_val_uni *tmp = luni;
+        luni = runi;
+        runi = tmp;
+        rt = lt;
+    }
+#if YYJSON_HAS_IEEE_754
+    /* Reject non-finite values even when fast-math assumes they cannot occur. */
+    if ((luni->u64 & F64_EXP_MASK) == F64_EXP_MASK) return false;
+#endif
+    real = luni->f64;
+    /* Check half-open bounds before casting rounded integer limits. */
+    if (rt == YYJSON_SUBTYPE_SINT) {
+        return real >= -9223372036854775808.0 &&
+               real < 9223372036854775808.0 &&
+               (i64)real == runi->i64 &&
+               real <= (f64)runi->i64 && real >= (f64)runi->i64;
+    } else {
+        f64 integer = unsafe_yyjson_u64_to_f64(runi->u64);
+        return real >= 0.0 && real < 18446744073709551616.0 &&
+               (u64)real == runi->u64 &&
+               real <= integer && real >= integer;
+    }
+}
+
 static_inline bool unsafe_yyjson_str_equals(const void *lhs, const void *rhs) {
     usize len = unsafe_yyjson_get_len(lhs);
     if (len != unsafe_yyjson_get_len(rhs)) return false;
@@ -3023,8 +3069,8 @@ bool unsafe_yyjson_equals(const yyjson_val *lhs, const yyjson_val *rhs) {
     }
 }
 
-bool unsafe_yyjson_mut_equals(const yyjson_mut_val *lhs,
-                              const yyjson_mut_val *rhs) {
+static bool yyjson_mut_equals_impl(const yyjson_mut_val *lhs,
+                                   const yyjson_mut_val *rhs, bool numeric) {
     yyjson_type type = unsafe_yyjson_get_type(lhs);
     if (type != unsafe_yyjson_get_type(rhs)) return false;
 
@@ -3040,7 +3086,9 @@ bool unsafe_yyjson_mut_equals(const yyjson_mut_val *lhs,
                     rhs = yyjson_mut_obj_iter_getn(&iter, lhs->uni.str,
                                                    unsafe_yyjson_get_len(lhs));
                     if (!rhs) return false;
-                    if (!unsafe_yyjson_mut_equals(lhs->next, rhs)) return false;
+                    if (!yyjson_mut_equals_impl(lhs->next, rhs, numeric)) {
+                        return false;
+                    }
                     lhs = lhs->next->next;
                 }
             }
@@ -3055,7 +3103,7 @@ bool unsafe_yyjson_mut_equals(const yyjson_mut_val *lhs,
                 lhs = (yyjson_mut_val *)lhs->uni.ptr;
                 rhs = (yyjson_mut_val *)rhs->uni.ptr;
                 while (len-- > 0) {
-                    if (!unsafe_yyjson_mut_equals(lhs, rhs)) return false;
+                    if (!yyjson_mut_equals_impl(lhs, rhs, numeric)) return false;
                     lhs = lhs->next;
                     rhs = rhs->next;
                 }
@@ -3064,7 +3112,8 @@ bool unsafe_yyjson_mut_equals(const yyjson_mut_val *lhs,
         }
 
         case YYJSON_TYPE_NUM:
-            return unsafe_yyjson_num_equals(lhs, rhs);
+            return numeric ? unsafe_yyjson_num_equals_numeric(lhs, rhs) :
+                             unsafe_yyjson_num_equals(lhs, rhs);
 
         case YYJSON_TYPE_RAW:
         case YYJSON_TYPE_STR:
@@ -3077,6 +3126,11 @@ bool unsafe_yyjson_mut_equals(const yyjson_mut_val *lhs,
         default:
             return false;
     }
+}
+
+bool unsafe_yyjson_mut_equals(const yyjson_mut_val *lhs,
+                              const yyjson_mut_val *rhs) {
+    return yyjson_mut_equals_impl(lhs, rhs, false);
 }
 
 bool yyjson_locate_pos(const char *str, size_t len, size_t pos,
@@ -11225,7 +11279,7 @@ yyjson_mut_val *yyjson_patch(yyjson_mut_doc *doc,
                 if (unlikely(!test)) {
                     return_err(POINTER, "failed to get `path`");
                 }
-                if (unlikely(!yyjson_mut_equals(val, test))) {
+                if (unlikely(!yyjson_mut_equals_impl(val, test, true))) {
                     return_err(EQUAL, "failed to test equal");
                 }
                 break;
@@ -11346,7 +11400,7 @@ yyjson_mut_val *yyjson_mut_patch(yyjson_mut_doc *doc,
                 if (unlikely(!test)) {
                     return_err(POINTER, "failed to get `path`");
                 }
-                if (unlikely(!yyjson_mut_equals(val, test))) {
+                if (unlikely(!yyjson_mut_equals_impl(val, test, true))) {
                     return_err(EQUAL, "failed to test equal");
                 }
                 break;
