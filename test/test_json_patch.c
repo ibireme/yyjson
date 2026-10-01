@@ -775,6 +775,38 @@ static void test_numeric_builder_equals(void) {
         test_patch_values(lhs, rhs, cases[idx].equal);
         test_patch_values(rhs, lhs, cases[idx].equal);
     }
+#if FLT_RADIX == 2 && DBL_MANT_DIG == 53 && \
+    DBL_MIN_EXP == -1021 && DBL_MAX_EXP == 1024
+    if (sizeof(double) == sizeof(uint64_t)) {
+        const struct {
+            uint64_t bits;
+            bool equal;
+        } zeros[] = {
+            { UINT64_C(0x0000000000000001), false },
+            { UINT64_C(0x8000000000000001), false },
+            { UINT64_C(0x000fffffffffffff), false },
+            { UINT64_C(0x0000000000000000), true },
+            { UINT64_C(0x8000000000000000), true },
+        };
+        for (idx = 0; idx < sizeof(zeros) / sizeof(zeros[0]); idx++) {
+            double value;
+            uint64_t bits;
+            yyjson_mut_val *real, *sint, *uint;
+            // Preserve subnormal inputs without floating-point arithmetic.
+            memcpy(&value, &zeros[idx].bits, sizeof(value));
+            memcpy(&bits, &value, sizeof(bits));
+            yy_assert(bits == zeros[idx].bits);
+            real = yyjson_mut_real(doc, value);
+            sint = yyjson_mut_sint(doc, 0);
+            uint = yyjson_mut_uint(doc, 0);
+            yy_assert(real && real->uni.u64 == zeros[idx].bits);
+            test_patch_values(real, sint, zeros[idx].equal);
+            test_patch_values(sint, real, zeros[idx].equal);
+            test_patch_values(real, uint, zeros[idx].equal);
+            test_patch_values(uint, real, zeros[idx].equal);
+        }
+    }
+#endif
     test_patch_values(yyjson_mut_sint(doc, INT64_MAX),
                       yyjson_mut_uint(doc, (uint64_t)INT64_MAX), true);
     test_patch_values(yyjson_mut_sint(doc, INT64_MIN),

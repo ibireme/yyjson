@@ -2991,6 +2991,8 @@ static_inline bool unsafe_yyjson_num_equals_numeric(const void *lhs,
 #if YYJSON_HAS_IEEE_754
     /* Reject non-finite values even when fast-math assumes they cannot occur. */
     if ((luni->u64 & F64_EXP_MASK) == F64_EXP_MASK) return false;
+    /* Compare zero by bits so subnormals cannot be flushed to zero. */
+    if (runi->u64 == 0) return (luni->u64 << 1) == 0;
 #endif
     real = luni->f64;
     /* Check half-open bounds before casting rounded integer limits. */
