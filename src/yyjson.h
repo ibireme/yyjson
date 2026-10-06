@@ -909,11 +909,14 @@ static const yyjson_read_flag YYJSON_READ_JSON5 =
     (1 << 13);  /* YYJSON_READ_ALLOW_UNQUOTED_KEY */
 
 /** Validate JSON without building a value tree.
-    The reader checks well-formedness and returns a stub `yyjson_doc`.
-    The stub carries no values and must not be walked. `yyjson_doc_free()`
-    releases it. Unless `YYJSON_READ_INSITU` is also set, the input is not
-    copied. Other `YYJSON_READ_*` flags are honored. `NUMBER_AS_RAW` and
-    `BIGNUM_AS_RAW` do not store raw text in this mode. */
+    The input is checked exactly as a normal read would check it, with the
+    same error code, position and message, and a stub `yyjson_doc` is
+    returned on success. The stub has no root value and does not keep the
+    input; `yyjson_doc_free()` releases it. The input is copied as in a
+    normal read unless `YYJSON_READ_INSITU` is set, in which case it may be
+    modified the same way. Memory beyond that copy is proportional to the
+    nesting depth, not to the number of values. The incremental reader
+    ignores this flag. */
 static const yyjson_read_flag YYJSON_READ_VALIDATE_ONLY            = 1 << 14;
 
 

@@ -512,10 +512,10 @@ For example:
 ```
 
 ### **YYJSON_READ_VALIDATE_ONLY**
-Check that the input is well-formed JSON and return a stub document.
-The stub has no values and must not be walked. `yyjson_doc_free()` releases it.
+Check that the input is well-formed JSON without building a value tree.
+Errors are reported exactly as a normal read reports them. On success a stub document is returned: it has no root value and does not keep the input, and `yyjson_doc_free()` releases it.
 
-The input is not copied unless `YYJSON_READ_INSITU` is also set. Other reader flags are honored. `YYJSON_READ_NUMBER_AS_RAW` and `YYJSON_READ_BIGNUM_AS_RAW` do not store raw text in this mode.
+The input is copied as in a normal read unless `YYJSON_READ_INSITU` is also set, in which case it may be modified the same way. Other reader flags are honored. Memory beyond the input copy is proportional to the nesting depth, not to the number of values.
 
 ```c
 yyjson_read_err err;
