@@ -40,9 +40,12 @@ static const yyjson_read_flag ALL_FLAGS[] = {
 static void test_validate_data(const char *path, char *dat, usize len,
                                yyjson_read_flag flg, expect_type expect) {
     char *copy;
-    yyjson_read_err err;
+    yyjson_read_err err, full_err;
     yyjson_doc *doc;
-    flg = (flg & (yyjson_read_flag)~YYJSON_READ_INSITU) | YYJSON_READ_VALIDATE_ONLY;
+    flg &= (yyjson_read_flag)~YYJSON_READ_INSITU;
+    doc = yyjson_read_opts(dat, len, flg, NULL, &full_err);
+    yyjson_doc_free(doc);
+    flg |= YYJSON_READ_VALIDATE_ONLY;
     copy = (char *)malloc(len + YYJSON_PADDING_SIZE);
     yy_assert(copy);
     if (len) memcpy(copy, dat, len);
@@ -60,6 +63,10 @@ static void test_validate_data(const char *path, char *dat, usize len,
         yy_assert(err.code != YYJSON_READ_SUCCESS);
         yy_assert(err.msg != NULL);
     }
+    yy_assertf(err.code == full_err.code && err.pos == full_err.pos &&
+               (err.msg == full_err.msg ||
+                (err.msg && full_err.msg && !strcmp(err.msg, full_err.msg))),
+               "validate and read disagree (0x%X): %s", flg, path);
     if (len) yy_assertf(memcmp(copy, dat, len) == 0,
                         "validate mutated the input (0x%X): %s", flg, path);
     yyjson_doc_free(doc);
@@ -952,13 +959,19 @@ static void test_json_validate(void) {
 
     {
         char deep[82];
+        yyjson_read_err full_err;
         int i;
         for (i = 0; i < 40; i++) deep[i] = '[';
         deep[40] = '1';
         for (i = 0; i < 40; i++) deep[41 + i] = ']';
+        yyjson_doc_free(yyjson_read_opts(deep, 81, 0, NULL, &full_err));
         memset(&err, 0, sizeof(err));
         doc = yyjson_read_opts(deep, 81, YYJSON_READ_VALIDATE_ONLY, NULL, &err);
+#if !YYJSON_READER_DEPTH_LIMIT
         yy_assert(doc != NULL);
+#endif
+        yy_assert((doc != NULL) == (full_err.code == YYJSON_READ_SUCCESS));
+        yy_assert(err.code == full_err.code && err.pos == full_err.pos);
         yyjson_doc_free(doc);
     }
     {
@@ -1051,6 +1064,23 @@ static void test_json_validate(void) {
         doc = yyjson_read_opts(bad, 5, uq | YYJSON_READ_ALLOW_INVALID_UNICODE, NULL, &err);
         yy_assert(doc != NULL);
         yyjson_doc_free(doc);
+    }
+#endif
+#if !YYJSON_FREESTANDING && !YYJSON_DISABLE_FILE
+    {
+        FILE *fp = tmpfile();
+        yy_assert(fp);
+        yy_assert(fwrite(ok, 1, ok_len, fp) == ok_len);
+        rewind(fp);
+        memset(&err, -1, sizeof(err));
+        doc = yyjson_read_fp(fp, YYJSON_READ_VALIDATE_ONLY, NULL, &err);
+        yy_assert(doc != NULL);
+        yy_assert(err.code == YYJSON_READ_SUCCESS);
+        yy_assert(yyjson_doc_get_root(doc) == NULL);
+        yy_assert(doc->str_pool == NULL);
+        yy_assert(yyjson_doc_get_read_size(doc) == ok_len);
+        yyjson_doc_free(doc);
+        fclose(fp);
     }
 #endif
     {
