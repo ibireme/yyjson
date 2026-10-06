@@ -788,6 +788,11 @@ static void test_numeric_builder_equals(void) {
             { UINT64_C(0x0000000000000000), true },
             { UINT64_C(0x8000000000000000), true },
         };
+        const uint64_t nan_bits[] = {
+            UINT64_C(0x7ff8000000000000),
+            UINT64_C(0x7ff8000000000001),
+        };
+        yyjson_mut_val *nan_vals[2];
         for (idx = 0; idx < sizeof(zeros) / sizeof(zeros[0]); idx++) {
             double value;
             uint64_t bits;
@@ -805,6 +810,16 @@ static void test_numeric_builder_equals(void) {
             test_patch_values(real, uint, zeros[idx].equal);
             test_patch_values(uint, real, zeros[idx].equal);
         }
+        // Use distinct NaN payloads without relying on negation.
+        for (idx = 0; idx < sizeof(nan_bits) / sizeof(nan_bits[0]); idx++) {
+            double value;
+            memcpy(&value, &nan_bits[idx], sizeof(value));
+            nan_vals[idx] = yyjson_mut_real(doc, value);
+            yy_assert(nan_vals[idx] && nan_vals[idx]->uni.u64 == nan_bits[idx]);
+            test_patch_values(nan_vals[idx], nan_vals[idx], true);
+        }
+        test_patch_values(nan_vals[0], nan_vals[1], false);
+        test_patch_values(nan_vals[1], nan_vals[0], false);
     }
 #endif
     test_patch_values(yyjson_mut_sint(doc, INT64_MAX),
@@ -816,7 +831,6 @@ static void test_numeric_builder_equals(void) {
     test_patch_values(yyjson_mut_raw(doc, "1"), yyjson_mut_uint(doc, 1), false);
     // Non-finite extension values retain their existing equality behavior.
     test_patch_values(yyjson_mut_real(doc, NAN), yyjson_mut_real(doc, NAN), true);
-    test_patch_values(yyjson_mut_real(doc, NAN), yyjson_mut_real(doc, -NAN), false);
     test_patch_values(yyjson_mut_real(doc, INFINITY),
                       yyjson_mut_real(doc, INFINITY), true);
     test_patch_values(yyjson_mut_real(doc, INFINITY),
