@@ -9111,13 +9111,19 @@ static_inline u8 *write_bool(u8 *cur, bool val) {
 /** Write indent (requires level x 4 bytes buffer).
     Param spaces should not larger than 4. */
 static_inline u8 *write_indent(u8 *cur, usize level, usize spaces, bool tabs) {
-    if (tabs) {
-        memset(cur, '\t', level);
-        return cur + level;
-    }
-    while (level-- > 0) {
-        byte_copy_4(cur, "    ");
-        cur += spaces;
+    if (likely(!tabs)) {
+        while (level-- > 0) {
+            byte_copy_4(cur, "    ");
+            cur += spaces;
+        }
+    } else if (level) {
+        while (level > 4) {
+            byte_copy_4(cur, "\t\t\t\t");
+            cur += 4;
+            level -= 4;
+        }
+        byte_copy_4(cur, "\t\t\t\t");
+        cur += level;
     }
     return cur;
 }
