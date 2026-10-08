@@ -11176,10 +11176,26 @@ static patch_op patch_op_get(yyjson_val *op) {
 #define return_err_val(_key) \
     return_err(INVALID_MEMBER, "invalid member " _key)
 
+/* The `add` operation replaces the value if the target location is an
+   existing object member, and inserts it otherwise (RFC 6902, 4.1). */
+static_inline bool patch_ptr_add(yyjson_mut_val *root,
+                                 const char *ptr, usize len,
+                                 yyjson_mut_val *val, yyjson_mut_doc *doc,
+                                 yyjson_ptr_err *err) {
+    yyjson_ptr_ctx ctx;
+    memset(&ctx, 0, sizeof(ctx));
+    if (yyjson_mut_ptr_getx(root, ptr, len, &ctx, NULL) &&
+        yyjson_mut_is_obj(ctx.ctn)) {
+        return yyjson_mut_ptr_replacex(root, ptr, len, val,
+                                       NULL, err) != NULL;
+    }
+    return yyjson_mut_ptr_addx(root, ptr, len, val, doc, false, NULL, err);
+}
+
 #define ptr_get(_ptr) yyjson_mut_ptr_getx( \
     root, _ptr->uni.str, _ptr##_len, NULL, &err->ptr)
-#define ptr_add(_ptr, _val) yyjson_mut_ptr_addx( \
-    root, _ptr->uni.str, _ptr##_len, _val, doc, false, NULL, &err->ptr)
+#define ptr_add(_ptr, _val) patch_ptr_add( \
+    root, _ptr->uni.str, _ptr##_len, _val, doc, &err->ptr)
 #define ptr_remove(_ptr) yyjson_mut_ptr_removex( \
     root, _ptr->uni.str, _ptr##_len, NULL, &err->ptr)
 #define ptr_replace(_ptr, _val)yyjson_mut_ptr_replacex( \
