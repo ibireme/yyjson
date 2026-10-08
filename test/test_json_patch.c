@@ -629,9 +629,229 @@ static void test_more(void) {
     });
 }
 
+// Test parsed values through both patch APIs, with and without error output.
+static void test_patch_equals(const char *lhs, const char *rhs, bool equal) {
+    char patch[512];
+    int len = snprintf(patch, sizeof(patch),
+                       "[{\"op\":\"test\",\"path\":\"\",\"value\":%s}]", rhs);
+    yyjson_doc *src = yyjson_read(lhs, strlen(lhs), 0);
+    char *dst = equal ? yyjson_write(src, 0, NULL) : NULL;
+    yy_assert(len > 0 && (size_t)len < sizeof(patch));
+    yy_assert(src != NULL);
+    yy_assert(!equal || dst != NULL);
+    test_patch((patch_data){
+        .src = lhs,
+        .patch = patch,
+        .dst = dst,
+        .err = { .code = equal ? YYJSON_PATCH_SUCCESS : YYJSON_PATCH_ERROR_EQUAL },
+    });
+    free(dst);
+    yyjson_doc_free(src);
+}
+
+// Preserve builder-selected subtypes, including positive signed integers and RAW.
+static void test_patch_values(yyjson_mut_val *lhs, yyjson_mut_val *rhs,
+                              bool equal) {
+    yyjson_mut_doc *doc = yyjson_mut_doc_new(NULL);
+    yyjson_mut_val *patch = yyjson_mut_arr(doc);
+    yyjson_mut_val *op = yyjson_mut_obj(doc);
+    yyjson_doc *src_doc, *pat_doc;
+    yyjson_patch_err err;
+    patch_data data = { .err = {
+        .code = equal ? YYJSON_PATCH_SUCCESS : YYJSON_PATCH_ERROR_EQUAL
+    } };
+    size_t idx;
+    yy_assert(doc && lhs && rhs && patch && op);
+    yy_assert(yyjson_mut_obj_add_str(doc, op, "op", "test"));
+    yy_assert(yyjson_mut_obj_add_str(doc, op, "path", ""));
+    yy_assert(yyjson_mut_obj_add_val(doc, op, "value", rhs));
+    yy_assert(yyjson_mut_arr_add_val(patch, op));
+    src_doc = yyjson_mut_val_imut_copy(lhs, NULL);
+    pat_doc = yyjson_mut_val_imut_copy(patch, NULL);
+    yy_assert(src_doc && pat_doc);
+    for (idx = 0; idx < 2; idx++) {
+        yyjson_mut_val *ret;
+        yyjson_patch_err *err_ptr = idx ? &err : NULL;
+        memset(&err, -1, sizeof(err));
+        ret = yyjson_patch(doc, yyjson_doc_get_root(src_doc),
+                           yyjson_doc_get_root(pat_doc), err_ptr);
+        yy_assertf((ret != NULL) == equal,
+                   "expected equal=%d for payloads %llx and %llx",
+                   (int)equal, (unsigned long long)lhs->uni.u64,
+                   (unsigned long long)rhs->uni.u64);
+        if (ret) yy_assert(yyjson_mut_equals(ret, lhs));
+        if (err_ptr) assert_err_eq(err_ptr, &data);
+        memset(&err, -1, sizeof(err));
+        ret = yyjson_mut_patch(doc, lhs, patch, err_ptr);
+        yy_assert((ret != NULL) == equal);
+        if (ret) yy_assert(yyjson_mut_equals(ret, lhs));
+        if (err_ptr) assert_err_eq(err_ptr, &data);
+    }
+    yyjson_doc_free(src_doc);
+    yyjson_doc_free(pat_doc);
+    yyjson_mut_doc_free(doc);
+}
+
+static void test_numeric_equals(void) {
+    const struct {
+        const char *lhs;
+        const char *rhs;
+        bool equal;
+    } cases[] = {
+        { "1", "1.0", true },
+        { "-5", "-5.0", true },
+        { "1", "1.5", false },
+        { "1", "-1.0", false },
+        { "-5", "-5.5", false },
+        { "9007199254740992", "9007199254740992.0", true },
+        { "9007199254740993", "9007199254740992.0", false },
+        { "9007199254740994", "9007199254740994.0", true },
+        { "-9223372036854775808", "-9223372036854775808.0", true },
+        { "-9223372036854775808", "-9223372036854777856.0", false },
+        { "9223372036854775807", "9223372036854775808.0", false },
+        { "9223372036854775808", "9223372036854775808.0", true },
+        { "18446744073709549568", "18446744073709549568.0", true },
+        { "18446744073709551615", "18446744073709551616.0", false },
+        { "{\"a\":[1,{\"b\":-5}],\"c\":0.0}",
+          "{\"c\":-0.0,\"a\":[1.0,{\"b\":-5.0}]}", true },
+        { "[1,{\"a\":2}]", "[1.0,{\"a\":2.5}]", false },
+        { "{\"1\":1}", "{\"1.0\":1.0}", false },
+        { "1", "\"1\"", false },
+        { "\"1\"", "\"1.0\"", false },
+        { "1", "true", false },
+    };
+    const char *zeros[] = { "0", "-0", "0.0", "-0.0" };
+    size_t idx, jdx;
+    for (idx = 0; idx < sizeof(cases) / sizeof(cases[0]); idx++) {
+        test_patch_equals(cases[idx].lhs, cases[idx].rhs, cases[idx].equal);
+        test_patch_equals(cases[idx].rhs, cases[idx].lhs, cases[idx].equal);
+    }
+    for (idx = 0; idx < sizeof(zeros) / sizeof(zeros[0]); idx++) {
+        for (jdx = 0; jdx < sizeof(zeros) / sizeof(zeros[0]); jdx++) {
+            test_patch_equals(zeros[idx], zeros[jdx], true);
+        }
+    }
+
+    test_patch((patch_data){
+        .src = "{\"n\":1}",
+        .patch = "["
+            "{\"op\":\"test\",\"path\":\"/n\",\"value\":1.0},"
+            "{\"op\":\"replace\",\"path\":\"/n\",\"value\":2}"
+        "]",
+        .dst = "{\"n\":2}",
+    });
+    test_patch((patch_data){
+        .src = "{\"n\":1}",
+        .patch = "["
+            "{\"op\":\"test\",\"path\":\"/n\",\"value\":1.0},"
+            "{\"op\":\"test\",\"path\":\"/n\",\"value\":1.5},"
+            "{\"op\":\"remove\",\"path\":\"/missing\"}"
+        "]",
+        .err = { .code = YYJSON_PATCH_ERROR_EQUAL, .idx = 1 },
+    });
+}
+
+static void test_numeric_builder_equals(void) {
+    const struct {
+        int64_t sint;
+        double real;
+        bool equal;
+    } cases[] = {
+        { 1, 1.0, true },
+        { 0, -0.0, true },
+        { 0, 0.5, false },
+        { INT64_C(9007199254740993), 9007199254740992.0, false },
+        { INT64_C(9007199254740994), 9007199254740994.0, true },
+        { INT64_MIN, -9223372036854775808.0, true },
+        { INT64_MAX, 9223372036854775808.0, false },
+    };
+    const double non_finite[] = { NAN, INFINITY, -INFINITY };
+    yyjson_mut_doc *doc = yyjson_mut_doc_new(NULL);
+    size_t idx;
+    yy_assert(doc);
+    for (idx = 0; idx < sizeof(cases) / sizeof(cases[0]); idx++) {
+        yyjson_mut_val *lhs = yyjson_mut_sint(doc, cases[idx].sint);
+        yyjson_mut_val *rhs = yyjson_mut_real(doc, cases[idx].real);
+        test_patch_values(lhs, rhs, cases[idx].equal);
+        test_patch_values(rhs, lhs, cases[idx].equal);
+    }
+#if FLT_RADIX == 2 && DBL_MANT_DIG == 53 && \
+    DBL_MIN_EXP == -1021 && DBL_MAX_EXP == 1024
+    if (sizeof(double) == sizeof(uint64_t)) {
+        const struct {
+            uint64_t bits;
+            bool equal;
+        } zeros[] = {
+            { UINT64_C(0x0000000000000001), false },
+            { UINT64_C(0x8000000000000001), false },
+            { UINT64_C(0x000fffffffffffff), false },
+            { UINT64_C(0x0000000000000000), true },
+            { UINT64_C(0x8000000000000000), true },
+        };
+        const uint64_t nan_bits[] = {
+            UINT64_C(0x7ff8000000000000),
+            UINT64_C(0x7ff8000000000001),
+        };
+        yyjson_mut_val *nan_vals[2];
+        for (idx = 0; idx < sizeof(zeros) / sizeof(zeros[0]); idx++) {
+            double value;
+            uint64_t bits;
+            yyjson_mut_val *real, *sint, *uint;
+            // Preserve subnormal inputs without floating-point arithmetic.
+            memcpy(&value, &zeros[idx].bits, sizeof(value));
+            memcpy(&bits, &value, sizeof(bits));
+            yy_assert(bits == zeros[idx].bits);
+            real = yyjson_mut_real(doc, value);
+            sint = yyjson_mut_sint(doc, 0);
+            uint = yyjson_mut_uint(doc, 0);
+            yy_assert(real && real->uni.u64 == zeros[idx].bits);
+            test_patch_values(real, sint, zeros[idx].equal);
+            test_patch_values(sint, real, zeros[idx].equal);
+            test_patch_values(real, uint, zeros[idx].equal);
+            test_patch_values(uint, real, zeros[idx].equal);
+        }
+        // Use distinct NaN payloads without relying on negation.
+        for (idx = 0; idx < sizeof(nan_bits) / sizeof(nan_bits[0]); idx++) {
+            double value;
+            memcpy(&value, &nan_bits[idx], sizeof(value));
+            nan_vals[idx] = yyjson_mut_real(doc, value);
+            yy_assert(nan_vals[idx] && nan_vals[idx]->uni.u64 == nan_bits[idx]);
+            test_patch_values(nan_vals[idx], nan_vals[idx], true);
+        }
+        test_patch_values(nan_vals[0], nan_vals[1], false);
+        test_patch_values(nan_vals[1], nan_vals[0], false);
+    }
+#endif
+    test_patch_values(yyjson_mut_sint(doc, INT64_MAX),
+                      yyjson_mut_uint(doc, (uint64_t)INT64_MAX), true);
+    test_patch_values(yyjson_mut_sint(doc, INT64_MIN),
+                      yyjson_mut_uint(doc, UINT64_C(9223372036854775808)), false);
+    test_patch_values(yyjson_mut_raw(doc, "1"), yyjson_mut_raw(doc, "1"), true);
+    test_patch_values(yyjson_mut_raw(doc, "1"), yyjson_mut_raw(doc, "1.0"), false);
+    test_patch_values(yyjson_mut_raw(doc, "1"), yyjson_mut_uint(doc, 1), false);
+    // Non-finite extension values retain their existing equality behavior.
+    test_patch_values(yyjson_mut_real(doc, NAN), yyjson_mut_real(doc, NAN), true);
+    test_patch_values(yyjson_mut_real(doc, INFINITY),
+                      yyjson_mut_real(doc, INFINITY), true);
+    test_patch_values(yyjson_mut_real(doc, INFINITY),
+                      yyjson_mut_real(doc, -INFINITY), false);
+    for (idx = 0; idx < sizeof(non_finite) / sizeof(non_finite[0]); idx++) {
+        yyjson_mut_val *real = yyjson_mut_real(doc, non_finite[idx]);
+        yyjson_mut_val *sint = yyjson_mut_sint(doc, 0);
+        yyjson_mut_val *uint = yyjson_mut_uint(doc, UINT64_MAX);
+        test_patch_values(real, sint, false);
+        test_patch_values(sint, real, false);
+        test_patch_values(real, uint, false);
+        test_patch_values(uint, real, false);
+    }
+    yyjson_mut_doc_free(doc);
+}
+
 yy_test_case(test_json_patch) {
     test_spec();
     test_more();
+    test_numeric_equals();
+    test_numeric_builder_equals();
 }
 
 #else
