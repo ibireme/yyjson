@@ -2781,8 +2781,13 @@ yyjson_mut_val *yyjson_val_mut_copy(yyjson_mut_doc *m_doc,
     return m_vals;
 }
 
-static yyjson_mut_val *unsafe_yyjson_mut_val_mut_copy(
-    yyjson_mut_doc *m_doc, const yyjson_mut_val *m_vals) {
+/* Maximum nesting depth for recursive mutable value copy. This prevents stack
+   overflow when deep-copying deeply nested documents, e.g. via
+   yyjson_mut_val_mut_copy() or the JSON Patch "add"/"replace" operations. */
+#define YYJSON_MUT_COPY_DEPTH_LIMIT 1024
+
+static yyjson_mut_val *unsafe_yyjson_mut_val_mut_copy_impl(
+    yyjson_mut_doc *m_doc, const yyjson_mut_val *m_vals, usize depth) {
     /*
      The mutable object or array stores all sub-values in a circular linked
      list, so we can traverse them in the same loop. The traversal starts from
@@ -2790,7 +2795,9 @@ static yyjson_mut_val *unsafe_yyjson_mut_val_mut_copy(
      second to last item, which needs to be linked to the last item to close the
      circle.
      */
-    yyjson_mut_val *m_val = unsafe_yyjson_mut_val(m_doc, 1);
+    yyjson_mut_val *m_val;
+    if (unlikely(depth > YYJSON_MUT_COPY_DEPTH_LIMIT)) return NULL;
+    m_val = unsafe_yyjson_mut_val(m_doc, 1);
     if (unlikely(!m_val)) return NULL;
     m_val->tag = m_vals->tag;
 
@@ -2800,11 +2807,11 @@ static yyjson_mut_val *unsafe_yyjson_mut_val_mut_copy(
             if (unsafe_yyjson_get_len(m_vals) > 0) {
                 yyjson_mut_val *last = (yyjson_mut_val *)m_vals->uni.ptr;
                 yyjson_mut_val *next = last->next, *prev;
-                prev = unsafe_yyjson_mut_val_mut_copy(m_doc, last);
+                prev = unsafe_yyjson_mut_val_mut_copy_impl(m_doc, last, depth + 1);
                 if (!prev) return NULL;
                 m_val->uni.ptr = (void *)prev;
                 while (next != last) {
-                    prev->next = unsafe_yyjson_mut_val_mut_copy(m_doc, next);
+                    prev->next = unsafe_yyjson_mut_val_mut_copy_impl(m_doc, next, depth + 1);
                     if (!prev->next) return NULL;
                     prev = prev->next;
                     next = next->next;
@@ -2825,6 +2832,11 @@ static yyjson_mut_val *unsafe_yyjson_mut_val_mut_copy(
             break;
     }
     return m_val;
+}
+
+static yyjson_mut_val *unsafe_yyjson_mut_val_mut_copy(
+    yyjson_mut_doc *m_doc, const yyjson_mut_val *m_vals) {
+    return unsafe_yyjson_mut_val_mut_copy_impl(m_doc, m_vals, 0);
 }
 
 yyjson_mut_val *yyjson_mut_val_mut_copy(yyjson_mut_doc *doc,
@@ -3016,9 +3028,16 @@ static_inline bool unsafe_yyjson_str_equals(const void *lhs, const void *rhs) {
                    unsafe_yyjson_get_str(rhs), len);
 }
 
-bool unsafe_yyjson_equals(const yyjson_val *lhs, const yyjson_val *rhs) {
+/* Maximum nesting depth for recursive value comparison. This prevents stack
+   overflow when comparing deeply nested documents with yyjson_equals(),
+   yyjson_mut_equals(), or the JSON Patch "test" operation. */
+#define YYJSON_EQUALS_DEPTH_LIMIT 1024
+
+static bool unsafe_yyjson_equals_impl(const yyjson_val *lhs,
+                                      const yyjson_val *rhs, usize depth) {
     yyjson_type type = unsafe_yyjson_get_type(lhs);
     if (type != unsafe_yyjson_get_type(rhs)) return false;
+    if (unlikely(depth > YYJSON_EQUALS_DEPTH_LIMIT)) return false;
 
     switch (type) {
         case YYJSON_TYPE_OBJ: {
@@ -3032,7 +3051,7 @@ bool unsafe_yyjson_equals(const yyjson_val *lhs, const yyjson_val *rhs) {
                     rhs = yyjson_obj_iter_getn(&iter, lhs->uni.str,
                                                unsafe_yyjson_get_len(lhs));
                     if (!rhs) return false;
-                    if (!unsafe_yyjson_equals(lhs + 1, rhs)) return false;
+                    if (!unsafe_yyjson_equals_impl(lhs + 1, rhs, depth + 1)) return false;
                     lhs = unsafe_yyjson_get_next(lhs + 1);
                 }
             }
@@ -3047,7 +3066,7 @@ bool unsafe_yyjson_equals(const yyjson_val *lhs, const yyjson_val *rhs) {
                 lhs = unsafe_yyjson_get_first(lhs);
                 rhs = unsafe_yyjson_get_first(rhs);
                 while (len-- > 0) {
-                    if (!unsafe_yyjson_equals(lhs, rhs)) return false;
+                    if (!unsafe_yyjson_equals_impl(lhs, rhs, depth + 1)) return false;
                     lhs = unsafe_yyjson_get_next(lhs);
                     rhs = unsafe_yyjson_get_next(rhs);
                 }
@@ -3071,10 +3090,16 @@ bool unsafe_yyjson_equals(const yyjson_val *lhs, const yyjson_val *rhs) {
     }
 }
 
+bool unsafe_yyjson_equals(const yyjson_val *lhs, const yyjson_val *rhs) {
+    return unsafe_yyjson_equals_impl(lhs, rhs, 0);
+}
+
 static bool yyjson_mut_equals_impl(const yyjson_mut_val *lhs,
-                                   const yyjson_mut_val *rhs, bool numeric) {
+                                   const yyjson_mut_val *rhs, bool numeric,
+                                   usize depth) {
     yyjson_type type = unsafe_yyjson_get_type(lhs);
     if (type != unsafe_yyjson_get_type(rhs)) return false;
+    if (unlikely(depth > YYJSON_EQUALS_DEPTH_LIMIT)) return false;
 
     switch (type) {
         case YYJSON_TYPE_OBJ: {
@@ -3088,7 +3113,7 @@ static bool yyjson_mut_equals_impl(const yyjson_mut_val *lhs,
                     rhs = yyjson_mut_obj_iter_getn(&iter, lhs->uni.str,
                                                    unsafe_yyjson_get_len(lhs));
                     if (!rhs) return false;
-                    if (!yyjson_mut_equals_impl(lhs->next, rhs, numeric)) {
+                    if (!yyjson_mut_equals_impl(lhs->next, rhs, numeric, depth + 1)) {
                         return false;
                     }
                     lhs = lhs->next->next;
@@ -3105,7 +3130,7 @@ static bool yyjson_mut_equals_impl(const yyjson_mut_val *lhs,
                 lhs = (yyjson_mut_val *)lhs->uni.ptr;
                 rhs = (yyjson_mut_val *)rhs->uni.ptr;
                 while (len-- > 0) {
-                    if (!yyjson_mut_equals_impl(lhs, rhs, numeric)) return false;
+                    if (!yyjson_mut_equals_impl(lhs, rhs, numeric, depth + 1)) return false;
                     lhs = lhs->next;
                     rhs = rhs->next;
                 }
@@ -3132,7 +3157,7 @@ static bool yyjson_mut_equals_impl(const yyjson_mut_val *lhs,
 
 bool unsafe_yyjson_mut_equals(const yyjson_mut_val *lhs,
                               const yyjson_mut_val *rhs) {
-    return yyjson_mut_equals_impl(lhs, rhs, false);
+    return yyjson_mut_equals_impl(lhs, rhs, false, 0);
 }
 
 bool yyjson_locate_pos(const char *str, size_t len, size_t pos,
@@ -11311,7 +11336,7 @@ yyjson_mut_val *yyjson_patch(yyjson_mut_doc *doc,
                 if (unlikely(!test)) {
                     return_err(POINTER, "failed to get `path`");
                 }
-                if (unlikely(!yyjson_mut_equals_impl(val, test, true))) {
+                if (unlikely(!yyjson_mut_equals_impl(val, test, true, 0))) {
                     return_err(EQUAL, "failed to test equal");
                 }
                 break;
@@ -11432,7 +11457,7 @@ yyjson_mut_val *yyjson_mut_patch(yyjson_mut_doc *doc,
                 if (unlikely(!test)) {
                     return_err(POINTER, "failed to get `path`");
                 }
-                if (unlikely(!yyjson_mut_equals_impl(val, test, true))) {
+                if (unlikely(!yyjson_mut_equals_impl(val, test, true, 0))) {
                     return_err(EQUAL, "failed to test equal");
                 }
                 break;
@@ -11459,12 +11484,20 @@ yyjson_mut_val *yyjson_mut_patch(yyjson_mut_doc *doc,
  * MARK: - JSON Merge-Patch API (RFC 7386) (Public)
  *============================================================================*/
 
-yyjson_mut_val *yyjson_merge_patch(yyjson_mut_doc *doc,
-                                   const yyjson_val *orig,
-                                   const yyjson_val *patch) {
+/* Maximum object nesting depth for JSON Merge Patch. This prevents stack
+   overflow when merging deeply nested documents, as the merge algorithm
+   recurses once per nesting level. */
+#define YYJSON_MERGE_PATCH_DEPTH_LIMIT 1024
+
+static yyjson_mut_val *yyjson_merge_patch_impl(yyjson_mut_doc *doc,
+                                               const yyjson_val *orig,
+                                               const yyjson_val *patch,
+                                               usize depth) {
     usize idx, max;
     yyjson_val *key, *orig_val, *patch_val, local_orig;
     yyjson_mut_val *builder, *mut_key, *mut_val, *merged_val;
+
+    if (unlikely(depth > YYJSON_MERGE_PATCH_DEPTH_LIMIT)) return NULL;
 
     if (unlikely(!yyjson_is_obj(patch))) {
         return yyjson_val_mut_copy(doc, patch);
@@ -11504,19 +11537,29 @@ yyjson_mut_val *yyjson_merge_patch(yyjson_mut_doc *doc,
         orig_val = yyjson_obj_getn(orig,
                                    unsafe_yyjson_get_str(key),
                                    unsafe_yyjson_get_len(key));
-        merged_val = yyjson_merge_patch(doc, orig_val, patch_val);
+        merged_val = yyjson_merge_patch_impl(doc, orig_val, patch_val, depth + 1);
+        if (!merged_val) return NULL;
         if (!yyjson_mut_obj_add(builder, mut_key, merged_val)) return NULL;
     }
 
     return builder;
 }
 
-yyjson_mut_val *yyjson_mut_merge_patch(yyjson_mut_doc *doc,
-                                       const yyjson_mut_val *orig,
-                                       const yyjson_mut_val *patch) {
+yyjson_mut_val *yyjson_merge_patch(yyjson_mut_doc *doc,
+                                   const yyjson_val *orig,
+                                   const yyjson_val *patch) {
+    return yyjson_merge_patch_impl(doc, orig, patch, 0);
+}
+
+static yyjson_mut_val *yyjson_mut_merge_patch_impl(yyjson_mut_doc *doc,
+                                                   const yyjson_mut_val *orig,
+                                                   const yyjson_mut_val *patch,
+                                                   usize depth) {
     usize idx, max;
     yyjson_mut_val *key, *orig_val, *patch_val, local_orig;
     yyjson_mut_val *builder, *mut_key, *mut_val, *merged_val;
+
+    if (unlikely(depth > YYJSON_MERGE_PATCH_DEPTH_LIMIT)) return NULL;
 
     if (unlikely(!yyjson_mut_is_obj(patch))) {
         return yyjson_mut_val_mut_copy(doc, patch);
@@ -11556,11 +11599,18 @@ yyjson_mut_val *yyjson_mut_merge_patch(yyjson_mut_doc *doc,
         orig_val = yyjson_mut_obj_getn(orig,
                                        unsafe_yyjson_get_str(key),
                                        unsafe_yyjson_get_len(key));
-        merged_val = yyjson_mut_merge_patch(doc, orig_val, patch_val);
+        merged_val = yyjson_mut_merge_patch_impl(doc, orig_val, patch_val, depth + 1);
+        if (!merged_val) return NULL;
         if (!yyjson_mut_obj_add(builder, mut_key, merged_val)) return NULL;
     }
 
     return builder;
+}
+
+yyjson_mut_val *yyjson_mut_merge_patch(yyjson_mut_doc *doc,
+                                       const yyjson_mut_val *orig,
+                                       const yyjson_mut_val *patch) {
+    return yyjson_mut_merge_patch_impl(doc, orig, patch, 0);
 }
 
 #endif /* YYJSON_DISABLE_UTILS */
