@@ -731,6 +731,11 @@ Writes JSON with a pretty format using a 4-space indent.
 Writes JSON with a pretty format using a 2-space indent.
 This flag will override `YYJSON_WRITE_PRETTY` flag.
 
+### **YYJSON_WRITE_PRETTY_TABS**
+Writes JSON with a pretty format using one tab per nesting level.
+This flag will override `YYJSON_WRITE_PRETTY` and
+`YYJSON_WRITE_PRETTY_TWO_SPACES` flags.
+
 ### **YYJSON_WRITE_ESCAPE_UNICODE**
 Escape unicode as `\uXXXX`, making the output ASCII-only, for example:
 

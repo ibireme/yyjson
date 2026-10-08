@@ -1051,8 +1051,105 @@ yy_test_case(test_json_writer) {
         yyjson_doc_free(doc);
         yyjson_mut_doc_free(mdoc);
     }
+
+    // test tab indent and roundtrip
+    {
+        const char *input = "{\"a\":[1,{\"b\":true}]}";
+        const char *expected =
+            "{\n"
+            "\t\"a\": [\n"
+            "\t\t1,\n"
+            "\t\t{\n"
+            "\t\t\t\"b\": true\n"
+            "\t\t}\n"
+            "\t]\n"
+            "}";
+        yyjson_doc *doc = yyjson_read(input, strlen(input), 0);
+        yyjson_mut_doc *mdoc = yyjson_doc_mut_copy(doc, NULL);
+        yyjson_doc *parsed;
+        char *ret;
+
+        validate_json_write_with_flag(YYJSON_WRITE_PRETTY_TABS,
+                                      mdoc, NULL, false, expected);
+
+        ret = yyjson_write(doc, YYJSON_WRITE_PRETTY_TABS, NULL);
+        yy_assert(ret && strcmp(ret, expected) == 0);
+        parsed = yyjson_read(ret, strlen(ret), 0);
+        yy_assert(parsed && yyjson_equals(yyjson_doc_get_root(doc),
+                                          yyjson_doc_get_root(parsed)));
+        yyjson_doc_free(parsed);
+        free(ret);
+
+        ret = yyjson_mut_write(mdoc, YYJSON_WRITE_PRETTY_TABS |
+                                    YYJSON_WRITE_PRETTY_TWO_SPACES |
+                                    YYJSON_WRITE_PRETTY, NULL);
+        yy_assert(ret && strcmp(ret, expected) == 0);
+        free(ret);
+
+        yyjson_doc_free(doc);
+        yyjson_mut_doc_free(mdoc);
+    }
     
     
+    // test indentation across four-byte tab copy boundaries
+    {
+        const yyjson_write_flag flags[] = {
+            YYJSON_WRITE_PRETTY,
+            YYJSON_WRITE_PRETTY_TWO_SPACES,
+            YYJSON_WRITE_PRETTY_TABS,
+            YYJSON_WRITE_PRETTY_TABS | YYJSON_WRITE_PRETTY,
+            YYJSON_WRITE_PRETTY_TABS | YYJSON_WRITE_PRETTY_TWO_SPACES,
+            YYJSON_WRITE_PRETTY_TABS | YYJSON_WRITE_PRETTY |
+                YYJSON_WRITE_PRETTY_TWO_SPACES
+        };
+        for (usize depth = 1; depth <= 9; depth++) {
+            char input[32], expected[512];
+            char *cur = input;
+            for (usize i = 0; i < depth; i++) *cur++ = '[';
+            memcpy(cur, "0,{},[]", 7);
+            cur += 7;
+            for (usize i = 0; i < depth; i++) *cur++ = ']';
+            *cur = '\0';
+            yyjson_doc *doc = yyjson_read(input, strlen(input), 0);
+            yy_assert(doc);
+            yyjson_mut_doc *mdoc = yyjson_doc_mut_copy(doc, NULL);
+            yy_assert(mdoc);
+
+            for (usize f = 0; f < yy_nelems(flags); f++) {
+                bool tabs = (flags[f] & YYJSON_WRITE_PRETTY_TABS) != 0;
+                usize width = tabs ? 1 :
+                    (flags[f] & YYJSON_WRITE_PRETTY_TWO_SPACES) ? 2 : 4;
+                char indent = tabs ? '\t' : ' ';
+                const char *values[] = { "0,\n", "{},\n", "[]\n" };
+                cur = expected;
+                for (usize i = 0; i < depth; i++) {
+                    memset(cur, indent, i * width);
+                    cur += i * width;
+                    *cur++ = '[';
+                    *cur++ = '\n';
+                }
+                for (usize i = 0; i < yy_nelems(values); i++) {
+                    usize len = strlen(values[i]);
+                    memset(cur, indent, depth * width);
+                    cur += depth * width;
+                    memcpy(cur, values[i], len);
+                    cur += len;
+                }
+                for (usize i = depth; i > 0; i--) {
+                    memset(cur, indent, (i - 1) * width);
+                    cur += (i - 1) * width;
+                    *cur++ = ']';
+                    if (i > 1) *cur++ = '\n';
+                }
+                *cur = '\0';
+                validate_json_write_with_flag(flags[f], mdoc, NULL,
+                                              false, expected);
+            }
+            yyjson_mut_doc_free(mdoc);
+            yyjson_doc_free(doc);
+        }
+    }
+
     // test newline at end
     {
         size_t len;
