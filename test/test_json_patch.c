@@ -627,6 +627,45 @@ static void test_more(void) {
         "]",
         .dst = "[{\"b\":4},0,3,4]"
     });
+    
+    // ---------------------------------
+    // add, move and copy replace an existing object member (RFC 6902, 4.1)
+    test_patch((patch_data){
+        .src = "{\"foo\":null}",
+        .patch = "["
+            "{\"op\":\"add\",\"path\":\"/foo\",\"value\":1}"
+        "]",
+        .dst = "{\"foo\":1}"
+    });
+    test_patch((patch_data){
+        .src = "{\"a\":{\"foo\":\"bar\",\"baz\":2}}",
+        .patch = "["
+            "{\"op\":\"add\",\"path\":\"/a/foo\",\"value\":[1]}"
+        "]",
+        .dst = "{\"a\":{\"foo\":[1],\"baz\":2}}"
+    });
+    test_patch((patch_data){
+        .src = "{\"foo\":1,\"bar\":2}",
+        .patch = "["
+            "{\"op\":\"move\",\"from\":\"/bar\",\"path\":\"/foo\"}"
+        "]",
+        .dst = "{\"foo\":2}"
+    });
+    test_patch((patch_data){
+        .src = "{\"foo\":1,\"bar\":2}",
+        .patch = "["
+            "{\"op\":\"copy\",\"from\":\"/bar\",\"path\":\"/foo\"}"
+        "]",
+        .dst = "{\"foo\":2,\"bar\":2}"
+    });
+    // add still inserts into an array
+    test_patch((patch_data){
+        .src = "[1,2]",
+        .patch = "["
+            "{\"op\":\"add\",\"path\":\"/0\",\"value\":0}"
+        "]",
+        .dst = "[0,1,2]"
+    });
 }
 
 // Test parsed values through both patch APIs, with and without error output.
