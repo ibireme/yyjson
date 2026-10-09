@@ -61,7 +61,7 @@ static void test_read_data(const char *path, char *dat, usize len,
         yy_assert(err.code != YYJSON_READ_SUCCESS);
         yy_assert(err.msg != NULL);
     }
-    
+
     // test write again
 #if !YYJSON_DISABLE_WRITER
     if (doc) {
@@ -76,21 +76,21 @@ static void test_read_data(const char *path, char *dat, usize len,
     }
 #endif
     yyjson_doc_free(doc);
-    
-    
+
+
     // test read insitu
     flg |= YYJSON_READ_INSITU;
-    
+
     char *dat_cpy = malloc(len + YYJSON_PADDING_SIZE);
     yy_assert(dat_cpy);
     memcpy(dat_cpy, dat, len);
     memset(dat_cpy + len, 0, YYJSON_PADDING_SIZE);
-    
+
     usize max_mem_len = yyjson_read_max_memory_usage(len, flg);
     void *buf = malloc(max_mem_len);
     yyjson_alc alc;
     yyjson_alc_pool_init(&alc, buf, max_mem_len);
-    
+
     doc = yyjson_read_opts(dat_cpy, len, flg, &alc, &err);
     if (expect == EXPECT_PASS) {
         yy_assertf(doc != NULL, "should pass but fail (0x%X): %s", flg, path);
@@ -119,17 +119,17 @@ static void test_read_data(const char *path, char *dat, usize len,
         YYJSON_READ_ALLOW_BOM |
         YYJSON_READ_ALLOW_INVALID_UNICODE;
     if (flg & non_std_flg) return;
-    
+
     // extend input length in chunks of one byte at a time
     const size_t chunk_len = 1;
     size_t read_len = 0;
     flg &= ~YYJSON_READ_INSITU;
-    
+
     dat_cpy = malloc(len + YYJSON_PADDING_SIZE);
     yy_assert(dat_cpy);
     memcpy(dat_cpy, dat, len);
     memset(dat_cpy + len, 0, YYJSON_PADDING_SIZE);
-    
+
     yyjson_incr_state *state = NULL;
 restart_incr_read:
     state = yyjson_incr_new((char *)dat, len, flg, NULL);
@@ -138,7 +138,7 @@ restart_incr_read:
     yy_assert(!yyjson_incr_read(state, 0, &err));
     yy_assert(!yyjson_incr_read(state, 0, NULL));
     yy_assert(!yyjson_incr_read(state, len + 1, NULL));
-    
+
     while (read_len < len || len == 0) {
         read_len += chunk_len;
         if (read_len > len) {
@@ -218,7 +218,7 @@ static void test_json_yyjson(void) {
         u8 *dat;
         usize len;
         yy_assertf(yy_file_read(path, &dat, &len), "fail to read file: %s", path);
-        
+
         // check file name
         bool has_fail       = yy_str_contains(name, "(fail)");
         bool has_garbage    = yy_str_contains(name, "(garbage)");
@@ -240,7 +240,7 @@ static void test_json_yyjson(void) {
                             has_inf | has_nan | has_str_err | has_bom |
                             has_ext_num | has_ext_esc |
                             has_ext_ws | has_str_sq | has_str_uq);
-        
+
         // test all flag combination
         u32 flg_num = (u32)yy_nelems(ALL_FLAGS);
         u32 flg_comb_num = 1 << flg_num;
@@ -249,7 +249,7 @@ static void test_json_yyjson(void) {
             for (u32 f = 0; f < flg_num; f++) {
                 if (c & (1 << f)) flg |= ALL_FLAGS[f];
             }
-            
+
             // check if the current combined flag is valid
             bool pass = !has_fail;
             pass &= !has_garbage    || (flg & (YYJSON_READ_STOP_WHEN_DONE));
@@ -280,32 +280,32 @@ static void test_json_yyjson(void) {
 #endif
             test_read_data(path, (char *)dat, len, flg, pass ? EXPECT_PASS : EXPECT_FAIL);
         }
-        
+
         // free file data
         free(dat);
     }
     yy_dir_free(names);
-    
-    
+
+
     // test invalid input
     yy_assert(!yyjson_read_opts(NULL, 0, 0, NULL, NULL));
     yy_assert(!yyjson_read_opts("1", 0, 0, NULL, NULL));
     yy_assert(!yyjson_read_opts("1", SIZE_MAX, 0, NULL, NULL));
-    
+
 #if !YYJSON_DISABLE_FILE
     // test read file
     yy_path_combine(dir, YYJSON_TEST_DATA_PATH, "data", "json", "test_yyjson", "blns.json", NULL);
     yyjson_doc *doc = yyjson_read_file(dir, 0, NULL, NULL);
     yy_assert(yyjson_is_arr(yyjson_doc_get_root(doc)));
     yyjson_doc_free(doc);
-    
+
     // test read file fail
     yyjson_read_err err;
     yy_assert(!yyjson_read_file(NULL, 0, NULL, NULL));
     yy_assert(!yyjson_read_file("...not a valid file...", 0, NULL, &err));
     yy_assert(err.code == YYJSON_READ_ERROR_FILE_OPEN);
 #endif
-    
+
     // test alloc fail
     yyjson_alc alc_small;
     char alc_buf[64];
@@ -327,7 +327,7 @@ static void test_json_checker(void) {
     int count;
     char **names = yy_dir_read(dir, &count);
     yy_assertf(names != NULL && count != 0, "read dir fail:%s\n", dir);
-    
+
     for (int i = 0; i < count; i++) {
         char *name = names[i];
         char path[YY_MAX_PATH];
@@ -341,7 +341,7 @@ static void test_json_checker(void) {
             test_read_file(path, 0, EXPECT_NONE);
         }
     }
-    
+
     yy_dir_free(names);
 }
 
@@ -352,13 +352,13 @@ static void test_json_parsing(void) {
     int count;
     char **names = yy_dir_read(dir, &count);
     yy_assertf(names != NULL && count != 0, "read dir fail:%s\n", dir);
-    
+
     for (int i = 0; i < count; i++) {
         char *name = names[i];
         if (*name == '.') continue;
         char path[YY_MAX_PATH];
         yy_path_combine(path, dir, name, NULL);
-        
+
         if (yy_str_has_prefix(name, "y_")) {
             test_read_file(path, 0, EXPECT_PASS);
         } else if (yy_str_has_prefix(name, "n_")) {
@@ -377,20 +377,20 @@ static void test_json_transform(void) {
     int count;
     char **names = yy_dir_read(dir, &count);
     yy_assertf(names != NULL && count != 0, "read dir fail:%s\n", dir);
-    
+
     for (int i = 0; i < count; i++) {
         char *name = names[i];
         if (*name == '.') continue;
         char path[YY_MAX_PATH];
         yy_path_combine(path, dir, name, NULL);
-        
+
         if (yy_str_contains(name, "invalid")) {
             test_read_file(path, 0, EXPECT_FAIL);
         } else {
             test_read_file(path, 0, EXPECT_PASS);
         }
     }
-    
+
     yy_dir_free(names);
 }
 
@@ -401,13 +401,13 @@ static void test_json_encoding(void) {
     int count;
     char **names = yy_dir_read(dir, &count);
     yy_assertf(names != NULL && count != 0, "read dir fail:%s\n", dir);
-    
+
     for (int i = 0; i < count; i++) {
         char *name = names[i];
         if (*name == '.') continue;
         char path[YY_MAX_PATH];
         yy_path_combine(path, dir, name, NULL);
-        
+
         if (strcmp(name, "utf8.json") == 0) {
             test_read_file(path, 0, EXPECT_PASS);
         } else if (strcmp(name, "utf8bom.json") == 0) {
@@ -447,7 +447,7 @@ static void validate_whitespace(const char *src, const char *dst, yyjson_read_fl
         yy_assert(!doc_src);
     }
 #endif
-    
+
     yyjson_doc_free(doc_src);
     yyjson_doc_free(doc_dst);
 }
@@ -463,7 +463,7 @@ static void test_json_whitespace(void) {
     (
      "[1, 2]",
      "[1,2]", YYJSON_READ_ALLOW_EXT_WHITESPACE);
-    
+
     validate_whitespace
     (
      "[1,\n2]",
@@ -472,8 +472,8 @@ static void test_json_whitespace(void) {
     (
      "[1,\n2]",
      "[1,2]", YYJSON_READ_ALLOW_EXT_WHITESPACE);
-    
-    
+
+
     // ---------------------------------
     // single-byte whitespace
     validate_whitespace
@@ -492,8 +492,8 @@ static void test_json_whitespace(void) {
     (
      "[1,\f2]",
      "[1,2]", YYJSON_READ_ALLOW_EXT_WHITESPACE);
-    
-    
+
+
     // ---------------------------------
     // multe-byte whitespace
     validate_whitespace
@@ -528,8 +528,8 @@ static void test_json_whitespace(void) {
     (
      "[1, \xE2\x81\x9F\xE3\x80\x80 2]",
      "[1,2]", YYJSON_READ_ALLOW_EXT_WHITESPACE);
-    
-    
+
+
     // ---------------------------------
     // BOM head
     validate_whitespace
@@ -548,8 +548,8 @@ static void test_json_whitespace(void) {
     (
      "\xEF\xBB\xBF[1,2]",
      "[1,2]", YYJSON_READ_ALLOW_BOM | YYJSON_READ_ALLOW_EXT_WHITESPACE);
-    
-    
+
+
     // ---------------------------------
     // BOM inside
     validate_whitespace
@@ -568,8 +568,8 @@ static void test_json_whitespace(void) {
     (
      "[1,2\xEF\xBB\xBF]",
      "[1,2]", YYJSON_READ_ALLOW_BOM | YYJSON_READ_ALLOW_EXT_WHITESPACE);
-    
-    
+
+
     // ---------------------------------
     // single-line comment
     validate_whitespace
@@ -580,7 +580,7 @@ static void test_json_whitespace(void) {
     (
      "[1,//test\n 2]",
      "[1,2]", YYJSON_READ_ALLOW_COMMENTS | YYJSON_READ_ALLOW_EXT_WHITESPACE);
-    
+
     validate_whitespace
     (
      "[1,//test\xE2\x80\xA8 2]",
@@ -589,7 +589,7 @@ static void test_json_whitespace(void) {
     (
      "[1,//test\xE2\x80\xA8 2]",
      "[1,2]", YYJSON_READ_ALLOW_COMMENTS | YYJSON_READ_ALLOW_EXT_WHITESPACE);
-    
+
     validate_whitespace
     (
      "[1,//test\xE2\x80\xA9 2]",
@@ -598,7 +598,7 @@ static void test_json_whitespace(void) {
     (
      "[1,//test\xE2\x80\xA9 2]",
      "[1,2]", YYJSON_READ_ALLOW_COMMENTS | YYJSON_READ_ALLOW_EXT_WHITESPACE);
-    
+
     validate_whitespace
     (
      "[1,//test\xE2\x80\xAF 2]",
@@ -607,7 +607,7 @@ static void test_json_whitespace(void) {
     (
      "[1,//test\xE2\x80\xAF 2]",
      NULL, YYJSON_READ_ALLOW_COMMENTS | YYJSON_READ_ALLOW_EXT_WHITESPACE);
-    
+
 }
 
 

@@ -85,12 +85,12 @@ jobs:
         cmake -E make_directory ${{runner.workspace}}/build
         cd ${{runner.workspace}}/build
         cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=RelWithDebInfo -DYYJSON_BUILD_TESTS=ON -DYYJSON_ENABLE_VALGRIND=ON
-    
+
     - name: Build
       shell: bash
       working-directory: ${{runner.workspace}}/build
       run: cmake --build . --config RelWithDebInfo
-    
+
     - name: Test
       shell: bash
       working-directory: ${{runner.workspace}}/build
@@ -123,12 +123,12 @@ jobs:
         cmake -E make_directory ${{runner.workspace}}/build
         cd ${{runner.workspace}}/build
         cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=RelWithDebInfo -DYYJSON_BUILD_TESTS=ON -DYYJSON_ENABLE_VALGRIND=ON
-    
+
     - name: Build
       shell: bash
       working-directory: ${{runner.workspace}}/build
       run: cmake --build . --config RelWithDebInfo
-    
+
     - name: Test
       shell: bash
       working-directory: ${{runner.workspace}}/build
@@ -245,7 +245,7 @@ jobs:
     steps:
     - name: Checkout Repository
       uses: actions/checkout@v6
-    
+
     - name: Install Dependencies
       shell: bash
       run: |
@@ -267,7 +267,7 @@ jobs:
     steps:
     - name: Checkout Repository
       uses: actions/checkout@v6
-      
+
     - name: Build and Test
       run: |
         docker run --rm -v "${{ github.workspace }}:/yyjson" alpine:latest sh -e -c '

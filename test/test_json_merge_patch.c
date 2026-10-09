@@ -15,11 +15,11 @@ static void test_one(const char *orig_json,
     yyjson_mut_doc *m_orig_doc = yyjson_doc_mut_copy(i_orig_doc, NULL);
     yyjson_mut_doc *m_patch_doc = yyjson_doc_mut_copy(i_patch_doc, NULL);
     yyjson_mut_doc *m_expe_doc = yyjson_doc_mut_copy(i_expe_doc, NULL);
-    
+
     yyjson_mut_doc *doc = yyjson_mut_doc_new(NULL);
     yyjson_mut_val *ret1 = yyjson_merge_patch(doc, i_orig_doc->root, i_patch_doc->root);
     yyjson_mut_val *ret2 = yyjson_mut_merge_patch(doc, m_orig_doc->root, m_patch_doc->root);
-    
+
 #if !YYJSON_DISABLE_WRITER
     char *str1 = yyjson_mut_val_write(ret1, 0, NULL);
     char *str2 = yyjson_mut_val_write(ret2, 0, NULL);
@@ -28,24 +28,24 @@ static void test_one(const char *orig_json,
     free(str1);
     free(str2);
 #endif
-    
+
     yy_assert(yyjson_mut_equals(m_expe_doc->root, ret1));
     yy_assert(yyjson_mut_equals(m_expe_doc->root, ret2));
-    
+
     yy_assert(yyjson_merge_patch(NULL, NULL, NULL) == NULL);
     yy_assert(yyjson_merge_patch(NULL, i_orig_doc->root, NULL) == NULL);
     yy_assert(yyjson_merge_patch(NULL, NULL, i_patch_doc->root) == NULL);
     yy_assert(yyjson_merge_patch(NULL, i_orig_doc->root, i_patch_doc->root) == NULL);
     yy_assert(yyjson_merge_patch(doc, i_orig_doc->root, NULL) == NULL);
     yy_assert(yyjson_merge_patch(doc, NULL, i_patch_doc->root) != NULL);
-    
+
     yy_assert(yyjson_mut_merge_patch(NULL, NULL, NULL) == NULL);
     yy_assert(yyjson_mut_merge_patch(NULL, m_orig_doc->root, NULL) == NULL);
     yy_assert(yyjson_mut_merge_patch(NULL, NULL, m_patch_doc->root) == NULL);
     yy_assert(yyjson_mut_merge_patch(NULL, m_orig_doc->root, m_patch_doc->root) == NULL);
     yy_assert(yyjson_mut_merge_patch(doc, m_orig_doc->root, NULL) == NULL);
     yy_assert(yyjson_mut_merge_patch(doc, NULL, m_patch_doc->root) != NULL);
-    
+
     yyjson_mut_doc_free(doc);
     yyjson_mut_doc_free(m_expe_doc);
     yyjson_mut_doc_free(m_patch_doc);
@@ -53,7 +53,7 @@ static void test_one(const char *orig_json,
     yyjson_doc_free(i_expe_doc);
     yyjson_doc_free(i_patch_doc);
     yyjson_doc_free(i_orig_doc);
-    
+
 #endif
 }
 

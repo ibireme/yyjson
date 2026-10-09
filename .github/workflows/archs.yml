@@ -30,7 +30,7 @@ jobs:
       fail-fast: false
       matrix:
         plat: [386, arm/v5, arm/v7, arm64, ppc64le, s390x, riscv64]
-    
+
     steps:
     - name: Checkout Repository
       uses: actions/checkout@v6

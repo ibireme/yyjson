@@ -38,7 +38,7 @@ The size of the value, such as string length, object size, or array size, is sto
 Modern 64-bit processors are typically limited to supporting fewer than 64 bits for RAM addresses ([Wikipedia](https://en.wikipedia.org/wiki/RAM_limit)). For example, Intel64, AMD64, and ARMv8 have a 52-bit (4PB) physical address limit. Therefore, it is safe to store the type and size information within the 64-bit `tag`.
 
 ## Immutable Document
-A JSON document stores all strings in a **contiguous** memory area.<br/> 
+A JSON document stores all strings in a **contiguous** memory area.<br/>
 Each string is unescaped in-place and ended with a null-terminator.<br/>
 For example:
 

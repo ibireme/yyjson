@@ -97,12 +97,12 @@ bool yy_path_combine(char *buf, const char *path, ...) {
     if (!buf) return false;
     *buf = '\0';
     if (!path) return false;
-    
+
     usize len = strlen(path);
     memmove(buf, path, len);
     const char *hdr = buf;
     buf += len;
-    
+
     va_list args;
     va_start(args, path);
     while (true) {
@@ -120,7 +120,7 @@ bool yy_path_combine(char *buf, const char *path, ...) {
         buf += len;
     }
     va_end(args);
-    
+
     *buf = '\0';
     return true;
 }
@@ -130,7 +130,7 @@ bool yy_path_remove_last(char *buf, const char *path) {
     if (!buf) return false;
     *buf = '\0';
     if (len == 0) return false;
-    
+
     const char *cur = path + len - 1;
     if (*cur == YY_DIR_SEPARATOR) cur--;
     for (; cur >= path; cur--) {
@@ -148,7 +148,7 @@ bool yy_path_get_last(char *buf, const char *path) {
     if (!buf) return false;
     *buf = '\0';
     if (len == 0) return false;
-    
+
     end = path + len - 1;
     if (*end == YY_DIR_SEPARATOR) end--;
     for (cur = end; cur >= path; cur--) {
@@ -165,16 +165,16 @@ bool yy_path_append_ext(char *buf, const char *path, const char *ext) {
     char tmp[YY_MAX_PATH];
     char *cur = tmp;
     if (!buf) return false;
-    
+
     memcpy(cur, path, len);
     cur += len;
     *cur++ = '.';
-    
+
     len = ext ? strlen(ext) : 0;
     memcpy(cur, ext, len);
     cur += len;
     *cur++ = '\0';
-    
+
     memcpy(buf, tmp, cur - tmp);
     return true;
 }
@@ -248,7 +248,7 @@ char **yy_dir_read_opts(const char *path, int *count, bool full) {
     int idx = 0, alc = 0;
     char **names = NULL, **names_tmp, *search;
     usize path_len = path ? strlen(path) : 0;
-    
+
     if (count) *count = 0;
     if (path_len == 0) return NULL;
     search = malloc(path_len + 3);
@@ -256,14 +256,14 @@ char **yy_dir_read_opts(const char *path, int *count, bool full) {
     memcpy(search, path, path_len);
     if (search[path_len - 1] == '\\') path_len--;
     memcpy(search + path_len, "\\*\0", 3);
-    
+
     handle = _findfirst(search, &entry);
     if (handle == -1) goto fail;
-    
+
     alc = 4;
     names = malloc(alc * sizeof(char*));
     if (!names) goto fail;
-    
+
     do {
         char *name = (char *)entry.name;
         if (!name || !strlen(name)) continue;
@@ -288,27 +288,27 @@ char **yy_dir_read_opts(const char *path, int *count, bool full) {
         idx++;
     } while (_findnext(handle, &entry) == 0);
     _findclose(handle);
-    
+
     if (idx > 1) qsort(names, idx, sizeof(char *), yy_dir_strcmp_func);
     names[idx] = NULL;
     if (count) *count = idx;
     return names;
-    
+
 fail:
     if (handle != -1)_findclose(handle);
     if (search) free(search);
     if (names) free(names);
     return NULL;
-    
+
 #elif defined(YY_HAS_GLOB)
     // readdir() may fail for 32-bit user-static qemu on 64-bit host
     // use glob() instead: https://gitlab.com/qemu-project/qemu/-/issues/263
-    
+
     if (count) *count = 0;
     if (!path) return NULL;
     size_t path_len = strlen(path);
     if (!path_len) return NULL;
-    
+
     char *patt = calloc(1, path_len * 2 + 4);
     if (!patt) return NULL;
     for (size_t i = 0, p = 0; i < path_len; i++, p++) {
@@ -320,7 +320,7 @@ fail:
             patt[++p] = '*';
         }
     }
-    
+
     glob_t buf = { 0 };
     int flag = 0;
 #ifdef GLOB_NOESCAPE
@@ -340,7 +340,7 @@ fail:
         globfree(&buf);
         return NULL;
     }
-    
+
     int i = 0, icount = 0;
     for(; i < (int)buf.gl_pathc; i++) {
         const char *one_path = buf.gl_pathv[i];
@@ -361,25 +361,25 @@ fail:
         names[icount++] = (char *)one;
     }
     globfree(&buf);
-    
+
     if (count) *count = icount;
     return names;
-    
+
 #else
     DIR *dir = NULL;
     struct dirent *entry;
     int idx = 0, alc = 0;
     char **names = NULL, **names_tmp;
-    
+
     if (count) *count = 0;
     if (!path || !strlen(path) || !(dir = opendir(path))) {
         goto fail;
     }
-    
+
     alc = 4;
     names = calloc(1, alc * sizeof(char *));
     if (!names) goto fail;
-    
+
     while ((entry = readdir(dir))) {
         char *name = (char *)entry->d_name;
         if (!name || !strlen(name)) continue;
@@ -409,7 +409,7 @@ fail:
     names[idx] = NULL;
     if (count) *count = idx;
     return names;
-    
+
 fail:
     if (dir) closedir(dir);
     yy_dir_free(names);
@@ -455,7 +455,7 @@ bool yy_file_read(const char *path, u8 **dat, usize *len) {
 bool yy_file_read_with_padding(const char *path, u8 **dat, usize *len, usize padding) {
     if (!path || !strlen(path)) return false;
     if (!dat || !len) return false;
-    
+
     FILE *file = yy_file_open(path, "rb");
     if (file == NULL) return false;
     if (fseek(file, 0, SEEK_END) != 0) {
@@ -476,7 +476,7 @@ bool yy_file_read_with_padding(const char *path, u8 **dat, usize *len, usize pad
         fclose(file);
         return false;
     }
-    
+
     if (file_size > 0) {
 #if _MSC_VER >= 1400
         if (fread_s(buf, file_size, file_size, 1, file) != 1) {
@@ -493,7 +493,7 @@ bool yy_file_read_with_padding(const char *path, u8 **dat, usize *len, usize pad
 #endif
     }
     fclose(file);
-    
+
     memset((char *)buf + file_size, 0, padding);
     *dat = (u8 *)buf;
     *len = (usize)file_size;
@@ -503,7 +503,7 @@ bool yy_file_read_with_padding(const char *path, u8 **dat, usize *len, usize pad
 bool yy_file_write(const char *path, u8 *dat, usize len) {
     if (!path || !strlen(path)) return false;
     if (len && !dat) return false;
-    
+
     FILE *file = NULL;
 #if _MSC_VER >= 1400
     if (fopen_s(&file, path, "wb") != 0) return false;
@@ -670,7 +670,7 @@ bool yy_buf_grow(yy_buf *buf, usize len) {
     if (!buf) return false;
     if ((usize)(buf->end - buf->cur) >= len) return true;
     if (!buf->hdr) return yy_buf_init(buf, len);
-    
+
     usize use = buf->cur - buf->hdr;
     usize alc = buf->end - buf->hdr;
     do {
@@ -679,7 +679,7 @@ bool yy_buf_grow(yy_buf *buf, usize len) {
     } while (alc - use < len);
     u8 *tmp = (u8 *)realloc(buf->hdr, alc);
     if (!tmp) return false;
-    
+
     buf->cur = tmp + (buf->cur - buf->hdr);
     buf->hdr = tmp;
     buf->end = tmp + alc;
@@ -736,7 +736,7 @@ void yy_dat_reset(yy_dat *dat) {
 char *yy_dat_read_line(yy_dat *dat, usize *len) {
     if (len) *len = 0;
     if (!dat || dat->cur >= dat->end) return NULL;
-    
+
     u8 *str = dat->cur;
     u8 *cur = dat->cur;
     u8 *end = dat->end;
@@ -782,7 +782,7 @@ double yy_get_time(void) {
     QueryPerformanceCounter(&counter);
     QueryPerformanceFrequency(&freq);
     return (double)counter.QuadPart / (double)freq.QuadPart;
-    
+
 #elif defined(__APPLE__)
     // mach_timebase_info is stable
     static mach_timebase_info_data_t clock_timebase = { 0 };
@@ -791,7 +791,7 @@ double yy_get_time(void) {
     }
     uint64_t t = mach_absolute_time();
     return ((double)t * clock_timebase.numer) / clock_timebase.denom / 1e9;
-    
+
 #else
 #   if defined(CLOCK_MONOTONIC)
     // Elapsed wall-clock time, monotonic.
@@ -817,11 +817,11 @@ double yy_get_timestamp(void) {
     // precision: 1e-3 seconds (1ms)
     FILETIME ft;
     GetSystemTimeAsFileTime(&ft);
-    
+
     ULARGE_INTEGER ui;
     ui.LowPart = ft.dwLowDateTime;
     ui.HighPart = ft.dwHighDateTime;
-    
+
     long long t = ui.QuadPart;
     return (double)t * 1e-7 - 11644473600.0;
 #else

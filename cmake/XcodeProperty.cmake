@@ -22,9 +22,9 @@ endmacro(set_xcode_property)
 
 # Set default Xcode properties to target
 # For example: set_default_xcode_property(yyjson)
-macro(set_default_xcode_property TARGET)     
+macro(set_default_xcode_property TARGET)
 
-    # Standard   
+    # Standard
     set_xcode_property(${TARGET} GCC_C_LANGUAGE_STANDARD "gnu99")
     set_xcode_property(${TARGET} CLANG_CXX_LANGUAGE_STANDARD "gnu++11")
     set_xcode_property(${TARGET} CLANG_CXX_LIBRARY "libc++")
@@ -38,7 +38,7 @@ macro(set_default_xcode_property TARGET)
     set_xcode_property(${TARGET} OTHER_CPLUSPLUSFLAGS[variant=MinSizeRel] "$(OTHER_CFLAGS)")
     set_xcode_property(${TARGET} OTHER_CPLUSPLUSFLAGS[variant=RelWithDebInfo] "$(OTHER_CFLAGS)")
     set_xcode_property(${TARGET} OTHER_CPLUSPLUSFLAGS[variant=Release] "$(OTHER_CFLAGS)")
-    
+
     # Macros
     set_xcode_property(${TARGET} GCC_PREPROCESSOR_DEFINITIONS[variant=Debug] "DEBUG=1")
     set_xcode_property(${TARGET} GCC_PREPROCESSOR_DEFINITIONS[variant=MinSizeRel] "NDEBUG=1")
@@ -52,7 +52,7 @@ macro(set_default_xcode_property TARGET)
     set_xcode_property(${TARGET} ONLY_ACTIVE_ARCH[variant=RelWithDebInfo] "NO")
     set_xcode_property(${TARGET} ONLY_ACTIVE_ARCH[variant=Release] "NO")
     set_xcode_property(${TARGET} SDKROOT "macosx")
-    
+
     # Debug Information
     set_xcode_property(${TARGET} DEBUG_INFORMATION_FORMAT[variant=Debug] "dwarf")
     set_xcode_property(${TARGET} DEBUG_INFORMATION_FORMAT[variant=MinSizeRel] "dwarf-with-dsym")
@@ -63,7 +63,7 @@ macro(set_default_xcode_property TARGET)
     set_xcode_property(${TARGET} GCC_GENERATE_DEBUGGING_SYMBOLS[variant=RelWithDebInfo] "YES")
     set_xcode_property(${TARGET} GCC_GENERATE_DEBUGGING_SYMBOLS[variant=Release] "NO")
     set_xcode_property(${TARGET} GCC_NO_COMMON_BLOCKS "YES")
-    
+
     # Common Warnings
     set_xcode_property(${TARGET} CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING "YES")
     set_xcode_property(${TARGET} CLANG_WARN_DOCUMENTATION_COMMENTS "YES")

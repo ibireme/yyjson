@@ -116,42 +116,42 @@ if(XCODE)
     if(YYJSON_ENABLE_FASTMATH)
         set(YYJSON_FLAGS "${YYJSON_FLAGS} -ffast-math")
     endif()
-    
+
     set_default_xcode_property(yyjson)
     set_xcode_deployment_version(yyjson "10.13" "12.0" "12.0" "4.0")
 
     set_xcode_property(yyjson GCC_C_LANGUAGE_STANDARD "c89")
     set_xcode_property(yyjson CLANG_CXX_LANGUAGE_STANDARD "c++98")
-    
+
     set_xcode_property(yyjson OTHER_CFLAGS[variant=Debug] ${YYJSON_FLAGS})
     set_xcode_property(yyjson OTHER_CFLAGS[variant=MinSizeRel] ${YYJSON_FLAGS})
     set_xcode_property(yyjson OTHER_CFLAGS[variant=RelWithDebInfo] ${YYJSON_FLAGS})
     set_xcode_property(yyjson OTHER_CFLAGS[variant=Release] ${YYJSON_FLAGS})
-    
+
 elseif(MSVC)
     # Flag list for MSVC
     set(YYJSON_FLAGS "/utf-8")
     if(YYJSON_ENABLE_FASTMATH)
         list(APPEND YYJSON_FLAGS "/fp:fast")
     endif()
-    
+
     target_compile_options(yyjson PRIVATE $<$<C_COMPILER_ID:MSVC>:${YYJSON_FLAGS}>)
     if(CMAKE_CXX_COMPILER)
         target_compile_options(yyjson PRIVATE $<$<CXX_COMPILER_ID:MSVC>:${YYJSON_FLAGS}>)
     endif()
-    
+
 elseif(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang|Intel")
     # Flag list for GCC like compilers
     set(YYJSON_FLAGS)
     if(YYJSON_ENABLE_FASTMATH)
         list(APPEND YYJSON_FLAGS "-ffast-math")
     endif()
-    
+
     target_compile_options(yyjson PRIVATE $<$<COMPILE_LANGUAGE:C>:${YYJSON_FLAGS}>)
     if(CMAKE_CXX_COMPILER)
         target_compile_options(yyjson PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${YYJSON_FLAGS}>)
     endif()
-    
+
     if(YYJSON_FORCE_32_BIT)
         set(CMAKE_C_FLAGS -m32)
         set(CMAKE_CXX_FLAGS -m32)
@@ -210,7 +210,7 @@ if(YYJSON_BUILD_TESTS)
         set(CMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED "NO")
         set(CMAKE_XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY "")
         set(YYJSON_TEST_DATA ${CMAKE_CURRENT_SOURCE_DIR}/test/data)
-        
+
         # CMake 4.0+ requires CMAKE_OSX_SYSROOT to be set manually
         if(NOT CMAKE_OSX_SYSROOT OR CMAKE_OSX_SYSROOT STREQUAL "")
             execute_process(
@@ -239,7 +239,7 @@ if(YYJSON_BUILD_TESTS)
             @ONLY
         )
         unset(YYJSON_TEST_LINES)
-        
+
         # Add source files and search path to XCTest
         file(GLOB YYJSON_TEST_SOURCE
             "test/test_*.c"
@@ -260,10 +260,10 @@ if(YYJSON_BUILD_TESTS)
             ${CMAKE_CURRENT_SOURCE_DIR}/test/xctest
         )
         xctest_add_test(XCTest.yyjson yyjson_tests)
-        
+
         set_default_xcode_property(yyjson_tests)
         set_xcode_deployment_version(yyjson_tests "10.13" "12.0" "12.0" "4.0")
-        
+
     else()
         # Check valgrind command
         if (YYJSON_ENABLE_VALGRIND)
@@ -281,10 +281,10 @@ if(YYJSON_BUILD_TESTS)
                 )
             endif()
         endif()
-        
+
         # Copy test data
         file(COPY "${CMAKE_CURRENT_SOURCE_DIR}/test/data" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}")
-        
+
         # Add dependency
         add_library(yyjson_test_utils
             test/util/yy_test_utils.c
@@ -296,7 +296,7 @@ if(YYJSON_BUILD_TESTS)
         if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
             target_compile_options(yyjson_test_utils PRIVATE $<$<COMPILE_LANGUAGE:C>:-std=c99>)
         endif()
-        
+
         # Add all test cases: c files prefixed with 'test_'
         file(GLOB YYJSON_TEST_SOURCE
             "test/test_*.c"
@@ -305,27 +305,27 @@ if(YYJSON_BUILD_TESTS)
             string(REGEX REPLACE "(^.*/|\\.[^.]*$)" "" SRC_NAME ${SRC_FILE})
             add_executable(${SRC_NAME} ${SRC_FILE})
             target_link_libraries(${SRC_NAME} PRIVATE yyjson yyjson_test_utils)
-            
+
             if(MSVC)
                 target_compile_options(${SRC_NAME} PRIVATE $<$<C_COMPILER_ID:MSVC>:/utf-8>)
                 target_compile_options(${SRC_NAME} PRIVATE $<$<CXX_COMPILER_ID:MSVC>:/utf-8>)
             endif()
-            
+
             if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
                 target_compile_options(${SRC_NAME} PRIVATE $<$<COMPILE_LANGUAGE:C>:-std=c99>)
             endif()
-            
+
             if(MEMORYCHECK_COMMAND)
                 add_test(NAME ${SRC_NAME}
                          COMMAND "${MEMORYCHECK_COMMAND}" ${MEMORYCHECK_COMMAND_OPTIONS} "${CMAKE_CURRENT_BINARY_DIR}/${SRC_NAME}")
             else()
                 add_test(${SRC_NAME} ${SRC_NAME})
             endif()
-            
+
             set_tests_properties(${SRC_NAME} PROPERTIES TIMEOUT 600)
             message(STATUS "Add test: ${SRC_NAME}")
         endforeach()
-        
+
         # Add code coverage and sanitize
         if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
             if (YYJSON_ENABLE_COVERAGE)
@@ -388,38 +388,38 @@ if(YYJSON_BUILD_TESTS)
         endif()
 
     endif()
-    
-    
+
+
     # Test compatibility
     if(MSVC)
         add_executable(test_compile_ansi_c test/compile_ansi.c)
         target_include_directories(test_compile_ansi_c PRIVATE src)
         add_executable(test_compile_ansi_cpp test/compile_ansi.cpp)
         target_include_directories(test_compile_ansi_cpp PRIVATE src)
-        
+
         # set warning level 4, treat warnings as errors
         set(YYJSON_STRICT_FLAGS /W4 /WX)
         target_compile_options(test_compile_ansi_c PRIVATE
             $<$<COMPILE_LANGUAGE:C>:${YYJSON_STRICT_FLAGS}>)
         target_compile_options(test_compile_ansi_cpp PRIVATE
             $<$<COMPILE_LANGUAGE:CXX>:${YYJSON_STRICT_FLAGS}>)
-        
+
         # add tests
         add_test(test_compile_ansi_c test_compile_ansi_c)
         message(STATUS "Add test: test_compile_ansi_c")
         add_test(test_compile_ansi_cpp test_compile_ansi_cpp)
         message(STATUS "Add test: test_compile_ansi_cpp")
-        
+
     elseif(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
-        
+
         # Compiler flag check
         include(CheckCCompilerFlag)
         include(CheckCXXCompilerFlag)
-        
+
         # Flags to check ANSI C/C++ standard strictly, treat warnings as errors
         set(YYJSON_STRICT_C_FLAGS "")
         set(YYJSON_STRICT_CXX_FLAGS "")
-        
+
         # Base flags
         set(YYJSON_BASE_FLAGS
             -pedantic
@@ -473,27 +473,27 @@ if(YYJSON_BUILD_TESTS)
                 # -Wno-zero-as-null-pointer-constant  # disable for C++
             )
         endif()
-        
+
         # Combine all available flags
         list(APPEND YYJSON_STRICT_C_FLAGS ${YYJSON_BASE_FLAGS})
         list(APPEND YYJSON_STRICT_CXX_FLAGS ${YYJSON_BASE_FLAGS})
         foreach(flag ${YYJSON_EXTRA_FLAGS})
             string(REGEX REPLACE "[-.+/:=]" "_" flag_name "${flag}")
-            
+
             check_c_compiler_flag(${flag} COMPILER_SUPPORT_C_FLAG${flag_name})
             if(COMPILER_SUPPORT_C_FLAG${flag_name})
                 list(APPEND YYJSON_STRICT_C_FLAGS ${flag})
             endif()
-            
+
             if(CMAKE_CXX_COMPILER)
                 check_cxx_compiler_flag(${flag} COMPILER_SUPPORT_CXX_FLAG${flag_name})
                 if(COMPILER_SUPPORT_CXX_FLAG${flag_name})
                     list(APPEND YYJSON_STRICT_CXX_FLAGS ${flag})
                 endif()
             endif()
-            
+
         endforeach()
-        
+
         # Check ANSI C
         check_c_compiler_flag("-ansi" COMPILER_SUPPORTS_ANSI_C)
         if(COMPILER_SUPPORTS_ANSI_C)
@@ -502,7 +502,7 @@ if(YYJSON_BUILD_TESTS)
             target_compile_options(test_compile_ansi_c PRIVATE
                 $<$<COMPILE_LANGUAGE:C>:-ansi ${YYJSON_STRICT_C_FLAGS}>)
         endif()
-        
+
         # Check modern C
         check_c_compiler_flag("-std=c11" COMPILER_SUPPORTS_C11)
         if(COMPILER_SUPPORTS_C11)
@@ -511,9 +511,9 @@ if(YYJSON_BUILD_TESTS)
             target_compile_options(test_compile_c11 PRIVATE
                 $<$<COMPILE_LANGUAGE:C>:-std=c11 ${YYJSON_STRICT_C_FLAGS}>)
         endif()
-        
+
         if(CMAKE_CXX_COMPILER)
-            
+
             # Check ANSI C++
             check_cxx_compiler_flag("-ansi" COMPILER_SUPPORTS_ANSI_CXX)
             if(COMPILER_SUPPORTS_ANSI_CXX)
@@ -522,7 +522,7 @@ if(YYJSON_BUILD_TESTS)
                 target_compile_options(test_compile_ansi_cxx PRIVATE
                     $<$<COMPILE_LANGUAGE:CXX>:-ansi ${YYJSON_STRICT_CXX_FLAGS}>)
             endif()
-            
+
             # Check modern C++
             check_cxx_compiler_flag("-std=c++17" COMPILER_SUPPORTS_CXX17)
             if(COMPILER_SUPPORTS_CXX17)
@@ -531,11 +531,11 @@ if(YYJSON_BUILD_TESTS)
                 target_compile_options(test_compile_cxx17 PRIVATE
                     $<$<COMPILE_LANGUAGE:CXX>:-std=c++17 ${YYJSON_STRICT_CXX_FLAGS}>)
             endif()
-            
+
         endif()
-        
+
     endif()
-    
+
 endif()
 
 
@@ -548,7 +548,7 @@ if (YYJSON_BUILD_FUZZER)
         file(COPY "${CMAKE_CURRENT_SOURCE_DIR}/fuzz/fuzzer.dict" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}")
         file(GLOB YYJSON_FILES "${CMAKE_CURRENT_SOURCE_DIR}/test/data/json/**/*.json")
         file(COPY ${YYJSON_FILES} DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/corpus")
-        
+
         set(COMPILE_FLAGS -fsanitize=fuzzer,address -O1 -g)
         target_compile_options(yyjson PRIVATE ${COMPILE_FLAGS})
         target_link_libraries(yyjson INTERFACE ${COMPILE_FLAGS})
@@ -596,12 +596,12 @@ if(YYJSON_BUILD_DOC)
     find_package(Doxygen)
     if(DOXYGEN_FOUND)
         message(STATUS "Doxygen found")
-        
+
         set(DOXYGEN_IN "${CMAKE_CURRENT_SOURCE_DIR}/doc/doxygen/Doxyfile.in")
         set(DOXYGEN_OUT "${CMAKE_CURRENT_BINARY_DIR}/Doxyfile")
         configure_file(${DOXYGEN_IN} ${DOXYGEN_OUT} @ONLY)
         message(STATUS "Doxygen will output to ${CMAKE_CURRENT_BINARY_DIR}/doxygen/html")
-        
+
         add_custom_target(yyjson_doc ALL
             COMMAND ${DOXYGEN_EXECUTABLE} "${CMAKE_CURRENT_BINARY_DIR}/Doxyfile"
             WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
