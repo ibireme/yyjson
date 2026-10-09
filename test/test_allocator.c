@@ -1,4 +1,4 @@
-// This file is used to test the built-in pool memory allocator. 
+// This file is used to test the built-in pool memory allocator.
 
 #include "yyjson.h"
 #include "yy_test_utils.h"
@@ -10,28 +10,28 @@ static void test_alc_pool_init(void) {
     yyjson_alc alc;
     usize size;
     void *buf;
-    
+
     yy_assert(!yyjson_alc_pool_init(NULL, NULL, 0));
-    
+
     memset(&alc, 0, sizeof(alc));
     yy_assert(!yyjson_alc_pool_init(&alc, NULL, 0));
     yy_assert(!alc.malloc(NULL, 1));
     yy_assert(!alc.realloc(NULL, NULL, 0, 1));
     alc.free(NULL, NULL);
-    
+
     memset(&alc, 0, sizeof(alc));
     yy_assert(!yyjson_alc_pool_init(&alc, NULL, 1024));
     yy_assert(!alc.malloc(NULL, 1));
     yy_assert(!alc.realloc(NULL, NULL, 0, 1));
     alc.free(NULL, NULL);
-    
+
     char small_buf[10];
     memset(&alc, 0, sizeof(alc));
     yy_assert(!yyjson_alc_pool_init(&alc, small_buf, sizeof(small_buf)));
     yy_assert(!alc.malloc(NULL, 1));
     yy_assert(!alc.realloc(NULL, NULL, 0, 1));
     alc.free(NULL, NULL);
-    
+
     size = 8 * sizeof(void *) - 1;
     buf = malloc(size);
     yy_assert(!yyjson_alc_pool_init(&alc, buf, size));
@@ -44,8 +44,8 @@ static void test_alc_pool_func(void) {
     usize ptr_size[NUM_PTR];
     void *buf = malloc(BUF_SIZE);
     yy_assert(yyjson_alc_pool_init(&alc, buf, BUF_SIZE));
-    
-    
+
+
     // suc and fail
     ptr[0] = alc.malloc(alc.ctx, BUF_SIZE / 2);
     yy_assert(ptr[0]);
@@ -53,8 +53,8 @@ static void test_alc_pool_func(void) {
     ptr[1] = alc.malloc(alc.ctx, BUF_SIZE / 2);
     yy_assert(!ptr[1]);
     alc.free(alc.ctx, ptr[0]);
-    
-    
+
+
     // alc large, free, alc again
     for (int i = 0; i < NUM_PTR; i++) {
         ptr[i] = alc.malloc(alc.ctx, 32);
@@ -72,8 +72,8 @@ static void test_alc_pool_func(void) {
     for (int i = NUM_PTR - 1; i >= 0; i--) {
         alc.free(alc.ctx, ptr[i]);
     }
-    
-    
+
+
     // alc large, free, alc small
     for (int i = 0; i < NUM_PTR; i++) {
         ptr[i] = alc.malloc(alc.ctx, 32);
@@ -91,8 +91,8 @@ static void test_alc_pool_func(void) {
     for (int i = NUM_PTR - 1; i >= 0; i--) {
         alc.free(alc.ctx, ptr[i]);
     }
-    
-    
+
+
     // alc small, free, alc large
     for (int i = 0; i < NUM_PTR; i++) {
         ptr[i] = alc.malloc(alc.ctx, 16);
@@ -110,8 +110,8 @@ static void test_alc_pool_func(void) {
     for (int i = 0; i < NUM_PTR; i++) {
         alc.free(alc.ctx, ptr[i]);
     }
-    
-    
+
+
     // alc small, realloc large
     for (int i = 0; i < NUM_PTR / 2; i++) {
         ptr[i] = alc.malloc(alc.ctx, 8);
@@ -134,15 +134,15 @@ static void test_alc_pool_func(void) {
     for (int i = 0; i < NUM_PTR / 2; i++) {
         alc.free(alc.ctx, ptr[i]);
     }
-    
-    
+
+
     // same space realloc
     ptr[0] = alc.malloc(alc.ctx, 64);
     ptr[0] = alc.realloc(alc.ctx, ptr[0], 64, 128);
     yy_assert(ptr[0]);
     alc.free(alc.ctx, ptr[0]);
-    
-    
+
+
     // random
     memset(ptr, 0, sizeof(ptr));
     memset(ptr_size, 0, sizeof(ptr_size));
@@ -175,8 +175,8 @@ static void test_alc_pool_func(void) {
     for (int i = 0; i < NUM_PTR; i++) {
         if (ptr[i]) alc.free(alc.ctx, ptr[i]);
     }
-    
-    
+
+
     // cleanup
     free(buf);
 }
@@ -189,7 +189,7 @@ static void test_alc_pool_read(void) {
     void *buf;
     yyjson_alc alc;
     yyjson_doc *doc;
-    
+
     for (size_t n = 1; n <= 1000; n++) {
         // e.g. n = 3: [1,1,1]
         size_t len = 1 + n * 2;
@@ -200,39 +200,39 @@ static void test_alc_pool_read(void) {
             str[i * 2 + 2] = ',';
         }
         str[len - 1] = ']';
-        
-        
+
+
         // default flag
         flg = 0;
         buf_len = yyjson_read_max_memory_usage(len, flg);
         buf = malloc(buf_len);
         yyjson_alc_pool_init(&alc, buf, buf_len);
-        
+
         doc = yyjson_read_opts(str, len, flg, &alc, NULL);
         yy_assert(doc);
         yy_assert(doc->val_read == n + 1);
         yyjson_doc_free(doc);
 
         free(buf);
-        
-        
+
+
         // instu flag
         str = realloc(str, len + YYJSON_PADDING_SIZE);
         memset(str + len, 0, YYJSON_PADDING_SIZE);
-        
+
         flg = YYJSON_READ_INSITU;
         buf_len = yyjson_read_max_memory_usage(len, flg);
         buf = malloc(buf_len);
         yyjson_alc_pool_init(&alc, buf, buf_len);
-        
+
         doc = yyjson_read_opts(str, len, flg, &alc, NULL);
         yy_assert(doc);
         yy_assert(doc->val_read == n + 1);
         yyjson_doc_free(doc);
-        
+
         free(buf);
-        
-        
+
+
         // cleanup
         free(str);
     }
@@ -243,8 +243,8 @@ static void test_alc_dyn(void) {
     yyjson_alc *alc;
     void *ptr[NUM_PTR];
     usize ptr_size[NUM_PTR];
-    
-    
+
+
     // new and destroy
     alc = yyjson_alc_dyn_new();
     yy_assert(alc);
@@ -252,8 +252,8 @@ static void test_alc_dyn(void) {
     yy_assert(!alc->malloc(alc->ctx, SIZE_MAX - 16));
     yyjson_alc_dyn_free(alc);
     yyjson_alc_dyn_free(NULL);
-    
-    
+
+
     // new, alloc, destroy
     alc = yyjson_alc_dyn_new();
     ptr[0] = alc->malloc(alc->ctx, 0x100);
@@ -261,8 +261,8 @@ static void test_alc_dyn(void) {
     memset(ptr[0], 0xFF, 0x100);
     alc->free(alc->ctx, ptr[0]);
     yyjson_alc_dyn_free(alc);
-    
-    
+
+
     // new, alloc-free, destroy
     alc = yyjson_alc_dyn_new();
     yy_rand_reset(0);
@@ -274,8 +274,8 @@ static void test_alc_dyn(void) {
         alc->free(alc->ctx, ptr[0]);
     }
     yyjson_alc_dyn_free(alc);
-    
-    
+
+
     // new, alloc-free, destroy
     alc = yyjson_alc_dyn_new();
     yy_rand_reset(0);
@@ -287,8 +287,8 @@ static void test_alc_dyn(void) {
         alc->free(alc->ctx, ptr[0]);
     }
     yyjson_alc_dyn_free(alc);
-    
-    
+
+
     // new, alloc-realloc-free, destroy
     alc = yyjson_alc_dyn_new();
     yy_rand_reset(0);
@@ -304,8 +304,8 @@ static void test_alc_dyn(void) {
         alc->free(alc->ctx, ptr[0]);
     }
     yyjson_alc_dyn_free(alc);
-    
-    
+
+
     // random
     alc = yyjson_alc_dyn_new();
     yy_rand_reset(0);

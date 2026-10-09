@@ -39,7 +39,7 @@ yyjson adds more test cases in this directory.
 ## test_encoding
 Source: <https://github.com/miloyip/nativejson-benchmark>
 
-Same JSON encoded as UTF-8/UTF-16/UTF-32 with or without BOM. 
+Same JSON encoded as UTF-8/UTF-16/UTF-32 with or without BOM.
 RFC 8259 only accepts UTF-8 without BOM.
 
 

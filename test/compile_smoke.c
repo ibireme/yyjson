@@ -33,24 +33,24 @@ static int test_read(void) {
 
     doc = yyjson_read_opts((char *)(void *)json, strlen(json), 0, &smoke_alc, NULL);
     yy_assert(doc != NULL);
-    
+
     root = yyjson_doc_get_root(doc);
     yy_assert(yyjson_is_str(yyjson_obj_get(root, "str")));
     yy_assert(yyjson_equals_str(yyjson_obj_get(root, "str"), "Harry"));
     yy_assert(yyjson_is_real(yyjson_obj_get(root, "fp")));
     yy_assert(yyjson_get_real(yyjson_obj_get(root, "fp")) == 0.5);
-    
+
     arr = yyjson_obj_get(root, "arr");
     yy_assert(yyjson_is_arr(arr) && yyjson_arr_size(arr) == 3);
     yy_assert(yyjson_get_int(yyjson_arr_get(arr, 0)) == 42);
     yy_assert(yyjson_get_int(yyjson_arr_get(arr, 1)) == -42);
     yy_assert(yyjson_is_null(yyjson_arr_get(arr, 2)));
-    
+
     out = yyjson_write_opts(doc, 0, &smoke_alc, NULL, NULL);
     yy_assert(out != NULL);
     yy_assert(str_eq(json, out));
     smoke_alc.free(smoke_alc.ctx, out);
-    
+
     yyjson_doc_free(doc);
     return 0;
 }
@@ -79,7 +79,7 @@ static int test_write(void) {
     yy_assert(out != NULL);
     yy_assert(str_eq(out, json));
     smoke_alc.free(smoke_alc.ctx, out);
-    
+
     yyjson_mut_doc_free(doc);
     return 0;
 }

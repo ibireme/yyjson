@@ -42,7 +42,7 @@ cmake -E make_directory build; cd build
 
 Build static library:
 ```shell
-cmake .. 
+cmake ..
 cmake --build .
 ```
 

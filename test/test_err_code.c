@@ -1,4 +1,4 @@
-// This file is used to test the accuracy of the error codes of 
+// This file is used to test the accuracy of the error codes of
 // json_read and json_write.
 
 #include "yyjson.h"
@@ -21,9 +21,9 @@ static void test_read_err_code(void) {
     yyjson_alc alc;
     char buf[1024];
     usize len;
-    
-    
-    
+
+
+
     // -------------------------------------------------------------------------
     // Success, no error.
     str = "[]";
@@ -32,9 +32,9 @@ static void test_read_err_code(void) {
     yyjson_doc_free(yyjson_read_opts((char *)str, strlen(str), 0, NULL, &err));
     yy_assert(err.code == YYJSON_READ_SUCCESS);
     yy_assert(err.pos == 0);
-    
-    
-    
+
+
+
     // -------------------------------------------------------------------------
     // Invalid parameter, such as NULL input string or 0 input length.
     str = "";
@@ -43,14 +43,14 @@ static void test_read_err_code(void) {
     yyjson_doc_free(yyjson_read_opts((char *)str, 0, 0, NULL, &err));
     yy_assert(err.code == YYJSON_READ_ERROR_INVALID_PARAMETER);
     yy_assert(err.pos == 0);
-    
+
     str = NULL;
     //    ^ input data is NULL
     memset(&err, -1, sizeof(err));
     yyjson_doc_free(yyjson_read_opts((char *)str, 0, 0, NULL, &err));
     yy_assert(err.code == YYJSON_READ_ERROR_INVALID_PARAMETER);
     yy_assert(err.pos == 0);
-    
+
 #if !YYJSON_DISABLE_FILE
     str = NULL;
     //    ^ input path is NULL
@@ -59,9 +59,9 @@ static void test_read_err_code(void) {
     yy_assert(err.code == YYJSON_READ_ERROR_INVALID_PARAMETER);
     yy_assert(err.pos == 0);
 #endif
-    
-    
-    
+
+
+
     // -------------------------------------------------------------------------
     // Memory allocation failure occurs.
     str = "[]";
@@ -71,9 +71,9 @@ static void test_read_err_code(void) {
     yyjson_doc_free(yyjson_read_opts((char *)str, strlen(str), 0, &alc, &err));
     yy_assert(err.code == YYJSON_READ_ERROR_MEMORY_ALLOCATION);
     yy_assert(err.pos == 0);
-    
-    
-    
+
+
+
     // -------------------------------------------------------------------------
     // Input JSON string is empty.
     str = " ";
@@ -82,16 +82,16 @@ static void test_read_err_code(void) {
     yyjson_doc_free(yyjson_read_opts((char *)str, strlen(str), 0, NULL, &err));
     yy_assert(err.code == YYJSON_READ_ERROR_EMPTY_CONTENT);
     yy_assert(err.pos == 0);
-    
+
     str = "\n\n\r\n";
     //     ^ input data is empty
     memset(&err, -1, sizeof(err));
     yyjson_doc_free(yyjson_read_opts((char *)str, strlen(str), 0, NULL, &err));
     yy_assert(err.code == YYJSON_READ_ERROR_EMPTY_CONTENT);
     yy_assert(err.pos == 0);
-    
-    
-    
+
+
+
     // -------------------------------------------------------------------------
     // Unexpected content after document, such as `[1]abc`.
     str = "[1]abc";
@@ -100,14 +100,14 @@ static void test_read_err_code(void) {
     yyjson_doc_free(yyjson_read_opts((char *)str, strlen(str), 0, NULL, &err));
     yy_assert(err.code == YYJSON_READ_ERROR_UNEXPECTED_CONTENT);
     yy_assert(err.pos == strlen(str) - 3);
-    
+
     str = "[1],";
     //        ^ unexpected content after document
     memset(&err, -1, sizeof(err));
     yyjson_doc_free(yyjson_read_opts((char *)str, strlen(str), 0, NULL, &err));
     yy_assert(err.code == YYJSON_READ_ERROR_UNEXPECTED_CONTENT);
     yy_assert(err.pos == strlen(str) - 1);
-    
+
 #if !YYJSON_DISABLE_NON_STANDARD
     str = "[1],";
     //        ^ unexpected content after document
@@ -117,12 +117,12 @@ static void test_read_err_code(void) {
     yy_assert(err.code == YYJSON_READ_ERROR_UNEXPECTED_CONTENT);
     yy_assert(err.pos == strlen(str) - 1);
 #endif
-    
-    
-    
+
+
+
     // -------------------------------------------------------------------------
     // Unexpected ending, such as `[123`.
-    
+
     // test truncated single value
     const char *truncated_single_values[] = {
         "-",
@@ -151,7 +151,7 @@ static void test_read_err_code(void) {
         yyjson_doc_free(yyjson_read_opts((char *)str, len, 0, NULL, &err));
         yy_assert(err.code == YYJSON_READ_ERROR_UNEXPECTED_END);
         yy_assert(err.pos == len);
-        
+
         // add a space after invalid json
         memcpy(buf, str, len);
         memcpy(buf + len, " ", 2);
@@ -165,7 +165,7 @@ static void test_read_err_code(void) {
             yy_assert(err.pos == len);
         }
     }
-    
+
     // test truncated nan/inf value
     const char *truncated_nan_inf_values[] = {
         "na",
@@ -189,7 +189,7 @@ static void test_read_err_code(void) {
         yyjson_doc_free(yyjson_read_opts((char *)str, len, 0, NULL, &err));
         yy_assert(err.code);
         yy_assert(err.code != YYJSON_READ_ERROR_UNEXPECTED_END);
-        
+
 #if !YYJSON_DISABLE_NON_STANDARD
         memset(&err, -1, sizeof(err));
         yyjson_doc_free(yyjson_read_opts((char *)str, strlen(str),
@@ -198,7 +198,7 @@ static void test_read_err_code(void) {
         yy_assert(err.pos == len);
 #endif
     }
-    
+
     // test truncated JSON
     const char *valid_jsons[] = {
         "[0]",
@@ -231,7 +231,7 @@ static void test_read_err_code(void) {
             }
         }
     }
-    
+
     // test with `JSONTestSuite` files
     char dir[YY_MAX_PATH];
     yy_path_combine(dir, YYJSON_TEST_DATA_PATH, "data", "json", "test_parsing", NULL);
@@ -242,7 +242,7 @@ static void test_read_err_code(void) {
         char path[YY_MAX_PATH];
         yy_path_combine(path, dir, name, NULL);
         if (!yy_str_has_prefix(name, "y_")) continue;
-        
+
         // read files, trim spaces, ignore too large files
         u8 *dat;
         if (!yy_file_read(path, &dat, &len)) continue;
@@ -250,7 +250,7 @@ static void test_read_err_code(void) {
         while (len && is_json_space(str[0])) { str++; len--; }
         while (len && is_json_space(str[len - 1])) { len--; }
         if (len > 256) len = 0;
-        
+
         // some numbers are still valid after being truncated
         // but other truncated JSON should report `unexpected end` errors
         for (usize l = 1; l < len; l++) {
@@ -266,7 +266,7 @@ static void test_read_err_code(void) {
         free(dat);
     }
     yy_dir_free(names);
-    
+
     // Both 'Infinity' and 'Inf' are valid literals here.
 #if !YYJSON_DISABLE_NON_STANDARD
     str = "-Infini";
@@ -277,9 +277,9 @@ static void test_read_err_code(void) {
     yy_assert(err.code == YYJSON_READ_ERROR_UNEXPECTED_END);
     yy_assert(err.pos == strlen(str));
 #endif
-    
-    
-    
+
+
+
     // -------------------------------------------------------------------------
     // Unexpected character inside the document, such as `[abc]`.
     str = "[abc]";
@@ -288,16 +288,16 @@ static void test_read_err_code(void) {
     yyjson_doc_free(yyjson_read_opts((char *)str, strlen(str), 0, NULL, &err));
     yy_assert(err.code == YYJSON_READ_ERROR_UNEXPECTED_CHARACTER);
     yy_assert(err.pos == 1);
-    
+
     str = "inf";
     //     ^ unexpected character
     memset(&err, -1, sizeof(err));
     yyjson_doc_free(yyjson_read_opts((char *)str, strlen(str), 0, NULL, &err));
     yy_assert(err.code == YYJSON_READ_ERROR_UNEXPECTED_CHARACTER);
     yy_assert(err.pos == 0);
-    
-    
-    
+
+
+
     // -------------------------------------------------------------------------
     // Invalid JSON structure, such as `[1,]`.
     str = "[1,]";
@@ -306,9 +306,9 @@ static void test_read_err_code(void) {
     yyjson_doc_free(yyjson_read_opts((char *)str, strlen(str), 0, NULL, &err));
     yy_assert(err.code == YYJSON_READ_ERROR_JSON_STRUCTURE);
     yy_assert(err.pos == strlen(str) - 2);
-    
-    
-    
+
+
+
     // -------------------------------------------------------------------------
     // Special case: object member is an array with a trailing comma
     str = "{\"array\":[1,],\"integer\":35}";
@@ -317,9 +317,9 @@ static void test_read_err_code(void) {
     yyjson_doc_free(yyjson_read_opts((char *)str, strlen(str), 0, NULL, &err));
     yy_assert(err.code == YYJSON_READ_ERROR_JSON_STRUCTURE);
     yy_assert(err.pos == strlen(str) - 16);
-    
-    
-    
+
+
+
     // -------------------------------------------------------------------------
     // Invalid comment, such as unclosed multi-line comment.
 #if !YYJSON_DISABLE_NON_STANDARD
@@ -330,7 +330,7 @@ static void test_read_err_code(void) {
                                      YYJSON_READ_ALLOW_COMMENTS, NULL, &err));
     yy_assert(err.code == YYJSON_READ_ERROR_UNEXPECTED_END);
     yy_assert(err.pos == strlen(str));
-    
+
     str = "[123/*";
     //         ^ unclosed multiline comment
     memset(&err, -1, sizeof(err));
@@ -339,9 +339,9 @@ static void test_read_err_code(void) {
     yy_assert(err.code == YYJSON_READ_ERROR_UNEXPECTED_END);
     yy_assert(err.pos == strlen(str));
 #endif
-    
-    
-    
+
+
+
     // -------------------------------------------------------------------------
     // Invalid number, such as `123.e12`, `000`.
     str = "123.e12";
@@ -350,41 +350,41 @@ static void test_read_err_code(void) {
     yyjson_doc_free(yyjson_read_opts((char *)str, strlen(str), 0, NULL, &err));
     yy_assert(err.code == YYJSON_READ_ERROR_INVALID_NUMBER);
     yy_assert(err.pos == 4);
-    
+
     str = "000";
     //     ^ number with leading zero is not allowed
     memset(&err, -1, sizeof(err));
     yyjson_doc_free(yyjson_read_opts((char *)str, strlen(str), 0, NULL, &err));
     yy_assert(err.code == YYJSON_READ_ERROR_INVALID_NUMBER);
     yy_assert(err.pos == 0);
-    
+
     str = "[01";
     //      ^ number with leading zero is not allowed
     memset(&err, -1, sizeof(err));
     yyjson_doc_free(yyjson_read_opts((char *)str, strlen(str), 0, NULL, &err));
     yy_assert(err.code == YYJSON_READ_ERROR_INVALID_NUMBER);
     yy_assert(err.pos == 1);
-    
+
     str = "[123.]";
     //          ^ no digit after decimal point
     memset(&err, -1, sizeof(err));
     yyjson_doc_free(yyjson_read_opts((char *)str, strlen(str), 0, NULL, &err));
     yy_assert(err.code == YYJSON_READ_ERROR_INVALID_NUMBER);
     yy_assert(err.pos == 5);
-    
-    
-    
+
+
+
     // -------------------------------------------------------------------------
     // Invalid string, such as invalid escaped character inside a string.
 #if !YYJSON_DISABLE_UTF8_VALIDATION
-    
+
     str = "\"\\uD800\"";
     //              ^ no low surrogate in string
     memset(&err, -1, sizeof(err));
     yyjson_doc_free(yyjson_read_opts((char *)str, strlen(str), 0, NULL, &err));
     yy_assert(err.code == YYJSON_READ_ERROR_INVALID_STRING);
     yy_assert(err.pos == 1);
-    
+
     // invalid 1-byte UTF-8
     memcpy(buf, "\"abcdefgh\"", 10);
     buf[1] = 0x01;
@@ -408,7 +408,7 @@ static void test_read_err_code(void) {
         yy_assert(err.code == YYJSON_READ_ERROR_INVALID_STRING);
         yy_assert(err.pos == 1);
     }
-    
+
     // invalid 2-bytes UTF-8
     memcpy(buf, "\"abcdefgh\"", 10);
     buf[1] = 0xC0;
@@ -419,7 +419,7 @@ static void test_read_err_code(void) {
         yy_assert(err.code == YYJSON_READ_ERROR_INVALID_STRING);
         yy_assert(err.pos == 1);
     }
-    
+
     // invalid 3-bytes UTF-8
     memcpy(buf, "\"abcdefgh\"", 10);
     buf[1] = 0xE0;
@@ -451,7 +451,7 @@ static void test_read_err_code(void) {
             yy_assert(err.pos == 1);
         }
     }
-    
+
     // invalid 4-bytes UTF-8
     memcpy(buf, "\"abcdefgh\"", 10);
     buf[1] = 0xF0;
@@ -519,9 +519,9 @@ static void test_read_err_code(void) {
         yy_assert(err.pos == 1);
     }
 #endif
-    
-    
-    
+
+
+
     // -------------------------------------------------------------------------
     // UTF-8 BOM
     buf[0] = 0xEF;
@@ -532,15 +532,15 @@ static void test_read_err_code(void) {
     yyjson_doc_free(yyjson_read_opts((char *)buf, strlen(buf), 0, NULL, &err));
     yy_assert(err.code == YYJSON_READ_ERROR_UNEXPECTED_CHARACTER);
     yy_assert(err.pos == 0);
-    
+
 #if !YYJSON_DISABLE_NON_STANDARD
     memset(&err, -1, sizeof(err));
     yyjson_doc_free(yyjson_read_opts((char *)buf, strlen(buf), YYJSON_READ_ALLOW_BOM, NULL, &err));
     yy_assert(err.code == YYJSON_READ_ERROR_UNEXPECTED_CHARACTER);
     yy_assert(err.pos == 3);
 #endif
-    
-    
+
+
     // -------------------------------------------------------------------------
     // Invalid JSON literal, such as `truu`.
     str = "[truu]";
@@ -549,23 +549,23 @@ static void test_read_err_code(void) {
     yyjson_doc_free(yyjson_read_opts((char *)str, strlen(str), 0, NULL, &err));
     yy_assert(err.code == YYJSON_READ_ERROR_LITERAL);
     yy_assert(err.pos == 1);
-    
+
     str = "truu";
     //     ^ invalid literal
     memset(&err, -1, sizeof(err));
     yyjson_doc_free(yyjson_read_opts((char *)str, strlen(str), 0, NULL, &err));
     yy_assert(err.code == YYJSON_READ_ERROR_LITERAL);
     yy_assert(err.pos == 0);
-    
+
     str = "nan";
     //     ^ invalid literal
     memset(&err, -1, sizeof(err));
     yyjson_doc_free(yyjson_read_opts((char *)str, strlen(str), 0, NULL, &err));
     yy_assert(err.code == YYJSON_READ_ERROR_LITERAL);
     yy_assert(err.pos == 0);
-    
-    
-    
+
+
+
 #if !YYJSON_DISABLE_FILE
     // -------------------------------------------------------------------------
     // Failed to open a file.
@@ -575,7 +575,7 @@ static void test_read_err_code(void) {
     yyjson_doc_free(yyjson_read_file(str, 0, NULL, &err));
     yy_assert(err.code == YYJSON_READ_ERROR_FILE_OPEN);
     yy_assert(err.pos == 0);
-    
+
     // Failed to parse a file.
     yy_path_combine(dir, YYJSON_TEST_DATA_PATH, "data", "json", "test_yyjson", "comment_multiline_empty(fail).json", NULL);
     memset(&err, -1, sizeof(err));
@@ -602,7 +602,7 @@ static void test_read_err_code(void) {
         free(json);
     }
 #endif
-    
+
 #endif
 }
 
@@ -615,9 +615,9 @@ static void test_write_err_code(void) {
     yyjson_write_err err;
     char *json;
     yyjson_alc alc;
-    
-    
-    
+
+
+
     // -------------------------------------------------------------------------
     // Success, no error.
     memset(&err, -1, sizeof(err));
@@ -629,18 +629,18 @@ static void test_write_err_code(void) {
     yyjson_mut_doc_free(doc);
     free(json);
     yy_assert(err.code == YYJSON_WRITE_SUCCESS);
-    
-    
-    
+
+
+
     // -------------------------------------------------------------------------
     // Invalid parameter, such as NULL document.
     memset(&err, -1, sizeof(err));
     json = yyjson_mut_write_opts(NULL, 0, NULL, NULL, &err);
     yy_assert(json == NULL);
     yy_assert(err.code == YYJSON_WRITE_ERROR_INVALID_PARAMETER);
-    
-    
-    
+
+
+
     // -------------------------------------------------------------------------
     // Memory allocation failure occurs.
     yyjson_alc_pool_init(&alc, NULL, 0);
@@ -652,9 +652,9 @@ static void test_write_err_code(void) {
     yy_assert(json == NULL);
     yyjson_mut_doc_free(doc);
     yy_assert(err.code == YYJSON_WRITE_ERROR_MEMORY_ALLOCATION);
-    
-    
-    
+
+
+
     // -------------------------------------------------------------------------
     // Invalid value type in JSON document.
     memset(&err, -1, sizeof(err));
@@ -666,9 +666,9 @@ static void test_write_err_code(void) {
     yy_assert(json == NULL);
     yyjson_mut_doc_free(doc);
     yy_assert(err.code == YYJSON_WRITE_ERROR_INVALID_VALUE_TYPE);
-    
-    
-    
+
+
+
     // -------------------------------------------------------------------------
     // NaN or Infinity number occurs.
     memset(&err, -1, sizeof(err));
@@ -679,9 +679,9 @@ static void test_write_err_code(void) {
     yy_assert(json == NULL);
     yyjson_mut_doc_free(doc);
     yy_assert(err.code == YYJSON_WRITE_ERROR_NAN_OR_INF);
-    
-    
-    
+
+
+
     // -------------------------------------------------------------------------
     // Invalid unicode in string.
     memset(&err, -1, sizeof(err));
@@ -716,7 +716,7 @@ static void test_write_err_code(void) {
         yyjson_mut_doc_free(doc);
     }
 #endif
-    
+
 #endif
 }
 
@@ -725,26 +725,26 @@ static void test_write_err_code(void) {
 static void test_locate_pos(void) {
     const char *str;
     size_t len, pos, line, col, chr;
-    
+
     // -------------------------------------------------------------------------
     // Invalid input.
     yy_assert(!yyjson_locate_pos(NULL, 0, 0, NULL, NULL, NULL));
-    
+
     line = col = chr = SIZE_MAX;
     yy_assert(!yyjson_locate_pos(NULL, 0, 0, &line, &col, &chr));
     yy_assert(line == 0 && col == 0 && chr == 0);
-    
+
     yy_assert(!yyjson_locate_pos("abc", 3, 4, NULL, NULL, NULL));
-    
+
     line = col = chr = SIZE_MAX;
     yy_assert(!yyjson_locate_pos("abc", 3, 4, &line, &col, &chr));
     yy_assert(line == 0 && col == 0 && chr == 0);
-    
+
     // -------------------------------------------------------------------------
     // Empty.
     yy_assert(yyjson_locate_pos("", 0, 0, &line, &col, &chr));
     yy_assert(line == 1 && col == 1 && chr == 0);
-    
+
     // -------------------------------------------------------------------------
     // Empty new line.
     yy_assert(yyjson_locate_pos("\n", 1, 0, &line, &col, &chr));
@@ -755,7 +755,7 @@ static void test_locate_pos(void) {
     yy_assert(line == 2 && col == 1 && chr == 1);
     yy_assert(yyjson_locate_pos("\n\n", 2, 2, &line, &col, &chr));
     yy_assert(line == 3 && col == 1 && chr == 2);
-    
+
     // -------------------------------------------------------------------------
     // 1 line.
     str = "abc";
@@ -764,7 +764,7 @@ static void test_locate_pos(void) {
         yy_assert(yyjson_locate_pos(str, len, pos, &line, &col, &chr));
         yy_assert(line == 1 && col == pos + 1 && chr == pos);
     }
-    
+
     // -------------------------------------------------------------------------
     // 2 lines.
     str = "abc\ndef";
@@ -777,7 +777,7 @@ static void test_locate_pos(void) {
             yy_assert(line == 2 && col == pos - 4 + 1 && chr == pos);
         }
     }
-    
+
     // -------------------------------------------------------------------------
     // 3 lines.
     str = "abc\ndef\nghijklmn";
@@ -792,7 +792,7 @@ static void test_locate_pos(void) {
             yy_assert(line == 3 && col == pos - 8 + 1 && chr == pos);
         }
     }
-    
+
     // -------------------------------------------------------------------------
     // Unicode.
     str = "abcé果😀"; // 1-4 byte UTF-8

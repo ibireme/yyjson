@@ -19,7 +19,7 @@ static yy_inline bool f64_isfinite(double x) {
 static bool mut_val_has_inf_nan(yyjson_mut_val *val) {
     usize idx, max;
     yyjson_mut_val *k, *v;
-    
+
     if (yyjson_mut_is_real(val)) {
         f64 num = yyjson_mut_get_real(val);
         if (!f64_isfinite(num)) return true;
@@ -40,10 +40,10 @@ static bool mut_val_has_inf_nan(yyjson_mut_val *val) {
 static usize mut_val_get_num(yyjson_mut_val *val) {
     usize idx, max, num;
     yyjson_mut_val *k, *v;
-    
+
     if (!val) return 0;
     if (!yyjson_mut_is_ctn(val)) return 1;
-    
+
     num = 1;
     if (yyjson_mut_is_arr(val)) {
         yyjson_mut_arr_foreach(val, idx, max, v) {
@@ -65,13 +65,13 @@ static void validate_json_write_with_flag(yyjson_write_flag flg,
                                           const char *expect) {
 #if !YYJSON_DISABLE_READER
     usize expect_len = expect ? strlen(expect) : 0;
-    
+
     // ---------------------------
     // write mutable doc to buffer
     usize buf_len, buf_suc;
     usize buf_len_min = expect_len > 64 ? expect_len - 64 : 0;
     usize buf_len_max = buf_len_min + (expect ? 1024 : 64);
-    
+
     for (buf_suc = 0, buf_len = buf_len_min; !is_alc_err && buf_len < buf_len_max; buf_len++) {
         char *buf = malloc(buf_len);
         usize ret_len = yyjson_mut_write_buf(buf, buf_len, doc, flg, NULL);
@@ -85,7 +85,7 @@ static void validate_json_write_with_flag(yyjson_write_flag flg,
         if (buf_suc > 16) break; // enough
     }
     yy_assert(expect ? buf_suc > 0 : buf_suc == 0);
-    
+
     for (buf_suc = 0, buf_len = buf_len_min; !is_alc_err && buf_len < buf_len_max; buf_len++) {
         char *buf = malloc(buf_len);
         usize ret_len = yyjson_mut_val_write_buf(buf, buf_len, yyjson_mut_doc_get_root(doc), flg, NULL);
@@ -99,12 +99,12 @@ static void validate_json_write_with_flag(yyjson_write_flag flg,
         if (buf_suc > 16) break; // enough
     }
     yy_assert(expect ? buf_suc > 0 : buf_suc == 0);
-    
-    
+
+
     // ---------------------------
     // write immutable doc to buffer
     yyjson_doc *doc_cpy = yyjson_mut_doc_imut_copy(doc, NULL);
-    
+
     for (buf_suc = 0, buf_len = buf_len_min; !is_alc_err && buf_len < buf_len_max; buf_len++) {
         char *buf = malloc(buf_len);
         usize ret_len = yyjson_write_buf(buf, buf_len, doc_cpy, flg, NULL);
@@ -118,7 +118,7 @@ static void validate_json_write_with_flag(yyjson_write_flag flg,
         if (buf_suc > 16) break; // enough
     }
     yy_assert(expect ? buf_suc > 0 : buf_suc == 0);
-    
+
     for (buf_suc = 0, buf_len = buf_len_min; !is_alc_err && buf_len < buf_len_max; buf_len++) {
         char *buf = malloc(buf_len);
         usize ret_len = yyjson_val_write_buf(buf, buf_len, yyjson_doc_get_root(doc_cpy), flg, NULL);
@@ -132,10 +132,10 @@ static void validate_json_write_with_flag(yyjson_write_flag flg,
         if (buf_suc > 16) break; // enough
     }
     yy_assert(expect ? buf_suc > 0 : buf_suc == 0);
-    
+
     yyjson_doc_free(doc_cpy);
-    
-    
+
+
     // ---------------------------
     // write mutable doc to string
     usize len;
@@ -148,18 +148,18 @@ static void validate_json_write_with_flag(yyjson_write_flag flg,
     yy_assertf(strlen(ret) == len, "write with flag 0x%x\nexpect:\n%s\noutput:\n%s\n", flg, expect, ret);
     yy_assertf(strlen(expect) == len, "write with flag 0x%x\nexpect:\n%s\noutput:\n%s\n", flg, expect, ret);
     yy_assertf(memcmp(ret, expect, len) == 0, "write with flag 0x%x\nexpect:\n%s\noutput:\n%s\n", flg, expect, ret);
-    
-    
+
+
 #if !YYJSON_DISABLE_FILE
-    
+
     // ---------------------------
     // temp file path
     const char *tmp_file_path = "__yyjson_test_tmp__.json";
     FILE *tmp_fp;
     u8 *dat, num = '0';
     usize dat_len;
-    
-    
+
+
     // ---------------------------
     // write mutable doc to file
     yy_file_delete(tmp_file_path);
@@ -169,8 +169,8 @@ static void validate_json_write_with_flag(yyjson_write_flag flg,
     yy_assert(memcmp(dat, ret, len) == 0);
     free(dat);
     yy_file_delete(tmp_file_path);
-    
-    
+
+
     // ---------------------------
     // write mutable doc to file pointer
     tmp_fp = yy_file_open(tmp_file_path, "wb");
@@ -181,8 +181,8 @@ static void validate_json_write_with_flag(yyjson_write_flag flg,
     yy_assert(memcmp(dat, ret, len) == 0);
     free(dat);
     yy_file_delete(tmp_file_path);
-    
-    
+
+
     // ---------------------------
     // write to read-only fp
     yy_file_write(tmp_file_path, (void *)&num, 1);
@@ -190,10 +190,10 @@ static void validate_json_write_with_flag(yyjson_write_flag flg,
     yy_assert(!yyjson_mut_write_fp(tmp_fp, doc, flg, alc, NULL));
     fclose(tmp_fp);
     yy_file_delete(tmp_file_path);
-    
+
     yy_assert(!yyjson_mut_write_fp(NULL, doc, flg, alc, NULL));
-    
-    
+
+
     // ---------------------------
     // read
     yyjson_read_flag rflg = YYJSON_READ_NOFLAG;
@@ -204,8 +204,8 @@ static void validate_json_write_with_flag(yyjson_write_flag flg,
         idoc = yyjson_read_opts(ret, len, rflg, NULL, NULL);
     }
     yy_assert(mut_val_get_num(doc->root) == idoc->val_read);
-    
-    
+
+
     // ---------------------------
     // write immutable doc to string
     usize len2;
@@ -213,13 +213,13 @@ static void validate_json_write_with_flag(yyjson_write_flag flg,
     yy_assert(len == len2 && ret2);
     yy_assert(memcmp(ret, ret2, len) == 0);
     free(ret2);
-    
+
     ret2 = yyjson_val_write_opts(idoc->root, flg, NULL, &len2, NULL);
     yy_assert(len == len2 && ret2);
     yy_assert(memcmp(ret, ret2, len) == 0);
     free(ret2);
-    
-    
+
+
     // ---------------------------
     // write immutable doc to file
     yy_assert(yyjson_write_file(tmp_file_path, idoc, flg, alc, NULL));
@@ -230,7 +230,7 @@ static void validate_json_write_with_flag(yyjson_write_flag flg,
     yy_assert(memcmp(dat2, ret, len) == 0);
     free(dat2);
     yy_file_delete(tmp_file_path);
-    
+
     tmp_fp = yy_file_open(tmp_file_path, "wb");
     yy_assert(yyjson_write_fp(tmp_fp, idoc, flg, alc, NULL));
     fclose(tmp_fp);
@@ -239,16 +239,16 @@ static void validate_json_write_with_flag(yyjson_write_flag flg,
     yy_assert(memcmp(dat2, ret, len) == 0);
     free(dat2);
     yy_file_delete(tmp_file_path);
-    
+
     yy_file_write(tmp_file_path, (void *)&num, 1);
     tmp_fp = yy_file_open(tmp_file_path, "rb");
     yy_assert(!yyjson_write_fp(tmp_fp, idoc, flg, alc, NULL));
     fclose(tmp_fp);
     yy_file_delete(tmp_file_path);
-    
+
     yy_assert(!yyjson_write_fp(NULL, idoc, flg, alc, NULL));
-    
-    
+
+
     // ---------------------------
     // write immutable val to file
     yy_assert(yyjson_val_write_file(tmp_file_path, idoc->root, flg, alc, NULL));
@@ -257,7 +257,7 @@ static void validate_json_write_with_flag(yyjson_write_flag flg,
     yy_assert(memcmp(dat2, ret, len) == 0);
     free(dat2);
     yy_file_delete(tmp_file_path);
-    
+
     tmp_fp = yy_file_open(tmp_file_path, "wb");
     yy_assert(yyjson_val_write_fp(tmp_fp, idoc->root, flg, alc, NULL));
     fclose(tmp_fp);
@@ -266,16 +266,16 @@ static void validate_json_write_with_flag(yyjson_write_flag flg,
     yy_assert(memcmp(dat2, ret, len) == 0);
     free(dat2);
     yy_file_delete(tmp_file_path);
-    
+
     yy_file_write(tmp_file_path, (void *)&num, 1);
     tmp_fp = yy_file_open(tmp_file_path, "rb");
     yy_assert(!yyjson_val_write_fp(tmp_fp, idoc->root, flg, alc, NULL));
     fclose(tmp_fp);
     yy_file_delete(tmp_file_path);
-    
+
     yy_assert(!yyjson_val_write_fp(NULL, idoc->root, flg, alc, NULL));
-    
-    
+
+
     // ---------------------------
     // copy mutable doc and write again
     yyjson_mut_doc *mdoc = yyjson_doc_mut_copy(idoc, NULL);
@@ -285,20 +285,20 @@ static void validate_json_write_with_flag(yyjson_write_flag flg,
     yy_assert(len == len3 && ret3);
     yy_assert(memcmp(ret, ret3, len) == 0);
     free(ret3);
-    
+
     ret3 = yyjson_mut_val_write_opts(doc->root, flg, NULL, &len3, NULL);
     yy_assert(len == len3 && ret3);
     yy_assert(memcmp(ret, ret3, len) == 0);
     free(ret3);
-    
-    
+
+
     // ---------------------------
     // cleanup
     yyjson_doc_free(idoc);
     yyjson_mut_doc_free(mdoc);
-    
+
 #endif
-    
+
     if (alc) alc->free(alc->ctx, (void *)ret);
     else free((void *)ret);
 #endif
@@ -316,7 +316,7 @@ static void validate_json_write_ex(yyjson_mut_doc *doc,
                                    const char *pre_null) {
     yyjson_write_flag flg;
     bool has_nan_inf = mut_val_has_inf_nan(yyjson_mut_doc_get_root(doc));
-    
+
     // nan inf should fail without 'INF_AND_NAN' flag
     if (has_nan_inf) {
         flg = YYJSON_WRITE_NOFLAG;
@@ -324,35 +324,35 @@ static void validate_json_write_ex(yyjson_mut_doc *doc,
         flg = YYJSON_WRITE_PRETTY;
         validate_json_write_with_flag(flg, doc, alc, is_alc_err, NULL);
     }
-    
+
     // minify
     flg = YYJSON_WRITE_NOFLAG;
     if (has_nan_inf) flg |= YYJSON_WRITE_ALLOW_INF_AND_NAN;
     validate_json_write_with_flag(flg, doc, alc, is_alc_err, min);
-    
+
     flg = YYJSON_WRITE_NOFLAG;
     if (has_nan_inf) flg |= YYJSON_WRITE_INF_AND_NAN_AS_NULL;
     validate_json_write_with_flag(flg, doc, alc, is_alc_err, min_null);
-    
+
     flg = YYJSON_WRITE_NOFLAG;
     if (has_nan_inf) flg |= YYJSON_WRITE_ALLOW_INF_AND_NAN |
                             YYJSON_WRITE_INF_AND_NAN_AS_NULL;
     validate_json_write_with_flag(flg, doc, alc, is_alc_err, min_null);
-    
+
     // pretty
     flg = YYJSON_WRITE_PRETTY;
     if (has_nan_inf) flg |= YYJSON_WRITE_ALLOW_INF_AND_NAN;
     validate_json_write_with_flag(flg, doc, alc, is_alc_err, pre);
-    
+
     flg = YYJSON_WRITE_PRETTY;
     if (has_nan_inf) flg |= YYJSON_WRITE_INF_AND_NAN_AS_NULL;
     validate_json_write_with_flag(flg, doc, alc, is_alc_err, pre_null);
-    
+
     flg = YYJSON_WRITE_PRETTY;
     if (has_nan_inf) flg |= YYJSON_WRITE_ALLOW_INF_AND_NAN |
                             YYJSON_WRITE_INF_AND_NAN_AS_NULL;
     validate_json_write_with_flag(flg, doc, alc, is_alc_err, pre_null);
-    
+
     // use small allocator to test allocation failure
     if (min && pre && alc && strlen(min) > 8) {
         char buf[64];
@@ -371,44 +371,44 @@ static void validate_json_write(yyjson_mut_doc *doc,
 }
 
 static void test_json_write(yyjson_alc *alc) {
-    
+
     yyjson_mut_doc *doc;
     yyjson_mut_val *root, *val, *val2;
     char *str1, *str2, *cur1, *cur2;
     usize len;
     yyjson_write_err err;
-    
+
     doc = yyjson_mut_doc_new(NULL);
-    
-    
+
+
     // invalid params
     yy_assert(!yyjson_mut_write(NULL, 0, NULL));
     yy_assert(!yyjson_mut_write(doc, 0, NULL));
-    
+
     len = 1;
     yy_assert(!yyjson_mut_write(NULL, 0, &len));
     yy_assert(len == 0);
     len = 1;
     yy_assert(!yyjson_mut_write(doc, 0, &len));
     yy_assert(len == 0);
-    
+
     yy_assert(!yyjson_mut_write_opts(NULL, 0, NULL, NULL, NULL));
     yy_assert(!yyjson_mut_write_opts(doc, 0, NULL, NULL, NULL));
-    
+
     len = 1;
     yy_assert(!yyjson_mut_write_opts(NULL, 0, NULL, &len, NULL));
     yy_assert(len == 0);
     len = 1;
     yy_assert(!yyjson_mut_write_opts(doc, 0, NULL, &len, NULL));
     yy_assert(len == 0);
-    
+
     memset(&err, 0, sizeof(err));
     yy_assert(!yyjson_mut_write_opts(NULL, 0, NULL, NULL, &err));
     yy_assert(err.code && err.msg);
     memset(&err, 0, sizeof(err));
     yy_assert(!yyjson_mut_write_opts(doc, 0, NULL, NULL, &err));
     yy_assert(err.code && err.msg);
-    
+
     len = 1;
     memset(&err, 0, sizeof(err));
     yy_assert(!yyjson_mut_write_opts(NULL, 0, NULL, &len, &err));
@@ -419,12 +419,12 @@ static void test_json_write(yyjson_alc *alc) {
     yy_assert(!yyjson_mut_write_opts(doc, 0, NULL, &len, &err));
     yy_assert(len == 0);
     yy_assert(err.code && err.msg);
-    
+
     yy_assert(!yyjson_write_buf(NULL, 0, NULL, 0, NULL));
     yy_assert(!yyjson_mut_write_buf(NULL, 0, NULL, 0, NULL));
     yy_assert(!yyjson_val_write_buf(NULL, 0, NULL, 0, NULL));
     yy_assert(!yyjson_mut_val_write_buf(NULL, 0, NULL, 0, NULL));
-    
+
     memset(&err, 0, sizeof(err));
     yy_assert(!yyjson_write_buf(NULL, 0, NULL, 0, &err));
     yy_assert(err.code && err.msg);
@@ -437,22 +437,22 @@ static void test_json_write(yyjson_alc *alc) {
     memset(&err, 0, sizeof(err));
     yy_assert(!yyjson_mut_val_write_buf(NULL, 0, NULL, 0, &err));
     yy_assert(err.code && err.msg);
-    
-    
+
+
     // invalid
     root = yyjson_mut_null(doc);
     root->tag = 0;
     yyjson_mut_doc_set_root(doc, root);
     validate_json_write(doc, alc, NULL, NULL);
-    
+
     root = yyjson_mut_arr(doc);
     yyjson_mut_doc_set_root(doc, root);
     val = yyjson_mut_null(doc);
     val->tag = 0;
     yyjson_mut_arr_add_val(root, val);
     validate_json_write(doc, alc, NULL, NULL);
-    
-    
+
+
     // single
 #if !YYJSON_DISABLE_NON_STANDARD
     root = yyjson_mut_real(doc, NAN);
@@ -460,7 +460,7 @@ static void test_json_write(yyjson_alc *alc) {
     validate_json_write_ex(doc, alc, false,
                            "NaN", "NaN",
                            "null", "null");
-    
+
     root = yyjson_mut_real(doc, -INFINITY);
     yyjson_mut_doc_set_root(doc, root);
     validate_json_write_ex(doc, alc, false,
@@ -472,73 +472,73 @@ static void test_json_write(yyjson_alc *alc) {
     validate_json_write_ex(doc, alc, false,
                            NULL, NULL,
                            "null", "null");
-    
+
     root = yyjson_mut_real(doc, -INFINITY);
     yyjson_mut_doc_set_root(doc, root);
     validate_json_write_ex(doc, alc, false,
                            NULL, NULL,
                            "null", "null");
 #endif
-    
+
     root = yyjson_mut_null(doc);
     yyjson_mut_doc_set_root(doc, root);
     validate_json_write(doc, alc, "null", "null");
-    
+
     root = yyjson_mut_true(doc);
     yyjson_mut_doc_set_root(doc, root);
     validate_json_write(doc, alc, "true", "true");
-    
+
     root = yyjson_mut_false(doc);
     yyjson_mut_doc_set_root(doc, root);
     validate_json_write(doc, alc, "false", "false");
-    
+
     root = yyjson_mut_uint(doc, 123);
     yyjson_mut_doc_set_root(doc, root);
     validate_json_write(doc, alc, "123", "123");
-    
+
     root = yyjson_mut_sint(doc, -123);
     yyjson_mut_doc_set_root(doc, root);
     validate_json_write(doc, alc, "-123", "-123");
-    
+
     root = yyjson_mut_real(doc, -1.5);
     yyjson_mut_doc_set_root(doc, root);
     validate_json_write(doc, alc, "-1.5", "-1.5");
-    
+
     root = yyjson_mut_str(doc, "abc");
     yyjson_mut_doc_set_root(doc, root);
     validate_json_write(doc, alc, "\"abc\"", "\"abc\"");
-    
+
     root = yyjson_mut_arr(doc);
     yyjson_mut_doc_set_root(doc, root);
     validate_json_write(doc, alc, "[]", "[]");
-    
+
     root = yyjson_mut_obj(doc);
     yyjson_mut_doc_set_root(doc, root);
     validate_json_write(doc, alc, "{}", "{}");
-    
-    
+
+
     // string without null-terminator
     for (len = 0; len <= 128; len++) {
         char *str = len ? malloc(len) : (char *)1;
         for (usize i = 0; i < len; i++) {
             str[i] = 'a' + (yy_rand_u32() % 26);
         }
-        
+
         char *json = malloc(len + 3);
         json[0] = '"';
         memcpy((void *)(json + 1), (void *)str, len);
         json[len + 1] = '"';
         json[len + 2] = '\0';
-        
+
         root = yyjson_mut_strn(doc, str, len);
         yyjson_mut_doc_set_root(doc, root);
         validate_json_write(doc, alc, json, json);
-        
+
         if (len) free((void *)str);
         free((void *)json);
     }
-    
-    
+
+
     // array
     root = yyjson_mut_arr(doc);
     yyjson_mut_doc_set_root(doc, root);
@@ -548,7 +548,7 @@ static void test_json_write(yyjson_alc *alc) {
                         "[\n"
                         "    1\n"
                         "]");
-    
+
     root = yyjson_mut_arr(doc);
     yyjson_mut_doc_set_root(doc, root);
     yyjson_mut_arr_add_int(doc, root, 1);
@@ -559,7 +559,7 @@ static void test_json_write(yyjson_alc *alc) {
                         "    1,\n"
                         "    2\n"
                         "]");
-    
+
 #if !YYJSON_DISABLE_NON_STANDARD
     root = yyjson_mut_arr(doc);
     yyjson_mut_doc_set_root(doc, root);
@@ -574,7 +574,7 @@ static void test_json_write(yyjson_alc *alc) {
                            "    null\n"
                            "]");
 #endif
-    
+
     root = yyjson_mut_arr(doc);
     yyjson_mut_doc_set_root(doc, root);
     yyjson_mut_arr_add_str(doc, root, "abc");
@@ -587,7 +587,7 @@ static void test_json_write(yyjson_alc *alc) {
                         "    true,\n"
                         "    null\n"
                         "]");
-    
+
     root = yyjson_mut_arr(doc);
     yyjson_mut_doc_set_root(doc, root);
     val = yyjson_mut_arr(doc);
@@ -597,7 +597,7 @@ static void test_json_write(yyjson_alc *alc) {
                         "[\n"
                         "    []\n"
                         "]");
-    
+
     root = yyjson_mut_arr(doc);
     yyjson_mut_doc_set_root(doc, root);
     val = yyjson_mut_arr_add_arr(doc, root);
@@ -609,7 +609,7 @@ static void test_json_write(yyjson_alc *alc) {
                         "        []\n"
                         "    ]\n"
                         "]");
-    
+
     root = yyjson_mut_arr(doc);
     yyjson_mut_doc_set_root(doc, root);
     val = yyjson_mut_obj(doc);
@@ -619,7 +619,7 @@ static void test_json_write(yyjson_alc *alc) {
                         "[\n"
                         "    {}\n"
                         "]");
-    
+
     root = yyjson_mut_arr(doc);
     yyjson_mut_doc_set_root(doc, root);
     yyjson_mut_arr_add_arr(doc, root);
@@ -630,7 +630,7 @@ static void test_json_write(yyjson_alc *alc) {
                         "    [],\n"
                         "    true\n"
                         "]");
-    
+
     root = yyjson_mut_arr(doc);
     yyjson_mut_doc_set_root(doc, root);
     yyjson_mut_arr_add_true(doc, root);
@@ -641,7 +641,7 @@ static void test_json_write(yyjson_alc *alc) {
                         "    true,\n"
                         "    []\n"
                         "]");
-    
+
     root = yyjson_mut_arr(doc);
     yyjson_mut_doc_set_root(doc, root);
     val = yyjson_mut_arr_add_arr(doc, root);
@@ -653,7 +653,7 @@ static void test_json_write(yyjson_alc *alc) {
                         "        true\n"
                         "    ]\n"
                         "]");
-    
+
     root = yyjson_mut_arr(doc);
     yyjson_mut_doc_set_root(doc, root);
     val = yyjson_mut_arr_add_arr(doc, root);
@@ -667,7 +667,7 @@ static void test_json_write(yyjson_alc *alc) {
                         "    ],\n"
                         "    []\n"
                         "]");
-    
+
     cur1 = str1 = malloc(1024 * 2 + 4);
     cur2 = str2 = malloc(1024 * 7 + 4);
     root = yyjson_mut_arr(doc);
@@ -692,8 +692,8 @@ static void test_json_write(yyjson_alc *alc) {
     validate_json_write(doc, alc, str1, str2);
     free(str1);
     free(str2);
-    
-    
+
+
     // object
     root = yyjson_mut_obj(doc);
     yyjson_mut_doc_set_root(doc, root);
@@ -705,7 +705,7 @@ static void test_json_write(yyjson_alc *alc) {
                         "{\n"
                         "    \"abc\": 123\n"
                         "}");
-    
+
 #if !YYJSON_DISABLE_NON_STANDARD
     root = yyjson_mut_obj(doc);
     yyjson_mut_doc_set_root(doc, root);
@@ -722,7 +722,7 @@ static void test_json_write(yyjson_alc *alc) {
                            "    \"abc\": null\n"
                            "}");
 #endif
-    
+
     root = yyjson_mut_obj(doc);
     yyjson_mut_doc_set_root(doc, root);
     yy_assert(doc->root);
@@ -734,7 +734,7 @@ static void test_json_write(yyjson_alc *alc) {
                         "{\n"
                         "    \"abc\": {}\n"
                         "}");
-    
+
     root = yyjson_mut_obj(doc);
     yyjson_mut_doc_set_root(doc, root);
     yyjson_mut_obj_add_null(doc, root, "a");
@@ -749,7 +749,7 @@ static void test_json_write(yyjson_alc *alc) {
                         "    \"c\": 123,\n"
                         "    \"d\": \"zzz\"\n"
                         "}");
-    
+
     root = yyjson_mut_obj(doc);
     yyjson_mut_doc_set_root(doc, root);
     yyjson_mut_obj_add_null(doc, root, "a");
@@ -766,7 +766,7 @@ static void test_json_write(yyjson_alc *alc) {
                         "    \"a\": 123,\n"
                         "    \"a\": \"zzz\"\n"
                         "}");
-    
+
     root = yyjson_mut_obj(doc);
     yyjson_mut_doc_set_root(doc, root);
     val = yyjson_mut_arr(doc);
@@ -779,7 +779,7 @@ static void test_json_write(yyjson_alc *alc) {
                         "        123\n"
                         "    ]\n"
                         "}");
-    
+
     root = yyjson_mut_obj(doc);
     yyjson_mut_doc_set_root(doc, root);
     val = yyjson_mut_arr(doc);
@@ -792,7 +792,7 @@ static void test_json_write(yyjson_alc *alc) {
                         "        123\n"
                         "    ]\n"
                         "}");
-    
+
     root = yyjson_mut_obj(doc);
     yyjson_mut_doc_set_root(doc, root);
     val = yyjson_mut_obj(doc);
@@ -806,7 +806,7 @@ static void test_json_write(yyjson_alc *alc) {
                         "        \"b\": {}\n"
                         "    }\n"
                         "}");
-    
+
     // large object with same key
     cur1 = str1 = malloc(1024 * 6 + 32);
     cur2 = str2 = malloc(1024 * 12 + 32);
@@ -832,7 +832,7 @@ static void test_json_write(yyjson_alc *alc) {
     validate_json_write(doc, alc, str1, str2);
     free(str1);
     free(str2);
-    
+
     yyjson_mut_doc_free(doc);
 }
 
@@ -847,7 +847,7 @@ yy_test_case(test_json_writer) {
         test_json_write(NULL);
         free(buf);
     }
-    
+
     // test invalid parameters
 #if !YYJSON_DISABLE_FILE
     {
@@ -909,7 +909,7 @@ yy_test_case(test_json_writer) {
         yy_assert(!yyjson_write(doc, YYJSON_WRITE_PRETTY, NULL));
         yyjson_doc_free(doc);
     }
-    
+
     // test fail
 #if !YYJSON_DISABLE_FILE
     {
@@ -919,14 +919,14 @@ yy_test_case(test_json_writer) {
         yyjson_doc *idoc = yyjson_read("1", 1, 0);
         yy_assert(!yyjson_write_file(path, idoc, 0, NULL, NULL));
         yyjson_doc_free(idoc);
-        
+
         yyjson_mut_doc *mdoc = yyjson_mut_doc_new(NULL);
         yyjson_mut_doc_set_root(mdoc, yyjson_mut_null(mdoc));
         yy_assert(!yyjson_mut_write_file(path, mdoc, 0, NULL, NULL));
         yyjson_mut_doc_free(mdoc);
     }
 #endif
-    
+
     // test raw
     {
         const char *str = "[1.2345678901234567890e999]";
@@ -936,7 +936,7 @@ yy_test_case(test_json_writer) {
         yy_assert(yyjson_is_raw(raw));
         yy_assert(yyjson_get_len(raw) == strlen(str) - 2);
         yy_assert(memcmp(yyjson_get_raw(raw), str + 1, strlen(str) - 2) == 0);
-        
+
         usize ret_len;
         char *ret = yyjson_write(idoc, 0, &ret_len);
         yy_assert(ret_len == strlen(str) && memcmp(ret, str, ret_len) == 0);
@@ -944,7 +944,7 @@ yy_test_case(test_json_writer) {
         ret = yyjson_write(idoc, YYJSON_WRITE_PRETTY, &ret_len);
         yy_assert(ret);
         free(ret);
-        
+
         yyjson_mut_doc *mdoc = yyjson_doc_mut_copy(idoc, NULL);
         ret = yyjson_mut_write(mdoc, 0, &ret_len);
         yy_assert(ret_len == strlen(str) && memcmp(ret, str, ret_len) == 0);
@@ -953,10 +953,10 @@ yy_test_case(test_json_writer) {
         yy_assert(ret);
         free(ret);
         yyjson_mut_doc_free(mdoc);
-        
+
         yyjson_doc_free(idoc);
     }
-    
+
     // test modify input
     {
         char *ret;
@@ -964,9 +964,9 @@ yy_test_case(test_json_writer) {
         yyjson_doc *doc = yyjson_read(str, strlen(str), 0);
         yyjson_val *root = yyjson_doc_get_root(doc);
         yyjson_val *val = yyjson_arr_get(root, 0);
-        
+
         yy_assert(!yyjson_set_bool(root, true));
-        
+
         yyjson_set_raw(val, "aaa", 3);
         ret = yyjson_write(doc, 0, NULL);
         yy_assert(strcmp(ret, "[aaa]") == 0);
@@ -976,42 +976,42 @@ yy_test_case(test_json_writer) {
         ret = yyjson_write(doc, 0, NULL);
         yy_assert(strcmp(ret, "[aaa]") == 0);
         free(ret);
-        
+
         yyjson_set_null(val);
         ret = yyjson_write(doc, 0, NULL);
         yy_assert(strcmp(ret, "[null]") == 0);
         free(ret);
-        
+
         yyjson_set_bool(val, true);
         ret = yyjson_write(doc, 0, NULL);
         yy_assert(strcmp(ret, "[true]") == 0);
         free(ret);
-        
+
         yyjson_set_uint(val, 111);
         ret = yyjson_write(doc, 0, NULL);
         yy_assert(strcmp(ret, "[111]") == 0);
         free(ret);
-        
+
         yyjson_set_sint(val, -111);
         ret = yyjson_write(doc, 0, NULL);
         yy_assert(strcmp(ret, "[-111]") == 0);
         free(ret);
-        
+
         yyjson_set_int(val, 100);
         ret = yyjson_write(doc, 0, NULL);
         yy_assert(strcmp(ret, "[100]") == 0);
         free(ret);
-        
+
         yyjson_set_real(val, 1.5);
         ret = yyjson_write(doc, 0, NULL);
         yy_assert(strcmp(ret, "[1.5]") == 0);
         free(ret);
-        
+
         yyjson_set_str(val, "abc");
         ret = yyjson_write(doc, 0, NULL);
         yy_assert(strcmp(ret, "[\"abc\"]") == 0);
         free(ret);
-        
+
         yyjson_set_str(val, "abc\n");
         yyjson_set_str_noesc(val, true);
         ret = yyjson_write(doc, 0, NULL);
@@ -1021,16 +1021,16 @@ yy_test_case(test_json_writer) {
         ret = yyjson_write(doc, 0, NULL);
         yy_assert(strcmp(ret, "[\"abc\\n\"]") == 0);
         free(ret);
-        
+
         yyjson_set_strn(val, "abcd", 3);
         ret = yyjson_write(doc, 0, NULL);
         yy_assert(strcmp(ret, "[\"abc\"]") == 0);
         free(ret);
-        
+
         yyjson_doc_free(doc);
     }
-    
-    
+
+
     // test 2 space indent
     {
         const char *str =
@@ -1039,15 +1039,15 @@ yy_test_case(test_json_writer) {
             "]";
         yyjson_doc *doc = yyjson_read(str, strlen(str), 0);
         yyjson_mut_doc *mdoc = yyjson_doc_mut_copy(doc, NULL);
-        
+
         char *ret = yyjson_write(doc, YYJSON_WRITE_PRETTY_TWO_SPACES, NULL);
         yy_assert(strcmp(ret, str) == 0);
         free(ret);
-        
+
         char *mret = yyjson_mut_write(mdoc, YYJSON_WRITE_PRETTY_TWO_SPACES, NULL);
         yy_assert(strcmp(mret, str) == 0);
         free(mret);
-        
+
         yyjson_doc_free(doc);
         yyjson_mut_doc_free(mdoc);
     }
@@ -1089,8 +1089,8 @@ yy_test_case(test_json_writer) {
         yyjson_doc_free(doc);
         yyjson_mut_doc_free(mdoc);
     }
-    
-    
+
+
     // test indentation across four-byte tab copy boundaries
     {
         const yyjson_write_flag flags[] = {
@@ -1157,7 +1157,7 @@ yy_test_case(test_json_writer) {
         yyjson_doc *doc;
         yyjson_mut_doc *mdoc;
         char *ret;
-        
+
         // single value
         str = "123";
         doc = yyjson_read(str, strlen(str), 0);
@@ -1166,17 +1166,17 @@ yy_test_case(test_json_writer) {
         yy_assert(memcmp(str, ret, strlen(str)) == 0);
         yy_assert(ret[strlen(str)] == '\n');
         free(ret);
-        
+
         mdoc = yyjson_doc_mut_copy(doc, NULL);
         ret = yyjson_mut_write(mdoc, YYJSON_WRITE_NEWLINE_AT_END, &len);
         yy_assert(strlen(ret) == len && len == strlen(str) + 1);
         yy_assert(memcmp(str, ret, strlen(str)) == 0);
         yy_assert(ret[strlen(str)] == '\n');
         free(ret);
-        
+
         yyjson_doc_free(doc);
         yyjson_mut_doc_free(mdoc);
-        
+
         // multiple values
         str = "[123]";
         doc = yyjson_read(str, strlen(str), 0);
@@ -1185,17 +1185,17 @@ yy_test_case(test_json_writer) {
         yy_assert(memcmp(str, ret, strlen(str)) == 0);
         yy_assert(ret[strlen(str)] == '\n');
         free(ret);
-        
+
         mdoc = yyjson_doc_mut_copy(doc, NULL);
         ret = yyjson_mut_write(mdoc, YYJSON_WRITE_NEWLINE_AT_END, &len);
         yy_assert(strlen(ret) == len && len == strlen(str) + 1);
         yy_assert(memcmp(str, ret, strlen(str)) == 0);
         yy_assert(ret[strlen(str)] == '\n');
         free(ret);
-        
+
         yyjson_doc_free(doc);
         yyjson_mut_doc_free(mdoc);
-        
+
         // multiple values, pretty
         str = "[\n    123\n]";
         doc = yyjson_read(str, strlen(str), 0);
@@ -1204,23 +1204,23 @@ yy_test_case(test_json_writer) {
         yy_assert(memcmp(str, ret, strlen(str)) == 0);
         yy_assert(ret[strlen(str)] == '\n');
         free(ret);
-        
+
         mdoc = yyjson_doc_mut_copy(doc, NULL);
         ret = yyjson_mut_write(mdoc, YYJSON_WRITE_PRETTY | YYJSON_WRITE_NEWLINE_AT_END, &len);
         yy_assert(strlen(ret) == len && len == strlen(str) + 1);
         yy_assert(memcmp(str, ret, strlen(str)) == 0);
         yy_assert(ret[strlen(str)] == '\n');
         free(ret);
-        
+
         yyjson_doc_free(doc);
         yyjson_mut_doc_free(mdoc);
     }
 #endif
-    
+
     // test build JSON on stack
     {
         const char *expect = "{\"code\":200,\"msg\":\"success\",\"arr\":[true,false,null,1,-1,0.5,inf]}";
-        
+
         yyjson_mut_val root, code_key, code, msg_key, msg, arr_key, arr;
         yyjson_mut_val vals[7];
         yyjson_mut_set_obj(&root);
@@ -1238,21 +1238,21 @@ yy_test_case(test_json_writer) {
         yyjson_mut_set_sint(&vals[4], -1);
         yyjson_mut_set_real(&vals[5], 0.5);
         yyjson_mut_set_raw(&vals[6], "inf", 3);
-        
+
         yyjson_mut_obj_add(&root, &code_key, &code);
         yyjson_mut_obj_add(&root, &msg_key, &msg);
         yyjson_mut_obj_add(&root, &arr_key, &arr);
         for (size_t i = 0; i < yy_nelems(vals); i++) {
             yyjson_mut_arr_append(&arr, &vals[i]);
         }
-        
+
         char buf[256];
         yyjson_alc alc;
         yyjson_alc_pool_init(&alc, buf, sizeof(buf));
         char *json = yyjson_mut_val_write_opts(&root, 0, &alc, NULL, NULL);
         yy_assert(strcmp(json, expect) == 0);
     }
-    
+
     // test bool conversion
     // some environments don't have a native bool type
     // and the bool type may store values other than 0/1
@@ -1260,7 +1260,7 @@ yy_test_case(test_json_writer) {
         yyjson_mut_doc *mdoc = yyjson_mut_doc_new(NULL);
         yyjson_mut_val *mobj = yyjson_mut_obj(mdoc);
         yyjson_mut_doc_set_root(mdoc, mobj);
-        
+
         for (u8 i = 0; i < 10; i++) {
             char str[2];
             snprintf(str, sizeof(str), "%d", (int)i);
@@ -1268,10 +1268,10 @@ yy_test_case(test_json_writer) {
             yyjson_mut_val *val = yyjson_mut_bool(mdoc, (bool)i);
             yyjson_mut_obj_add(mobj, key, val);
         }
-        
+
         char *json = yyjson_mut_write(mdoc, YYJSON_WRITE_PRETTY, NULL);
         yy_assert(json != NULL);
-        
+
 #if !YYJSON_DISABLE_READER
         yyjson_doc *doc = yyjson_read(json, strlen(json), 0);
         yyjson_val *obj = yyjson_doc_get_root(doc);
@@ -1285,7 +1285,7 @@ yy_test_case(test_json_writer) {
         }
         yyjson_doc_free(doc);
 #endif
-        
+
         yyjson_mut_doc_free(mdoc);
         free(json);
     }

@@ -59,23 +59,23 @@ static void test_patch(patch_data data) {
     yyjson_mut_val *mpat = yyjson_val_mut_copy(doc, pat);
     yyjson_mut_val *ret;
     yyjson_patch_err err;
-    
+
     ret = yyjson_patch(doc, src, pat, NULL);
     assert_mut_val_eq(ret, data.dst);
-    
+
     memset(&err, -1, sizeof(err));
     ret = yyjson_patch(doc, src, pat, &err);
     assert_mut_val_eq(ret, data.dst);
     assert_err_eq(&err, &data);
-    
+
     ret = yyjson_mut_patch(doc, msrc, mpat, NULL);
     assert_mut_val_eq(ret, data.dst);
-    
+
     memset(&err, -1, sizeof(err));
     ret = yyjson_mut_patch(doc, msrc, mpat, &err);
     assert_mut_val_eq(ret, data.dst);
     assert_err_eq(&err, &data);
-    
+
     yyjson_mut_doc_free(doc);
     yyjson_doc_free(src_doc);
     yyjson_doc_free(pat_doc);
@@ -92,7 +92,7 @@ static void test_spec(void) {
         "]",
         .dst = "{\"foo\":\"bar\",\"baz\":\"qux\"}",
     });
-    
+
     // A.2.  Adding an Array Element
     test_patch((patch_data){
         .src = "{\"foo\":[\"bar\",\"baz\"]}",
@@ -101,7 +101,7 @@ static void test_spec(void) {
         "]",
         .dst = "{\"foo\":[\"bar\",\"qux\",\"baz\"]}",
     });
-    
+
     // A.3.  Removing an Object Member
     test_patch((patch_data){
         .src = "{\"foo\":\"bar\",\"baz\":\"qux\"}",
@@ -110,7 +110,7 @@ static void test_spec(void) {
         "]",
         .dst = "{\"foo\":\"bar\"}",
     });
-    
+
     // A.4.  Removing an Array Element
     test_patch((patch_data){
         .src = "{\"foo\":[\"bar\",\"qux\",\"baz\"]}",
@@ -119,7 +119,7 @@ static void test_spec(void) {
         "]",
         .dst = "{\"foo\":[\"bar\",\"baz\"]}",
     });
-    
+
     // A.5.  Replacing a Value
     test_patch((patch_data){
         .src = "{\"foo\":\"bar\",\"baz\":\"qux\"}",
@@ -128,7 +128,7 @@ static void test_spec(void) {
         "]",
         .dst = "{\"foo\":\"bar\",\"baz\":\"boo\"}",
     });
-    
+
     // A.6.  Moving a Value
     test_patch((patch_data){
         .src = "{\"foo\":{\"bar\":\"baz\",\"waldo\":\"fred\"},\"qux\":{\"corge\":\"grault\"}}",
@@ -137,7 +137,7 @@ static void test_spec(void) {
         "]",
         .dst = "{\"foo\":{\"bar\":\"baz\"},\"qux\":{\"corge\":\"grault\",\"thud\":\"fred\"}}",
     });
-    
+
     // A.7.  Moving an Array Element
     test_patch((patch_data){
         .src = "{\"foo\":[\"all\",\"grass\",\"cows\",\"eat\"]}",
@@ -146,7 +146,7 @@ static void test_spec(void) {
         "]",
         .dst = "{\"foo\":[\"all\",\"cows\",\"eat\",\"grass\"]}",
     });
-    
+
     // A.8.  Testing a Value: Success
     test_patch((patch_data){
         .src = "{\"baz\":\"qux\",\"foo\":[\"a\",2,\"c\"]}",
@@ -156,7 +156,7 @@ static void test_spec(void) {
         "]",
         .dst = "{\"baz\":\"qux\",\"foo\":[\"a\",2,\"c\"]}",
     });
-    
+
     // A.9.  Testing a Value: Error
     test_patch((patch_data){
         .src = "{\"baz\":\"qux\"}",
@@ -168,7 +168,7 @@ static void test_spec(void) {
             .idx = 0,
         },
     });
-    
+
     // A.10.  Adding a Nested Member Object
     test_patch((patch_data){
         .src = "{\"foo\":\"bar\"}",
@@ -177,7 +177,7 @@ static void test_spec(void) {
         "]",
         .dst = "{\"foo\":\"bar\",\"child\":{\"grandchild\":{}}}",
     });
-    
+
     // A.11.  Ignoring Unrecognized Elements
     test_patch((patch_data){
         .src = "{\"foo\":\"bar\"}",
@@ -186,7 +186,7 @@ static void test_spec(void) {
         "]",
         .dst = "{\"foo\":\"bar\",\"baz\":\"qux\"}",
     });
-    
+
     // A.12.  Adding to a Nonexistent Target
     test_patch((patch_data){
         .src = "{\"foo\":\"bar\"}",
@@ -199,7 +199,7 @@ static void test_spec(void) {
             .ptr = YYJSON_PTR_ERR_RESOLVE,
         },
     });
-    
+
     // A.13.  Invalid JSON Patch Document
     // Note:  yyjson allows duplicate keys, here only the first "op" is taken
     test_patch((patch_data){
@@ -209,7 +209,7 @@ static void test_spec(void) {
         "]",
         .dst = "{\"foo\":\"bar\",\"baz\":\"qux\"}",
     });
-    
+
     // A.14.  ~ Escape Ordering
     test_patch((patch_data){
         .src = "{\"/\":9,\"~1\":10}",
@@ -218,7 +218,7 @@ static void test_spec(void) {
         "]",
         .dst = "{\"/\":9,\"~1\":10}",
     });
-    
+
     // A.15.  Comparing Strings and Numbers
     test_patch((patch_data){
         .src = "{\"/\":9,\"~1\":10}",
@@ -230,7 +230,7 @@ static void test_spec(void) {
             .idx = 0,
         },
     });
-    
+
     // A.16.  Adding an Array Value
     test_patch((patch_data){
         .src = "{\"foo\":[\"bar\"]}",
@@ -272,7 +272,7 @@ static void test_more(void) {
             .code = YYJSON_PATCH_ERROR_INVALID_PARAMETER,
         }
     });
-    
+
     // ---------------------------------
     // error with index
     test_patch((patch_data){
@@ -335,7 +335,7 @@ static void test_more(void) {
             .idx = 2,
         }
     });
-    
+
     // ---------------------------------
     // error op
     test_patch((patch_data){
@@ -373,7 +373,7 @@ static void test_more(void) {
         .patch = "[{\"op\":\"unknown\",\"path\":\"/0\",\"value\":0}]",
         .err = { .code = YYJSON_PATCH_ERROR_INVALID_MEMBER, }
     });
-    
+
     // ---------------------------------
     // add
     test_patch((patch_data){
@@ -408,7 +408,7 @@ static void test_more(void) {
         .patch = "[{\"op\":\"add\",\"path\":\"\",\"value\":1}]",
         .dst = "1",
     });
-    
+
     // ---------------------------------
     // remove
     test_patch((patch_data){
@@ -440,7 +440,7 @@ static void test_more(void) {
         .patch = "[{\"op\":\"remove\",\"path\":\"/0\"}]",
         .dst = "[]",
     });
-    
+
     // ---------------------------------
     // replace
     test_patch((patch_data){
@@ -475,7 +475,7 @@ static void test_more(void) {
         .patch = "[{\"op\":\"replace\",\"path\":\"\",\"value\":1}]",
         .dst = "1",
     });
-    
+
     // ---------------------------------
     // move
     test_patch((patch_data){
@@ -526,7 +526,7 @@ static void test_more(void) {
         .patch = "[{\"op\":\"move\",\"from\":\"/0/0\",\"path\":\"\"}]",
         .dst = "1",
     });
-    
+
     // ---------------------------------
     // copy
     test_patch((patch_data){
@@ -577,7 +577,7 @@ static void test_more(void) {
         .patch = "[{\"op\":\"copy\",\"from\":\"/0/0\",\"path\":\"\"}]",
         .dst = "1",
     });
-    
+
     // ---------------------------------
     // test
     test_patch((patch_data){
@@ -612,7 +612,7 @@ static void test_more(void) {
         .patch = "[{\"op\":\"test\",\"path\":\"\",\"value\":2}]",
         .err = { .code = YYJSON_PATCH_ERROR_EQUAL }
     });
-    
+
     // ---------------------------------
     // multiple ops
     test_patch((patch_data){
@@ -627,7 +627,7 @@ static void test_more(void) {
         "]",
         .dst = "[{\"b\":4},0,3,4]"
     });
-    
+
     // ---------------------------------
     // add, move and copy replace an existing object member (RFC 6902, 4.1)
     test_patch((patch_data){

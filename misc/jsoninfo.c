@@ -35,7 +35,7 @@ int main(int argc, const char * argv[]) {
         print_help();
         return 0;
     }
-    
+
     for (int i = 1; i < argc - 1; i++) {
         const char *arg = argv[i];
         size_t len = strlen(arg);
@@ -88,14 +88,14 @@ int main(int argc, const char * argv[]) {
     if (!O_MINIFY && !O_PRETTY) {
         O_PRETTY = true;
     }
-    
+
     yyjson_read_err err;
     yyjson_doc *doc = yyjson_read_file(O_PATH, 0 , NULL, &err);
     if (!doc) {
         printf("JSON read fail: %s, position:%ld\n", err.msg, (long)err.pos);
         return 0;
     }
-    
+
     if (O_OUT) {
         yyjson_write_err werr;
         yyjson_write_flag flg = YYJSON_WRITE_NOFLAG;
@@ -109,7 +109,7 @@ int main(int argc, const char * argv[]) {
         yyjson_doc_free(doc);
         return 0;
     }
-    
+
     long num_null = 0;
     long num_bool = 0;
     long num_int = 0;
@@ -135,17 +135,17 @@ int main(int argc, const char * argv[]) {
             default: break;
         }
     }
-    
+
     size_t val_count = yyjson_doc_get_val_count(doc);
     size_t read_size = yyjson_doc_get_read_size(doc);
-    
+
     const char *name = O_PATH;
     for (const char *tmp = name, *max = name + strlen(name); tmp < max; tmp++) {
         if ((*tmp == '/' || *tmp == '\\') && tmp + 1 < max) {
             name = tmp + 1;
         }
     }
-    
+
     printf("name: %s\n", name);
     printf("size: %ld\n", (long)read_size);
     printf("vals: %ld\n", (long)val_count);
@@ -156,6 +156,6 @@ int main(int argc, const char * argv[]) {
     printf("  real: %ld\n", num_real);
     printf("  bool: %ld\n", num_bool);
     printf("  null: %ld\n", num_null);
-    
+
     return 0;
 }

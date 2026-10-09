@@ -85,8 +85,8 @@ The `flg` is reader flag, pass 0 if you don't need it, see `reader flag` for det
 Returns `NULL` if `dat` is NULL or `len` is 0.
 
 ```c
-yyjson_doc *yyjson_read(const char *dat, 
-                        size_t len, 
+yyjson_doc *yyjson_read(const char *dat,
+                        size_t len,
                         yyjson_read_flag flg);
 ```
 Sample code:
@@ -154,10 +154,10 @@ The `alc` is memory allocator, pass NULL if you don't need it, see `memory alloc
 The `err` is a pointer to receive error message, pass NULL if you don't need it.<br/>
 
 ```c
-yyjson_doc *yyjson_read_opts(char *dat, 
-                             size_t len, 
+yyjson_doc *yyjson_read_opts(char *dat,
+                             size_t len,
                              yyjson_read_flag flg,
-                             const yyjson_alc *alc, 
+                             const yyjson_alc *alc,
                              yyjson_read_err *err);
 ```
 
@@ -273,7 +273,7 @@ yyjson_read_err err;
 yyjson_doc *doc = yyjson_read_opts(dat, dat_len, 0, NULL, &err);
 
 if (!doc) {
-    printf("read error: %s, code: %u at byte position: %lu\n", 
+    printf("read error: %s, code: %u at byte position: %lu\n",
             err.msg, err.code, err.pos);
     // printed:
     // read error: trailing comma is not allowed, code: 7, at byte position: 40
@@ -373,7 +373,7 @@ size_t file_size = ...;
 char *dat = malloc(file_size + YYJSON_PADDING_SIZE);
 your_read_file(dat, file);
 memset(dat + file_size, 0, YYJSON_PADDING_SIZE); // add padding
-    
+
 char *hdr = dat;
 char *end = dat + file_size;
 yyjson_read_flag flg = YYJSON_READ_INSITU | YYJSON_READ_STOP_WHEN_DONE;
@@ -553,7 +553,7 @@ yyjson_mut_doc_set_root(doc, arr);
 yyjson_mut_arr_add_int(doc, arr, 1);
 yyjson_mut_arr_add_int(doc, arr, 2);
 yyjson_mut_arr_add_int(doc, arr, 3);
-    
+
 char *json = yyjson_mut_write(doc, YYJSON_WRITE_PRETTY, NULL);
 printf("%s\n", json);
 free(json);
@@ -624,7 +624,7 @@ The `err` is a pointer to receive error message, pass NULL if you don't need it.
 This function returns the number of bytes written (excluding the null terminator), or 0 on failure.<br/>
 
 This function does not allocate memory, but the buffer must be larger than the final JSON size to allow temporary space.
- 
+
  The extra space is needed temporarily for each value while it is written, and is reused for later values:
  - Number: `40`
  - String: `16 + (str_len * 6)`
@@ -745,7 +745,7 @@ Escape unicode as `\uXXXX`, making the output ASCII-only, for example:
 ```
 
 ### **YYJSON_WRITE_LOWERCASE_HEX**
-Use lowercase hex digits in `\uXXXX` escape sequences instead of the default uppercase. 
+Use lowercase hex digits in `\uXXXX` escape sequences instead of the default uppercase.
 Only effective when `YYJSON_WRITE_ESCAPE_UNICODE` is also set.
 
 ### **YYJSON_WRITE_ESCAPE_SLASHES**
@@ -857,7 +857,7 @@ yyjson_subtype yyjson_get_subtype(const yyjson_val *val);
 // Returns value's tag, see `Data Structures` doc for details.
 uint8_t yyjson_get_tag(const yyjson_val *val);
 
-// returns type description, such as:  
+// returns type description, such as:
 // "null", "string", "array", "object", "true", "false",
 // "uint", "sint", "real", "unknown"
 const char *yyjson_get_type_desc(const yyjson_val *val);
@@ -1010,7 +1010,7 @@ yyjson_mut_arr_iter iter = yyjson_mut_arr_iter_with(arr);
 while ((val = yyjson_mut_arr_iter_next(&iter))) {
     if (your_val_is_unused(val)) {
         // you can remove current value inside iteration
-        yyjson_mut_arr_iter_remove(&iter); 
+        yyjson_mut_arr_iter_remove(&iter);
     }
 }
 ```
@@ -1202,7 +1202,7 @@ yyjson_doc *yyjson_mut_val_imut_copy(const yyjson_mut_val *val, const yyjson_alc
 ```
 
 ## JSON Value Creation
-The following functions are used to create mutable JSON value, 
+The following functions are used to create mutable JSON value,
 the value's memory is held by the document.<br/>
 
 ```c
@@ -1365,7 +1365,7 @@ yyjson_mut_obj_with_kv(doc, pairs, 3);
 The following functions are used to modify the contents of a JSON object.<br/>
 
 ```c
-// Adds a key-value pair at the end of the object. 
+// Adds a key-value pair at the end of the object.
 // The key must be a string value.
 // This function allows duplicate keys in one object.
 bool yyjson_mut_obj_add(yyjson_mut_val *obj, yyjson_mut_val *key, yyjson_mut_val *val);
@@ -1402,7 +1402,7 @@ bool yyjson_mut_obj_add_strcpy(yyjson_mut_doc *doc, yyjson_mut_val *obj, const c
 bool yyjson_mut_obj_add_strncpy(yyjson_mut_doc *doc, yyjson_mut_val *obj, const char *key, const char *val, size_t len);
 yyjson_mut_val *yyjson_mut_obj_add_arr(yyjson_mut_doc *doc, yyjson_mut_val *obj, const char *_key);
 yyjson_mut_val *yyjson_mut_obj_add_obj(yyjson_mut_doc *doc, yyjson_mut_val *obj, const char *_key);
-                              
+
 // Convenience API:
 // Removes all key-value pairs for the given key.
 // Note that this function takes a linear search time.
@@ -1483,7 +1483,7 @@ The library also supports modifying JSON values using `JSON Pointer`.
 bool yyjson_mut_ptr_add(yyjson_mut_val *val, const char *ptr, yyjson_mut_val *new_val, yyjson_mut_doc *doc);
 bool yyjson_mut_ptr_addn(yyjson_mut_val *val, const char *ptr, size_t len, yyjson_mut_val *new_val, yyjson_mut_doc *doc);
 bool yyjson_mut_ptr_addx(yyjson_mut_val *val, const char *ptr, size_t len, yyjson_mut_val *new_val, yyjson_mut_doc *doc, bool create_parent, yyjson_ptr_ctx *ctx, yyjson_ptr_err *err);
-                                           
+
 bool yyjson_mut_doc_ptr_add(yyjson_mut_doc *doc, const char *ptr, yyjson_mut_val *new_val);
 bool yyjson_mut_doc_ptr_addn(yyjson_mut_doc *doc, const char *ptr, size_t len, yyjson_mut_val *new_val);
 bool yyjson_mut_doc_ptr_addx(yyjson_mut_doc *doc, const char *ptr, size_t len, yyjson_mut_val *new_val, bool create_parent, yyjson_ptr_ctx *ctx, yyjson_ptr_err *err);
@@ -1492,7 +1492,7 @@ bool yyjson_mut_doc_ptr_addx(yyjson_mut_doc *doc, const char *ptr, size_t len, y
 bool yyjson_mut_ptr_set(yyjson_mut_val *val, const char *ptr, yyjson_mut_val *new_val, yyjson_mut_doc *doc);
 bool yyjson_mut_ptr_setn(yyjson_mut_val *val, const char *ptr, size_t len, yyjson_mut_val *new_val, yyjson_mut_doc *doc);
 bool yyjson_mut_ptr_setx(yyjson_mut_val *val, const char *ptr, size_t len, yyjson_mut_val *new_val, yyjson_mut_doc *doc, bool create_parent, yyjson_ptr_ctx *ctx, yyjson_ptr_err *err);
-                                             
+
 bool yyjson_mut_doc_ptr_set(yyjson_mut_doc *doc, const char *ptr, yyjson_mut_val *new_val);
 bool yyjson_mut_doc_ptr_setn(yyjson_mut_doc *doc, const char *ptr, size_t len, yyjson_mut_val *new_val);
 bool yyjson_mut_doc_ptr_setx(yyjson_mut_doc *doc, const char *ptr, size_t len, yyjson_mut_val *new_val, bool create_parent, yyjson_ptr_ctx *ctx, yyjson_ptr_err *err);
@@ -1501,7 +1501,7 @@ bool yyjson_mut_doc_ptr_setx(yyjson_mut_doc *doc, const char *ptr, size_t len, y
 yyjson_mut_val *yyjson_mut_ptr_replace(yyjson_mut_val *val, const char *ptr, yyjson_mut_val *new_val);
 yyjson_mut_val *yyjson_mut_ptr_replacen(yyjson_mut_val *val, const char *ptr, size_t len, yyjson_mut_val *new_val);
 yyjson_mut_val *yyjson_mut_ptr_replacex(yyjson_mut_val *val, const char *ptr, size_t len, yyjson_mut_val *new_val, yyjson_ptr_ctx *ctx, yyjson_ptr_err *err);
-    
+
 yyjson_mut_val *yyjson_mut_doc_ptr_replace(yyjson_mut_doc *doc, const char *ptr, yyjson_mut_val *new_val);
 yyjson_mut_val *yyjson_mut_doc_ptr_replacen(yyjson_mut_doc *doc, const char *ptr, size_t len, yyjson_mut_val *new_val);
 yyjson_mut_val *yyjson_mut_doc_ptr_replacex(yyjson_mut_doc *doc, const char *ptr, size_t len, yyjson_mut_val *new_val, yyjson_ptr_ctx *ctx, yyjson_ptr_err *err);
@@ -1804,9 +1804,9 @@ alc->free(alc->ctx, json);
 # Stack Memory Usage
 Most functions in the library use fixed-size stack memory. This includes functions for JSON reading and writing, as well as JSON Pointer handling.
 
-However, a few functions use recursion and may cause a stack overflow if the nesting level is too deep. These functions are marked with the following warning in the header file: 
-> @warning 
-> This function is recursive and may cause a stack overflow 
+However, a few functions use recursion and may cause a stack overflow if the nesting level is too deep. These functions are marked with the following warning in the header file:
+> @warning
+> This function is recursive and may cause a stack overflow
 > if the object level is too deep.
 
 

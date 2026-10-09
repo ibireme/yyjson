@@ -123,7 +123,7 @@ jobs:
         compiler:
           - gcc
           - clang
-        opt: 
+        opt:
           - no_conv
           - no_file
           - no_reader
@@ -180,7 +180,7 @@ jobs:
       shell: bash
       working-directory: ${{runner.workspace}}/build
       run: cmake --build . --config Release
-    
+
     - name: Test
       shell: bash
       working-directory: ${{runner.workspace}}/build

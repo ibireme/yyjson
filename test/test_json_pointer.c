@@ -30,14 +30,14 @@ typedef enum {
 //  old = src.remove(ptr), src->dst
 typedef struct {
     ptr_op op;          // operation
-    
+
     bool create_parent; // param
     const char *src;    // source document, `empty_root` for empty root
     const char *ptr;    // pointer
     size_t ptr_len;     // pointer length, 0 to use strlen()
     const char *val;    // json value
     const char *dst;    // destination document, `empty_root` for empty root
-    
+
     const char *key;    // used for ctx_append
     const char *ctn;    // expected ctx.ctn (target value's parent)
     const char *pre;    // expected ctx.pre (target value's previous)
@@ -125,17 +125,17 @@ static void test_ptr_op(ptr_data data) {
         idoc->root = NULL;
         mdoc = yyjson_mut_doc_new(NULL);
     }
-    
+
     // input value
     yyjson_doc *ival_doc = yyjson_read(data.val, data.val ? strlen(data.val) : 0, 0);
     yyjson_mut_doc *mval_doc = yyjson_doc_mut_copy(ival_doc, NULL);
     yyjson_mut_val *mval = yyjson_mut_doc_get_root(mval_doc);
-    
+
     // pointer
     const char *ptr = data.ptr;
     size_t ptr_len = data.ptr_len;
     if (ptr && !ptr_len) ptr_len = strlen(ptr);
-    
+
     // temp value
     yyjson_val *iret;
     yyjson_mut_doc *doc;
@@ -143,7 +143,7 @@ static void test_ptr_op(ptr_data data) {
     yyjson_ptr_err err;
     yyjson_ptr_ctx ctx;
     bool suc;
-    
+
 #define mut_before() do { \
     memset(&err, -1, sizeof(err)); \
     memset(&ctx, -1, sizeof(ctx)); \
@@ -151,11 +151,11 @@ static void test_ptr_op(ptr_data data) {
     val = yyjson_mut_val_mut_copy(doc, mval); \
     root = doc? doc->root : NULL;\
 } while(false)
-    
+
 #define mut_after() do { \
     yyjson_mut_doc_free(doc); \
 } while (false)
-    
+
     // val = src.get(ptr)
     if (data.op == PTR_OP_GET) {
         // -----------------------------
@@ -168,29 +168,29 @@ static void test_ptr_op(ptr_data data) {
             iret = yyjson_doc_get_pointer(idoc, ptr); // deprecated
             assert_val_eq(iret, data.val);
         }
-        
+
         iret = yyjson_doc_ptr_getn(NULL, NULL, ptr_len);
         yy_assert(iret == NULL);
         iret = yyjson_doc_ptr_getn(idoc, ptr, ptr_len);
         assert_val_eq(iret, data.val);
         iret = yyjson_doc_get_pointern(idoc, ptr, ptr_len); // deprecated
         assert_val_eq(iret, data.val);
-        
+
         iret = yyjson_doc_ptr_getx(NULL, NULL, ptr_len, NULL);
         yy_assert(iret == NULL);
         iret = yyjson_doc_ptr_getx(idoc, ptr, ptr_len, NULL);
         assert_val_eq(iret, data.val);
-        
+
         memset(&err, -1, sizeof(err));
         iret = yyjson_doc_ptr_getx(NULL, NULL, ptr_len, &err);
         yy_assert(iret == NULL);
         assert_err_param(&err);
-        
+
         memset(&err, -1, sizeof(err));
         iret = yyjson_doc_ptr_getx(idoc, ptr, ptr_len, &err);
         assert_val_eq(iret, data.val);
         assert_err(&err, &data);
-        
+
         // -----------------------------
         // val.get
         iret = yyjson_ptr_get(NULL, NULL);
@@ -201,7 +201,7 @@ static void test_ptr_op(ptr_data data) {
             iret = yyjson_get_pointer(iroot, ptr); // deprecated
             assert_val_eq(iret, data.val);
         }
-        
+
         iret = yyjson_ptr_getn(NULL, NULL, ptr_len);
         assert_val_eq(iret, NULL);
         iret = yyjson_ptr_getn(iroot, ptr, ptr_len);
@@ -212,17 +212,17 @@ static void test_ptr_op(ptr_data data) {
             iret = unsafe_yyjson_get_pointer(iroot, ptr, ptr_len); // deprecated
             assert_val_eq(iret, data.val);
         }
-        
+
         iret = yyjson_ptr_getx(NULL, NULL, ptr_len, NULL);
         assert_val_eq(iret, NULL);
         iret = yyjson_ptr_getx(iroot, ptr, ptr_len, NULL);
         assert_val_eq(iret, data.val);
-        
+
         memset(&err, -1, sizeof(err));
         iret = yyjson_ptr_getx(NULL, NULL, ptr_len, &err);
         yy_assert(iret == NULL);
         assert_err_param(&err);
-        
+
         memset(&err, -1, sizeof(err));
         iret = yyjson_ptr_getx(iroot, ptr, ptr_len, &err);
         assert_val_eq(iret, data.val);
@@ -231,7 +231,7 @@ static void test_ptr_op(ptr_data data) {
         } else {
             assert_err(&err, &data);
         }
-        
+
         // -----------------------------
         // mut_doc.get
         ret = yyjson_mut_doc_ptr_get(NULL, NULL);
@@ -242,35 +242,35 @@ static void test_ptr_op(ptr_data data) {
             ret = yyjson_mut_doc_get_pointer(mdoc, ptr); // deprecated
             assert_mut_val_eq(ret, data.val);
         }
-        
+
         ret = yyjson_mut_doc_ptr_getn(NULL, NULL, ptr_len);
         yy_assert(ret == NULL);
         ret = yyjson_mut_doc_ptr_getn(mdoc, ptr, ptr_len);
         assert_mut_val_eq(ret, data.val);
         ret = yyjson_mut_doc_get_pointern(mdoc, ptr, ptr_len); // deprecated
         assert_mut_val_eq(ret, data.val);
-        
+
         ret = yyjson_mut_doc_ptr_getx(NULL, NULL, ptr_len, NULL, NULL);
         yy_assert(ret == NULL);
         ret = yyjson_mut_doc_ptr_getx(mdoc, ptr, ptr_len, NULL, NULL);
         assert_mut_val_eq(ret, data.val);
-        
+
         memset(&err, -1, sizeof(err));
         memset(&ctx, -1, sizeof(ctx));
         ret = yyjson_mut_doc_ptr_getx(NULL, NULL, ptr_len, &ctx, &err);
         yy_assert(ret == NULL);
         assert_ctx_eq(&ctx, NULL);
         assert_err_param(&err);
-        
+
         memset(&err, -1, sizeof(err));
         memset(&ctx, -1, sizeof(ctx));
         ret = yyjson_mut_doc_ptr_getx(mdoc, ptr, ptr_len, &ctx, &err);
         assert_mut_val_eq(ret, data.val);
         assert_ctx_eq(&ctx, &data);
         assert_err(&err, &data);
-        
+
         assert_mut_doc_eq(mdoc, data.src); /* doc should not be modified */
-        
+
         // -----------------------------
         // mut_val.get
         ret = yyjson_mut_ptr_get(NULL, NULL);
@@ -281,7 +281,7 @@ static void test_ptr_op(ptr_data data) {
             ret = yyjson_mut_get_pointer(mroot, ptr); // deprecated
             assert_mut_val_eq(ret, data.val);
         }
-        
+
         ret = yyjson_mut_ptr_getn(NULL, NULL, ptr_len);
         yy_assert(ret == NULL);
         ret = yyjson_mut_ptr_getn(mroot, ptr, ptr_len);
@@ -292,19 +292,19 @@ static void test_ptr_op(ptr_data data) {
             ret = unsafe_yyjson_mut_get_pointer(mroot, ptr, ptr_len); // deprecated
             assert_mut_val_eq(ret, data.val);
         }
-        
+
         ret = yyjson_mut_ptr_getx(NULL, NULL, ptr_len, NULL, NULL);
         yy_assert(ret == NULL);
         ret = yyjson_mut_ptr_getx(mroot, ptr, ptr_len, NULL, NULL);
         assert_mut_val_eq(ret, data.val);
-        
+
         memset(&err, -1, sizeof(err));
         memset(&ctx, -1, sizeof(ctx));
         ret = yyjson_mut_ptr_getx(NULL, NULL, ptr_len, &ctx, &err);
         yy_assert(ret == NULL);
         assert_ctx_eq(&ctx, NULL);
         assert_err_param(&err);
-        
+
         memset(&err, -1, sizeof(err));
         memset(&ctx, -1, sizeof(ctx));
         ret = yyjson_mut_ptr_getx(mroot, ptr, ptr_len, &ctx, &err);
@@ -315,10 +315,10 @@ static void test_ptr_op(ptr_data data) {
         } else {
             assert_err(&err, &data);
         }
-        
+
         assert_mut_doc_eq(mdoc, data.src); /* doc should not be modified */
     }
-    
+
     // suc = src.add(ptr, val), src->dst
     if (data.op == PTR_OP_ADD) {
         // -----------------------------
@@ -329,44 +329,44 @@ static void test_ptr_op(ptr_data data) {
                 suc = yyjson_mut_doc_ptr_add(NULL, NULL, NULL);
                 yy_assert(suc == false);
                 mut_after();
-                
+
                 mut_before();
                 suc = yyjson_mut_doc_ptr_add(doc, ptr, val);
                 yy_assert(suc == (data.err == 0));
                 assert_mut_doc_eq(doc, data.dst);
                 mut_after();
             }
-            
+
             mut_before();
             suc = yyjson_mut_doc_ptr_addn(NULL, NULL, ptr_len, NULL);
             yy_assert(suc == false);
             mut_after();
-            
+
             mut_before();
             suc = yyjson_mut_doc_ptr_addn(doc, ptr, ptr_len, val);
             yy_assert(suc == (data.err == 0));
             assert_mut_doc_eq(doc, data.dst);
             mut_after();
         }
-        
+
         mut_before();
         suc = yyjson_mut_doc_ptr_addx(NULL, NULL, ptr_len, NULL, data.create_parent, NULL, NULL);
         yy_assert(suc == false);
         mut_after();
-        
+
         mut_before();
         suc = yyjson_mut_doc_ptr_addx(doc, ptr, ptr_len, val, data.create_parent, NULL, NULL);
         yy_assert(suc == (data.err == 0));
         assert_mut_doc_eq(doc, data.dst);
         mut_after();
-        
+
         mut_before();
         suc = yyjson_mut_doc_ptr_addx(NULL, NULL, ptr_len, NULL, data.create_parent, &ctx, &err);
         yy_assert(suc == false);
         assert_err_param(&err);
         assert_ctx_eq(&ctx, NULL);
         mut_after();
-        
+
         mut_before();
         suc = yyjson_mut_doc_ptr_addx(doc, ptr, ptr_len, val, data.create_parent, &ctx, &err);
         yy_assert(suc == (data.err == 0));
@@ -374,7 +374,7 @@ static void test_ptr_op(ptr_data data) {
         assert_mut_doc_eq(doc, data.dst);
         assert_ctx_eq(&ctx, &data);
         mut_after();
-        
+
         // -----------------------------
         // mut_val.add
         if (data.create_parent) {
@@ -383,7 +383,7 @@ static void test_ptr_op(ptr_data data) {
                 suc = yyjson_mut_ptr_add(NULL, NULL, NULL, NULL);
                 yy_assert(suc == false);
                 mut_after();
-                
+
                 mut_before();
                 suc = yyjson_mut_ptr_add(root, ptr, val, doc);
                 if (root) {
@@ -394,12 +394,12 @@ static void test_ptr_op(ptr_data data) {
                 }
                 mut_after();
             }
-            
+
             mut_before();
             suc = yyjson_mut_ptr_addn(NULL, NULL, ptr_len, NULL, NULL);
             yy_assert(suc == false);
             mut_after();
-            
+
             mut_before();
             suc = yyjson_mut_ptr_addn(root, ptr, ptr_len, val, doc);
             if (root) {
@@ -410,12 +410,12 @@ static void test_ptr_op(ptr_data data) {
             }
             mut_after();
         }
-        
+
         mut_before();
         suc = yyjson_mut_ptr_addx(NULL, NULL, ptr_len, NULL, NULL, data.create_parent, NULL, NULL);
         yy_assert(suc == false);
         mut_after();
-        
+
         mut_before();
         suc = yyjson_mut_ptr_addx(root, ptr, ptr_len, val, doc, data.create_parent, NULL, NULL);
         if (root) {
@@ -425,14 +425,14 @@ static void test_ptr_op(ptr_data data) {
             yy_assert(suc == false);
         }
         mut_after();
-        
+
         mut_before();
         suc = yyjson_mut_ptr_addx(NULL, NULL, ptr_len, NULL, doc, data.create_parent, &ctx, &err);
         yy_assert(suc == false);
         assert_ctx_eq(&ctx, NULL);
         assert_err_param(&err);
         mut_after();
-        
+
         mut_before();
         suc = yyjson_mut_ptr_addx(root, ptr, ptr_len, val, doc, data.create_parent, &ctx, &err);
         if (root) {
@@ -446,7 +446,7 @@ static void test_ptr_op(ptr_data data) {
         }
         mut_after();
     }
-    
+
     // suc = src.set(ptr, val), src->dst
     if (data.op == PTR_OP_SET) {
         // -----------------------------
@@ -457,44 +457,44 @@ static void test_ptr_op(ptr_data data) {
                 suc = yyjson_mut_doc_ptr_set(NULL, NULL, NULL);
                 yy_assert(suc == false);
                 mut_after();
-                
+
                 mut_before();
                 suc = yyjson_mut_doc_ptr_set(doc, ptr, val);
                 yy_assert(suc == (data.err == 0));
                 assert_mut_doc_eq(doc, data.dst);
                 mut_after();
             }
-            
+
             mut_before();
             suc = yyjson_mut_doc_ptr_setn(NULL, NULL, ptr_len, NULL);
             yy_assert(suc == false);
             mut_after();
-            
+
             mut_before();
             suc = yyjson_mut_doc_ptr_setn(doc, ptr, ptr_len, val);
             yy_assert(suc == (data.err == 0));
             assert_mut_doc_eq(doc, data.dst);
             mut_after();
         }
-        
+
         mut_before();
         suc = yyjson_mut_doc_ptr_setx(NULL, NULL, ptr_len, NULL, data.create_parent, NULL, NULL);
         yy_assert(suc == false);
         mut_after();
-        
+
         mut_before();
         suc = yyjson_mut_doc_ptr_setx(doc, ptr, ptr_len, val, data.create_parent, NULL, NULL);
         yy_assert(suc == (data.err == 0));
         assert_mut_doc_eq(doc, data.dst);
         mut_after();
-        
+
         mut_before();
         suc = yyjson_mut_doc_ptr_setx(NULL, NULL, ptr_len, NULL, data.create_parent, &ctx, &err);
         yy_assert(suc == false);
         assert_err_param(&err);
         assert_ctx_eq(&ctx, NULL);
         mut_after();
-        
+
         mut_before();
         suc = yyjson_mut_doc_ptr_setx(doc, ptr, ptr_len, val, data.create_parent, &ctx, &err);
         yy_assert(suc == (data.err == 0));
@@ -502,7 +502,7 @@ static void test_ptr_op(ptr_data data) {
         assert_mut_doc_eq(doc, data.dst);
         assert_ctx_eq(&ctx, &data);
         mut_after();
-        
+
         // -----------------------------
         // mut_val.set
         if (data.create_parent) {
@@ -511,7 +511,7 @@ static void test_ptr_op(ptr_data data) {
                 suc = yyjson_mut_ptr_set(NULL, NULL, NULL, NULL);
                 yy_assert(suc == false);
                 mut_after();
-                
+
                 mut_before();
                 suc = yyjson_mut_ptr_set(root, ptr, val, doc);
                 if (root) {
@@ -522,12 +522,12 @@ static void test_ptr_op(ptr_data data) {
                 }
                 mut_after();
             }
-            
+
             mut_before();
             suc = yyjson_mut_ptr_setn(NULL, NULL, ptr_len, NULL, NULL);
             yy_assert(suc == false);
             mut_after();
-            
+
             mut_before();
             suc = yyjson_mut_ptr_setn(root, ptr, ptr_len, val, doc);
             if (root) {
@@ -538,12 +538,12 @@ static void test_ptr_op(ptr_data data) {
             }
             mut_after();
         }
-        
+
         mut_before();
         suc = yyjson_mut_ptr_setx(NULL, NULL, ptr_len, NULL, NULL, data.create_parent, NULL, NULL);
         yy_assert(suc == false);
         mut_after();
-        
+
         mut_before();
         suc = yyjson_mut_ptr_setx(root, ptr, ptr_len, val, doc, data.create_parent, NULL, NULL);
         if (root) {
@@ -558,14 +558,14 @@ static void test_ptr_op(ptr_data data) {
             yy_assert(suc == false);
         }
         mut_after();
-        
+
         mut_before();
         suc = yyjson_mut_ptr_setx(NULL, NULL, ptr_len, NULL, doc, data.create_parent, &ctx, &err);
         yy_assert(suc == false);
         assert_ctx_eq(&ctx, NULL);
         assert_err_param(&err);
         mut_after();
-         
+
         mut_before();
         suc = yyjson_mut_ptr_setx(root, ptr, ptr_len, val, doc, data.create_parent, &ctx, &err);
         if (root) {
@@ -586,7 +586,7 @@ static void test_ptr_op(ptr_data data) {
         }
         mut_after();
     }
-    
+
     // old = src.replace(ptr, val), src->dst
     if (data.op == PTR_OP_REPLACE) {
         // -----------------------------
@@ -596,43 +596,43 @@ static void test_ptr_op(ptr_data data) {
             ret = yyjson_mut_doc_ptr_replace(NULL, NULL, NULL);
             yy_assert(ret == NULL);
             mut_after();
-            
+
             mut_before();
             ret = yyjson_mut_doc_ptr_replace(doc, ptr, val);
             assert_mut_val_eq(ret, data.old);
             assert_mut_doc_eq(doc, data.dst);
             mut_after();
         }
-        
+
         mut_before();
         ret = yyjson_mut_doc_ptr_replacen(NULL, NULL, ptr_len, NULL);
         yy_assert(ret == NULL);
         mut_after();
-        
+
         mut_before();
         ret = yyjson_mut_doc_ptr_replacen(doc, ptr, ptr_len, val);
         assert_mut_val_eq(ret, data.old);
         assert_mut_doc_eq(doc, data.dst);
         mut_after();
-        
+
         mut_before();
         ret = yyjson_mut_doc_ptr_replacex(NULL, NULL, ptr_len, NULL, NULL, NULL);
         yy_assert(ret == NULL);
         mut_after();
-        
+
         mut_before();
         ret = yyjson_mut_doc_ptr_replacex(doc, ptr, ptr_len, val, NULL, NULL);
         assert_mut_val_eq(ret, data.old);
         assert_mut_doc_eq(doc, data.dst);
         mut_after();
-        
+
         mut_before();
         ret = yyjson_mut_doc_ptr_replacex(NULL, NULL, ptr_len, NULL, &ctx, &err);
         yy_assert(ret == NULL);
         assert_err_param(&err);
         assert_ctx_eq(&ctx, NULL);
         mut_after();
-        
+
         mut_before();
         ret = yyjson_mut_doc_ptr_replacex(doc, ptr, ptr_len, val, &ctx, &err);
         assert_mut_val_eq(ret, data.old);
@@ -640,7 +640,7 @@ static void test_ptr_op(ptr_data data) {
         assert_ctx_eq(&ctx, &data);
         assert_err(&err, &data);
         mut_after();
-        
+
         // -----------------------------
         // mut_val.replace
         if (data.ptr_len == 0) { // can use strlen()
@@ -648,7 +648,7 @@ static void test_ptr_op(ptr_data data) {
             ret = yyjson_mut_ptr_replace(NULL, NULL, NULL);
             yy_assert(ret == NULL);
             mut_after();
-            
+
             mut_before();
             ret = yyjson_mut_ptr_replace(root, ptr, val);
             if (root && val) {
@@ -664,12 +664,12 @@ static void test_ptr_op(ptr_data data) {
             }
             mut_after();
         }
-        
+
         mut_before();
         ret = yyjson_mut_ptr_replacen(NULL, NULL, ptr_len, NULL);
         yy_assert(ret == NULL);
         mut_after();
-        
+
         mut_before();
         ret = yyjson_mut_ptr_replacen(root, ptr, ptr_len, val);
         if (root && val) {
@@ -684,12 +684,12 @@ static void test_ptr_op(ptr_data data) {
             yy_assert(ret == NULL);
         }
         mut_after();
-        
+
         mut_before();
         ret = yyjson_mut_ptr_replacex(NULL, NULL, ptr_len, NULL, NULL, NULL);
         yy_assert(ret == NULL);
         mut_after();
-        
+
         mut_before();
         ret = yyjson_mut_ptr_replacex(root, ptr, ptr_len, val, NULL, NULL);
         if (root && val) {
@@ -704,14 +704,14 @@ static void test_ptr_op(ptr_data data) {
             yy_assert(ret == NULL);
         }
         mut_after();
-        
+
         mut_before();
         ret = yyjson_mut_ptr_replacex(NULL, NULL, ptr_len, NULL, &ctx, &err);
         yy_assert(ret == NULL);
         assert_err_param(&err);
         assert_ctx_eq(&ctx, NULL);
         mut_after();
-        
+
         mut_before();
         ret = yyjson_mut_ptr_replacex(root, ptr, ptr_len, val, &ctx, &err);
         if (root && val) {
@@ -732,7 +732,7 @@ static void test_ptr_op(ptr_data data) {
         }
         mut_after();
     }
-    
+
     // old = src.remove(ptr), src->dst
     if (data.op == PTR_OP_REMOVE) {
         // -----------------------------
@@ -742,43 +742,43 @@ static void test_ptr_op(ptr_data data) {
             ret = yyjson_mut_doc_ptr_remove(NULL, NULL);
             yy_assert(ret == NULL);
             mut_after();
-            
+
             mut_before();
             ret = yyjson_mut_doc_ptr_remove(doc, ptr);
             assert_mut_val_eq(ret, data.old);
             assert_mut_doc_eq(doc, data.dst);
             mut_after();
         }
-        
+
         mut_before();
         ret = yyjson_mut_doc_ptr_removen(NULL, NULL, ptr_len);
         yy_assert(ret == NULL);
         mut_after();
-        
+
         mut_before();
         ret = yyjson_mut_doc_ptr_removen(doc, ptr, ptr_len);
         assert_mut_val_eq(ret, data.old);
         assert_mut_doc_eq(doc, data.dst);
         mut_after();
-        
+
         mut_before();
         ret = yyjson_mut_doc_ptr_removex(NULL, NULL, ptr_len, NULL, NULL);
         yy_assert(ret == NULL);
         mut_after();
-        
+
         mut_before();
         ret = yyjson_mut_doc_ptr_removex(doc, ptr, ptr_len, NULL, NULL);
         assert_mut_val_eq(ret, data.old);
         assert_mut_doc_eq(doc, data.dst);
         mut_after();
-        
+
         mut_before();
         ret = yyjson_mut_doc_ptr_removex(NULL, NULL, ptr_len, &ctx, &err);
         yy_assert(ret == NULL);
         assert_err_param(&err);
         assert_ctx_eq(&ctx, NULL);
         mut_after();
-        
+
         mut_before();
         ret = yyjson_mut_doc_ptr_removex(doc, ptr, ptr_len, &ctx, &err);
         assert_mut_val_eq(ret, data.old);
@@ -786,7 +786,7 @@ static void test_ptr_op(ptr_data data) {
         assert_ctx_eq(&ctx, &data);
         assert_err(&err, &data);
         mut_after();
-        
+
         // -----------------------------
         // mut_val.remove
         if (data.ptr_len == 0) { // can use strlen()
@@ -794,7 +794,7 @@ static void test_ptr_op(ptr_data data) {
             ret = yyjson_mut_ptr_remove(NULL, NULL);
             yy_assert(ret == NULL);
             mut_after();
-            
+
             mut_before();
             ret = yyjson_mut_ptr_remove(root, ptr);
             if (root) {
@@ -810,12 +810,12 @@ static void test_ptr_op(ptr_data data) {
             }
             mut_after();
         }
-        
+
         mut_before();
         ret = yyjson_mut_ptr_removen(NULL, NULL, ptr_len);
         yy_assert(ret == NULL);
         mut_after();
-        
+
         mut_before();
         ret = yyjson_mut_ptr_removen(root, ptr, ptr_len);
         if (root) {
@@ -830,12 +830,12 @@ static void test_ptr_op(ptr_data data) {
             yy_assert(ret == NULL);
         }
         mut_after();
-        
+
         mut_before();
         ret = yyjson_mut_ptr_removex(NULL, NULL, ptr_len, NULL, NULL);
         yy_assert(ret == NULL);
         mut_after();
-        
+
         mut_before();
         ret = yyjson_mut_ptr_removex(root, ptr, ptr_len, NULL, NULL);
         if (root) {
@@ -850,14 +850,14 @@ static void test_ptr_op(ptr_data data) {
             yy_assert(ret == NULL);
         }
         mut_after();
-        
+
         mut_before();
         ret = yyjson_mut_ptr_removex(NULL, NULL, ptr_len, &ctx, &err);
         yy_assert(ret == NULL);
         assert_err_param(&err);
         assert_ctx_eq(&ctx, NULL);
         mut_after();
-        
+
         mut_before();
         ret = yyjson_mut_ptr_removex(root, ptr, ptr_len, &ctx, &err);
         if (root) {
@@ -878,10 +878,10 @@ static void test_ptr_op(ptr_data data) {
         }
         mut_after();
     }
-    
+
 #undef mut_before
 #undef mut_after
-    
+
     yyjson_doc_free(idoc);
     yyjson_mut_doc_free(mdoc);
     yyjson_doc_free(ival_doc);
@@ -894,7 +894,7 @@ static void test_ctx_op(ptr_data data) {
     // source
     yyjson_doc *idoc = yyjson_read(data.src, data.src ? strlen(data.src) : 0, 0);
     yyjson_mut_doc *mdoc = yyjson_doc_mut_copy(idoc, NULL);
-    
+
     // input value
     yyjson_doc *ival_doc = yyjson_read(data.val, data.val ? strlen(data.val) : 0, 0);
     yyjson_mut_doc *mval_doc = yyjson_doc_mut_copy(ival_doc, NULL);
@@ -902,19 +902,19 @@ static void test_ctx_op(ptr_data data) {
     yyjson_doc *ikey_doc = yyjson_read(data.key, data.key ? strlen(data.key) : 0, 0);
     yyjson_mut_doc *mkey_doc = yyjson_doc_mut_copy(ikey_doc, NULL);
     yyjson_mut_val *mkey = yyjson_mut_doc_get_root(mkey_doc);
-    
+
     // pointer
     const char *ptr = data.ptr;
     size_t ptr_len = data.ptr_len;
     if (ptr && !ptr_len) ptr_len = strlen(ptr);
-    
+
     // temp value
     yyjson_mut_doc *doc;
     yyjson_mut_val *ret, *key, *val;
     yyjson_ptr_err err;
     yyjson_ptr_ctx ctx;
     bool suc;
-    
+
 #define mut_before() do { \
     memset(&err, -1, sizeof(err)); \
     memset(&ctx, -1, sizeof(ctx)); \
@@ -922,11 +922,11 @@ static void test_ctx_op(ptr_data data) {
     val = yyjson_mut_val_mut_copy(doc, mval); \
     key = yyjson_mut_val_mut_copy(doc, mkey); \
 } while(false)
-    
+
 #define mut_after() do { \
     yyjson_mut_doc_free(doc); \
 } while (false)
-    
+
     if (data.op == PTR_OP_ADD) {
         mut_before();
         ret = yyjson_mut_doc_ptr_getx(doc, ptr, ptr_len, &ctx, &err);
@@ -936,7 +936,7 @@ static void test_ctx_op(ptr_data data) {
         assert_ctx_eq(&ctx, &data);
         mut_after();
     }
-    
+
     if (data.op == PTR_OP_REPLACE) {
         mut_before();
         ret = yyjson_mut_doc_ptr_getx(doc, ptr, ptr_len, &ctx, &err);
@@ -946,7 +946,7 @@ static void test_ctx_op(ptr_data data) {
         assert_ctx_eq(&ctx, &data);
         mut_after();
     }
-    
+
     if (data.op == PTR_OP_REMOVE) {
         mut_before();
         ret = yyjson_mut_doc_ptr_getx(doc, ptr, ptr_len, &ctx, &err);
@@ -956,10 +956,10 @@ static void test_ctx_op(ptr_data data) {
         assert_ctx_eq(&ctx, &data);
         mut_after();
     }
-    
+
 #undef mut_before
 #undef mut_after
-    
+
     yyjson_doc_free(idoc);
     yyjson_mut_doc_free(mdoc);
     yyjson_doc_free(ival_doc);
@@ -1082,7 +1082,7 @@ static void test_spec(void) {
 // -----------------------------------------------------------------------------
 // expected: val = src.get(ptr)
 static void test_ptr_get(void) {
-    
+
     // ---------------------------------
     // invalid parameter
     test_ptr_op((ptr_data){
@@ -1103,7 +1103,7 @@ static void test_ptr_get(void) {
         .ptr = "/a",
         .err = YYJSON_PTR_ERR_PARAMETER,
     });
-    
+
     // ---------------------------------
     // null root
     test_ptr_op((ptr_data){
@@ -1118,7 +1118,7 @@ static void test_ptr_get(void) {
         .ptr = "/a",
         .err = YYJSON_PTR_ERR_NULL_ROOT,
     });
-    
+
     // ---------------------------------
     // single root
     test_ptr_op((ptr_data){
@@ -1134,7 +1134,7 @@ static void test_ptr_get(void) {
         .err = YYJSON_PTR_ERR_RESOLVE,
         .pos = 1,
     });
-    
+
     // ---------------------------------
     // error syntax
     test_ptr_op((ptr_data){
@@ -1186,7 +1186,7 @@ static void test_ptr_get(void) {
         .err = YYJSON_PTR_ERR_SYNTAX,
         .pos = 3,
     });
-    
+
     // ---------------------------------
     // array index
     test_ptr_op((ptr_data){
@@ -1353,7 +1353,7 @@ static void test_ptr_get(void) {
         .err = YYJSON_PTR_ERR_RESOLVE,
         .pos = 5,
     });
-    
+
     // ---------------------------------
     // object key
     test_ptr_op((ptr_data){
@@ -1452,7 +1452,7 @@ static void test_ptr_get(void) {
         .err = YYJSON_PTR_ERR_RESOLVE,
         .pos = 7,
     });
-    
+
     // ---------------------------------
     // pointer without null-terminator
     const char *ptr = "/a/b";
@@ -1500,7 +1500,7 @@ static void test_ptr_put(void) {
         .ptr = NULL,
         .err = YYJSON_PTR_ERR_PARAMETER,
     });
-    
+
     // ---------------------------------
     // error syntax (level 0)
     test_ptr_op((ptr_data){
@@ -1534,7 +1534,7 @@ static void test_ptr_put(void) {
         .dst = "[0,1,2]",
         .err = YYJSON_PTR_ERR_SYNTAX,
     });
-    
+
     // ---------------------------------
     // error syntax (level 1)
     test_ptr_op((ptr_data){
@@ -1572,7 +1572,7 @@ static void test_ptr_put(void) {
         .err = YYJSON_PTR_ERR_SYNTAX,
         .pos = 1,
     });
-    
+
     // ---------------------------------
     // error syntax (level 2)
     test_ptr_op((ptr_data){
@@ -1612,7 +1612,7 @@ static void test_ptr_put(void) {
         .err = YYJSON_PTR_ERR_SYNTAX,
         .pos = 3,
     });
-    
+
     // ---------------------------------
     // error syntax (level 3)
     test_ptr_op((ptr_data){
@@ -1652,7 +1652,7 @@ static void test_ptr_put(void) {
         .err = YYJSON_PTR_ERR_RESOLVE,
         .pos = 3,
     });
-    
+
     // ---------------------------------
     // no root (single value)
     test_ptr_op((ptr_data){
@@ -1684,7 +1684,7 @@ static void test_ptr_put(void) {
         .dst = empty_root,
         .err = YYJSON_PTR_ERR_NULL_ROOT,
     });
-    
+
     // ---------------------------------
     // no root (level 1)
     test_ptr_op((ptr_data){
@@ -1740,7 +1740,7 @@ static void test_ptr_put(void) {
         .dst = empty_root,
         .err = YYJSON_PTR_ERR_NULL_ROOT,
     });
-    
+
     // ---------------------------------
     // no root (level 2)
     test_ptr_op((ptr_data){
@@ -1796,7 +1796,7 @@ static void test_ptr_put(void) {
         .dst = empty_root,
         .err = YYJSON_PTR_ERR_NULL_ROOT,
     });
-    
+
     // ---------------------------------
     // target is root
     test_ptr_op((ptr_data){
@@ -1830,7 +1830,7 @@ static void test_ptr_put(void) {
         .dst = empty_root,
         .old = "[1,2]",
     });
-    
+
     // ---------------------------------
     // target is root, no value
     test_ptr_op((ptr_data){
@@ -1864,7 +1864,7 @@ static void test_ptr_put(void) {
         .dst = empty_root,
         .old = "[1,2]",
     });
-    
+
     // ---------------------------------
     // no value
     test_ptr_op((ptr_data){
@@ -1900,7 +1900,7 @@ static void test_ptr_put(void) {
         .old = "1",
         .ctn = "[2]",
     });
-    
+
     // ---------------------------------
     // no parent (level 2)
     test_ptr_op((ptr_data){
@@ -1960,7 +1960,7 @@ static void test_ptr_put(void) {
         .err = YYJSON_PTR_ERR_RESOLVE,
         .pos = 1,
     });
-    
+
     // ---------------------------------
     // no parent (level 3)
     test_ptr_op((ptr_data){
@@ -2000,7 +2000,7 @@ static void test_ptr_put(void) {
         .err = YYJSON_PTR_ERR_RESOLVE,
         .pos = 1,
     });
-    
+
     // ---------------------------------
     // parent type not matched (array with no index)
     test_ptr_op((ptr_data){
@@ -2127,7 +2127,7 @@ static void test_ptr_put(void) {
         .err = YYJSON_PTR_ERR_RESOLVE,
         .pos = 3,
     });
-    
+
     // ---------------------------------
     // array size 0[0]
     test_ptr_op((ptr_data){
@@ -2169,7 +2169,7 @@ static void test_ptr_put(void) {
         .err = YYJSON_PTR_ERR_RESOLVE,
         .pos = 1,
     });
-    
+
     // ---------------------------------
     // array size 0[-]
     test_ptr_op((ptr_data){
@@ -2211,7 +2211,7 @@ static void test_ptr_put(void) {
         .err = YYJSON_PTR_ERR_RESOLVE,
         .pos = 1,
     });
-    
+
     // ---------------------------------
     // array size 0[1]
     test_ptr_op((ptr_data){
@@ -2250,7 +2250,7 @@ static void test_ptr_put(void) {
         .err = YYJSON_PTR_ERR_RESOLVE,
         .pos = 1,
     });
-    
+
     // ---------------------------------
     // array size 1[0]
     test_ptr_op((ptr_data){
@@ -2290,7 +2290,7 @@ static void test_ptr_put(void) {
         .ctn = "[]",
         .old = "1",
     });
-    
+
     // ---------------------------------
     // array size 1[1]
     test_ptr_op((ptr_data){
@@ -2331,7 +2331,7 @@ static void test_ptr_put(void) {
         .err = YYJSON_PTR_ERR_RESOLVE,
         .pos = 1,
     });
-    
+
     // ---------------------------------
     // array size 1[-]
     test_ptr_op((ptr_data){
@@ -2372,7 +2372,7 @@ static void test_ptr_put(void) {
         .err = YYJSON_PTR_ERR_RESOLVE,
         .pos = 1,
     });
-    
+
     // ---------------------------------
     // array size 1[2]
     test_ptr_op((ptr_data){
@@ -2410,7 +2410,7 @@ static void test_ptr_put(void) {
         .err = YYJSON_PTR_ERR_RESOLVE,
         .pos = 1,
     });
-    
+
     // ---------------------------------
     // array size 2[0]
     test_ptr_op((ptr_data){
@@ -2450,7 +2450,7 @@ static void test_ptr_put(void) {
         .ctn = "[1]",
         .old = "0",
     });
-    
+
     // ---------------------------------
     // array size 2[1]
     test_ptr_op((ptr_data){
@@ -2490,7 +2490,7 @@ static void test_ptr_put(void) {
         .ctn = "[0]",
         .old = "1",
     });
-    
+
     // ---------------------------------
     // array size 2[2]
     test_ptr_op((ptr_data){
@@ -2531,7 +2531,7 @@ static void test_ptr_put(void) {
         .err = YYJSON_PTR_ERR_RESOLVE,
         .pos = 1,
     });
-    
+
     // ---------------------------------
     // array size 2[3]
     test_ptr_op((ptr_data){
@@ -2569,7 +2569,7 @@ static void test_ptr_put(void) {
         .err = YYJSON_PTR_ERR_RESOLVE,
         .pos = 1,
     });
-    
+
     // ---------------------------------
     // parent's parent index is last
     test_ptr_op((ptr_data){
@@ -2612,7 +2612,7 @@ static void test_ptr_put(void) {
         .err = YYJSON_PTR_ERR_RESOLVE,
         .pos = 1,
     });
-    
+
     // ---------------------------------
     // key exist
     test_ptr_op((ptr_data){
@@ -2654,7 +2654,7 @@ static void test_ptr_put(void) {
         .ctn = "{\"b\":2}",
         .old = "1",
     });
-    
+
     // ---------------------------------
     // duplicated key
     test_ptr_op((ptr_data){
@@ -2696,7 +2696,7 @@ static void test_ptr_put(void) {
         .ctn = "{\"b\":2,\"c\":4}",
         .old = "1",
     });
-    
+
     // ---------------------------------
     // special key (escaped character)
     test_ptr_op((ptr_data){
@@ -2735,7 +2735,7 @@ static void test_ptr_put(void) {
         .ctn = "{\"a\":1,\"b\":2}",
         .old = "3",
     });
-    
+
     // ---------------------------------
     // special key (empty string)
     test_ptr_op((ptr_data){
@@ -2774,7 +2774,7 @@ static void test_ptr_put(void) {
         .ctn = "{\"a\":1,\"b\":2}",
         .old = "3",
     });
-    
+
     // ---------------------------------
     // special key (string with NUL character)
     test_ptr_op((ptr_data){
@@ -2844,7 +2844,7 @@ static void test_ptr_ctx(void) {
         .dst = "[0,1,2]",
         .err = 1,
     });
-    
+
     // ---------------------------------
     // invalid param (no val)
     test_ctx_op((ptr_data){
@@ -2865,7 +2865,7 @@ static void test_ptr_ctx(void) {
         .pre = "2",
         .err = 1,
     });
-    
+
     // ---------------------------------
     // invalid param (no key)
     test_ctx_op((ptr_data){
@@ -2877,7 +2877,7 @@ static void test_ptr_ctx(void) {
         .ctn = "{\"a\":1}",
         .err = 1,
     });
-    
+
     // ---------------------------------
     // no ctx.ctn
     test_ctx_op((ptr_data){
@@ -2901,7 +2901,7 @@ static void test_ptr_ctx(void) {
         .dst = "[0,1,2]",
         .err = 1,
     });
-    
+
     // ---------------------------------
     // array size 0[0]
     test_ctx_op((ptr_data){
@@ -2930,7 +2930,7 @@ static void test_ptr_ctx(void) {
         .ctn = "[]",
         .err = 1,
     });
-    
+
     // ---------------------------------
     // array size 1[0]
     test_ctx_op((ptr_data){
@@ -2960,7 +2960,7 @@ static void test_ptr_ctx(void) {
         .ctn = "[]",
         .old = "1",
     });
-    
+
     // ---------------------------------
     // array size 1[1]
     test_ctx_op((ptr_data){
@@ -2989,7 +2989,7 @@ static void test_ptr_ctx(void) {
         .ctn = "[1]",
         .err = 1,
     });
-    
+
     // ---------------------------------
     // array size 2[0]
     test_ctx_op((ptr_data){
@@ -3019,7 +3019,7 @@ static void test_ptr_ctx(void) {
         .ctn = "[2]",
         .old = "1",
     });
-    
+
     // ---------------------------------
     // array size 2[1]
     test_ctx_op((ptr_data){
@@ -3049,7 +3049,7 @@ static void test_ptr_ctx(void) {
         .ctn = "[1]",
         .old = "2",
     });
-    
+
     // ---------------------------------
     // array size 2[2]
     test_ctx_op((ptr_data){
@@ -3078,8 +3078,8 @@ static void test_ptr_ctx(void) {
         .ctn = "[1,2]",
         .err = 1,
     });
-    
-    
+
+
     // ---------------------------------
     // object size 0[0]
     test_ctx_op((ptr_data){
@@ -3109,7 +3109,7 @@ static void test_ptr_ctx(void) {
         .ctn = "{}",
         .err = 1,
     });
-    
+
     // ---------------------------------
     // object size 1[0]
     test_ctx_op((ptr_data){
@@ -3140,7 +3140,7 @@ static void test_ptr_ctx(void) {
         .ctn = "{}",
         .old = "1",
     });
-    
+
     // ---------------------------------
     // object size 1[1]
     test_ctx_op((ptr_data){
@@ -3170,7 +3170,7 @@ static void test_ptr_ctx(void) {
         .ctn = "{\"a\":1}",
         .err = 1,
     });
-    
+
     // ---------------------------------
     // object size 2[0]
     test_ctx_op((ptr_data){
@@ -3201,7 +3201,7 @@ static void test_ptr_ctx(void) {
         .ctn = "{\"b\":2}",
         .old = "1",
     });
-    
+
     // ---------------------------------
     // object size 2[1]
     test_ctx_op((ptr_data){
@@ -3232,7 +3232,7 @@ static void test_ptr_ctx(void) {
         .ctn = "{\"a\":1}",
         .old = "2",
     });
-    
+
     // ---------------------------------
     // object size 2[2]
     test_ctx_op((ptr_data){
@@ -3277,16 +3277,16 @@ static void test_ptr_get_type(void) {
         \"pi\": 3.14159, \
         \"pistr\": \"3.14159\" \
     }";
-    
+
     bool bool_value;
     double real_value;
     int64_t sint_value;
     uint64_t uint_value;
     const char *string_value;
-    
+
     yyjson_doc *doc = yyjson_read(json, strlen(json), 0);
     yyjson_val *root = yyjson_doc_get_root (doc);
-    
+
     // successful gets
     yy_assert(yyjson_ptr_get_bool(root, "/true", &bool_value) == true && bool_value == true);
     yy_assert(yyjson_ptr_get_uint(root, "/answer/to/life", &uint_value) == true && uint_value == 42);
@@ -3304,7 +3304,7 @@ static void test_ptr_get_type(void) {
     yy_assert(yyjson_ptr_get_num(root, "/answer/to/life", &real_value) == true && real_value == (double)42.0);
     yy_assert(yyjson_ptr_get_num(root, "/pi", &real_value) == true && real_value == (double)3.14159);
     yy_assert(yyjson_ptr_get_str(root, "/pistr", &string_value) == true && strcmp(string_value, "3.14159") == 0);
-    
+
     // unsuccessful gets
     yy_assert(yyjson_ptr_get_uint(root, "/-1", &uint_value) == false);  // type cast error
     yy_assert(yyjson_ptr_get_sint(root, "/i64_max+", &sint_value) == false);  // type cast error
@@ -3313,7 +3313,7 @@ static void test_ptr_get_type(void) {
     yy_assert(yyjson_ptr_get_uint(root, "/nosuch", &uint_value) == false); // not exist
     yy_assert(yyjson_ptr_get_sint(root, "/nosuch", &sint_value) == false); // not exist
     yy_assert(yyjson_ptr_get_real(root, "/nosuch", &real_value) == false); // not exist
-    
+
     // type mismatch
     yy_assert(yyjson_ptr_get_bool(root, "/pi", &bool_value) == false);
     yy_assert(yyjson_ptr_get_uint(root, "/pi", &uint_value) == false);
@@ -3321,7 +3321,7 @@ static void test_ptr_get_type(void) {
     yy_assert(yyjson_ptr_get_real(root, "/zero", &real_value) == false);
     yy_assert(yyjson_ptr_get_num(root, "/true", &real_value) == false);
     yy_assert(yyjson_ptr_get_str(root, "/pi", &string_value) == false);
-    
+
     yyjson_doc_free(doc);
 }
 

@@ -1,5 +1,5 @@
-/* 
- This file is used to test the compatibility of C++. 
+/*
+ This file is used to test the compatibility of C++.
  It should be able to compile successfully in C++ environments.
 */
 
