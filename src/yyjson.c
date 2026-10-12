@@ -3801,7 +3801,8 @@ static_noinline void bigint_set_buf(bigint *big, u64 sig, i32 *exp,
         if (dig_len_total > F64_MAX_DEC_DIG) {
             dig_big_cut = true;
             sig_end -= dig_len_total - (F64_MAX_DEC_DIG + 1);
-            sig_end -= (dot_pos + 1 == sig_end);
+            sig_end -= (dot_pos + 1 == sig_end) ||
+                       (has_dot && dot_pos >= sig_end);
             dig_len_total = (F64_MAX_DEC_DIG + 1);
         }
         *exp -= (i32)dig_len_total - U64_SAFE_DIG;
