@@ -757,6 +757,100 @@ static void test_incr_root_number_truncation(void) {
     free(buf);
 }
 
+static void test_incr_insitu_end_byte(void) {
+    yyjson_read_err err;
+    yyjson_incr_state *state;
+    yyjson_doc *doc;
+
+    {
+        char buf[] = "[1]x\0\0\0\0";
+        state = yyjson_incr_new(buf, 4,
+                               YYJSON_READ_INSITU | YYJSON_READ_STOP_WHEN_DONE,
+                               NULL);
+        yy_assert(state != NULL);
+        doc = yyjson_incr_read(state, 3, &err);
+        yy_assert(doc != NULL);
+        yy_assert(err.code == YYJSON_READ_SUCCESS);
+        yy_assertf(buf[3] == 'x', "successful read changed the next byte");
+        yyjson_doc_free(doc);
+        yyjson_incr_free(state);
+    }
+
+    {
+        char buf[] = "[1,x]\0\0\0\0";
+        state = yyjson_incr_new(buf, 5, YYJSON_READ_INSITU, NULL);
+        yy_assert(state != NULL);
+        doc = yyjson_incr_read(state, 4, &err);
+        yy_assert(doc == NULL);
+        yy_assert(err.code == YYJSON_READ_ERROR_UNEXPECTED_CHARACTER);
+        yy_assertf(buf[4] == ']', "hard error changed the next byte");
+        yyjson_incr_free(state);
+    }
+
+    {
+        char buf[] = "[1,\0\0\0\0";
+        state = yyjson_incr_new(buf, 3, YYJSON_READ_INSITU, NULL);
+        yy_assert(state != NULL);
+        buf[3] = 'X';
+        doc = yyjson_incr_read(state, 3, &err);
+        yy_assert(doc == NULL);
+        yy_assert(err.code == YYJSON_READ_ERROR_UNEXPECTED_END);
+        yy_assertf(buf[3] == 'X', "final incomplete read changed the end byte");
+        yyjson_incr_free(state);
+    }
+
+    {
+        char buf[] = "[1,2]\0\0\0\0";
+        state = yyjson_incr_new(buf, 5, YYJSON_READ_INSITU, NULL);
+        yy_assert(state != NULL);
+        doc = yyjson_incr_read(state, 3, &err);
+        yy_assert(doc == NULL);
+        yy_assert(err.code == YYJSON_READ_ERROR_MORE);
+        yy_assertf(buf[3] == '2', "MORE changed the next byte");
+        doc = yyjson_incr_read(state, 5, &err);
+        yy_assert(doc != NULL);
+        yy_assert(yyjson_arr_size(yyjson_doc_get_root(doc)) == 2);
+        yyjson_doc_free(doc);
+        yyjson_incr_free(state);
+    }
+
+    {
+        char buf[] = "[\"a\\n\",12]x\0\0\0\0";
+        yyjson_val *root, *str, *raw;
+        usize len = strlen(buf);
+        state = yyjson_incr_new(buf, len,
+                               YYJSON_READ_INSITU |
+                               YYJSON_READ_STOP_WHEN_DONE |
+                               YYJSON_READ_NUMBER_AS_RAW, NULL);
+        yy_assert(state != NULL);
+        doc = yyjson_incr_read(state, len - 1, &err);
+        yy_assert(doc != NULL);
+        yy_assertf(buf[len - 1] == 'x', "raw/string read changed the next byte");
+        root = yyjson_doc_get_root(doc);
+        str = yyjson_arr_get(root, 0);
+        raw = yyjson_arr_get(root, 1);
+        yy_assert(strcmp(yyjson_get_str(str), "a\n") == 0);
+        yy_assert(strcmp(yyjson_get_raw(raw), "12") == 0);
+        yyjson_doc_free(doc);
+        yyjson_incr_free(state);
+    }
+
+    {
+        char buf[] = "123\0\0\0\0";
+        state = yyjson_incr_new(buf, 3,
+                               YYJSON_READ_INSITU | YYJSON_READ_NUMBER_AS_RAW,
+                               NULL);
+        yy_assert(state != NULL);
+        buf[3] = 'X';
+        doc = yyjson_incr_read(state, 3, &err);
+        yy_assert(doc != NULL);
+        yy_assert(strcmp(yyjson_get_raw(yyjson_doc_get_root(doc)), "123") == 0);
+        yy_assertf(buf[3] == '\0', "raw number lost its end terminator");
+        yyjson_doc_free(doc);
+        yyjson_incr_free(state);
+    }
+}
+
 /* Without STOP_WHEN_DONE the reader rejects content after a complete document.
    The incremental reader must apply the same rule to bytes that are still
    pending in the buffer: it must not finalize a document early and accept
@@ -828,6 +922,7 @@ static void test_incr_trailing_content(void) {
 static void test_json_incremental(void) {
     test_incr_raw_number_terminator();
     test_incr_root_number_truncation();
+    test_incr_insitu_end_byte();
     test_incr_trailing_content();
     char *dat = create_json(3, 10);
     usize len = strlen(dat);
