@@ -4962,6 +4962,8 @@ yyjson_api yyjson_mut_val *yyjson_mut_patch(yyjson_mut_doc *doc,
 
  @warning This function is recursive and may cause a stack overflow if the
     object level is too deep.
+ @warning Duplicate keys are kept. A repeated key is merged again and copies
+    that member again. Key lookup is linear, so two large objects are slow.
  */
 yyjson_api yyjson_mut_val *yyjson_merge_patch(yyjson_mut_doc *doc,
                                               const yyjson_val *orig,
@@ -4974,6 +4976,8 @@ yyjson_api yyjson_mut_val *yyjson_merge_patch(yyjson_mut_doc *doc,
 
  @warning This function is recursive and may cause a stack overflow if the
     object level is too deep.
+ @warning Duplicate keys are kept. A repeated key is merged again and copies
+    that member again. Key lookup is linear, so two large objects are slow.
  */
 yyjson_api yyjson_mut_val *yyjson_mut_merge_patch(yyjson_mut_doc *doc,
                                                   const yyjson_mut_val *orig,

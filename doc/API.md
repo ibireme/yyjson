@@ -1593,6 +1593,9 @@ yyjson_mut_val *yyjson_mut_patch(yyjson_mut_doc *doc,
 ## JSON Merge Patch
 The library supports JSON Merge Patch (RFC 7386).
 Specification and example: <https://tools.ietf.org/html/rfc7386>
+
+Note that duplicate keys are kept. A repeated key copies that member again.
+Key lookup is linear, so merging two large objects is slow.
 ```c
 // Creates and returns a merge-patched JSON value.
 // Returns NULL if the patch could not be applied.
