@@ -4931,6 +4931,10 @@ typedef struct yyjson_patch_err {
  The memory of the returned value is allocated by the `doc`.
  The `err` is used to receive error information, pass NULL if not needed.
  Returns NULL if the patch could not be applied.
+
+ @warning `copy` deep-copies with recursion and may cause a stack overflow
+    if the object level is too deep. A patch can build a deeper tree than
+    the input.
  */
 yyjson_api yyjson_mut_val *yyjson_patch(yyjson_mut_doc *doc,
                                         const yyjson_val *orig,
@@ -4942,6 +4946,10 @@ yyjson_api yyjson_mut_val *yyjson_patch(yyjson_mut_doc *doc,
  The memory of the returned value is allocated by the `doc`.
  The `err` is used to receive error information, pass NULL if not needed.
  Returns NULL if the patch could not be applied.
+
+ @warning `copy` deep-copies with recursion and may cause a stack overflow
+    if the object level is too deep. A patch can build a deeper tree than
+    the input.
  */
 yyjson_api yyjson_mut_val *yyjson_mut_patch(yyjson_mut_doc *doc,
                                             const yyjson_mut_val *orig,

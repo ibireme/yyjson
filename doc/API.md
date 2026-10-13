@@ -1575,6 +1575,10 @@ if (yyjson_mut_is_null(val)) yyjson_ptr_ctx_remove(&ctx);
 ## JSON Patch
 The library supports JSON Patch (RFC 6902).
 Specification and example: <https://tools.ietf.org/html/rfc6902>
+
+Note that `copy` adds the existing value again, so the result can be deeper
+and larger than the input. The deep-copy is recursive and may overflow the
+stack if the object level is too deep.
 ```c
 // Creates and returns a patched JSON value.
 // Returns NULL if the patch could not be applied.
@@ -1826,13 +1830,19 @@ alc->free(alc->ctx, json);
 
 
 
-# Stack Memory Usage
+# Stack and Memory Growth
 Most functions in the library use fixed-size stack memory. This includes functions for JSON reading and writing, as well as JSON Pointer handling.
 
-However, a few functions use recursion and may cause a stack overflow if the nesting level is too deep. These functions are marked with the following warning in the header file:
+A few functions use recursion and may cause a stack overflow if the nesting level is too deep. These functions are marked with the following warning in the header file:
 > @warning
 > This function is recursive and may cause a stack overflow
 > if the object level is too deep.
+
+A few operations can also make the result much larger than the input:
+
+- Pretty writing (`YYJSON_WRITE_PRETTY`, `YYJSON_WRITE_PRETTY_TWO_SPACES`, or `YYJSON_WRITE_PRETTY_TABS`) repeats the indent on every nested level. A small but deeply nested document can become very large.
+- JSON Patch `copy` adds an existing value again, so the result can be much larger than the patch.
+- JSON Merge Patch keeps duplicate keys. A repeated key copies that member again.
 
 
 
