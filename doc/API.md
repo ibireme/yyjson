@@ -69,23 +69,6 @@ yyjson_mut_val *yyjson_mut_strcpy(yyjson_mut_doc *doc, const char *str);
 yyjson_mut_val *yyjson_mut_strncpy(yyjson_mut_doc *doc, const char *str, size_t len);
 ```
 
-To replace an existing mutable value with a copied string, use:
-
-```c
-bool yyjson_mut_set_strcpy(yyjson_mut_doc *doc, yyjson_mut_val *val, const char *str);
-bool yyjson_mut_set_strncpy(yyjson_mut_doc *doc, yyjson_mut_val *val, const char *str, size_t len);
-```
-
-The value must belong to `doc`. The string pool only grows, so previous strings
-remain allocated until the document is freed. For example:
-
-```c
-char name[] = "Alice";
-yyjson_mut_val *name_val = yyjson_mut_strcpy(doc, "old");
-yyjson_mut_set_strcpy(doc, name_val, name);
-name[0] = 'M'; // name_val still contains "Alice"
-```
-
 
 
 ---------------
@@ -963,6 +946,28 @@ bool yyjson_set_real(yyjson_val *val, double num);
 // The string is not copied, should be held by caller.
 bool yyjson_set_str(yyjson_val *val, const char *str);
 bool yyjson_set_strn(yyjson_val *val, const char *str, size_t len);
+
+// Mutable version (`yyjson_mut_set_*`).
+// Returns false if `val` is NULL.
+// Should not be used on an existing object or array.
+bool yyjson_mut_set_raw(yyjson_mut_val *val, const char *raw, size_t len);
+bool yyjson_mut_set_null(yyjson_mut_val *val);
+bool yyjson_mut_set_bool(yyjson_mut_val *val, bool num);
+bool yyjson_mut_set_uint(yyjson_mut_val *val, uint64_t num);
+bool yyjson_mut_set_sint(yyjson_mut_val *val, int64_t num);
+bool yyjson_mut_set_int(yyjson_mut_val *val, int64_t num);
+bool yyjson_mut_set_float(yyjson_mut_val *val, float num);
+bool yyjson_mut_set_double(yyjson_mut_val *val, double num);
+bool yyjson_mut_set_real(yyjson_mut_val *val, double num);
+
+// The string is not copied, should be held by caller.
+bool yyjson_mut_set_str(yyjson_mut_val *val, const char *str);
+bool yyjson_mut_set_strn(yyjson_mut_val *val, const char *str, size_t len);
+
+// The string is copied into `doc` and held by it.
+// Returns false on error. The value is unchanged on failure.
+bool yyjson_mut_set_strcpy(yyjson_mut_val *val, const char *str, yyjson_mut_doc *doc);
+bool yyjson_mut_set_strncpy(yyjson_mut_val *val, const char *str, size_t len, yyjson_mut_doc *doc);
 ```
 
 

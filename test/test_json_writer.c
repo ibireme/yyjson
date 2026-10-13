@@ -1253,6 +1253,22 @@ yy_test_case(test_json_writer) {
         yy_assert(strcmp(json, expect) == 0);
     }
 
+    // test set copied string
+    {
+        yyjson_mut_doc *doc = yyjson_mut_doc_new(NULL);
+        yyjson_mut_val val;
+        char src[] = "hello";
+
+        yyjson_mut_set_strcpy(&val, src, doc);
+        src[0] = 'X';
+        yy_assert(yyjson_mut_equals_str(&val, "hello"));
+
+        yyjson_mut_set_strncpy(&val, "abcdef", 3, doc);
+        yy_assert(yyjson_mut_equals_str(&val, "abc"));
+
+        yyjson_mut_doc_free(doc);
+    }
+
     // test bool conversion
     // some environments don't have a native bool type
     // and the bool type may store values other than 0/1

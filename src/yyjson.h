@@ -2762,28 +2762,22 @@ yyjson_api_inline bool yyjson_mut_set_strn(yyjson_mut_val *val,
                                            const char *str, size_t len);
 
 /** Set the value to a copied string (null-terminated).
-    The string is copied to `doc`'s string pool before the value is changed.
-    The value must belong to `doc`. The pool only grows, so previous strings
-    remain allocated until `doc` is freed.
-    Returns false if `doc`, `val` or `str` is NULL, or if allocation fails.
+    The string is copied into `doc` and held by it.
+    Returns false if input is NULL or allocation fails.
     The value is unchanged on failure.
     @warning This function should not be used on an existing object or array. */
-yyjson_api_inline bool yyjson_mut_set_strcpy(yyjson_mut_doc *doc,
-                                             yyjson_mut_val *val,
-                                             const char *str);
+yyjson_api_inline bool yyjson_mut_set_strcpy(yyjson_mut_val *val,
+                                             const char *str,
+                                             yyjson_mut_doc *doc);
 
 /** Set the value to a copied string (with length).
-    The string is copied to `doc`'s string pool before the value is changed.
-    The string may contain embedded NUL characters. The value must belong to
-    `doc`. The pool only grows, so previous strings remain allocated until
-    `doc` is freed.
-    Returns false if `doc`, `val` or `str` is NULL, if `len` is too large, or
-    if allocation fails.
+    The string is copied into `doc` and held by it.
+    Returns false if input is NULL, `len` is too large, or allocation fails.
     The value is unchanged on failure.
     @warning This function should not be used on an existing object or array. */
-yyjson_api_inline bool yyjson_mut_set_strncpy(yyjson_mut_doc *doc,
-                                              yyjson_mut_val *val,
-                                              const char *str, size_t len);
+yyjson_api_inline bool yyjson_mut_set_strncpy(yyjson_mut_val *val,
+                                              const char *str, size_t len,
+                                              yyjson_mut_doc *doc);
 
 /** Marks this string as not needing to be escaped during JSON writing.
     This can be used to avoid the overhead of escaping if the string contains
@@ -6186,28 +6180,22 @@ yyjson_api_inline bool yyjson_mut_set_strn(yyjson_mut_val *val,
     return true;
 }
 
-yyjson_api_inline bool yyjson_mut_set_strcpy(yyjson_mut_doc *doc,
-                                             yyjson_mut_val *val,
-                                             const char *str) {
-    size_t len;
+yyjson_api_inline bool yyjson_mut_set_strncpy(yyjson_mut_val *val,
+                                              const char *str, size_t len,
+                                              yyjson_mut_doc *doc) {
     char *new_str;
-    if (yyjson_unlikely(!doc || !val || !str)) return false;
-    len = strlen(str);
+    if (yyjson_unlikely(!val || !str || !doc)) return false;
     new_str = unsafe_yyjson_mut_strncpy(doc, str, len);
     if (yyjson_unlikely(!new_str)) return false;
     unsafe_yyjson_set_strn(val, new_str, len);
     return true;
 }
 
-yyjson_api_inline bool yyjson_mut_set_strncpy(yyjson_mut_doc *doc,
-                                              yyjson_mut_val *val,
-                                              const char *str, size_t len) {
-    char *new_str;
-    if (yyjson_unlikely(!doc || !val || !str)) return false;
-    new_str = unsafe_yyjson_mut_strncpy(doc, str, len);
-    if (yyjson_unlikely(!new_str)) return false;
-    unsafe_yyjson_set_strn(val, new_str, len);
-    return true;
+yyjson_api_inline bool yyjson_mut_set_strcpy(yyjson_mut_val *val,
+                                             const char *str,
+                                             yyjson_mut_doc *doc) {
+    if (yyjson_unlikely(!str)) return false;
+    return yyjson_mut_set_strncpy(val, str, strlen(str), doc);
 }
 
 yyjson_api_inline bool yyjson_mut_set_str_noesc(yyjson_mut_val *val,

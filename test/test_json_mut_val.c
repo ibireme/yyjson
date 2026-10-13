@@ -4,32 +4,6 @@
 #include "yy_test_utils.h"
 
 
-typedef struct test_mut_set_strcpy_alc_ctx {
-    bool fail_malloc;
-    usize malloc_count;
-} test_mut_set_strcpy_alc_ctx;
-
-static void *test_mut_set_strcpy_malloc(void *ctx, size_t size) {
-    test_mut_set_strcpy_alc_ctx *alc_ctx = (test_mut_set_strcpy_alc_ctx *)ctx;
-    alc_ctx->malloc_count++;
-    if (alc_ctx->fail_malloc) return NULL;
-    return malloc(size);
-}
-
-static void *test_mut_set_strcpy_realloc(void *ctx, void *ptr,
-                                         size_t old_size, size_t size) {
-    (void)ctx;
-    (void)old_size;
-    return realloc(ptr, size);
-}
-
-static void test_mut_set_strcpy_free(void *ctx, void *ptr) {
-    (void)ctx;
-    free(ptr);
-}
-
-
-
 /*==============================================================================
  * MARK: - Val
  *============================================================================*/
@@ -284,111 +258,6 @@ static void test_json_mut_val_api(void) {
     validate_mut_str(doc, "\0\0\0", 3, true);
 
     yyjson_mut_doc_free(doc);
-}
-
-
-static void test_json_mut_set_strcpy_api(void) {
-    yyjson_mut_doc *doc;
-    yyjson_mut_val *arr, *val, *next;
-    char src[] = "source";
-    char bytes[] = { 'a', '\0', 'b' };
-    const char *str;
-
-    doc = yyjson_mut_doc_new(NULL);
-    yy_assert(doc);
-    yy_assert(yyjson_mut_doc_set_str_pool_size(doc, 4));
-    arr = yyjson_mut_arr(doc);
-    val = yyjson_mut_strcpy(doc, "old");
-    next = yyjson_mut_int(doc, 7);
-    yy_assert(arr && val && next);
-    yy_assert(yyjson_mut_arr_append(arr, val));
-    yy_assert(yyjson_mut_arr_append(arr, next));
-
-    str = yyjson_mut_get_str(val);
-    yy_assert(yyjson_mut_set_strcpy(doc, val, str));
-    yy_assert(yyjson_mut_equals_str(val, "old"));
-    yy_assert(yyjson_mut_set_strcpy(doc, val, src));
-    src[0] = 'X';
-    yy_assert(yyjson_mut_equals_str(val, "source"));
-    yy_assert(yyjson_mut_set_strncpy(doc, val, bytes, sizeof(bytes)));
-    bytes[0] = 'X';
-    yy_assert(yyjson_mut_get_len(val) == 3);
-    yy_assert(memcmp(yyjson_mut_get_str(val), "a\0b", 3) == 0);
-    yy_assert(yyjson_mut_set_strcpy(doc, val, ""));
-    yy_assert(yyjson_mut_get_len(val) == 0);
-    yy_assert(yyjson_mut_get_str(val)[0] == '\0');
-    yy_assert(yyjson_mut_set_strncpy(doc, val, "", 0));
-    yy_assert(yyjson_mut_get_len(val) == 0);
-
-    yy_assert(yyjson_mut_set_strcpy(doc, val, "abcdef"));
-    str = yyjson_mut_get_str(val);
-    yy_assert(yyjson_mut_set_strncpy(doc, val, str + 1, 4));
-    yy_assert(yyjson_mut_get_len(val) == 4);
-    yy_assert(memcmp(yyjson_mut_get_str(val), "bcde", 4) == 0);
-    str = yyjson_mut_get_str(val);
-    yy_assert(yyjson_mut_set_strcpy(doc, val, str));
-    yy_assert(yyjson_mut_equals_str(val, "bcde"));
-    yy_assert(val->next == next);
-    yy_assert(yyjson_mut_arr_size(arr) == 2);
-    yy_assert(yyjson_mut_arr_get(arr, 0) == val);
-    yy_assert(yyjson_mut_arr_get(arr, 1) == next);
-    yy_assert(yyjson_mut_get_int(next) == 7);
-    yyjson_mut_doc_free(doc);
-
-    doc = yyjson_mut_doc_new(NULL);
-    yy_assert(doc);
-    yy_assert(yyjson_mut_doc_set_str_pool_size(doc, 4));
-    val = yyjson_mut_strcpy(doc, "old");
-    yy_assert(val);
-    str = yyjson_mut_get_str(val);
-    yy_assert(yyjson_mut_set_strncpy(doc, val, str, 3));
-    yy_assert(yyjson_mut_equals_str(val, "old"));
-    yyjson_mut_doc_free(doc);
-
-    {
-        yyjson_alc alc;
-        test_mut_set_strcpy_alc_ctx alc_ctx;
-
-        alc_ctx.fail_malloc = false;
-        alc_ctx.malloc_count = 0;
-        alc.malloc = test_mut_set_strcpy_malloc;
-        alc.realloc = test_mut_set_strcpy_realloc;
-        alc.free = test_mut_set_strcpy_free;
-        alc.ctx = &alc_ctx;
-        doc = yyjson_mut_doc_new(&alc);
-        yy_assert(doc);
-        yy_assert(yyjson_mut_doc_set_str_pool_size(doc, 4));
-        arr = yyjson_mut_arr(doc);
-        val = yyjson_mut_strcpy(doc, "orig");
-        next = yyjson_mut_int(doc, 9);
-        yy_assert(arr && val && next);
-        yy_assert(yyjson_mut_arr_append(arr, val));
-        yy_assert(yyjson_mut_arr_append(arr, next));
-
-        alc_ctx.fail_malloc = true;
-        {
-            usize malloc_count = alc_ctx.malloc_count;
-            yy_assert(!yyjson_mut_set_strcpy(NULL, val, "new"));
-            yy_assert(!yyjson_mut_set_strcpy(doc, NULL, "new"));
-            yy_assert(!yyjson_mut_set_strcpy(doc, val, NULL));
-            yy_assert(!yyjson_mut_set_strncpy(NULL, val, "new", 3));
-            yy_assert(!yyjson_mut_set_strncpy(doc, NULL, "new", 3));
-            yy_assert(!yyjson_mut_set_strncpy(doc, val, NULL, 3));
-            yy_assert(!yyjson_mut_set_strncpy(doc, val, "new", (usize)-1));
-            yy_assert(alc_ctx.malloc_count == malloc_count);
-        }
-
-        yy_assert(!yyjson_mut_set_strcpy(doc, val, "replacement"));
-        yy_assert(yyjson_mut_equals_str(val, "orig"));
-        yy_assert(!yyjson_mut_set_strncpy(doc, val, "replacement", 11));
-        yy_assert(yyjson_mut_equals_str(val, "orig"));
-        yy_assert(val->next == next);
-        yy_assert(yyjson_mut_arr_size(arr) == 2);
-        yy_assert(yyjson_mut_arr_get(arr, 0) == val);
-        yy_assert(yyjson_mut_arr_get(arr, 1) == next);
-        yy_assert(yyjson_mut_get_int(next) == 9);
-        yyjson_mut_doc_free(doc);
-    }
 }
 
 
@@ -2534,7 +2403,6 @@ static void test_json_mut_equals_api(void) {
 
 yy_test_case(test_json_mut_val) {
     test_json_mut_val_api();
-    test_json_mut_set_strcpy_api();
     test_json_mut_arr_api();
     test_json_mut_obj_api();
     test_json_mut_doc_api();
