@@ -7215,9 +7215,14 @@ unexpected_end:
     state->alc_len = alc_len;
     return NULL;
 
+fail_alloc:
+    err->pos = (usize)(cur - hdr);
+    err->code = YYJSON_READ_ERROR_MEMORY_ALLOCATION;
+    err->msg = MSG_MALLOC;
+    *end = saved_end;
+    return NULL;
 fail_string:            return_err(cur, INVALID_STRING, msg);
 fail_number:            return_err(cur, INVALID_NUMBER, msg);
-fail_alloc:             return_err(cur, MEMORY_ALLOCATION, MSG_MALLOC);
 fail_trailing_comma:    return_err(cur, JSON_STRUCTURE, MSG_COMMA);
 fail_literal_true:      return_err(cur, LITERAL, MSG_CHAR_T);
 fail_literal_false:     return_err(cur, LITERAL, MSG_CHAR_F);
