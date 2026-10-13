@@ -69,6 +69,23 @@ yyjson_mut_val *yyjson_mut_strcpy(yyjson_mut_doc *doc, const char *str);
 yyjson_mut_val *yyjson_mut_strncpy(yyjson_mut_doc *doc, const char *str, size_t len);
 ```
 
+To replace an existing mutable value with a copied string, use:
+
+```c
+bool yyjson_mut_set_strcpy(yyjson_mut_doc *doc, yyjson_mut_val *val, const char *str);
+bool yyjson_mut_set_strncpy(yyjson_mut_doc *doc, yyjson_mut_val *val, const char *str, size_t len);
+```
+
+The value must belong to `doc`. The string pool only grows, so previous strings
+remain allocated until the document is freed. For example:
+
+```c
+char name[] = "Alice";
+yyjson_mut_val *name_val = yyjson_mut_strcpy(doc, "old");
+yyjson_mut_set_strcpy(doc, name_val, name);
+name[0] = 'M'; // name_val still contains "Alice"
+```
+
 
 
 ---------------
