@@ -1591,98 +1591,83 @@ static void test_number_locale(void) {
     test_all_files();
 }
 
+/// Read one number and compare it with f64_read().
+static void check_long_real(const char *str, usize len) {
+    f64 expect;
+    yyjson_doc *doc;
+    yyjson_val *val;
+    yyjson_val out = { 0 };
+    const char *end;
+
+    yy_assertf(f64_read(str, &expect) == len,
+               "f64_read fail, len:%u, head:%.32s",
+               (unsigned)len, str);
+
+    doc = yyjson_read(str, len, 0);
+    val = yyjson_doc_get_root(doc);
+    yy_assertf(val && yyjson_is_real(val) && yyjson_get_real(val) == expect,
+               "read mismatch, len:%u, head:%.32s",
+               (unsigned)len, str);
+
+    end = yyjson_read_number(str, &out, 0, NULL, NULL);
+    yy_assertf(end == str + len && yyjson_equals(val, &out),
+               "read_number mismatch, len:%u, head:%.32s",
+               (unsigned)len, str);
+    yyjson_doc_free(doc);
+}
+
+/// Long integer parts around a double midpoint should round like f64_read().
+/// `mid_lo` is just below the midpoint, `mid_hi` is the midpoint itself.
 static void test_long_real_rounding(void) {
-#if FP_IEEE_754
-    // The midpoint between 1e30 and its next double is 1000000000000000090253369016320.
-    const char *mid_below = "1000000000000000090253369016319";
-    const char *mid_above = "1000000000000000090253369016320";
+    const char *mid_lo = "1000000000000000090253369016319";
+    const char *mid_hi = "1000000000000000090253369016320";
     const usize int_lens[] = { 768, 769, 770, 771, 800 };
-    const u64 lower_bits = 0x46293e5939a08ceaULL;
-    char num[820];
+    char buf[1024];
 
     for (usize i = 0; i < sizeof(int_lens) / sizeof(int_lens[0]); i++) {
         usize int_len = int_lens[i];
-        usize zeros = int_len - strlen(mid_below);
-        for (int side = 0; side < 2; side++) {
-            for (int negative = 0; negative < 2; negative++) {
+        for (int above = 0; above < 2; above++) {
+            for (int neg = 0; neg < 2; neg++) {
+                const char *mid = above ? mid_hi : mid_lo;
+                usize mid_len = strlen(mid);
+                usize pad = int_len - mid_len;
                 usize pos = 0;
-                u64 expected = lower_bits + (u64)side;
-                yyjson_val val = { 0 };
-                yyjson_doc *doc;
-                const char *end;
-                u64 bits;
-                f64 real;
 
-                if (negative) {
-                    num[pos++] = '-';
-                    expected |= 0x8000000000000000ULL;
-                }
-                memcpy(num + pos, side ? mid_above : mid_below,
-                       strlen(mid_below));
-                pos += strlen(mid_below);
-                memset(num + pos, side ? '0' : '9', zeros);
-                pos += zeros;
-                num[pos++] = '.';
-                num[pos++] = side ? '1' : '9';
-                pos += (usize)snprintf(num + pos, sizeof(num) - pos,
-                                       "%c-%u", side ? 'E' : 'e',
-                                       (unsigned)zeros);
-
-                end = yyjson_read_number(num, &val, 0, NULL, NULL);
-                yy_assertf(end == num + pos && yyjson_is_real(&val),
-                           "long real read failed: digits=%u side=%d negative=%d",
-                           (unsigned)int_len, side, negative);
-                real = yyjson_get_real(&val);
-                memcpy(&bits, &real, sizeof(bits));
-                yy_assertf(bits == expected,
-                           "long real rounding: digits=%u side=%d negative=%d got=%llx expected=%llx",
-                           (unsigned)int_len, side, negative,
-                           (unsigned long long)bits, (unsigned long long)expected);
-
-                doc = yyjson_read(num, pos, 0);
-                yy_assertf(doc && yyjson_is_real(yyjson_doc_get_root(doc)),
-                           "long real document read failed: digits=%u side=%d negative=%d",
-                           (unsigned)int_len, side, negative);
-                real = yyjson_get_real(yyjson_doc_get_root(doc));
-                memcpy(&bits, &real, sizeof(bits));
-                yy_assertf(bits == expected,
-                           "long real document rounding: digits=%u side=%d negative=%d got=%llx expected=%llx",
-                           (unsigned)int_len, side, negative,
-                           (unsigned long long)bits, (unsigned long long)expected);
-                yyjson_doc_free(doc);
+                if (neg) buf[pos++] = '-';
+                memcpy(buf + pos, mid, mid_len);
+                pos += mid_len;
+                memset(buf + pos, above ? '0' : '9', pad);
+                pos += pad;
+                buf[pos++] = '.';
+                buf[pos++] = above ? '1' : '9';
+                pos += (usize)snprintf(buf + pos, sizeof(buf) - pos,
+                                       "%c-%u", above ? 'E' : 'e',
+                                       (unsigned)pad);
+                check_long_real(buf, pos);
             }
         }
     }
 
+    /// same magnitude, no decimal point
     {
-        usize zeros = 800 - strlen(mid_below);
-        usize pos = strlen(mid_below);
-        yyjson_val val = { 0 };
-        const char *end;
-        u64 bits;
-        f64 real;
+        usize mid_len = strlen(mid_lo);
+        usize pad = 800 - mid_len;
+        usize pos = mid_len;
 
-        memcpy(num, mid_below, pos);
-        memset(num + pos, '9', zeros);
-        pos += zeros;
-        pos += (usize)snprintf(num + pos, sizeof(num) - pos,
-                               "e-%u", (unsigned)zeros);
-        end = yyjson_read_number(num, &val, 0, NULL, NULL);
-        yy_assert(end == num + pos && yyjson_is_real(&val));
-        real = yyjson_get_real(&val);
-        memcpy(&bits, &real, sizeof(bits));
-        yy_assertf(bits == lower_bits,
-                   "long integer rounding: got=%llx expected=%llx",
-                   (unsigned long long)bits, (unsigned long long)lower_bits);
+        memcpy(buf, mid_lo, mid_len);
+        memset(buf + pos, '9', pad);
+        pos += pad;
+        pos += (usize)snprintf(buf + pos, sizeof(buf) - pos,
+                               "e-%u", (unsigned)pad);
+        check_long_real(buf, pos);
     }
-#endif
 }
 
 static void test_number_extra(void) {
-    test_long_real_rounding();
     test_random_int();
     test_random_real();
     test_special_real();
+    test_long_real_rounding();
 
 #if YYJSON_TEST_ALL_FLOAT || 0
     test_all_float(); /// costs too much time, disabled for regular testing
