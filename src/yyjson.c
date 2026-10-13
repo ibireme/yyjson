@@ -6694,6 +6694,7 @@ void yyjson_incr_free(yyjson_incr_state *state) {
 yyjson_doc *yyjson_incr_read(yyjson_incr_state *state, size_t len,
                              yyjson_read_err *err) {
 #define return_err_inv_param(_msg) do { \
+    if (end) *end = saved_end; \
     err->pos = 0; \
     err->msg = _msg; \
     err->code = YYJSON_READ_ERROR_INVALID_PARAMETER; \
@@ -6708,6 +6709,7 @@ yyjson_doc *yyjson_incr_read(yyjson_incr_state *state, size_t len,
         err->code = YYJSON_READ_ERROR_##_code; \
         err->msg = _msg; \
     } \
+    *end = saved_end; \
     return NULL; \
 } while (false)
 
@@ -7182,6 +7184,7 @@ doc_end:
         if (unlikely(len < state->buf_len)) goto unexpected_end;
     }
 
+    *end = saved_end;
     **pre = '\0';
     doc = (yyjson_doc *)val_hdr;
     doc->root = val_hdr + hdr_len;
@@ -7195,6 +7198,7 @@ doc_end:
     return doc;
 
 unexpected_end:
+    *end = saved_end;
     err->pos = len;
     /* if no more data, stop the incr read */
     if (unlikely(len >= state->buf_len)) {
@@ -7209,8 +7213,6 @@ unexpected_end:
     state->val_end = val_end;
     state->ctn = ctn;
     state->alc_len = alc_len;
-    /* restore the end where we've inserted a null terminator */
-    *end = saved_end;
     return NULL;
 
 fail_string:            return_err(cur, INVALID_STRING, msg);
