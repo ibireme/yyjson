@@ -748,6 +748,27 @@ Escape unicode as `\uXXXX`, making the output ASCII-only, for example:
 Use lowercase hex digits in `\uXXXX` escape sequences instead of the default uppercase.
 Only effective when `YYJSON_WRITE_ESCAPE_UNICODE` is also set.
 
+### **YYJSON_WRITE_TRAILING_COMMAS**
+Writes a comma after the last element of each non-empty array and object.
+This works with both minified and pretty output, for example:
+
+```js
+{"a":[1,2,],"b":{},}
+```
+
+```js
+{
+    "a": [
+        1,
+        2,
+    ],
+    "b": {},
+}
+```
+
+Note that this output is **NOT** standard JSON and may be rejected by other JSON libraries.
+It can be read back with `YYJSON_READ_ALLOW_TRAILING_COMMAS`.
+
 ### **YYJSON_WRITE_ESCAPE_SLASHES**
 Escapes the forward slash character `/` as `\/`, for example:
 
