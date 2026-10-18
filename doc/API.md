@@ -196,7 +196,8 @@ To read a large JSON document incrementally:
 ### Create the state for incremental reading
 
 The `buf` should be a UTF-8 string, null-terminator is not required.
-You can pass a const string if you don't use the `YYJSON_READ_INSITU` flag.<br/>
+You can pass a const string if you don't use the `YYJSON_READ_INSITU` flag.
+In this case, cast it to `char *` when calling `yyjson_incr_new()`; the input is copied and is not modified.<br/>
 The `buf_len` is the length of `buf` in bytes.
 The `flg` is reader flag. Pass 0 if you don't need it. See reader flag for details.
 The `alc` is memory allocator, pass NULL if you don't need it. See `memory allocator` for details.<br/>
@@ -242,7 +243,7 @@ const char *dat = your_file.bytes;
 size_t len = your_file.size;
 
 yyjson_read_flag flg = YYJSON_READ_NOFLAG;
-yyjson_incr_state *state = yyjson_incr_new(dat, len, flg, NULL);
+yyjson_incr_state *state = yyjson_incr_new((char *)dat, len, flg, NULL);
 yyjson_doc *doc;
 yyjson_read_err err;
 size_t read_so_far = 0;
