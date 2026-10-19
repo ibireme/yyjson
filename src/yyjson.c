@@ -12898,11 +12898,12 @@ more:
 
 /** Write a number through a temp buffer if the window is too small. */
 static_noinline bool sw_write_num_slow(yyjson_sw *sw, yyjson_val val) {
-    u8 buf[FP_BUF_LEN];
+    u8 buf[FP_BUF_LEN + 1];
+    u8 *num = buf + 1; /* integer writer may step back */
     u8 *end;
-    end = write_num(buf, &val, sw->flg & ~YYJSON_WRITE_ALLOW_INF_AND_NAN);
+    end = write_num(num, &val, sw->flg & ~YYJSON_WRITE_ALLOW_INF_AND_NAN);
     if (!end) return_err(NAN_OR_INF, MSG_NAN_INF);
-    if (!sw_write_bytes(sw, buf, (usize)(end - buf))) return false;
+    if (!sw_write_bytes(sw, num, (usize)(end - num))) return false;
     return yyjson_impl_sw_after_val(sw);
 }
 
@@ -12922,10 +12923,11 @@ static bool sw_write_num(yyjson_sw *sw, yyjson_val val) {
 /** Write an integer through a temp buffer if the window is too small. */
 static_noinline bool sw_write_int_slow(yyjson_sw *sw, u64 val, bool neg) {
     u8 buf[32];
-    u8 *cur = buf;
+    u8 *out = buf + 1; /* integer writer may step back */
+    u8 *cur = out;
     if (neg) *cur++ = '-';
     cur = write_u64(val, cur);
-    if (!sw_write_bytes(sw, buf, (usize)(cur - buf))) return false;
+    if (!sw_write_bytes(sw, out, (usize)(cur - out))) return false;
     return yyjson_impl_sw_after_val(sw);
 }
 

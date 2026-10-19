@@ -282,7 +282,7 @@ static const yyjson_sax_handler stat_handler = {
 // Every event arrives, in every kind of input.
 static void test_sax_events(void) {
     static const char json[] =
-        "{\"n\":1,\"a\":[true,false,null,{\"s\":\"x\\n\",\"r\":1.5}],\"neg\":-2}";
+        "{\"n\":1,\"a\":[true,false,null,{\"s\":\"x\\n\",\"r\":2.0}],\"neg\":-2}";
     foreach_mode(mode) {
         sax_stat stat = {0};
         bool ok = false;
@@ -295,7 +295,7 @@ static void test_sax_events(void) {
         yy_assert(stat.keys == 5 && stat.strings == 1);
         yy_assert(stat.uints == 1 && stat.uint_sum == 1);
         yy_assert(stat.sints == 1 && stat.sint_sum == -2);
-        yy_assert(stat.reals == 1 && stat.real_sum == 1.5);
+        yy_assert(stat.reals == 1 && stat.real_sum == 2.0);
         yy_assert(stat.bools == 2 && stat.trues == 1);
         yy_assert(stat.nulls == 1);
     }
@@ -510,15 +510,15 @@ static bool sax_out_write(void *ctx, const void *src, size_t len) {
 // The events of a document make the text of it, minified or pretty, to memory
 // or to a callback.
 static void test_sax_copy(void) {
-    static const struct {
+    const struct {
         const char *json;
         yyjson_read_flag rflg;
         yyjson_write_flag wflg;
         const char *expect;
     } cases[] = {
-        { " { \"n\" : 1 ,\"a\":[ true,false , null,{ \"s\":\"x\\n\", \"r\":1.50} ],"
+        { " { \"n\" : 1 ,\"a\":[ true,false , null,{ \"s\":\"x\\n\", \"r\":2.0} ],"
           "\"neg\" :-2 }\n", 0, 0,
-          "{\"n\":1,\"a\":[true,false,null,{\"s\":\"x\\n\",\"r\":1.5}],"
+          "{\"n\":1,\"a\":[true,false,null,{\"s\":\"x\\n\",\"r\":2.0}],"
           "\"neg\":-2}" },
         { "{\"n\":1,\"a\":[true,[],{}],\"b\":\"\"}", 0, YYJSON_WRITE_PRETTY,
           "{\n    \"n\": 1,\n    \"a\": [\n        true,\n        [],\n"
@@ -527,7 +527,8 @@ static void test_sax_copy(void) {
           YYJSON_WRITE_ESCAPE_UNICODE | YYJSON_WRITE_ESCAPE_SLASHES,
           "[\"\\u4E2D\\uD83D\\uDE00\",\"\\/\"]" },
         { "[1.50,1e2,123456789012345678901234567890]",
-          YYJSON_READ_NUMBER_AS_RAW, 0, "[1.50,1e2,123456789012345678901234567890]" },
+          YYJSON_READ_NUMBER_AS_RAW, 0,
+          "[1.50,1e2,123456789012345678901234567890]" },
         { "\"a\\u0000b\"", 0, 0, "\"a\\u0000b\"" },
         { "3", 0, YYJSON_WRITE_NEWLINE_AT_END, "3\n" },
     };

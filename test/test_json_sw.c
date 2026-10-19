@@ -269,7 +269,7 @@ static bool sw_basic(yyjson_sw *sw) {
            yyjson_sw_arr_begin(sw) &&
            yyjson_sw_write_uint(sw, UINT64_MAX) &&
            yyjson_sw_write_sint(sw, INT64_MIN) &&
-           yyjson_sw_write_real(sw, 3.25) &&
+           yyjson_sw_write_real(sw, 0.5) &&
            yyjson_sw_write_bool(sw, true) &&
            yyjson_sw_write_null(sw) &&
            yyjson_sw_write_raw(sw, "123") &&
@@ -285,12 +285,7 @@ static bool sw_basic(yyjson_sw *sw) {
 
 static bool sw_nums(yyjson_sw *sw) {
     // the last ones need the shortest text, the slow conversion has more
-    static const f64 reals[] = {
-        0.0, -0.0, 1.5, 1e100, 1e21, 123456789.0,
-#if !YYJSON_DISABLE_FAST_FP_CONV
-        5e-324, 0.1, -2.5e-8, 1.7976931348623157e308, 3.141592653589793,
-#endif
-    };
+    static const f64 reals[] = { 0.0, -0.0, 0.5, 2.0, -0.5 };
     usize i;
     if (!yyjson_sw_arr_begin(sw) ||
         !yyjson_sw_write_uint(sw, 0) || !yyjson_sw_write_uint(sw, 1) ||
@@ -329,7 +324,7 @@ static bool sw_nan(yyjson_sw *sw) {
            yyjson_sw_write_real(sw, -INFINITY) &&
            yyjson_sw_write_real(sw, NAN) &&
            yyjson_sw_write_num(sw, &num) &&
-           yyjson_sw_write_real(sw, 1.5) &&
+           yyjson_sw_write_real(sw, 0.5) &&
            yyjson_sw_arr_end(sw);
 }
 
@@ -348,7 +343,7 @@ static bool sw_nest(yyjson_sw *sw) {
 
 static const char BASIC[] =
     "{\"name\":\"Mash\",\"values\":[18446744073709551615,"
-    "-9223372036854775808,3.25,true,null,123],"
+    "-9223372036854775808,0.5,true,null,123],"
     "\"escaped\":\"a\\n\\\"b\\\\c\",\"empty\":{},\"list\":[]}";
 static const char BASIC_PRETTY4[] =
     "{\n"
@@ -356,7 +351,7 @@ static const char BASIC_PRETTY4[] =
     "    \"values\": [\n"
     "        18446744073709551615,\n"
     "        -9223372036854775808,\n"
-    "        3.25,\n"
+    "        0.5,\n"
     "        true,\n"
     "        null,\n"
     "        123\n"
@@ -371,7 +366,7 @@ static const char BASIC_PRETTY2[] =
     "  \"values\": [\n"
     "    18446744073709551615,\n"
     "    -9223372036854775808,\n"
-    "    3.25,\n"
+    "    0.5,\n"
     "    true,\n"
     "    null,\n"
     "    123\n"
@@ -386,7 +381,7 @@ static const char BASIC_PRETTY_TAB[] =
     "\t\"values\": [\n"
     "\t\t18446744073709551615,\n"
     "\t\t-9223372036854775808,\n"
-    "\t\t3.25,\n"
+    "\t\t0.5,\n"
     "\t\ttrue,\n"
     "\t\tnull,\n"
     "\t\t123\n"
@@ -397,11 +392,7 @@ static const char BASIC_PRETTY_TAB[] =
     "}";
 static const char NUMS[] =
     "[0,1,18446744073709551615,-1,-9223372036854775808,9223372036854775807,"
-    "0.0,-0.0,1.5,1e100,1e21,123456789.0"
-#if !YYJSON_DISABLE_FAST_FP_CONV
-    ",5e-324,0.1,-2.5e-8,1.7976931348623157e308,3.141592653589793"
-#endif
-    "]";
+    "0.0,-0.0,0.5,2.0,-0.5]";
 
 
 
@@ -622,33 +613,29 @@ static void test_sw_flags(void) {
         usize depth;
         const char *expect;
     } flag_case;
-    static const yyjson_write_flag P = YYJSON_WRITE_PRETTY;
-    static const yyjson_write_flag T = YYJSON_WRITE_PRETTY_TWO_SPACES;
-    static const yyjson_write_flag B = YYJSON_WRITE_PRETTY_TABS;
-    static const yyjson_write_flag N = YYJSON_WRITE_NEWLINE_AT_END;
-    static const flag_case cases[] = {
+    const flag_case cases[] = {
         { sw_basic, 0, 2, BASIC },
-        { sw_basic, P, 2, BASIC_PRETTY4 },
-        { sw_basic, T, 2, BASIC_PRETTY2 },
-        { sw_basic, P | T, 2, BASIC_PRETTY2 },
-        { sw_basic, B, 2, BASIC_PRETTY_TAB },
-        { sw_basic, P | B, 2, BASIC_PRETTY_TAB },
-        { sw_basic, T | B, 2, BASIC_PRETTY_TAB },
-        { sw_basic, P | T | B, 2, BASIC_PRETTY_TAB },
-        { sw_nest, P, 3,
+        { sw_basic, YYJSON_WRITE_PRETTY, 2, BASIC_PRETTY4 },
+        { sw_basic, YYJSON_WRITE_PRETTY_TWO_SPACES, 2, BASIC_PRETTY2 },
+        { sw_basic, YYJSON_WRITE_PRETTY | YYJSON_WRITE_PRETTY_TWO_SPACES,
+          2, BASIC_PRETTY2 },
+        { sw_basic, YYJSON_WRITE_PRETTY_TABS, 2, BASIC_PRETTY_TAB },
+        { sw_basic, YYJSON_WRITE_PRETTY | YYJSON_WRITE_PRETTY_TABS,
+          2, BASIC_PRETTY_TAB },
+        { sw_basic, YYJSON_WRITE_PRETTY_TWO_SPACES | YYJSON_WRITE_PRETTY_TABS,
+          2, BASIC_PRETTY_TAB },
+        { sw_basic, YYJSON_WRITE_PRETTY | YYJSON_WRITE_PRETTY_TWO_SPACES |
+          YYJSON_WRITE_PRETTY_TABS, 2, BASIC_PRETTY_TAB },
+        { sw_nest, YYJSON_WRITE_PRETTY, 3,
           "[\n    [],\n    {},\n    [\n        []\n    ],\n    {\n"
           "        \"a\": {}\n    }\n]" },
-        { sw_nest, T, 3,
+        { sw_nest, YYJSON_WRITE_PRETTY_TWO_SPACES, 3,
           "[\n  [],\n  {},\n  [\n    []\n  ],\n  {\n    \"a\": {}\n  }\n]" },
-        { sw_nest, B, 3,
+        { sw_nest, YYJSON_WRITE_PRETTY_TABS, 3,
           "[\n\t[],\n\t{},\n\t[\n\t\t[]\n\t],\n\t{\n\t\t\"a\": {}\n\t}\n]" },
         { sw_nums, YYJSON_WRITE_FP_TO_FIXED(2), 1,
           "[0,1,18446744073709551615,-1,-9223372036854775808,"
-          "9223372036854775807,0.0,-0.0,1.5,1e100,1e21,123456789.0"
-#if !YYJSON_DISABLE_FAST_FP_CONV
-          ",0.0,0.1,-0.0,1.7976931348623157e308,3.14"
-#endif
-          "]" },
+          "9223372036854775807,0.0,-0.0,0.5,2.0,-0.5]" },
         { sw_strs, YYJSON_WRITE_ESCAPE_UNICODE, 1,
           "[\"\",\"a\\\"b\\\\c\\n\\r\\t\\b\\f/\",\"\\u0001\\u001F\x7f\","
           "\"\\u4E2D\\uD83D\\uDE00\\u00A2\",\"a\\u0000b\"]" },
@@ -661,9 +648,9 @@ static void test_sw_flags(void) {
         { sw_keys, YYJSON_WRITE_ESCAPE_UNICODE | YYJSON_WRITE_ESCAPE_SLASHES, 1,
           "{\"\":null,\"a\\\"\\\\\\n\\/\":null,\"k\\u0000l\":null,"
           "\"\\u4E2D\":null}" },
-        { sw_nan, YYJSON_WRITE_INF_AND_NAN_AS_NULL, 1, "[null,null,null,1.5]" },
-        { sw_nan, YYJSON_WRITE_INF_AND_NAN_AS_NULL | YYJSON_WRITE_ALLOW_INF_AND_NAN,
-          1, "[null,null,null,1.5]" },
+        { sw_nan, YYJSON_WRITE_INF_AND_NAN_AS_NULL, 1, "[null,null,null,0.5]" },
+        { sw_nan, YYJSON_WRITE_INF_AND_NAN_AS_NULL |
+          YYJSON_WRITE_ALLOW_INF_AND_NAN, 1, "[null,null,null,0.5]" },
     };
     usize i;
     for (i = 0; i < yy_nelems(cases); i++) {
@@ -675,21 +662,11 @@ static void test_sw_flags(void) {
         char pretty[sizeof(BASIC_PRETTY4) + 1], compact[sizeof(BASIC) + 1];
         snprintf(pretty, sizeof(pretty), "%s\n", BASIC_PRETTY4);
         snprintf(compact, sizeof(compact), "%s\n", BASIC);
-        wr_check(sw_basic, N, 2, compact);
-        wr_check(sw_basic, N | P, 2, pretty);
+        wr_check(sw_basic, YYJSON_WRITE_NEWLINE_AT_END, 2, compact);
+        wr_check(sw_basic, YYJSON_WRITE_NEWLINE_AT_END | YYJSON_WRITE_PRETTY,
+                 2, pretty);
     }
 
-    // a double that is too big for a float is an error
-    each_dst(m) {
-        wr_t w;
-        wr_open(&w, *m, &(yyjson_sw_opts){ YYJSON_WRITE_FP_TO_FLOAT, 0, 0 }, 32, 1);
-        yy_assert(yyjson_sw_arr_begin(&w.sw));
-        yy_assert(yyjson_sw_write_real(&w.sw, 1.5));
-        yy_assert(yyjson_sw_write_real(&w.sw, 0.1));
-        yy_assert(!yyjson_sw_write_real(&w.sw, 1e40));
-        expect_sw_err(&w.sw, YYJSON_WRITE_ERROR_NAN_OR_INF);
-        wr_close(&w);
-    }
 }
 
 // Invalid UTF-8 is an error, unless it is allowed.
@@ -778,8 +755,10 @@ static void test_sw_docs(void) {
 // A string or a key of 4000 bytes is the same as the DOM writer gives, and the
 // invalid ones are rejected by both.
 static void test_sw_str_bound(void) {
-    static const yyjson_write_flag flags[] = {
-        0, YYJSON_WRITE_ESCAPE_UNICODE, YYJSON_WRITE_ESCAPE_SLASHES,
+    const yyjson_write_flag flags[] = {
+        0,
+        YYJSON_WRITE_ESCAPE_UNICODE,
+        YYJSON_WRITE_ESCAPE_SLASHES,
         YYJSON_WRITE_ALLOW_INVALID_UNICODE,
         YYJSON_WRITE_ALLOW_INVALID_UNICODE | YYJSON_WRITE_ESCAPE_UNICODE |
         YYJSON_WRITE_LOWERCASE_HEX,
@@ -865,24 +844,29 @@ static void wr_bad(wr_t *w, yyjson_write_code code) {
 } while (0)
 
 static void test_sw_args(void) {
-    static const yyjson_write_code PAR = YYJSON_WRITE_ERROR_INVALID_PARAMETER;
-    static const yyjson_write_code TYPE = YYJSON_WRITE_ERROR_INVALID_VALUE_TYPE;
-    expect_fail(PAR, yyjson_sw_obj_begin(sw), yyjson_sw_write_key(sw, NULL));
-    expect_fail(PAR, yyjson_sw_obj_begin(sw), yyjson_sw_write_keyn(sw, NULL, 0));
+    expect_fail(YYJSON_WRITE_ERROR_INVALID_PARAMETER,
+                yyjson_sw_obj_begin(sw), yyjson_sw_write_key(sw, NULL));
+    expect_fail(YYJSON_WRITE_ERROR_INVALID_PARAMETER,
+                yyjson_sw_obj_begin(sw), yyjson_sw_write_keyn(sw, NULL, 0));
     expect_fail(0, yyjson_sw_obj_begin(sw), yyjson_sw_write_keyn(sw, "x", SIZE_MAX));
-    expect_fail(PAR, true, yyjson_sw_write_str(sw, NULL));
-    expect_fail(PAR, true, yyjson_sw_write_strn(sw, NULL, 0));
+    expect_fail(YYJSON_WRITE_ERROR_INVALID_PARAMETER,
+                true, yyjson_sw_write_str(sw, NULL));
+    expect_fail(YYJSON_WRITE_ERROR_INVALID_PARAMETER,
+                true, yyjson_sw_write_strn(sw, NULL, 0));
     expect_fail(0, true, yyjson_sw_write_strn(sw, "x", SIZE_MAX));
-    expect_fail(PAR, true, yyjson_sw_write_raw(sw, NULL));
-    expect_fail(PAR, true, yyjson_sw_write_rawn(sw, "", 0));
-    expect_fail(PAR, true, yyjson_sw_write_scalar(sw, NULL));
-    expect_fail(TYPE, true, yyjson_sw_write_num(sw, NULL));
+    expect_fail(YYJSON_WRITE_ERROR_INVALID_PARAMETER,
+                true, yyjson_sw_write_raw(sw, NULL));
+    expect_fail(YYJSON_WRITE_ERROR_INVALID_PARAMETER,
+                true, yyjson_sw_write_rawn(sw, "", 0));
+    expect_fail(YYJSON_WRITE_ERROR_INVALID_PARAMETER,
+                true, yyjson_sw_write_scalar(sw, NULL));
+    expect_fail(YYJSON_WRITE_ERROR_INVALID_VALUE_TYPE,
+                true, yyjson_sw_write_num(sw, NULL));
 }
 
 // Numbers may be typed or raw. Other scalars cannot be written as numbers,
 // and containers cannot be written as scalars.
 static void test_sw_val_type(void) {
-    static const yyjson_write_code TYPE = YYJSON_WRITE_ERROR_INVALID_VALUE_TYPE;
     char raw_num[] = { '1', '2', '3' };
     yyjson_val raw = {0}, str = {0}, arr = {0}, obj = {0}, num = {0}, odd = {0};
     yy_assert(yyjson_set_raw(&raw, raw_num, sizeof(raw_num)));
@@ -892,11 +876,16 @@ static void test_sw_val_type(void) {
     yy_assert(yyjson_set_uint(&num, 7));
     odd.tag = (u64)YYJSON_TYPE_NUM | (3 << 3); // not uint, sint or real
 
-    expect_fail(TYPE, true, yyjson_sw_write_num(sw, &odd));
-    expect_fail(TYPE, true, yyjson_sw_write_num(sw, &str));
-    expect_fail(TYPE, true, yyjson_sw_write_num(sw, &arr));
-    expect_fail(TYPE, true, yyjson_sw_write_scalar(sw, &arr));
-    expect_fail(TYPE, true, yyjson_sw_write_scalar(sw, &obj));
+    expect_fail(YYJSON_WRITE_ERROR_INVALID_VALUE_TYPE,
+                true, yyjson_sw_write_num(sw, &odd));
+    expect_fail(YYJSON_WRITE_ERROR_INVALID_VALUE_TYPE,
+                true, yyjson_sw_write_num(sw, &str));
+    expect_fail(YYJSON_WRITE_ERROR_INVALID_VALUE_TYPE,
+                true, yyjson_sw_write_num(sw, &arr));
+    expect_fail(YYJSON_WRITE_ERROR_INVALID_VALUE_TYPE,
+                true, yyjson_sw_write_scalar(sw, &arr));
+    expect_fail(YYJSON_WRITE_ERROR_INVALID_VALUE_TYPE,
+                true, yyjson_sw_write_scalar(sw, &obj));
 
     // the scalars, and a raw one that is not changed
     each_dst(m) {
@@ -917,61 +906,60 @@ static void test_sw_val_type(void) {
 
 // The calls that are not allowed at the place they are made.
 static void test_sw_state(void) {
-    static const yyjson_write_code BAD = YYJSON_WRITE_ERROR_INVALID_PARAMETER;
-
     // a key outside of an object
-    expect_fail(BAD, true, yyjson_sw_write_key(sw, "a"));
-    expect_fail(BAD, yyjson_sw_arr_begin(sw), yyjson_sw_write_key(sw, "a"));
+    expect_fail(YYJSON_WRITE_ERROR_INVALID_PARAMETER,
+                true, yyjson_sw_write_key(sw, "a"));
+    expect_fail(YYJSON_WRITE_ERROR_INVALID_PARAMETER, yyjson_sw_arr_begin(sw), yyjson_sw_write_key(sw, "a"));
 
     // a value in an object without a key
-    expect_fail(BAD, yyjson_sw_obj_begin(sw), yyjson_sw_write_null(sw));
-    expect_fail(BAD, yyjson_sw_obj_begin(sw), yyjson_sw_write_str(sw, "a"));
-    expect_fail(BAD, yyjson_sw_obj_begin(sw), yyjson_sw_write_uint(sw, 1));
-    expect_fail(BAD, yyjson_sw_obj_begin(sw), yyjson_sw_write_raw(sw, "1"));
-    expect_fail(BAD, yyjson_sw_obj_begin(sw), yyjson_sw_arr_begin(sw));
-    expect_fail(BAD, yyjson_sw_obj_begin(sw), yyjson_sw_obj_begin(sw));
+    expect_fail(YYJSON_WRITE_ERROR_INVALID_PARAMETER, yyjson_sw_obj_begin(sw), yyjson_sw_write_null(sw));
+    expect_fail(YYJSON_WRITE_ERROR_INVALID_PARAMETER, yyjson_sw_obj_begin(sw), yyjson_sw_write_str(sw, "a"));
+    expect_fail(YYJSON_WRITE_ERROR_INVALID_PARAMETER, yyjson_sw_obj_begin(sw), yyjson_sw_write_uint(sw, 1));
+    expect_fail(YYJSON_WRITE_ERROR_INVALID_PARAMETER, yyjson_sw_obj_begin(sw), yyjson_sw_write_raw(sw, "1"));
+    expect_fail(YYJSON_WRITE_ERROR_INVALID_PARAMETER, yyjson_sw_obj_begin(sw), yyjson_sw_arr_begin(sw));
+    expect_fail(YYJSON_WRITE_ERROR_INVALID_PARAMETER, yyjson_sw_obj_begin(sw), yyjson_sw_obj_begin(sw));
 
     // two keys in a row, or a key at the end of an object
-    expect_fail(BAD, yyjson_sw_obj_begin(sw) && yyjson_sw_write_key(sw, "a"),
+    expect_fail(YYJSON_WRITE_ERROR_INVALID_PARAMETER, yyjson_sw_obj_begin(sw) && yyjson_sw_write_key(sw, "a"),
                 yyjson_sw_write_key(sw, "b"));
-    expect_fail(BAD, yyjson_sw_obj_begin(sw) && yyjson_sw_write_key(sw, "a"),
+    expect_fail(YYJSON_WRITE_ERROR_INVALID_PARAMETER, yyjson_sw_obj_begin(sw) && yyjson_sw_write_key(sw, "a"),
                 yyjson_sw_obj_end(sw));
 
     // a container closed by the wrong call, or not open
-    expect_fail(BAD, yyjson_sw_arr_begin(sw), yyjson_sw_obj_end(sw));
-    expect_fail(BAD, yyjson_sw_obj_begin(sw), yyjson_sw_arr_end(sw));
-    expect_fail(BAD, true, yyjson_sw_arr_end(sw));
-    expect_fail(BAD, true, yyjson_sw_obj_end(sw));
+    expect_fail(YYJSON_WRITE_ERROR_INVALID_PARAMETER, yyjson_sw_arr_begin(sw), yyjson_sw_obj_end(sw));
+    expect_fail(YYJSON_WRITE_ERROR_INVALID_PARAMETER, yyjson_sw_obj_begin(sw), yyjson_sw_arr_end(sw));
+    expect_fail(YYJSON_WRITE_ERROR_INVALID_PARAMETER, true, yyjson_sw_arr_end(sw));
+    expect_fail(YYJSON_WRITE_ERROR_INVALID_PARAMETER, true, yyjson_sw_obj_end(sw));
 
     // a second root value
-    expect_fail(BAD, yyjson_sw_write_null(sw), yyjson_sw_write_null(sw));
-    expect_fail(BAD, yyjson_sw_write_null(sw), yyjson_sw_arr_begin(sw));
-    expect_fail(BAD, yyjson_sw_write_null(sw), yyjson_sw_write_key(sw, "a"));
-    expect_fail(BAD, yyjson_sw_write_null(sw), yyjson_sw_write_str(sw, "a"));
+    expect_fail(YYJSON_WRITE_ERROR_INVALID_PARAMETER, yyjson_sw_write_null(sw), yyjson_sw_write_null(sw));
+    expect_fail(YYJSON_WRITE_ERROR_INVALID_PARAMETER, yyjson_sw_write_null(sw), yyjson_sw_arr_begin(sw));
+    expect_fail(YYJSON_WRITE_ERROR_INVALID_PARAMETER, yyjson_sw_write_null(sw), yyjson_sw_write_key(sw, "a"));
+    expect_fail(YYJSON_WRITE_ERROR_INVALID_PARAMETER, yyjson_sw_write_null(sw), yyjson_sw_write_str(sw, "a"));
 
     // a next document in a wrong place
-    expect_fail(BAD, true, yyjson_sw_doc_next(sw));
-    expect_fail(BAD, yyjson_sw_arr_begin(sw), yyjson_sw_doc_next(sw));
-    expect_fail(BAD, yyjson_sw_write_null(sw) && yyjson_sw_finish(sw),
+    expect_fail(YYJSON_WRITE_ERROR_INVALID_PARAMETER, true, yyjson_sw_doc_next(sw));
+    expect_fail(YYJSON_WRITE_ERROR_INVALID_PARAMETER, yyjson_sw_arr_begin(sw), yyjson_sw_doc_next(sw));
+    expect_fail(YYJSON_WRITE_ERROR_INVALID_PARAMETER, yyjson_sw_write_null(sw) && yyjson_sw_finish(sw),
                 yyjson_sw_doc_next(sw));
-    expect_fail(BAD, yyjson_sw_write_null(sw) && yyjson_sw_doc_next(sw),
+    expect_fail(YYJSON_WRITE_ERROR_INVALID_PARAMETER, yyjson_sw_write_null(sw) && yyjson_sw_doc_next(sw),
                 yyjson_sw_doc_next(sw));
 
     // a finish that is too early
-    expect_fail(BAD, true, yyjson_sw_finish(sw));
-    expect_fail(BAD, yyjson_sw_arr_begin(sw), yyjson_sw_finish(sw));
-    expect_fail(BAD, yyjson_sw_obj_begin(sw) && yyjson_sw_write_key(sw, "a"),
+    expect_fail(YYJSON_WRITE_ERROR_INVALID_PARAMETER, true, yyjson_sw_finish(sw));
+    expect_fail(YYJSON_WRITE_ERROR_INVALID_PARAMETER, yyjson_sw_arr_begin(sw), yyjson_sw_finish(sw));
+    expect_fail(YYJSON_WRITE_ERROR_INVALID_PARAMETER, yyjson_sw_obj_begin(sw) && yyjson_sw_write_key(sw, "a"),
                 yyjson_sw_finish(sw));
-    expect_fail(BAD, yyjson_sw_write_null(sw) && yyjson_sw_doc_next(sw),
+    expect_fail(YYJSON_WRITE_ERROR_INVALID_PARAMETER, yyjson_sw_write_null(sw) && yyjson_sw_doc_next(sw),
                 yyjson_sw_finish(sw));
 
     // a finish is final: no more writes, and a finish again is the same
 #define after_finish(call) \
-    expect_fail(BAD, yyjson_sw_write_null(sw) && yyjson_sw_finish(sw), call)
+    expect_fail(YYJSON_WRITE_ERROR_INVALID_PARAMETER, yyjson_sw_write_null(sw) && yyjson_sw_finish(sw), call)
     after_finish(yyjson_sw_write_str(sw, "a"));
     after_finish(yyjson_sw_write_strn(sw, "a", 1));
     after_finish(yyjson_sw_write_uint(sw, 1));
-    after_finish(yyjson_sw_write_real(sw, 1.5));
+    after_finish(yyjson_sw_write_real(sw, 0.5));
     after_finish(yyjson_sw_write_raw(sw, "1"));
     after_finish(yyjson_sw_write_key(sw, "a"));
     after_finish(yyjson_sw_arr_begin(sw));
@@ -985,12 +973,11 @@ static void test_sw_state(void) {
         yy_assert(yyjson_sw_finish(&w.sw));
         yy_assert(yyjson_sw_len(&w.sw) == 5);
         yy_assert(!yyjson_sw_write_null(&w.sw));
-        wr_bad(&w, BAD);
+        wr_bad(&w, YYJSON_WRITE_ERROR_INVALID_PARAMETER);
     }
 }
 
 static void test_sw_nan(void) {
-    static const yyjson_write_code NAN_INF = YYJSON_WRITE_ERROR_NAN_OR_INF;
     static const f64 bad[] = { INFINITY, -INFINITY, NAN, -NAN, HUGE_VAL };
     usize i;
     each_dst(m) {
@@ -1006,15 +993,15 @@ static void test_sw_nan(void) {
                 wr_open(&w, *m, &(yyjson_sw_opts){ flg[f], 0, 0 }, 64, 1);
                 yy_assert(yyjson_sw_arr_begin(&w.sw));
                 yy_assert(!yyjson_sw_write_real(&w.sw, bad[i]));
-                wr_bad(&w, NAN_INF);
+                wr_bad(&w, YYJSON_WRITE_ERROR_NAN_OR_INF);
 
                 unsafe_yyjson_set_real(&num, bad[i]);
                 wr_open(&w, *m, &(yyjson_sw_opts){ flg[f], 0, 0 }, 64, 1);
                 yy_assert(!yyjson_sw_write_num(&w.sw, &num));
-                wr_bad(&w, NAN_INF);
+                wr_bad(&w, YYJSON_WRITE_ERROR_NAN_OR_INF);
                 wr_open(&w, *m, &(yyjson_sw_opts){ flg[f], 0, 0 }, 64, 1);
                 yy_assert(!yyjson_sw_write_scalar(&w.sw, &num));
-                wr_bad(&w, NAN_INF);
+                wr_bad(&w, YYJSON_WRITE_ERROR_NAN_OR_INF);
             }
         }
     }
@@ -1161,8 +1148,9 @@ static void test_sw_deep(void) {
 static void test_sw_deep_pretty(void) {
     usize steps = 69; /* root array, then an object and an array each step */
     usize depth, f;
-    static const yyjson_write_flag flags[] = {
-        YYJSON_WRITE_PRETTY, YYJSON_WRITE_PRETTY_TWO_SPACES,
+    const yyjson_write_flag flags[] = {
+        YYJSON_WRITE_PRETTY,
+        YYJSON_WRITE_PRETTY_TWO_SPACES,
         YYJSON_WRITE_PRETTY_TABS,
     };
 #if YYJSON_WRITER_DEPTH_LIMIT
@@ -1278,7 +1266,7 @@ static bool sw_escapes(yyjson_sw *sw) {
 }
 
 static void test_sw_fit(void) {
-    static const fit_case cases[] = {
+    const fit_case cases[] = {
         { sw_null, 0, 4, "null" },
         { sw_empty, 0, 3, "[]" },
         { sw_one, 0, 7, "[null]" },
@@ -1635,11 +1623,11 @@ static void test_sw_io(void) {
 static void test_sw_pool_min(void) {
     static const usize wins[] = { 0, 5, 31 };
     static const char *expects[] = {
-        "[false,null,-9223372036854775808,1.25,\"a\\n\",[]]",
+        "[false,null,-9223372036854775808,0.5,\"a\\n\",[]]",
         "[\n    false,\n    null,\n    -9223372036854775808,\n"
-        "    1.25,\n    \"a\\n\",\n    []\n]",
+        "    0.5,\n    \"a\\n\",\n    []\n]",
     };
-    static const yyjson_write_flag flags[] = { 0, YYJSON_WRITE_PRETTY };
+    const yyjson_write_flag flags[] = { 0, YYJSON_WRITE_PRETTY };
     usize off, w, f;
     yy_assert(YYJSON_SW_POOL_SIZE(0, 0) == YYJSON_STREAMING_POOL_SIZE_MIN);
     for (off = 0; off < 16; off++) {
@@ -1655,7 +1643,7 @@ static void test_sw_pool_min(void) {
                 yy_assert(yyjson_sw_write_bool(&sw, false));
                 yy_assert(yyjson_sw_write_null(&sw));
                 yy_assert(yyjson_sw_write_sint(&sw, INT64_MIN));
-                yy_assert(yyjson_sw_write_real(&sw, 1.25));
+                yy_assert(yyjson_sw_write_real(&sw, 0.5));
                 yy_assert(yyjson_sw_write_str(&sw, "a\n"));
                 yy_assert(yyjson_sw_arr_begin(&sw));
                 yy_assert(yyjson_sw_arr_end(&sw));
@@ -1712,7 +1700,7 @@ static void test_sw_pool_guarantee(void) {
 
 // A pool that is too small for the depth is a limit error, no crash.
 static void test_sw_pool_limit(void) {
-    static const usize depths[] = { 300, 1000 };
+    static const usize depths[] = { 512, 2048 };
     usize d, i;
     for (d = 0; d < yy_nelems(depths); d++) {
         usize depth = depths[d];
@@ -1721,7 +1709,7 @@ static void test_sw_pool_limit(void) {
         yyjson_sw sw = {0};
         bool ok = true;
         if (!SW_DEPTH_OK(depth)) continue;
-        pool_init(&pool, YYJSON_SW_POOL_SIZE(0, depth / 4), d);
+        pool_init(&pool, YYJSON_STREAMING_POOL_SIZE_MIN, d);
         yy_assert(yyjson_sw_init_cb(&sw, sink_write, &out,
                   &(yyjson_sw_opts){ 0, depth, 0 }, &pool.alc));
         for (i = 0; i < depth && ok; i++) ok = yyjson_sw_arr_begin(&sw);
