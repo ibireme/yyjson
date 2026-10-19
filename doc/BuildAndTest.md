@@ -287,6 +287,7 @@ Define as 1 to disable non-standard JSON features support at compile-time:
 - YYJSON_READ_JSON5
 - YYJSON_WRITE_ALLOW_INF_AND_NAN
 - YYJSON_WRITE_ALLOW_INVALID_UNICODE
+- YYJSON_WRITE_TRAILING_COMMAS
 
 This reduces binary size by about 10%, and slightly improves performance.<br/>
 It is recommended when not dealing with non-standard JSON.

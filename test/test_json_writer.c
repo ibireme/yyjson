@@ -198,6 +198,7 @@ static void validate_json_write_with_flag(yyjson_write_flag flg,
     // read
     yyjson_read_flag rflg = YYJSON_READ_NOFLAG;
     if (flg & YYJSON_WRITE_ALLOW_INF_AND_NAN) rflg |= YYJSON_READ_ALLOW_INF_AND_NAN;
+    if (flg & YYJSON_WRITE_TRAILING_COMMAS) rflg |= YYJSON_READ_ALLOW_TRAILING_COMMAS;
     yyjson_doc *idoc = yyjson_read_opts(ret, len, rflg, NULL, NULL);
     yy_assert(idoc);
     if (mut_val_get_num(doc->root) != idoc->val_read) {
@@ -1145,6 +1146,158 @@ yy_test_case(test_json_writer) {
                 validate_json_write_with_flag(flags[f], mdoc, NULL,
                                               false, expected);
             }
+            yyjson_mut_doc_free(mdoc);
+            yyjson_doc_free(doc);
+        }
+    }
+
+    // test trailing commas
+    {
+        typedef struct {
+            const char *input;
+            yyjson_read_flag read_flg;
+            const char *minify;
+            const char *pretty;
+            const char *pretty_tabs;
+        } trailing_case;
+        const trailing_case cases[] = {
+#if !YYJSON_DISABLE_NON_STANDARD
+            {
+                "{\"a\":[1,{\"b\":true},[],{}],\"c\":\"x\"}", 0,
+                "{\"a\":[1,{\"b\":true,},[],{},],\"c\":\"x\",}",
+                "{\n"
+                "    \"a\": [\n"
+                "        1,\n"
+                "        {\n"
+                "            \"b\": true,\n"
+                "        },\n"
+                "        [],\n"
+                "        {},\n"
+                "    ],\n"
+                "    \"c\": \"x\",\n"
+                "}",
+                "{\n"
+                "\t\"a\": [\n"
+                "\t\t1,\n"
+                "\t\t{\n"
+                "\t\t\t\"b\": true,\n"
+                "\t\t},\n"
+                "\t\t[],\n"
+                "\t\t{},\n"
+                "\t],\n"
+                "\t\"c\": \"x\",\n"
+                "}"
+            },
+            {
+                "[[[null]]]", 0,
+                "[[[null,],],]",
+                "[\n"
+                "    [\n"
+                "        [\n"
+                "            null,\n"
+                "        ],\n"
+                "    ],\n"
+                "]",
+                "[\n"
+                "\t[\n"
+                "\t\t[\n"
+                "\t\t\tnull,\n"
+                "\t\t],\n"
+                "\t],\n"
+                "]"
+            },
+            {
+                "[[[1]],2]", YYJSON_READ_NUMBER_AS_RAW,
+                "[[[1,],],2,]",
+                "[\n"
+                "    [\n"
+                "        [\n"
+                "            1,\n"
+                "        ],\n"
+                "    ],\n"
+                "    2,\n"
+                "]",
+                "[\n"
+                "\t[\n"
+                "\t\t[\n"
+                "\t\t\t1,\n"
+                "\t\t],\n"
+                "\t],\n"
+                "\t2,\n"
+                "]"
+            },
+#else
+            /* the flag is ignored when non-standard features are disabled */
+            {
+                "{\"a\":[1,{\"b\":true},[],{}],\"c\":\"x\"}", 0,
+                "{\"a\":[1,{\"b\":true},[],{}],\"c\":\"x\"}",
+                "{\n"
+                "    \"a\": [\n"
+                "        1,\n"
+                "        {\n"
+                "            \"b\": true\n"
+                "        },\n"
+                "        [],\n"
+                "        {}\n"
+                "    ],\n"
+                "    \"c\": \"x\"\n"
+                "}",
+                "{\n"
+                "\t\"a\": [\n"
+                "\t\t1,\n"
+                "\t\t{\n"
+                "\t\t\t\"b\": true\n"
+                "\t\t},\n"
+                "\t\t[],\n"
+                "\t\t{}\n"
+                "\t],\n"
+                "\t\"c\": \"x\"\n"
+                "}"
+            },
+#endif
+            /* empty containers and single values have no comma to add */
+            { "[]", 0, "[]", "[]", "[]" },
+            { "{}", 0, "{}", "{}", "{}" },
+            { "1", 0, "1", "1", "1" },
+        };
+        const yyjson_write_flag trailing = YYJSON_WRITE_TRAILING_COMMAS;
+
+        for (usize i = 0; i < yy_nelems(cases); i++) {
+            const trailing_case *tc = &cases[i];
+            yyjson_doc *doc = yyjson_read(tc->input, strlen(tc->input),
+                                          tc->read_flg);
+            yy_assert(doc);
+            yyjson_mut_doc *mdoc = yyjson_doc_mut_copy(doc, NULL);
+            yy_assert(mdoc);
+
+            validate_json_write_with_flag(trailing,
+                                          mdoc, NULL, false, tc->minify);
+            validate_json_write_with_flag(trailing | YYJSON_WRITE_PRETTY,
+                                          mdoc, NULL, false, tc->pretty);
+            validate_json_write_with_flag(trailing | YYJSON_WRITE_PRETTY_TABS,
+                                          mdoc, NULL, false, tc->pretty_tabs);
+
+            // the output can be read back with trailing commas allowed
+            const char *outs[] = { tc->minify, tc->pretty, tc->pretty_tabs };
+            for (usize o = 0; o < yy_nelems(outs); o++) {
+                yyjson_doc *parsed = yyjson_read(outs[o], strlen(outs[o]),
+                    tc->read_flg | YYJSON_READ_ALLOW_TRAILING_COMMAS);
+                yy_assert(parsed);
+                yy_assert(yyjson_equals(yyjson_doc_get_root(doc),
+                                        yyjson_doc_get_root(parsed)));
+                yyjson_doc_free(parsed);
+            }
+
+            // combined with newline at end
+            usize len;
+            usize minify_len = strlen(tc->minify);
+            char *ret = yyjson_write(doc, trailing |
+                                     YYJSON_WRITE_NEWLINE_AT_END, &len);
+            yy_assert(ret && len == minify_len + 1 && strlen(ret) == len);
+            yy_assert(memcmp(ret, tc->minify, minify_len) == 0);
+            yy_assert(ret[minify_len] == '\n');
+            free(ret);
+
             yyjson_mut_doc_free(mdoc);
             yyjson_doc_free(doc);
         }

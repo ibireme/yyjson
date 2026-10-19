@@ -9423,6 +9423,7 @@ static_inline u8 *write_root_minify(const yyjson_val *root,
     bool esc = has_flg(ESCAPE_UNICODE) != 0;
     bool inv = has_allow(INVALID_UNICODE) != 0;
     bool newline = has_flg(NEWLINE_AT_END) != 0;
+    bool trailing = has_wflag(flg, YYJSON_WRITE_TRAILING_COMMAS, 1);
 
     if (buf) {
         hdr = (u8 *)buf;
@@ -9536,7 +9537,7 @@ ctn_end:
 #if YYJSON_WRITER_DEPTH_LIMIT
     ctn_depth--;
 #endif
-    cur--;
+    if (likely(!trailing)) cur--; /* remove the last comma */
     *cur++ = (u8)(']' | ((u8)ctn_obj << 5));
     *cur++ = ',';
     if (unlikely((u8 *)ctx >= end)) goto doc_end;
@@ -9634,6 +9635,7 @@ static_inline u8 *write_root_pretty(const yyjson_val *root,
     bool tabs = has_flg(PRETTY_TABS) != 0;
     usize spaces = tabs ? 1 : has_flg(PRETTY_TWO_SPACES) ? 2 : 4;
     bool newline = has_flg(NEWLINE_AT_END) != 0;
+    bool trailing = has_wflag(flg, YYJSON_WRITE_TRAILING_COMMAS, 1);
 
     if (buf) {
         hdr = (u8 *)buf;
@@ -9770,8 +9772,10 @@ ctn_end:
 #if YYJSON_WRITER_DEPTH_LIMIT
     ctn_depth--;
 #endif
-    cur -= 2;
-    *cur++ = '\n';
+    if (likely(!trailing)) { /* remove the last comma */
+        cur -= 2;
+        *cur++ = '\n';
+    }
     incr_len(level * 4);
     cur = write_indent(cur, --level, spaces, tabs);
     *cur++ = (u8)(']' | ((u8)ctn_obj << 5));
@@ -10070,6 +10074,7 @@ static_inline u8 *mut_write_root_minify(const yyjson_mut_val *root,
     bool esc = has_flg(ESCAPE_UNICODE) != 0;
     bool inv = has_allow(INVALID_UNICODE) != 0;
     bool newline = has_flg(NEWLINE_AT_END) != 0;
+    bool trailing = has_wflag(flg, YYJSON_WRITE_TRAILING_COMMAS, 1);
 
     if (buf) {
         hdr = (u8 *)buf;
@@ -10186,7 +10191,7 @@ ctn_end:
 #if YYJSON_WRITER_DEPTH_LIMIT
     ctn_depth--;
 #endif
-    cur--;
+    if (likely(!trailing)) cur--; /* remove the last comma */
     *cur++ = (u8)(']' | ((u8)ctn_obj << 5));
     *cur++ = ',';
     if (unlikely((u8 *)ctx >= end)) goto doc_end;
@@ -10287,6 +10292,7 @@ static_inline u8 *mut_write_root_pretty(const yyjson_mut_val *root,
     bool tabs = has_flg(PRETTY_TABS) != 0;
     usize spaces = tabs ? 1 : has_flg(PRETTY_TWO_SPACES) ? 2 : 4;
     bool newline = has_flg(NEWLINE_AT_END) != 0;
+    bool trailing = has_wflag(flg, YYJSON_WRITE_TRAILING_COMMAS, 1);
 
     if (buf) {
         hdr = (u8 *)buf;
@@ -10426,8 +10432,10 @@ ctn_end:
 #if YYJSON_WRITER_DEPTH_LIMIT
     ctn_depth--;
 #endif
-    cur -= 2;
-    *cur++ = '\n';
+    if (likely(!trailing)) { /* remove the last comma */
+        cur -= 2;
+        *cur++ = '\n';
+    }
     incr_len(level * 4);
     cur = write_indent(cur, --level, spaces, tabs);
     *cur++ = (u8)(']' | ((u8)ctn_obj << 5));
