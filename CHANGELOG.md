@@ -2,6 +2,14 @@
 All notable changes to this project will be documented in this file.
 
 
+## Unreleased
+#### Added
+- Add `yyjson_sr_*` and `yyjson_sw_*` streaming reader and writer.
+- Add `YYJSON_DISABLE_STREAMING` compile-time option to disable streaming APIs.
+
+#### Changed
+- Change `YYJSON_PADDING_SIZE` from 4 to 8 for streaming APIs; DOM ABI remains compatible.
+
 
 ## 0.13.0 (2026-09-08)
 #### Added

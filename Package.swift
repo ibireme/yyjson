@@ -15,6 +15,7 @@ let package = Package(
         .trait(name: "noReader", description: "Omit JSON reader"),
         .trait(name: "noWriter", description: "Omit JSON writer"),
         .trait(name: "noIncrementalReader", description: "Omit incremental reader"),
+        .trait(name: "noStreaming", description: "Omit streaming reader and writer"),
         .trait(name: "noUtilities", description: "Omit JSON Pointer, Patch, Merge Patch"),
         .trait(
             name: "noFastFloatingPoint",
@@ -39,6 +40,7 @@ let package = Package(
                 .define("YYJSON_DISABLE_READER", to: "1", .when(traits: ["noReader"])),
                 .define("YYJSON_DISABLE_WRITER", to: "1", .when(traits: ["noWriter"])),
                 .define("YYJSON_DISABLE_INCR_READER", to: "1", .when(traits: ["noIncrementalReader"])),
+                .define("YYJSON_DISABLE_STREAMING", to: "1", .when(traits: ["noStreaming"])),
                 .define("YYJSON_DISABLE_UTILS", to: "1", .when(traits: ["noUtilities"])),
                 .define("YYJSON_DISABLE_FAST_FP_CONV", to: "1", .when(traits: ["noFastFloatingPoint"])),
                 .define("YYJSON_DISABLE_NON_STANDARD", to: "1", .when(traits: ["strictStandardJSON"])),

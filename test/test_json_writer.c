@@ -1458,6 +1458,61 @@ yy_test_case(test_json_writer) {
         yyjson_mut_doc_free(mdoc);
         free(json);
     }
+
+    // Nested arrays, the innermost holding a zero.
+    // With a compile-time limit, one level past it fails.
+    {
+        usize depth, min_depth, max_depth;
+#if YYJSON_WRITER_DEPTH_LIMIT
+        min_depth = (usize)YYJSON_WRITER_DEPTH_LIMIT;
+        max_depth = min_depth + 1;
+#else
+        min_depth = 8;
+        max_depth = 8;
+#endif
+        for (depth = min_depth; depth <= max_depth; depth++) {
+            usize i;
+            bool too_deep = false;
+            yyjson_mut_doc *mdoc;
+            yyjson_mut_val *cur;
+            yyjson_doc *doc;
+            yyjson_write_err err;
+            char *str;
+#if YYJSON_WRITER_DEPTH_LIMIT
+            too_deep = depth > (usize)YYJSON_WRITER_DEPTH_LIMIT;
+#endif
+            mdoc = yyjson_mut_doc_new(NULL);
+            yy_assert(mdoc != NULL);
+            cur = yyjson_mut_arr(mdoc);
+            yyjson_mut_doc_set_root(mdoc, cur);
+            for (i = 1; i < depth; i++) {
+                yyjson_mut_val *inner = yyjson_mut_arr(mdoc);
+                yy_assert(inner != NULL);
+                yy_assert(yyjson_mut_arr_append(cur, inner));
+                cur = inner;
+            }
+            yy_assert(yyjson_mut_arr_add_int(mdoc, cur, 0));
+
+            str = yyjson_mut_write_opts(mdoc, 0, NULL, NULL, &err);
+            if (too_deep) {
+                yy_assert(!str && err.code == YYJSON_WRITE_ERROR_DEPTH);
+            } else {
+                yy_assert(str && err.code == YYJSON_WRITE_SUCCESS);
+                free(str);
+            }
+            doc = yyjson_mut_doc_imut_copy(mdoc, NULL);
+            yy_assert(doc != NULL);
+            str = yyjson_write_opts(doc, 0, NULL, NULL, &err);
+            if (too_deep) {
+                yy_assert(!str && err.code == YYJSON_WRITE_ERROR_DEPTH);
+            } else {
+                yy_assert(str && err.code == YYJSON_WRITE_SUCCESS);
+                free(str);
+            }
+            yyjson_doc_free(doc);
+            yyjson_mut_doc_free(mdoc);
+        }
+    }
 }
 
 #else

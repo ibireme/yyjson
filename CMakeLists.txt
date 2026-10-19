@@ -40,6 +40,7 @@ set_property(CACHE YYJSON_SANITIZER PROPERTY STRINGS "" address undefined memory
 option(YYJSON_DISABLE_READER "Disable JSON reader" OFF)
 option(YYJSON_DISABLE_WRITER "Disable JSON writer" OFF)
 option(YYJSON_DISABLE_INCR_READER "Disable incremental reader" OFF)
+option(YYJSON_DISABLE_STREAMING "Disable streaming APIs" OFF)
 option(YYJSON_DISABLE_FILE "Disable file/fp read and write APIs" OFF)
 option(YYJSON_DISABLE_UTILS "Disable JSON Pointer, JSON Patch, JSON Merge Patch" OFF)
 option(YYJSON_DISABLE_FAST_FP_CONV "Disable custom floating-point number conversion" OFF)
@@ -47,8 +48,8 @@ option(YYJSON_DISABLE_NON_STANDARD "Disable non-standard JSON support" OFF)
 option(YYJSON_DISABLE_UTF8_VALIDATION "Disable UTF-8 validation" OFF)
 option(YYJSON_DISABLE_UNALIGNED_MEMORY_ACCESS "Disable unaligned memory access explicit" OFF)
 option(YYJSON_FREESTANDING "Build without libc (freestanding)" OFF)
-option(YYJSON_READER_DEPTH_LIMIT "Set a depth limit for reading nested objects/arrays, 0 for unlimited" 0)
-option(YYJSON_WRITER_DEPTH_LIMIT "Set a depth limit for writing nested objects/arrays, 0 for unlimited" 0)
+option(YYJSON_READER_DEPTH_LIMIT "Set a depth limit for reading nested objects/arrays, 0 means no limit" 0)
+option(YYJSON_WRITER_DEPTH_LIMIT "Set a depth limit for writing nested objects/arrays, 0 means no limit" 0)
 
 
 # ------------------------------------------------------------------------------
@@ -65,6 +66,9 @@ if(YYJSON_DISABLE_WRITER)
 endif()
 if(YYJSON_DISABLE_INCR_READER)
     target_compile_definitions(yyjson PUBLIC YYJSON_DISABLE_INCR_READER)
+endif()
+if(YYJSON_DISABLE_STREAMING)
+    target_compile_definitions(yyjson PUBLIC YYJSON_DISABLE_STREAMING)
 endif()
 if(YYJSON_DISABLE_FILE)
     target_compile_definitions(yyjson PUBLIC YYJSON_DISABLE_FILE)
@@ -545,18 +549,32 @@ endif()
 if (YYJSON_BUILD_FUZZER)
     if(CMAKE_C_COMPILER_ID STREQUAL "Clang")
         enable_testing()
-        file(COPY "${CMAKE_CURRENT_SOURCE_DIR}/fuzz/fuzzer.dict" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}")
-        file(GLOB YYJSON_FILES "${CMAKE_CURRENT_SOURCE_DIR}/test/data/json/**/*.json")
-        file(COPY ${YYJSON_FILES} DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/corpus")
+        file(COPY "${CMAKE_CURRENT_SOURCE_DIR}/fuzz/fuzzer.dict"
+             DESTINATION "${CMAKE_CURRENT_BINARY_DIR}")
+        file(GLOB YYJSON_FILES
+             "${CMAKE_CURRENT_SOURCE_DIR}/test/data/json/**/*.json")
 
         set(COMPILE_FLAGS -fsanitize=fuzzer,address -O1 -g)
         target_compile_options(yyjson PRIVATE ${COMPILE_FLAGS})
         target_link_libraries(yyjson INTERFACE ${COMPILE_FLAGS})
 
-        add_executable(fuzzer "fuzz/fuzzer.c")
-        target_link_libraries(fuzzer yyjson)
-        add_test(test_fuzzer ${CMAKE_CURRENT_BINARY_DIR}/fuzzer -dict=fuzzer.dict -max_total_time=300 ${CMAKE_CURRENT_BINARY_DIR}/corpus)
-        set_tests_properties(test_fuzzer PROPERTIES TIMEOUT 600)
+        set(YYJSON_FUZZERS
+            fuzzer
+            stream_fuzzer
+            patch_fuzzer
+            merge_patch_fuzzer
+        )
+        foreach(FUZZ_NAME ${YYJSON_FUZZERS})
+            set(FUZZ_CORPUS "${CMAKE_CURRENT_BINARY_DIR}/corpus_${FUZZ_NAME}")
+            file(COPY ${YYJSON_FILES} DESTINATION "${FUZZ_CORPUS}")
+            add_executable(${FUZZ_NAME} "fuzz/${FUZZ_NAME}.c")
+            target_link_libraries(${FUZZ_NAME} yyjson)
+            add_test(NAME test_${FUZZ_NAME}
+                COMMAND ${CMAKE_CURRENT_BINARY_DIR}/${FUZZ_NAME}
+                        -dict=fuzzer.dict -max_total_time=180
+                        ${FUZZ_CORPUS})
+            set_tests_properties(test_${FUZZ_NAME} PROPERTIES TIMEOUT 360)
+        endforeach()
     else()
         message(WARNING "LibFuzzer requires LLVM Clang as compiler")
     endif()
@@ -578,13 +596,6 @@ if(YYJSON_BUILD_MISC)
     add_executable(make_tables "misc/make_tables.c")
     if(XCODE)
         set_default_xcode_property(make_tables)
-    endif()
-
-    # depth-limit experiment; only does anything if a DEPTH_LIMIT is set
-    add_executable(experiment_depth_limit "misc/experiment_depth_limit.c")
-    target_link_libraries(experiment_depth_limit PRIVATE yyjson)
-    if(XCODE)
-        set_default_xcode_property(experiment_depth_limit)
     endif()
 endif()
 

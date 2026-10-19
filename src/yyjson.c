@@ -337,11 +337,7 @@ uint32_t yyjson_version(void) {
 /* The minimum size of the dynamic allocator's chunk. */
 #define YYJSON_ALC_DYN_MIN_SIZE             0x1000
 
-/* Default value for compile-time options. */
 
-#ifndef YYJSON_READER_DEPTH_LIMIT
-#define YYJSON_READER_DEPTH_LIMIT 0
-#endif
 
 #ifndef YYJSON_WRITER_DEPTH_LIMIT
 #define YYJSON_WRITER_DEPTH_LIMIT 0
@@ -377,12 +373,6 @@ uint32_t yyjson_version(void) {
 #define static_inline   static yyjson_inline
 #undef  static_noinline
 #define static_noinline static yyjson_noinline
-
-/* Macros for min and max. */
-#undef  yyjson_min
-#define yyjson_min(x, y) ((x) < (y) ? (x) : (y))
-#undef  yyjson_max
-#define yyjson_max(x, y) ((x) > (y) ? (x) : (y))
 
 /* Used to write u64 literal for C89 which doesn't support "ULL" suffix. */
 #undef  U64
@@ -421,11 +411,22 @@ uint32_t yyjson_version(void) {
  *============================================================================*/
 
 /* Common error messages. */
+#define MSG_NULL(_name)     "parameter '" _name "' is NULL"
+#define MSG_ZERO(_name)     "parameter '" _name "' is 0"
+#define MSG_EMPTY(_name)    "parameter '" _name "' is empty"
+#define MSG_INVALID(_name)  "parameter '" _name "' is invalid"
+#define MSG_LARGE(_name)    "parameter '" _name "' is too large"
+#define MSG_DAT_EMPTY   "input data is empty"
+#define MSG_READ        "failed to read data"
+#define MSG_WRITE       "failed to write data"
 #define MSG_FOPEN       "failed to open file"
 #define MSG_FREAD       "failed to read file"
 #define MSG_FWRITE      "failed to write file"
 #define MSG_FCLOSE      "failed to close file"
-#define MSG_MALLOC      "failed to allocate memory"
+#define MSG_ALLOC       "failed to allocate memory"
+#define MSG_DEPTH       "depth limit exceeded"
+#define MSG_BUF_LIMIT   "buffer limit exceeded"
+#define MSG_VAL_LEN     "value length limit exceeded"
 #define MSG_CHAR_T      "invalid literal, expected 'true'"
 #define MSG_CHAR_F      "invalid literal, expected 'false'"
 #define MSG_CHAR_N      "invalid literal, expected 'null'"
@@ -438,13 +439,23 @@ uint32_t yyjson_version(void) {
 #define MSG_NOT_END     "unexpected end of data"
 #define MSG_COMMENT     "unclosed multiline comment"
 #define MSG_COMMA       "trailing comma is not allowed"
-#define MSG_NAN_INF     "nan or inf number is not allowed"
-#define MSG_ERR_TYPE    "invalid JSON value type"
+#define MSG_STR_UTF8    "invalid UTF-8 encoding in string"
+#define MSG_STR_ESC     "invalid escape sequence in string"
+#define MSG_STR_CTRL    "unexpected control character in string"
+#define MSG_STR_END     "unclosed string"
+#define MSG_NAN_INF     "NaN or Infinity is not allowed"
+#define MSG_VAL_TYPE    "invalid JSON value type"
+#define MSG_NUM         "invalid number"
+#define MSG_NOT_ARR     "not inside an array"
+#define MSG_NOT_OBJ     "not inside an object"
+#define MSG_ARR_OPEN    "unclosed array"
+#define MSG_OBJ_OPEN    "unclosed object"
+#define MSG_CTN_OPEN    "unclosed container"
+#define MSG_NO_REWIND   "input cannot rewind"
+#define MSG_SW_STATE    "invalid writer state"
 #define MSG_ERR_BOM     "UTF-8 byte order mark (BOM) is not supported"
-#define MSG_ERR_UTF8    "invalid utf-8 encoding in string"
 #define MSG_ERR_UTF16   "UTF-16 encoding is not supported"
 #define MSG_ERR_UTF32   "UTF-32 encoding is not supported"
-#define MSG_DEPTH       "depth limit exceeded"
 
 /* U64 constant values */
 #undef  U64_MAX
@@ -1975,6 +1986,16 @@ static_inline bool f64_is_inf(f64 val) {
 #endif
 }
 
+/** Returns whether the double value is NaN. */
+static_inline bool f64_is_nan(f64 val) {
+#if YYJSON_HAS_IEEE_754
+    u64 bits = f64_to_bits(val);
+    return (bits & F64_EXP_MASK) == F64_BITS_INF && (bits & F64_SIG_MASK);
+#else
+    return val != val;
+#endif
+}
+
 /** Get 'nan' bits with sign. */
 static_inline u64 f64_bits_nan(bool sign) {
 #if YYJSON_HAS_IEEE_754
@@ -2375,6 +2396,22 @@ static void *pool_realloc(void *ctx_ptr, void *ptr,
         }
         return new_ptr;
     }
+}
+
+/** Max payload from one pool chunk, or 0 if not a pool or empty. */
+static_inline usize pool_max_size(const yyjson_alc *alc) {
+    pool_ctx *ctx = alc ? (pool_ctx *)alc->ctx : NULL;
+    pool_chunk *cur;
+    usize size = 0;
+    if (!ctx || alc->malloc != pool_malloc) return 0;
+    cur = ctx->free_list;
+    while (cur) {
+        if (cur->size > size) size = cur->size;
+        cur = cur->next;
+    }
+    if (size <= sizeof(pool_chunk)) return 0;
+    /* inverse of pool_size_align: request must not round up past the chunk */
+    return size_align_down(size - sizeof(pool_chunk), sizeof(pool_chunk));
 }
 
 bool yyjson_alc_pool_init(yyjson_alc *alc, void *buf, usize size) {
@@ -2989,7 +3026,8 @@ static_inline bool unsafe_yyjson_num_equals_numeric(const void *lhs,
         rt = lt;
     }
 #if YYJSON_HAS_IEEE_754
-    /* Reject non-finite values even when fast-math assumes they cannot occur. */
+    /* Reject non-finite values even when fast-math assumes they cannot
+       occur. */
     if ((luni->u64 & F64_EXP_MASK) == F64_EXP_MASK) return false;
     /* Compare zero by bits so subnormals cannot be flushed to zero. */
     if (runi->u64 == 0) return (luni->u64 << 1) == 0;
@@ -3105,7 +3143,8 @@ static bool yyjson_mut_equals_impl(const yyjson_mut_val *lhs,
                 lhs = (yyjson_mut_val *)lhs->uni.ptr;
                 rhs = (yyjson_mut_val *)rhs->uni.ptr;
                 while (len-- > 0) {
-                    if (!yyjson_mut_equals_impl(lhs, rhs, numeric)) return false;
+                    if (!yyjson_mut_equals_impl(lhs, rhs, numeric))
+                        return false;
                     lhs = lhs->next;
                     rhs = rhs->next;
                 }
@@ -4764,7 +4803,7 @@ static_inline bool read_uni_esc(u8 **src_ptr, u8 **dst_ptr, const char **msg) {
 
     src += 2; /* skip `\u` */
     if (unlikely(!hex_load_4(src, &hi))) {
-        return_err(src - 2, "invalid escaped sequence in string");
+        return_err(src - 2, MSG_STR_ESC);
     }
     src += 4; /* skip hex */
     if (likely((hi & 0xF800) != 0xD800)) {
@@ -4952,7 +4991,7 @@ skip_utf8:
 #endif
         if (unlikely(pos == src)) {
             if (has_allow(INVALID_UNICODE)) ++src;
-            else return_err(src, "invalid UTF-8 encoding in string");
+            else return_err(src, MSG_STR_UTF8);
         }
         goto skip_ascii;
     }
@@ -5019,7 +5058,7 @@ copy_escape:
                 } else if (quo == '\'' && *src == '\'') {
                     *dst++ = '\''; src++; break;
                 } else {
-                    return_err(src - 1, "invalid escaped sequence in string");
+                    return_err(src - 1, MSG_STR_ESC);
                 }
             }
         }
@@ -5031,10 +5070,8 @@ copy_escape:
         if (con) con[0] = con[1] = NULL;
         return true;
     } else {
-        if (!has_allow(INVALID_UNICODE)) {
-            return_err(src, "unexpected control character in string");
-        }
-        if (src >= eof) return_err(src, "unclosed string");
+        if (!has_allow(INVALID_UNICODE)) return_err(src, MSG_STR_CTRL);
+        if (src >= eof) return_err(src, MSG_STR_END);
         *dst++ = *src++;
     }
 
@@ -5123,9 +5160,7 @@ copy_utf8:
         }
 #endif
         if (unlikely(pos == src)) {
-            if (!has_allow(INVALID_UNICODE)) {
-                return_err(src, MSG_ERR_UTF8);
-            }
+            if (!has_allow(INVALID_UNICODE)) return_err(src, MSG_STR_UTF8);
             goto copy_ascii_stop_1;
         }
         goto copy_ascii;
@@ -5215,7 +5250,7 @@ skip_utf8:
             src += 4;
         } else {
 #if !YYJSON_DISABLE_UTF8_VALIDATION
-            if (!has_allow(INVALID_UNICODE)) return_err(src, MSG_ERR_UTF8);
+            if (!has_allow(INVALID_UNICODE)) return_err(src, MSG_STR_UTF8);
 #endif
             src += 1;
         }
@@ -5278,7 +5313,7 @@ copy_utf8:
             dst += 4; src += 4;
         } else {
 #if !YYJSON_DISABLE_UTF8_VALIDATION
-            if (!has_allow(INVALID_UNICODE)) return_err(src, MSG_ERR_UTF8);
+            if (!has_allow(INVALID_UNICODE)) return_err(src, MSG_STR_UTF8);
 #endif
             *dst = *src;
             dst += 1; src += 1;
@@ -5394,7 +5429,7 @@ doc_end:
 
 fail_string:        return_err(cur, INVALID_STRING, msg);
 fail_number:        return_err(cur, INVALID_NUMBER, msg);
-fail_alloc:         return_err(cur, MEMORY_ALLOCATION, MSG_MALLOC);
+fail_alloc:         return_err(cur, MEMORY_ALLOCATION, MSG_ALLOC);
 fail_literal_true:  return_err(cur, LITERAL, MSG_CHAR_T);
 fail_literal_false: return_err(cur, LITERAL, MSG_CHAR_F);
 fail_literal_null:  return_err(cur, LITERAL, MSG_CHAR_N);
@@ -5815,7 +5850,7 @@ doc_end:
 
 fail_string:            return_err(cur, INVALID_STRING, msg);
 fail_number:            return_err(cur, INVALID_NUMBER, msg);
-fail_alloc:             return_err(cur, MEMORY_ALLOCATION, MSG_MALLOC);
+fail_alloc:             return_err(cur, MEMORY_ALLOCATION, MSG_ALLOC);
 fail_trailing_comma:    return_err(cur, JSON_STRUCTURE, MSG_COMMA);
 fail_literal_true:      return_err(cur, LITERAL, MSG_CHAR_T);
 fail_literal_false:     return_err(cur, LITERAL, MSG_CHAR_F);
@@ -6285,7 +6320,7 @@ doc_end:
 
 fail_string:            return_err(cur, INVALID_STRING, msg);
 fail_number:            return_err(cur, INVALID_NUMBER, msg);
-fail_alloc:             return_err(cur, MEMORY_ALLOCATION, MSG_MALLOC);
+fail_alloc:             return_err(cur, MEMORY_ALLOCATION, MSG_ALLOC);
 fail_trailing_comma:    return_err(cur, JSON_STRUCTURE, MSG_COMMA);
 fail_literal_true:      return_err(cur, LITERAL, MSG_CHAR_T);
 fail_literal_false:     return_err(cur, LITERAL, MSG_CHAR_F);
@@ -6328,27 +6363,28 @@ yyjson_doc *yyjson_read_opts(char *dat, usize len,
 
     /* validate input parameters */
     if (!err) err = &tmp_err;
-    if (unlikely(!dat)) return_err(0, INVALID_PARAMETER, "input data is NULL");
-    if (unlikely(!len)) return_err(0, INVALID_PARAMETER, "input length is 0");
+    if (unlikely(!dat)) return_err(0, INVALID_PARAMETER, MSG_NULL("dat"));
+    if (unlikely(!len)) return_err(0, INVALID_PARAMETER, MSG_ZERO("len"));
 
-    /* add 4-byte zero padding for input data if necessary */
+    /* add zero padding for input data if necessary */
     if (has_flg(INSITU)) {
         hdr = (u8 *)dat;
         eof = (u8 *)dat + len;
         cur = (u8 *)dat;
     } else {
         if (unlikely(len >= USIZE_MAX - YYJSON_PADDING_SIZE)) {
-            return_err(0, MEMORY_ALLOCATION, MSG_MALLOC);
+            return_err(0, MEMORY_ALLOCATION, MSG_ALLOC);
         }
         hdr = (u8 *)alc.malloc(alc.ctx, len + YYJSON_PADDING_SIZE);
         if (unlikely(!hdr)) {
-            return_err(0, MEMORY_ALLOCATION, MSG_MALLOC);
+            return_err(0, MEMORY_ALLOCATION, MSG_ALLOC);
         }
         eof = hdr + len;
         cur = hdr;
         memcpy(hdr, dat, len);
     }
-    memset(eof, 0, YYJSON_PADDING_SIZE);
+    /* 4-byte padding is sufficient; keep 4 for old ABI compatibility. */
+    memset(eof, 0, 4);
 
     if (has_allow(BOM)) {
         if (len >= 3 && is_utf8_bom(cur)) cur += 3;
@@ -6365,7 +6401,7 @@ yyjson_doc *yyjson_read_opts(char *dat, usize len,
             }
         }
         if (unlikely(cur >= eof)) {
-            return_err(0, EMPTY_CONTENT, "input data is empty");
+            return_err(0, EMPTY_CONTENT, MSG_DAT_EMPTY);
         }
     }
 
@@ -6415,7 +6451,7 @@ yyjson_doc *yyjson_read_file(const char *path,
     FILE *file;
 
     if (!err) err = &tmp_err;
-    if (unlikely(!path)) return_err(INVALID_PARAMETER, "input path is NULL");
+    if (unlikely(!path)) return_err(INVALID_PARAMETER, MSG_NULL("path"));
 
     file = fopen_readonly(path);
     if (unlikely(!file)) return_err(FILE_OPEN, MSG_FREAD);
@@ -6450,7 +6486,7 @@ yyjson_doc *yyjson_read_fp(FILE *file,
 
     /* validate input parameters */
     if (!err) err = &tmp_err;
-    if (unlikely(!file)) return_err(INVALID_PARAMETER, "input file is NULL");
+    if (unlikely(!file)) return_err(INVALID_PARAMETER, MSG_NULL("fp"));
 
     /* get current position */
     file_pos = ftell(file);
@@ -6473,7 +6509,7 @@ yyjson_doc *yyjson_read_fp(FILE *file,
         buf_size = dat_size + YYJSON_PADDING_SIZE;
         buf = alc.malloc(alc.ctx, buf_size);
         if (buf == NULL) {
-            return_err(MEMORY_ALLOCATION, MSG_MALLOC);
+            return_err(MEMORY_ALLOCATION, MSG_ALLOC);
         }
         if (fread_safe(buf, dat_size, file) != dat_size) {
             return_err(FILE_READ, MSG_FREAD);
@@ -6489,15 +6525,15 @@ yyjson_doc *yyjson_read_fp(FILE *file,
         buf_size = YYJSON_PADDING_SIZE;
         while (true) {
             if (buf_size + chunk_now < buf_size) { /* overflow */
-                return_err(MEMORY_ALLOCATION, MSG_MALLOC);
+                return_err(MEMORY_ALLOCATION, MSG_ALLOC);
             }
             buf_size += chunk_now;
             if (!buf) {
                 buf = alc.malloc(alc.ctx, buf_size);
-                if (!buf) return_err(MEMORY_ALLOCATION, MSG_MALLOC);
+                if (!buf) return_err(MEMORY_ALLOCATION, MSG_ALLOC);
             } else {
                 tmp = alc.realloc(alc.ctx, buf, buf_size - chunk_now, buf_size);
-                if (!tmp) return_err(MEMORY_ALLOCATION, MSG_MALLOC);
+                if (!tmp) return_err(MEMORY_ALLOCATION, MSG_ALLOC);
                 buf = tmp;
             }
             tmp = ((u8 *)buf) + buf_size - YYJSON_PADDING_SIZE - chunk_now;
@@ -6556,10 +6592,10 @@ const char *yyjson_read_number(const char *dat,
 
     if (!err) err = &tmp_err;
     if (unlikely(!dat)) {
-        return_err(cur, INVALID_PARAMETER, "input data is NULL");
+        return_err(cur, INVALID_PARAMETER, MSG_NULL("dat"));
     }
     if (unlikely(!val)) {
-        return_err(cur, INVALID_PARAMETER, "output value is NULL");
+        return_err(cur, INVALID_PARAMETER, MSG_NULL("val"));
     }
 
 #if YYJSON_DISABLE_FAST_FP_CONV
@@ -6573,7 +6609,7 @@ const char *yyjson_read_number(const char *dat,
         hdr = (u8 *)alc->malloc(alc->ctx, dat_len + 1);
         cur = hdr;
         if (unlikely(!hdr)) {
-            return_err(cur, MEMORY_ALLOCATION, MSG_MALLOC);
+            return_err(cur, MEMORY_ALLOCATION, MSG_ALLOC);
         }
         memcpy(hdr, dat, dat_len + 1);
     }
@@ -6659,7 +6695,7 @@ yyjson_incr_state *yyjson_incr_new(char *buf, size_t buf_len,
     state->flg = flg;
     state->buf_len = buf_len;
 
-    /* add 4-byte zero padding for input data if necessary */
+    /* add zero padding for input data if necessary */
     if (has_flg(INSITU)) {
         state->hdr = (u8 *)buf;
     } else {
@@ -6670,7 +6706,8 @@ yyjson_incr_state *yyjson_incr_new(char *buf, size_t buf_len,
         }
         memcpy(state->hdr, buf, buf_len);
     }
-    memset(state->hdr + buf_len, 0, YYJSON_PADDING_SIZE);
+    /* 4-byte padding is sufficient; keep 4 for old ABI compatibility. */
+    memset(state->hdr + buf_len, 0, 4);
     state->cur = state->hdr;
     state->raw_ptr = state->raw_end;
     state->label = LABEL_doc_begin;
@@ -6752,7 +6789,7 @@ yyjson_doc *yyjson_incr_read(yyjson_incr_state *state, size_t len,
 #define check_maybe_truncated_number() do { \
     if (unlikely(cur >= end)) { \
         if (unlikely(cur > state->cur + INCR_NUM_MAX_LEN)) { \
-            msg = "number too long"; \
+            msg = "number length limit exceeded"; \
             goto fail_number; \
         } \
         goto unexpected_end; \
@@ -6789,13 +6826,13 @@ yyjson_doc *yyjson_incr_read(yyjson_incr_state *state, size_t len,
     /* validate input parameters */
     if (!err) err = &tmp_err;
     if (unlikely(!state)) {
-        return_err_inv_param("input state is NULL");
+        return_err_inv_param(MSG_NULL("state"));
     }
     if (unlikely(!len)) {
-        return_err_inv_param("input length is 0");
+        return_err_inv_param(MSG_ZERO("len"));
     }
     if (unlikely(len > state->buf_len)) {
-        return_err_inv_param("length is greater than total input length");
+        return_err_inv_param("parameter 'len' is greater than total length");
     }
 
     /* restore state saved from the previous call */
@@ -6833,7 +6870,7 @@ yyjson_doc *yyjson_incr_read(yyjson_incr_state *state, size_t len,
     case LABEL_obj_val_begin: goto obj_val_begin;
     case LABEL_obj_val_end: goto obj_val_end;
     case LABEL_doc_end: goto doc_end;
-    default: return_err_inv_param("invalid incremental state");
+    default: return_err_inv_param(MSG_INVALID("state"));
     }
 
 doc_begin:
@@ -7218,7 +7255,7 @@ unexpected_end:
 fail_alloc:
     err->pos = (usize)(cur - hdr);
     err->code = YYJSON_READ_ERROR_MEMORY_ALLOCATION;
-    err->msg = MSG_MALLOC;
+    err->msg = MSG_ALLOC;
     *end = saved_end;
     return NULL;
 fail_string:            return_err(cur, INVALID_STRING, msg);
@@ -8920,33 +8957,40 @@ static_inline u8 *write_str_noesc(u8 *cur, const u8 *str, usize str_len) {
 }
 
 /**
- Write UTF-8 string (requires len * 6 + 2 bytes buffer).
+ Write UTF-8 string without quotes.
+ NULL `lim` requires `len * 6 + 1` bytes buffer.
  @param cur Buffer cursor.
  @param esc Escape unicode.
  @param inv Allow invalid unicode.
- @param str A UTF-8 string, null-terminator is not required.
+ @param str Input cursor, advanced on success; no null-terminator required.
  @param str_len Length of string in bytes.
  @param enc_table Encode type table for character.
+ @param hex_table Hexadecimal digit pairs for escapes.
+ @param lim Optional output bound, or NULL.
  @return The buffer cursor after string, or NULL on invalid unicode.
  */
-static_inline u8 *write_str(u8 *cur, bool esc, bool inv,
-                            const u8 *str, usize str_len,
-                            const char_enc_type *enc_table,
-                            const u8 *hex_table) {
+static_inline u8 *write_str_body(u8 *cur, bool esc, bool inv,
+                                 const u8 **str, usize str_len,
+                                 const char_enc_type *enc_table,
+                                 const u8 *hex_table, u8 *lim) {
     /* The replacement character U+FFFD, used to indicate invalid character.
        Looked up via hex_table so that LOWERCASE_HEX produces "fffd" while
        the default produces "FFFD". */
     const v32 pre = {{ '\\', 'u', '0', '0' }};
 
-    const u8 *src = str;
-    const u8 *end = str + str_len;
-    *cur++ = '"';
+    const u8 *src = *str;
+    const u8 *end = src + str_len;
+    const u8 *ascii_end;
 
 copy_ascii:
+    ascii_end = end;
+    if (lim && (usize)(lim - cur) < (usize)(end - src)) {
+        ascii_end = src + (lim - cur);
+    }
     /*
      Copy continuous ASCII, loop unrolling, same as the following code:
 
-         while (end > src) (
+         while (ascii_end > src) (
             if (unlikely(enc_table[*src])) break;
             *cur++ = *src++;
          );
@@ -8959,24 +9003,24 @@ copy_ascii:
     memcpy(cur, src, i); \
     cur += i; src += i; goto copy_utf8;
 
-    while (end - src >= 16) {
+    while (ascii_end - src >= 16) {
         repeat16_incr(expr_jump)
         byte_copy_16(cur, src);
         cur += 16; src += 16;
     }
 
-    while (end - src >= 4) {
+    while (ascii_end - src >= 4) {
         repeat4_incr(expr_jump)
         byte_copy_4(cur, src);
         cur += 4; src += 4;
     }
 
-    while (end > src) {
+    while (ascii_end > src) {
         expr_jump(0)
         *cur++ = *src++;
     }
 
-    *cur++ = '"';
+    *str = src;
     return cur;
 
     repeat16_incr(expr_stop)
@@ -8985,6 +9029,8 @@ copy_ascii:
 #undef expr_stop
 
 copy_utf8:
+    /* 12 covers a surrogate pair and the 4-byte store for a 3-byte copy. */
+    if (lim && (usize)(lim - cur) < 12) goto copy_end;
     if (unlikely(src + 4 > end)) {
         if (end == src) goto copy_end;
         if (end - src < enc_table[*src] / 2) goto err_one;
@@ -9008,6 +9054,24 @@ copy_utf8:
             goto copy_utf8;
         }
         case CHAR_ENC_CPY_3: {
+            u32 uni, tmp;
+            if (lim) {
+                const u8 *start = src;
+                const u8 *run_end = src + yyjson_min((usize)(end - src),
+                                                     (usize)(lim - cur));
+                /* Validate and copy a run with one shared input/output bound.
+                   In particular, CJK text need not re-enter the dispatcher
+                   and check the worst-case escape room for every character. */
+                while ((usize)(run_end - src) >= 4) {
+                    uni = byte_load_4(src);
+                    if (!is_utf8_seq3(uni)) break;
+                    byte_copy_4(cur, src);
+                    cur += 3;
+                    src += 3;
+                }
+                if (src != start) goto copy_utf8;
+            }
+
 #if YYJSON_DISABLE_UTF8_VALIDATION
             if (likely(src + 4 <= end)) {
                 byte_copy_4(cur, src);
@@ -9016,7 +9080,6 @@ copy_utf8:
                 cur[2] = src[2];
             }
 #else
-            u32 uni, tmp;
             if (likely(src + 4 <= end)) {
                 uni = byte_load_4(src);
                 if (unlikely(!is_utf8_seq3(uni))) goto err_cpy;
@@ -9121,7 +9184,7 @@ copy_utf8:
     }
 
 copy_end:
-    *cur++ = '"';
+    *str = src;
     return cur;
 
 err_one:
@@ -9145,6 +9208,18 @@ err_esc:
     cur += 6;
     src += 1;
     goto copy_utf8;
+}
+
+/** Write a complete quoted string (requires len * 6 + 2 bytes). */
+static_inline u8 *write_str(u8 *cur, bool esc, bool inv,
+                            const u8 *str, usize str_len,
+                            const char_enc_type *enc_table,
+                            const u8 *hex_table) {
+    *cur++ = '"';
+    cur = write_str_body(cur, esc, inv, &str, str_len,
+                         enc_table, hex_table, NULL);
+    if (cur) *cur++ = '"';
+    return cur;
 }
 
 
@@ -9198,7 +9273,7 @@ static_inline u8 *write_indent(u8 *cur, usize level, usize spaces, bool tabs) {
 static bool write_dat_to_fp(FILE *fp, u8 *dat, usize len,
                             yyjson_write_err *err) {
     if (fwrite(dat, 1, len, fp) != len) {
-        err->msg = "file writing failed";
+        err->msg = MSG_FWRITE;
         err->code = YYJSON_WRITE_ERROR_FILE_WRITE;
         return false;
     }
@@ -9353,10 +9428,10 @@ static_inline u8 *write_root_single(yyjson_val *val,
     memset(err, 0, sizeof(yyjson_write_err));
     return hdr;
 
-fail_alloc: return_err(MEMORY_ALLOCATION, MSG_MALLOC);
-fail_type:  return_err(INVALID_VALUE_TYPE, MSG_ERR_TYPE);
+fail_alloc: return_err(MEMORY_ALLOCATION, MSG_ALLOC);
+fail_type:  return_err(INVALID_VALUE_TYPE, MSG_VAL_TYPE);
 fail_num:   return_err(NAN_OR_INF, MSG_NAN_INF);
-fail_str:   return_err(INVALID_STRING, MSG_ERR_UTF8);
+fail_str:   return_err(INVALID_STRING, MSG_STR_UTF8);
 
 #undef return_err
 #undef check_str_len
@@ -9560,10 +9635,10 @@ doc_end:
     memset(err, 0, sizeof(yyjson_write_err));
     return hdr;
 
-fail_alloc: return_err(MEMORY_ALLOCATION, MSG_MALLOC);
-fail_type:  return_err(INVALID_VALUE_TYPE, MSG_ERR_TYPE);
+fail_alloc: return_err(MEMORY_ALLOCATION, MSG_ALLOC);
+fail_type:  return_err(INVALID_VALUE_TYPE, MSG_VAL_TYPE);
 fail_num:   return_err(NAN_OR_INF, MSG_NAN_INF);
-fail_str:   return_err(INVALID_STRING, MSG_ERR_UTF8);
+fail_str:   return_err(INVALID_STRING, MSG_STR_UTF8);
 #if YYJSON_WRITER_DEPTH_LIMIT
 fail_depth: return_err(DEPTH, MSG_DEPTH);
 #endif
@@ -9800,10 +9875,10 @@ doc_end:
     memset(err, 0, sizeof(yyjson_write_err));
     return hdr;
 
-fail_alloc: return_err(MEMORY_ALLOCATION, MSG_MALLOC);
-fail_type:  return_err(INVALID_VALUE_TYPE, MSG_ERR_TYPE);
+fail_alloc: return_err(MEMORY_ALLOCATION, MSG_ALLOC);
+fail_type:  return_err(INVALID_VALUE_TYPE, MSG_VAL_TYPE);
 fail_num:   return_err(NAN_OR_INF, MSG_NAN_INF);
-fail_str:   return_err(INVALID_STRING, MSG_ERR_UTF8);
+fail_str:   return_err(INVALID_STRING, MSG_STR_UTF8);
 #if YYJSON_WRITER_DEPTH_LIMIT
 fail_depth: return_err(DEPTH, MSG_DEPTH);
 #endif
@@ -9828,7 +9903,7 @@ static char *write_root(const yyjson_val *val,
 
     if (unlikely(!root)) {
         *dat_len = 0;
-        err->msg = "input JSON is NULL";
+        err->msg = MSG_NULL("val");
         err->code = YYJSON_READ_ERROR_INVALID_PARAMETER;
         return NULL;
     }
@@ -9882,7 +9957,7 @@ bool yyjson_val_write_file(const char *path,
 
     if (!err) err = &tmp_err;
     if (unlikely(!path || !*path)) {
-        err->msg = "input path is invalid";
+        err->msg = path ? MSG_EMPTY("path") : MSG_NULL("path");
         err->code = YYJSON_READ_ERROR_INVALID_PARAMETER;
         return false;
     }
@@ -9908,7 +9983,7 @@ bool yyjson_val_write_fp(FILE *fp,
 
     if (!err) err = &tmp_err;
     if (unlikely(!fp)) {
-        err->msg = "input fp is invalid";
+        err->msg = MSG_NULL("fp");
         err->code = YYJSON_READ_ERROR_INVALID_PARAMETER;
         return false;
     }
@@ -9946,7 +10021,7 @@ size_t yyjson_val_write_buf(char *buf, size_t buf_len,
                             yyjson_write_err *err) {
     if (unlikely(!buf || !buf_len)) {
         if (err) err->code = YYJSON_WRITE_ERROR_INVALID_PARAMETER;
-        if (err) err->msg = "input buf or buf_len is invalid";
+        if (err) err->msg = buf ? MSG_ZERO("buf_len") : MSG_NULL("buf");
         return 0;
     } else {
         write_root(val, flg, &YYJSON_NULL_ALC, buf, &buf_len, err);
@@ -10216,10 +10291,10 @@ doc_end:
     err->msg = NULL;
     return hdr;
 
-fail_alloc: return_err(MEMORY_ALLOCATION, MSG_MALLOC);
-fail_type:  return_err(INVALID_VALUE_TYPE, MSG_ERR_TYPE);
+fail_alloc: return_err(MEMORY_ALLOCATION, MSG_ALLOC);
+fail_type:  return_err(INVALID_VALUE_TYPE, MSG_VAL_TYPE);
 fail_num:   return_err(NAN_OR_INF, MSG_NAN_INF);
-fail_str:   return_err(INVALID_STRING, MSG_ERR_UTF8);
+fail_str:   return_err(INVALID_STRING, MSG_STR_UTF8);
 #if YYJSON_WRITER_DEPTH_LIMIT
 fail_depth: return_err(DEPTH, MSG_DEPTH);
 #endif
@@ -10462,10 +10537,10 @@ doc_end:
     err->msg = NULL;
     return hdr;
 
-fail_alloc: return_err(MEMORY_ALLOCATION, MSG_MALLOC);
-fail_type:  return_err(INVALID_VALUE_TYPE, MSG_ERR_TYPE);
+fail_alloc: return_err(MEMORY_ALLOCATION, MSG_ALLOC);
+fail_type:  return_err(INVALID_VALUE_TYPE, MSG_VAL_TYPE);
 fail_num:   return_err(NAN_OR_INF, MSG_NAN_INF);
-fail_str:   return_err(INVALID_STRING, MSG_ERR_UTF8);
+fail_str:   return_err(INVALID_STRING, MSG_STR_UTF8);
 #if YYJSON_WRITER_DEPTH_LIMIT
 fail_depth: return_err(DEPTH, MSG_DEPTH);
 #endif
@@ -10491,7 +10566,7 @@ static char *mut_write_root(const yyjson_mut_val *val,
 
     if (unlikely(!root)) {
         *dat_len = 0;
-        err->msg = "input JSON is NULL";
+        err->msg = MSG_NULL("val");
         err->code = YYJSON_WRITE_ERROR_INVALID_PARAMETER;
         return NULL;
     }
@@ -10546,7 +10621,7 @@ size_t yyjson_mut_val_write_buf(char *buf, size_t buf_len,
                                 yyjson_write_err *err) {
     if (unlikely(!buf || !buf_len)) {
         if (err) err->code = YYJSON_WRITE_ERROR_INVALID_PARAMETER;
-        if (err) err->msg = "input buf or buf_len is invalid";
+        if (err) err->msg = buf ? MSG_ZERO("buf_len") : MSG_NULL("buf");
         return 0;
     } else {
         mut_write_root(val, 0, flg, &YYJSON_NULL_ALC, buf, &buf_len, err);
@@ -10578,7 +10653,7 @@ bool yyjson_mut_val_write_file(const char *path,
 
     if (!err) err = &tmp_err;
     if (unlikely(!path || !*path)) {
-        err->msg = "input path is invalid";
+        err->msg = path ? MSG_EMPTY("path") : MSG_NULL("path");
         err->code = YYJSON_WRITE_ERROR_INVALID_PARAMETER;
         return false;
     }
@@ -10604,7 +10679,7 @@ bool yyjson_mut_val_write_fp(FILE *fp,
 
     if (!err) err = &tmp_err;
     if (unlikely(!fp)) {
-        err->msg = "input fp is invalid";
+        err->msg = MSG_NULL("fp");
         err->code = YYJSON_WRITE_ERROR_INVALID_PARAMETER;
         return false;
     }
@@ -11231,10 +11306,10 @@ yyjson_mut_val *yyjson_patch(yyjson_mut_doc *doc,
     memset(&iter, 0, sizeof(iter));
 
     if (unlikely(!doc || !orig || !patch)) {
-        return_err(INVALID_PARAMETER, "input parameter is NULL");
+        return_err(INVALID_PARAMETER, "parameter is NULL");
     }
     if (unlikely(!yyjson_is_arr(patch))) {
-        return_err(INVALID_PARAMETER, "input patch is not array");
+        return_err(INVALID_PARAMETER, "parameter 'patch' is not an array");
     }
     root = yyjson_val_mut_copy(doc, orig);
     if (unlikely(!root)) return_err_copy();
@@ -11350,10 +11425,10 @@ yyjson_mut_val *yyjson_mut_patch(yyjson_mut_doc *doc,
     memset(&iter, 0, sizeof(iter));
 
     if (unlikely(!doc || !orig || !patch)) {
-        return_err(INVALID_PARAMETER, "input parameter is NULL");
+        return_err(INVALID_PARAMETER, "parameter is NULL");
     }
     if (unlikely(!yyjson_mut_is_arr(patch))) {
-        return_err(INVALID_PARAMETER, "input patch is not array");
+        return_err(INVALID_PARAMETER, "parameter 'patch' is not an array");
     }
     root = yyjson_mut_val_mut_copy(doc, orig);
     if (unlikely(!root)) return_err_copy();
@@ -11580,3 +11655,1546 @@ yyjson_mut_val *yyjson_mut_merge_patch(yyjson_mut_doc *doc,
 }
 
 #endif /* YYJSON_DISABLE_UTILS */
+
+
+
+#if !YYJSON_DISABLE_STREAMING
+
+/*==============================================================================
+ * MARK: - Streaming Buffer (Private)
+ *============================================================================*/
+
+/*
+ Input/output and the container stack share one memory block.
+ A pool allocator uses its largest free chunk and stays fixed.
+ Otherwise the block grows on demand.
+ */
+
+/* Default I/O window size. */
+#define STREAM_WIN_SIZE_DEF ((usize)16 << 10)
+
+/** Allocate the shared buffer. A pool gives its largest free chunk and stays
+    fixed, otherwise the buffer is `want` bytes and may grow. */
+static u8 *sbuf_alloc(const yyjson_alc *alc, usize want, usize *len,
+                      bool *grow) {
+    usize size = pool_max_size(alc);
+    u8 *p;
+    *grow = !size;
+    if (!size) size = want;
+    p = (u8 *)alc->malloc(alc->ctx, size);
+    if (!p) { *len = 0; return NULL; }
+    *len = size;
+    return p;
+}
+
+/** Grow the shared buffer to `need` bytes and move the stack to its end. */
+static u8 *sbuf_grow(const yyjson_alc *alc, u8 *ptr, usize *len, usize need,
+                     usize stk_used) {
+    usize old = *len;
+    u8 *p;
+    if (need < old || stk_used > old) return NULL;
+    p = (u8 *)alc->realloc(alc->ctx, ptr, old, need);
+    if (!p) return NULL;
+    if (stk_used) memmove(p + need - stk_used, p + old - stk_used, stk_used);
+    *len = need;
+    return p;
+}
+
+#endif /* YYJSON_DISABLE_STREAMING */
+
+
+
+#if !YYJSON_DISABLE_STREAMING && !YYJSON_DISABLE_READER
+
+/*==============================================================================
+ * MARK: - Streaming Reader (Private)
+ *============================================================================*/
+
+/*
+ Data layout:
+
+   hdr        cur            end                 buf_end
+   [ consumed | unread input | pad | free | stack ]
+                                           <--
+
+ Buffered input and the stack share one buffer (`hdr == buf`).
+ The `YYJSON_PADDING_SIZE` zero bytes after `end` allow reads near the
+ input boundary. Each open container stores one byte at the end: its
+ closer, `]` or `}`. At document level, `depth` and `ctn` are zero.
+
+ Refill moves a kept prefix and unread input to `hdr`. The prefix may be
+ decoded bytes. In-situ input stays in the caller's buffer (`hdr != buf`);
+ the allocation then holds only the stack.
+ */
+
+#define return_err(_code, _msg) do { \
+    (void)yyjson_impl_sr_err(_code, _msg); \
+    return false; \
+} while (false)
+
+#define return_err_val(_code, _msg, _val) do { \
+    (void)yyjson_impl_sr_err(_code, _msg); \
+    return (_val); \
+} while (false)
+
+/** Set the first error and return false.
+    The cursor switches to an empty readable window. */
+bool yyjson_impl_sr_set_err(yyjson_sr *sr, yyjson_read_code code,
+                            const char *msg) {
+    static const u8 empty[YYJSON_PADDING_SIZE] = { 0 };
+    u64 pos = yyjson_sr_pos(sr);
+    if (sr->fail) return false;
+    sr->fail = true;
+
+    /* set a readable empty cursor for error paths */
+    sr->hdr = constcast(u8 *)empty;
+    sr->cur = constcast(u8 *)empty;
+    sr->end = constcast(u8 *)empty;
+    sr->ofs = pos;
+    sr->err.code = code;
+    sr->err.msg = msg;
+    sr->err.pos = (usize)yyjson_min(pos, (u64)USIZE_MAX);
+    return false;
+}
+
+/** Fail because there is no current value to consume. */
+bool yyjson_impl_sr_no_val(yyjson_sr *sr) {
+    return_err(INVALID_PARAMETER, "no current value, call next or find first");
+}
+
+/** Skip an exposed value that the caller did not consume. */
+static_inline bool sr_skip_held(yyjson_sr *sr) {
+    return !yyjson_impl_sr_has_val(sr) || yyjson_sr_skip_val(sr);
+}
+
+/** Update the cached depth limit for the current buffer. */
+static void sr_sync_cap(yyjson_sr *sr) {
+    const u8 *floor = sr->hdr == sr->buf ?
+                      sr->end + YYJSON_PADDING_SIZE : sr->buf;
+    usize bytes = (usize)(sr->buf_end - floor);
+    sr->cap = yyjson_min(bytes, sr->max_depth);
+}
+
+/** Bytes still free for input: the live stack and the padding stay put. */
+static usize sr_io_room(const yyjson_sr *sr) {
+    usize gap = (usize)(sr->buf_end - sr->end);
+    usize need = sr->depth + YYJSON_PADDING_SIZE;
+    return gap > need ? gap - need : 0;
+}
+
+/** Move a kept prefix and unread input to the start of the buffer. */
+static void sr_compact(yyjson_sr *sr, yyjson_sv *keep) {
+    usize len = keep ? keep->len : 0;
+    usize spent = (usize)(sr->cur - sr->hdr) - len;
+    usize tail = (usize)(sr->end - sr->cur);
+    if (spent) {
+        if (len) memmove(sr->hdr, keep->ptr, len);
+        if (tail) memmove(sr->hdr + len, sr->cur, tail);
+        sr->ofs += (u64)spent;
+        sr->cur = sr->hdr + len;
+        sr->end = sr->cur + tail;
+        memset(constcast(u8 *)sr->end, 0, YYJSON_PADDING_SIZE);
+    }
+    if (keep) keep->ptr = (const char *)sr->hdr;
+}
+
+/** Grow the compacted buffer, keeping input, a view and the stack. */
+static bool sr_grow(yyjson_sr *sr, yyjson_sv *keep) {
+    bool shared = sr->hdr == sr->buf;
+    usize size = (usize)(sr->buf_end - sr->buf);
+    usize cur_off = shared ? (usize)(sr->cur - sr->hdr) : 0;
+    usize end_off = shared ? (usize)(sr->end - sr->hdr) : 0;
+    u8 *buf;
+    if (!sr->grow || size > USIZE_MAX / 2) return false;
+    buf = sbuf_grow(&sr->alc, sr->buf, &size, size * 2, sr->depth);
+    if (!buf) return false;
+    sr->buf = buf;
+    sr->buf_end = buf + size;
+    if (shared) {
+        sr->hdr = buf;
+        sr->cur = buf + cur_off;
+        sr->end = buf + end_off;
+        if (keep) keep->ptr = (const char *)buf;
+    }
+    sr_sync_cap(sr);
+    return true;
+}
+
+/** Make room for one more container. */
+static bool sr_reserve(yyjson_sr *sr) {
+    if (sr->hdr == sr->buf) sr_compact(sr, NULL);
+    sr_sync_cap(sr);
+    return sr->depth < sr->cap || sr_grow(sr, NULL);
+}
+
+/** Refill while keeping an optional view. Returns false on EOF or error. */
+static_noinline bool sr_refill(yyjson_sr *sr, yyjson_sv *keep) {
+    usize room, want, got;
+    const usize reserve = YYJSON_STREAMING_POOL_SIZE_MIN;
+    u8 probe;
+    if (unlikely(sr->fail || sr->eof)) return false;
+    room = sr_io_room(sr);
+    if (sr->cur != sr->hdr || !room) {
+        sr_compact(sr, keep);
+        room = sr_io_room(sr);
+        if (!room && sr_grow(sr, keep)) room = sr_io_room(sr);
+    }
+    /* leave a gap for the stack, so that opening containers right after a
+       refill does not compact the buffer; a held value takes all it can */
+    want = room;
+    if (!keep || room > 2 * reserve) {
+        want -= yyjson_min(room / 2, reserve);
+    }
+    want = yyjson_min(want, sr->win_size);
+    want = yyjson_max(want, 1); /* a full buffer reads a probe byte (EOF?) */
+    if (sr->src == YYJSON_SR_SRC_MEM) {
+        got = (usize)(sr->in.mem.end - sr->in.mem.cur);
+        got = yyjson_min(got, want);
+        if (room) memcpy(constcast(u8 *)sr->end, sr->in.mem.cur, got);
+        sr->in.mem.cur += got;
+    } else {
+        got = sr->in.cb.read(sr->in.cb.ctx,
+                             room ? constcast(u8 *)sr->end : &probe, want);
+        if (got == USIZE_MAX) {
+            return_err(STREAMING_IO, MSG_READ);
+        }
+        got = yyjson_min(got, want);
+    }
+    if (!got) sr->eof = true;
+    if (!room && got) {
+        if (sr->grow) return_err(MEMORY_ALLOCATION, MSG_ALLOC);
+        return_err(BUFFER_LIMIT, MSG_BUF_LIMIT);
+    }
+    sr->end += got;
+    memset(constcast(u8 *)sr->end, 0, YYJSON_PADDING_SIZE);
+    sr_sync_cap(sr);
+    return got > 0;
+}
+
+/** Skip whitespace, keeping an optional view across refills. */
+static_inline bool sr_skip_space(yyjson_sr *sr, yyjson_sv *keep) {
+    while (true) {
+        sr->cur = yyjson_impl_sr_skip_space(sr->cur);
+        if (sr->cur < sr->end) return true;
+        if (!sr_refill(sr, keep)) return false;
+    }
+}
+
+/** Reset the reader as scratch memory. */
+static bool sr_init(yyjson_sr *sr, const yyjson_sr_opts *opts,
+                    const yyjson_alc *alc_ptr) {
+    yyjson_alc alc = alc_ptr ? *alc_ptr : YYJSON_DEFAULT_ALC;
+    memset(sr, 0, sizeof(*sr));
+    sr->alc = alc;
+    sr->flg = opts ? opts->flg : 0;
+    sr->state = YYJSON_SR_STATE_ROOT;
+    sr->max_depth = opts && opts->max_depth ? opts->max_depth : USIZE_MAX;
+#if YYJSON_READER_DEPTH_LIMIT
+    if (sr->max_depth > (usize)YYJSON_READER_DEPTH_LIMIT)
+        sr->max_depth = (usize)YYJSON_READER_DEPTH_LIMIT;
+#endif
+    sr->max_val_len = opts && opts->max_val_len ? opts->max_val_len : USIZE_MAX;
+    sr->win_size = opts && opts->win_size
+        ? opts->win_size
+        : STREAM_WIN_SIZE_DEF;
+    return true;
+}
+
+/** Allocate the input buffer and stack, or just the stack for in-situ. */
+static bool sr_alloc(yyjson_sr *sr, bool stk_only) {
+    usize want = YYJSON_STREAMING_POOL_SIZE_MIN, size;
+    u8 *p;
+    if (!stk_only) {
+        if (sr->win_size > USIZE_MAX - want - YYJSON_PADDING_SIZE) {
+            return_err(INVALID_PARAMETER, MSG_LARGE("win_size"));
+        }
+        want += sr->win_size + YYJSON_PADDING_SIZE;
+    }
+    p = sbuf_alloc(&sr->alc, want, &size, &sr->grow);
+    if (!p) return_err(MEMORY_ALLOCATION, MSG_ALLOC);
+    sr->buf = p;
+    sr->buf_end = p + size;
+    if (stk_only) {
+        sr_sync_cap(sr);
+        return true;
+    }
+    if (size <= YYJSON_PADDING_SIZE + 1) {
+        sr->alc.free(sr->alc.ctx, p);
+        sr->buf = NULL;
+        sr->buf_end = NULL;
+        return_err(MEMORY_ALLOCATION, MSG_ALLOC);
+    }
+    sr->hdr = p;
+    sr->cur = p;
+    sr->end = p;
+    memset(p, 0, YYJSON_PADDING_SIZE);
+    sr_sync_cap(sr);
+    return true;
+}
+
+/** Check the value length limit. Not used by skip. */
+static_inline bool sr_check_len(yyjson_sr *sr, usize len) {
+    if (unlikely(len > sr->max_val_len)) return_err(VALUE_LENGTH, MSG_VAL_LEN);
+    return true;
+}
+
+
+
+#if !YYJSON_DISABLE_UTF8_VALIDATION
+
+/** Skip valid multi-byte UTF-8 sequences, stop at an ASCII or bad byte. */
+static_inline const u8 *sr_skip_utf8(const u8 *cur) {
+    u32 uni = byte_load_4(cur);
+    u32 tmp;
+    while (is_utf8_seq3(uni)) {
+        cur += 3;
+        uni = byte_load_4(cur);
+    }
+    if (is_utf8_seq1(uni)) return cur;
+    while (is_utf8_seq2(uni)) {
+        cur += 2;
+        uni = byte_load_4(cur);
+    }
+    while (is_utf8_seq4(uni)) {
+        cur += 4;
+        uni = byte_load_4(cur);
+    }
+    return cur;
+}
+
+/** Validate UTF-8 in `[src, src + len)`, followed by the zero padding. */
+static bool sr_utf8_is_valid(u8 *src, usize len) {
+    u8 *cur = src, *end = src + len;
+    while (cur < end) {
+        u8 *pos;
+        while ((usize)(end - cur) >= sizeof(usize)) {
+            usize w = yyjson_impl_word_load(cur);
+            if (w & YYJSON_WORD_80) break;
+            cur += sizeof(usize);
+        }
+        /* padding zeros are ASCII (< 0x80) */
+        while (cur < end && *cur < 0x80) cur++;
+        if (cur >= end) return true;
+        pos = cur;
+        cur = constcast(u8 *)sr_skip_utf8(cur);
+        if (cur >= end) return true;
+        if (pos == cur) return false;
+    }
+    return true;
+}
+
+/** Scan a UTF-8 string suffix. Returns its closing quote, or NULL. */
+const u8 *yyjson_impl_sr_scan_str_utf8(const u8 *src) {
+    const u8 *cur = src;
+    while (true) {
+        const u8 *pos;
+        while (true) {
+            usize w = yyjson_impl_word_load(cur);
+            if (yyjson_impl_word_has_byte(w, '"') |
+                yyjson_impl_word_has_byte(w, '\\') |
+                yyjson_impl_word_has_ctrl(w) |
+                (w & YYJSON_WORD_80)) break;
+            cur += sizeof(usize);
+        }
+        while (*cur < 0x80) {
+            if (*cur == '"') return cur;
+            if (*cur == '\\' || *cur < 0x20) return NULL;
+            cur++;
+        }
+        pos = cur;
+        cur = sr_skip_utf8(cur);
+        if (pos == cur) return NULL;
+    }
+}
+#endif /* !YYJSON_DISABLE_UTF8_VALIDATION */
+
+/** Decode one escape at `src` (points at '\\') within [src, end).
+    Sets `*src_len` / `*dst_len`. Returns 0, 1 (need more), or -1 with `*msg`.
+    If `final`, the input ends at `end` and a high surrogate is not waited
+    for a low one (the zero padding after `end` makes the reads safe). */
+static i32 sr_decode_escape(const u8 *src, const u8 *end, bool final, u8 *dst,
+                            usize *src_len, usize *dst_len,
+                            const char **msg) {
+    u16 hi;
+    u8 *cur, *out;
+    usize left = (usize)(end - src);
+    if (left < 2) return 1;
+    switch (src[1]) {
+    case '"':  *dst = '"';  break;
+    case '\\': *dst = '\\'; break;
+    case '/':  *dst = '/';  break;
+    case 'b':  *dst = '\b'; break;
+    case 'f':  *dst = '\f'; break;
+    case 'n':  *dst = '\n'; break;
+    case 'r':  *dst = '\r'; break;
+    case 't':  *dst = '\t'; break;
+    case 'u':
+        /* check for a complete escape before calling the shared decoder */
+        if (left < 12 && !final) {
+            if (left < 6) return 1;
+            if (!hex_load_4(src + 2, &hi)) goto fail;
+            if (hi >= 0xD800 && hi <= 0xDBFF) return 1;
+        }
+        cur = constcast(u8 *)src;
+        out = dst;
+        if (!read_uni_esc(&cur, &out, msg)) return -1;
+        *src_len = (usize)(cur - src);
+        *dst_len = (usize)(out - dst);
+        return 0;
+    default:
+        goto fail;
+    }
+    *src_len = 2;
+    *dst_len = 1;
+    return 0;
+fail:
+    *msg = MSG_STR_ESC;
+    return -1;
+}
+
+/** Point the source at `pos`. Does not move the window or the stack. */
+static bool sr_seek_src(yyjson_sr *sr, u64 pos) {
+    if (!yyjson_sr_can_rewind(sr)) {
+        return_err(INVALID_PARAMETER, MSG_NO_REWIND);
+    }
+    if (sr->src == YYJSON_SR_SRC_MEM) {
+        if (pos > (u64)(sr->in.mem.end - sr->in.mem.beg)) {
+            return_err(INVALID_PARAMETER, MSG_NO_REWIND);
+        }
+        sr->in.mem.cur = sr->in.mem.beg + (usize)pos;
+    } else {
+        u64 base = sr->in.cb.base;
+        if (pos > U64_MAX - base) {
+            return_err(INVALID_PARAMETER, MSG_NO_REWIND);
+        }
+        if (!sr->in.cb.seek(sr->in.cb.ctx, base + pos)) {
+            return_err(STREAMING_IO, MSG_READ);
+        }
+    }
+    sr->eof = false;
+    return true;
+}
+
+/** Move the next read to `pos` without touching depth or the stack.
+    Discards the window: skipped keys may have written NULs into it. */
+static bool sr_rewind(yyjson_sr *sr, u64 pos) {
+    if (!sr_seek_src(sr, pos)) return false;
+    sr->hdr = sr->buf;
+    sr->cur = sr->buf;
+    sr->end = sr->buf;
+    sr->ofs = pos;
+    memset(sr->buf, 0, YYJSON_PADDING_SIZE);
+    sr->skip_depth = 0;
+    sr->skip = YYJSON_SR_SKIP_CTN;
+    sr_sync_cap(sr);
+    return true;
+}
+
+/** Read the next key and leave the cursor at its value. */
+static_inline bool sr_obj_next(yyjson_sr *sr, yyjson_sv *key) {
+    const u8 *p;
+    if (sr->fail) return false;
+    if (!sr_skip_space(sr, NULL)) {
+        return_err(UNEXPECTED_END, MSG_OBJ_OPEN);
+    }
+    if (*sr->cur == '}') return false;
+    if (sr->state == YYJSON_SR_STATE_DONE) {
+        if (*sr->cur != ',') {
+            return_err(UNEXPECTED_CHARACTER, MSG_OBJ_END);
+        }
+        sr->cur++;
+        if (!sr_skip_space(sr, NULL)) {
+            return_err(UNEXPECTED_END, MSG_OBJ_OPEN);
+        }
+        if (*sr->cur == '}') {
+            return_err(UNEXPECTED_CHARACTER, MSG_COMMA);
+        }
+    }
+    if (*sr->cur != '"') {
+        return_err(UNEXPECTED_CHARACTER, MSG_OBJ_KEY);
+    }
+    *key = yyjson_impl_sr_scan_str(sr);
+    if (sr->fail) return false;
+    /* empty keys use static "" to avoid dangling across refill */
+    if (!key->len) key->ptr = "";
+    /* commit the cursor once if the key and separator fit in the window */
+    p = yyjson_impl_sr_skip_space(sr->cur);
+    if (*p == ':') {
+        p = yyjson_impl_sr_skip_space(p + 1);
+        if (p < sr->end) {
+            sr->cur = p;
+            sr->state = YYJSON_SR_STATE_HELD;
+            return true;
+        }
+    }
+    /* keep the terminator along with a nonempty key */
+    if (key->len) key->len++;
+    if (!sr_skip_space(sr, key->len ? key : NULL)) {
+        return_err(UNEXPECTED_END, MSG_NOT_END);
+    }
+    p = sr->cur;
+    if (*p != ':') {
+        return_err(UNEXPECTED_CHARACTER, MSG_OBJ_SEP);
+    }
+    sr->cur = p + 1;
+    if (!sr_skip_space(sr, key->len ? key : NULL)) {
+        return_err(UNEXPECTED_END, MSG_NOT_END);
+    }
+    if (key->len) key->len--;
+    sr->state = YYJSON_SR_STATE_HELD;
+    return true;
+}
+
+/** Check the cursor is inside an object and skip an unread value. */
+static_inline bool sr_obj_ready(yyjson_sr *sr) {
+    if (!sr->depth || sr->ctn != '}') {
+        return_err(INVALID_PARAMETER, MSG_NOT_OBJ);
+    }
+    return sr_skip_held(sr);
+}
+
+/** Find `key` among the next members. */
+static bool sr_obj_find(yyjson_sr *sr, const char *key, usize key_len) {
+    while (true) {
+        yyjson_sv found;
+        if (!sr_obj_next(sr, &found)) return false;
+        if (found.len == key_len &&
+            memcmp(found.ptr, key, key_len) == 0) return true;
+        if (!yyjson_sr_skip_val(sr)) return false;
+        sr->state = YYJSON_SR_STATE_DONE;
+    }
+}
+
+
+
+/*==============================================================================
+ * MARK: - Streaming Reader (Public)
+ *============================================================================*/
+
+bool yyjson_sr_init_mem(yyjson_sr *sr, char *src, usize len,
+                        const yyjson_sr_opts *opts, const yyjson_alc *alc) {
+    if (!sr) return false;
+    if (!sr_init(sr, opts, alc)) return false;
+    if (!src) return_err(INVALID_PARAMETER, MSG_NULL("src"));
+    if (unlikely(len >= USIZE_MAX - YYJSON_PADDING_SIZE)) {
+        return_err(INVALID_PARAMETER, MSG_LARGE("len"));
+    }
+    if (sr->flg & YYJSON_READ_INSITU) {
+        /* reads may overwrite quotes; a rescan would see that damage */
+        if (!sr_alloc(sr, true)) return false;
+        memset(src + len, 0, YYJSON_PADDING_SIZE);
+        sr->eof = true;
+        sr->hdr = (u8 *)src;
+        sr->cur = (u8 *)src;
+        sr->end = (u8 *)src + len;
+        sr_sync_cap(sr);
+    } else {
+        if (!sr_alloc(sr, false)) return false;
+        sr->src = YYJSON_SR_SRC_MEM;
+        sr->in.mem.beg = (const u8 *)src;
+        sr->in.mem.cur = (const u8 *)src;
+        sr->in.mem.end = (const u8 *)src + len;
+    }
+    return true;
+}
+
+bool yyjson_sr_init_cb(yyjson_sr *sr, yyjson_sr_read_cb read,
+                       yyjson_sr_seek_cb seek, void *ctx,
+                       const yyjson_sr_opts *opts, const yyjson_alc *alc) {
+    if (!sr) return false;
+    if (!sr_init(sr, opts, alc)) return false;
+    if (!read) return_err(INVALID_PARAMETER, MSG_NULL("read"));
+    if (!sr_alloc(sr, false)) return false;
+    sr->src = YYJSON_SR_SRC_CB;
+    sr->in.cb.read = read;
+    sr->in.cb.seek = seek;
+    sr->in.cb.ctx = ctx;
+    return true;
+}
+
+#if !YYJSON_FREESTANDING && !YYJSON_DISABLE_FILE
+/** Read callback of a FILE. */
+static usize sr_file_read(void *ctx, void *dst, usize cap) {
+    usize got = fread_safe(dst, cap, (FILE *)ctx);
+    if (got < cap && ferror((FILE *)ctx)) return USIZE_MAX;
+    return got;
+}
+
+/** Seek callback of a FILE. `pos` is an offset from the start of the file. */
+static bool sr_file_seek(void *ctx, u64 pos) {
+    return pos <= (u64)LONG_MAX && !fseek((FILE *)ctx, (long)pos, SEEK_SET);
+}
+
+bool yyjson_sr_init_fp(yyjson_sr *sr, FILE *fp, const yyjson_sr_opts *opts,
+                       const yyjson_alc *alc) {
+    long base;
+    if (!sr) return false;
+    if (!sr_init(sr, opts, alc)) return false;
+    if (!fp) return_err(INVALID_PARAMETER, MSG_NULL("fp"));
+    /* pipes fail here; init still succeeds without rewind */
+    base = ftell(fp);
+    if (!sr_alloc(sr, false)) return false;
+    sr->src = YYJSON_SR_SRC_CB;
+    sr->in.cb.read = sr_file_read;
+    sr->in.cb.seek = base >= 0 ? sr_file_seek : NULL;
+    sr->in.cb.ctx = fp;
+    sr->in.cb.base = base >= 0 ? (u64)base : 0;
+    return true;
+}
+#endif /* !YYJSON_FREESTANDING && !YYJSON_DISABLE_FILE */
+
+
+
+void yyjson_sr_free(yyjson_sr *sr) {
+    if (!sr || !sr->buf) return;
+    sr->alc.free(sr->alc.ctx, sr->buf);
+    sr->buf = NULL;
+    sr->buf_end = NULL;
+    sr->hdr = NULL;
+    sr->cur = NULL;
+    sr->end = NULL;
+}
+
+/** Resume a skip with the current window exhausted and skip fields set.
+    Ordinary skips discard input; raw reads preserve it through `val`. */
+bool yyjson_impl_sr_skip_more(yyjson_sr *sr, yyjson_sv *val) {
+    while (true) {
+        const u8 *cur, *next;
+        sr->cur = sr->end;
+        if (val) {
+            val->len = (usize)((const char *)sr->cur - val->ptr);
+            if (!sr_check_len(sr, val->len)) return false;
+        }
+        if (!sr_refill(sr, val)) {
+            if (sr->fail) return false;
+            if (sr->skip == YYJSON_SR_SKIP_RAW) return true;
+            return_err(UNEXPECTED_END, sr->skip != YYJSON_SR_SKIP_CTN ?
+                       MSG_STR_END : MSG_CTN_OPEN);
+        }
+        cur = sr->cur;
+        if (sr->skip == YYJSON_SR_SKIP_RAW) {
+            next = yyjson_impl_sr_skip_class(cur, YYJSON_SR_CHAR_DELIM, false);
+            if (next < sr->end) {
+                sr->cur = next;
+                return true;
+            }
+        } else {
+            if (sr->skip != YYJSON_SR_SKIP_CTN) {
+                if (sr->skip == YYJSON_SR_SKIP_ESC) {
+                    cur++;
+                }
+                next = yyjson_impl_sr_skip_str_win(sr, cur);
+                if (!next) continue;
+                if (!sr->skip_depth) {
+                    sr->cur = next;
+                    return true;
+                }
+                cur = next;
+            }
+            next = yyjson_impl_sr_skip_ctn_win(sr, cur, sr->skip_depth);
+            if (next) {
+                sr->cur = next;
+                return true;
+            }
+        }
+    }
+}
+
+/** Skip one value at the cursor. */
+bool yyjson_impl_sr_skip_val(yyjson_sr *sr) {
+    if (sr->fail) return false;
+    if (!yyjson_impl_sr_has_val(sr)) return yyjson_impl_sr_no_val(sr);
+    if (!sr_skip_space(sr, NULL)) return_err(UNEXPECTED_END, MSG_NOT_END);
+    if (yyjson_impl_sr_char_is(*sr->cur, DELIM)) {
+        return_err(UNEXPECTED_CHARACTER, MSG_CHAR);
+    }
+    return yyjson_impl_sr_skip_from(sr);
+}
+
+/** Peek the type of the next value, refilling the window if needed. */
+yyjson_type yyjson_impl_sr_peek_type(yyjson_sr *sr) {
+    if (!sr_skip_space(sr, NULL)) return YYJSON_TYPE_NONE;
+    return (yyjson_type)(yyjson_sr_char_table[*sr->cur] & YYJSON_TYPE_MASK);
+}
+
+/** Begin a container with full checks, growing the stack if needed. */
+bool yyjson_impl_sr_ctn_begin_slow(yyjson_sr *sr, u8 token) {
+    if (sr->fail) return false;
+    if (!yyjson_impl_sr_has_val(sr)) return yyjson_impl_sr_no_val(sr);
+    if (!sr_skip_space(sr, NULL)) return_err(UNEXPECTED_END, MSG_NOT_END);
+    if (*sr->cur != token) {
+        return_err(UNEXPECTED_CHARACTER, token == '[' ?
+                   "unexpected character, expected '['" :
+                   "unexpected character, expected '{'");
+    }
+    if (sr->depth >= sr->max_depth) return_err(DEPTH, MSG_DEPTH);
+    if (sr->depth >= sr->cap) {
+        if (!sr_reserve(sr)) {
+            if (sr->grow) return_err(MEMORY_ALLOCATION, MSG_ALLOC);
+            return_err(BUFFER_LIMIT, MSG_BUF_LIMIT);
+        }
+    }
+    sr->cur++;
+    sr->ctn = (u8)(token + 2); /* `[` --> `]`, `{` --> `}` */
+    sr->depth++;
+    yyjson_impl_sr_slot_store(sr);
+    sr->state = YYJSON_SR_STATE_NONE;
+    return true;
+}
+
+/** Move to the next array element with full checks. */
+bool yyjson_impl_sr_arr_next(yyjson_sr *sr) {
+    u8 c;
+    if (sr->fail) return false;
+    if (!sr->depth || sr->ctn != ']') {
+        return_err(INVALID_PARAMETER, MSG_NOT_ARR);
+    }
+    if (!sr_skip_held(sr)) return false;
+    if (!sr_skip_space(sr, NULL)) {
+        return_err(UNEXPECTED_END, MSG_ARR_OPEN);
+    }
+    c = *sr->cur;
+    if (sr->state == YYJSON_SR_STATE_DONE) {
+        if (c == ']') return false;
+        if (c != ',') return_err(UNEXPECTED_CHARACTER, MSG_ARR_END);
+        sr->cur++;
+        if (!sr_skip_space(sr, NULL)) {
+            return_err(UNEXPECTED_END, MSG_ARR_OPEN);
+        }
+        if (*sr->cur == ']') {
+            return_err(UNEXPECTED_CHARACTER, MSG_COMMA);
+        }
+    } else if (c == ']') {
+        return false;
+    }
+    sr->state = YYJSON_SR_STATE_HELD;
+    return true;
+}
+
+/** End a container, skipping its unread content. */
+bool yyjson_impl_sr_ctn_end_slow(yyjson_sr *sr, u8 token) {
+    const u8 *next;
+    if (sr->fail) return false;
+    if (!sr->depth || sr->ctn != token) {
+        return_err(INVALID_PARAMETER, token == ']' ?
+                   MSG_NOT_ARR : MSG_NOT_OBJ);
+    }
+    next = yyjson_impl_sr_skip_ctn_win(sr, sr->cur, 1);
+    if (next) {
+        sr->cur = next;
+    } else {
+        sr->cur = sr->end;
+        if (!yyjson_impl_sr_skip_more(sr, NULL)) return false;
+    }
+    if (sr->cur[-1] != token) {
+        return_err(UNEXPECTED_CHARACTER, token == ']' ?
+                   "unexpected character, expected ']'" :
+                   "unexpected character, expected '}'");
+    }
+    sr->depth--;
+    sr->ctn = sr->depth ? yyjson_impl_sr_slot_ctn(sr, sr->depth) : 0;
+    sr->state = YYJSON_SR_STATE_DONE;
+    return true;
+}
+
+bool yyjson_sr_obj_next(yyjson_sr *sr, yyjson_sv *key) {
+    if (!sr || sr->fail) return false;
+    if (!key) return_err(INVALID_PARAMETER, MSG_NULL("key"));
+    return sr_obj_ready(sr) && sr_obj_next(sr, key);
+}
+
+/** Find a key in the rest of the object. */
+bool yyjson_impl_sr_obj_findn(yyjson_sr *sr, const char *key, usize key_len) {
+    return !sr->fail && sr_obj_ready(sr) && sr_obj_find(sr, key, key_len);
+}
+
+bool yyjson_sr_obj_begin_rewind(yyjson_sr *sr, u64 *start) {
+    if (!sr || sr->fail) return false;
+    if (!start) return_err(INVALID_PARAMETER, MSG_NULL("start"));
+    if (!yyjson_sr_can_rewind(sr)) {
+        return_err(INVALID_PARAMETER, MSG_NO_REWIND);
+    }
+    if (!yyjson_sr_obj_begin(sr)) return false;
+    *start = yyjson_sr_pos(sr);
+    return true;
+}
+
+bool yyjson_sr_obj_find_rewindn(yyjson_sr *sr, const char *key,
+                                usize key_len, u64 start) {
+    u64 origin;
+    u8 saved;
+    if (!sr) return false;
+    if (!key) return_err(INVALID_PARAMETER, MSG_NULL("key"));
+    if (sr->fail) return false;
+    if (!sr->depth || sr->ctn != '}') {
+        return_err(INVALID_PARAMETER, MSG_NOT_OBJ);
+    }
+    if (!yyjson_sr_can_rewind(sr)) {
+        return_err(INVALID_PARAMETER, MSG_NO_REWIND);
+    }
+    if (!sr_skip_held(sr)) return false;
+    origin = yyjson_sr_pos(sr);
+    saved = sr->state;
+    if (yyjson_sr_obj_findn(sr, key, key_len)) return true;
+    if (sr->fail) return false;
+    if (start > origin) return_err(INVALID_PARAMETER, "invalid start offset");
+    if (start < origin) {
+        if (!sr_rewind(sr, start)) return false;
+        sr->state = YYJSON_SR_STATE_NONE;
+        if (sr_obj_find(sr, key, key_len)) return true;
+        if (sr->fail) return false;
+    }
+    if (!sr_rewind(sr, origin)) return false;
+    sr->state = saved;
+    return false;
+}
+
+/** Decode a string after the prefix scanned by the inline reader. */
+yyjson_sv yyjson_impl_sr_read_str(yyjson_sr *sr, const u8 *prefix_end) {
+    yyjson_sv empty = { NULL, 0 }, str;
+    if (sr->fail) return empty;
+    if (!sr_skip_space(sr, NULL)) {
+        return_err_val(UNEXPECTED_END, MSG_NOT_END, empty);
+    }
+    if (*sr->cur != '"') {
+        return_err_val(UNEXPECTED_CHARACTER,
+            "unexpected character, expected a string", empty);
+    }
+    str.ptr = (const char *)++sr->cur;
+    str.len = prefix_end ? (usize)(prefix_end - sr->cur) : 0;
+    sr->cur += str.len;
+    if (!sr_check_len(sr, str.len)) return empty;
+    while (true) {
+        const u8 *p = yyjson_impl_sr_skip_str(sr->cur);
+        usize run = (usize)(p - sr->cur), sl, dl;
+        u8 *dst = constcast(u8 *)str.ptr + str.len;
+        const char *msg;
+        i32 rc;
+        if (!sr_check_len(sr, str.len + run)) return empty;
+        if (run && dst != sr->cur) memmove(dst, sr->cur, run);
+        str.len += run;
+        sr->cur = p;
+        if (p >= sr->end) {
+            if (!sr_refill(sr, &str)) {
+                return_err_val(UNEXPECTED_END, MSG_STR_END, empty);
+            }
+            continue;
+        }
+        if (*p == '"') {
+            sr->cur = p + 1;
+            break;
+        }
+        if (*p < 0x20) {
+            return_err_val(INVALID_STRING, MSG_STR_CTRL, empty);
+        }
+        dst = constcast(u8 *)str.ptr + str.len;
+        rc = sr_decode_escape(p, sr->end, false, dst, &sl, &dl, &msg);
+        if (rc > 0) {
+            if (sr_refill(sr, &str)) continue;
+            /* the input ended inside the escape, judge what is left */
+            dst = constcast(u8 *)str.ptr + str.len;
+            rc = sr_decode_escape(sr->cur, sr->end, true, dst, &sl, &dl, &msg);
+            if (rc > 0) return_err_val(UNEXPECTED_END, MSG_STR_END, empty);
+        }
+        if (rc < 0) return_err_val(INVALID_STRING, msg, empty);
+        sr->cur += sl;
+        str.len += dl;
+        if (!sr_check_len(sr, str.len)) return empty;
+    }
+    /* the consumed quote leaves one byte for the terminator */
+    *constcast(char *)(str.ptr + str.len) = '\0';
+#if !YYJSON_DISABLE_UTF8_VALIDATION
+    if (
+#if !YYJSON_DISABLE_NON_STANDARD
+        !(sr->flg & YYJSON_READ_ALLOW_INVALID_UNICODE) &&
+#endif
+        !sr_utf8_is_valid(constcast(u8 *)str.ptr, str.len)) {
+        return_err_val(INVALID_STRING, MSG_STR_UTF8, empty);
+    }
+#endif
+    if (!str.len) str.ptr = "";
+    sr->state = YYJSON_SR_STATE_DONE;
+    return str;
+}
+
+/** Parse a number and return its end, or NULL on failure. */
+const u8 *yyjson_impl_sr_parse_num(const u8 *dat, yyjson_val *val) {
+    u8 *cur = constcast(u8 *)dat;
+    u8 raw_end[1];
+    u8 *raw_ptr = raw_end;
+    const char *msg;
+    if (unlikely(!read_num(&cur, &raw_ptr, 0, val, &msg))) return NULL;
+    return cur;
+}
+
+/** Read a complete number token, then parse it.
+    At EOF, parse the padded input directly. */
+bool yyjson_impl_sr_read_num_slow(yyjson_sr *sr, yyjson_val *v, u8 kind) {
+    yyjson_sv token;
+    yyjson_read_flag flg;
+    u8 *cur, raw_end[1], *raw_ptr = raw_end;
+    const char *msg = NULL;
+    bool complete = sr->eof;
+    if (sr->fail) return false;
+    if (!sr_skip_space(sr, NULL)) return_err(UNEXPECTED_END, MSG_NOT_END);
+    if ((yyjson_sr_char_table[*sr->cur] & YYJSON_TYPE_MASK) !=
+        YYJSON_TYPE_NUM) {
+        return_err(UNEXPECTED_CHARACTER,
+                   "unexpected character, expected a number");
+    }
+    if (complete) {
+        token.ptr = (const char *)sr->cur;
+        token.len = (usize)(sr->end - sr->cur);
+    } else {
+        token = yyjson_sr_read_raw(sr);
+        if (sr->fail || !token.ptr) return false;
+    }
+    cur = constcast(u8 *)token.ptr;
+    flg = kind == YYJSON_SR_NUM_ANY ?
+          sr->flg & (YYJSON_READ_NUMBER_AS_RAW | YYJSON_READ_BIGNUM_AS_RAW) : 0;
+    memset(v, 0, sizeof(*v));
+    if (!read_num(&cur, &raw_ptr, flg, v, &msg)) goto fail_num;
+    if ((!complete && cur != (const u8 *)token.ptr + token.len) ||
+        (cur < sr->end && !yyjson_impl_sr_char_is(*cur, DELIM))) {
+        goto fail_num;
+    }
+    if (!sr_check_len(sr, (usize)(cur - (const u8 *)token.ptr))) return false;
+    sr->cur = cur;
+    sr->state = YYJSON_SR_STATE_DONE;
+    return yyjson_impl_sr_num_check(sr, v, kind);
+
+fail_num:
+    /* report at the number start, whether or not the token was consumed */
+    sr->cur = constcast(u8 *)token.ptr;
+    return_err(INVALID_NUMBER, msg ? msg : MSG_NUM);
+}
+
+/** Read a boolean or null literal across windows. */
+bool yyjson_impl_sr_read_lit_slow(yyjson_sr *sr, yyjson_type type) {
+    const char *lit;
+    const u8 *cur;
+    usize len, left;
+    bool value;
+    if (sr->fail) return false;
+    if (!sr_skip_space(sr, NULL)) {
+        return_err(UNEXPECTED_END, MSG_NOT_END);
+    }
+    value = type == YYJSON_TYPE_BOOL && *sr->cur == 't';
+    lit = type == YYJSON_TYPE_NULL ? "null" : value ? "true" : "false";
+    len = type == YYJSON_TYPE_BOOL && !value ? 5 : 4;
+    while ((usize)(sr->end - sr->cur) <= len &&
+           !sr->eof) {
+        if (!sr_refill(sr, NULL)) break;
+    }
+    if (sr->fail) return false;
+    cur = sr->cur;
+    left = (usize)(sr->end - cur);
+    if (left < len || memcmp(cur, lit, len) ||
+        !yyjson_impl_sr_char_is(cur[len], DELIM) ||
+        (left == len && !sr->eof)) {
+        return_err(LITERAL, type == YYJSON_TYPE_BOOL ?
+                   "invalid literal, expected 'true' or 'false'" : MSG_CHAR_N);
+    }
+    if (!sr_check_len(sr, len)) return false;
+    sr->cur = cur + len;
+    sr->state = YYJSON_SR_STATE_DONE;
+    return value;
+}
+
+yyjson_sv yyjson_sr_read_raw(yyjson_sr *sr) {
+    yyjson_sv sv = { NULL, 0 };
+    const u8 *start, *next;
+    if (!sr || sr->fail) return sv;
+    if (!yyjson_impl_sr_has_val(sr)) {
+        yyjson_impl_sr_no_val(sr);
+        return sv;
+    }
+    if (!sr_skip_space(sr, NULL)) {
+        return_err_val(UNEXPECTED_END, MSG_NOT_END, sv);
+    }
+    start = sr->cur;
+    if (yyjson_impl_sr_char_is(*start, DELIM)) {
+        return_err_val(UNEXPECTED_CHARACTER, MSG_CHAR, sv);
+    }
+    next = yyjson_impl_sr_skip_win(sr, start);
+    if (next) {
+        if (!sr_check_len(sr, (usize)(next - start))) return sv;
+        sr->cur = next;
+    } else {
+        /* refills preserve the token and update its start */
+        yyjson_sv val;
+        val.ptr = (const char *)start;
+        val.len = 0;
+        sr->cur = sr->end;
+        if (!yyjson_impl_sr_skip_more(sr, &val)) return sv;
+        start = (const u8 *)val.ptr;
+        if (!sr_check_len(sr, (usize)(sr->cur - start))) return sv;
+    }
+    sv.ptr = (const char *)start;
+    sv.len = (usize)(sr->cur - start);
+    sr->state = YYJSON_SR_STATE_DONE;
+    return sv;
+}
+
+/** Read a null, boolean, number or string into `val`. */
+bool yyjson_impl_sr_read_scalar(yyjson_sr *sr, yyjson_val *val) {
+    yyjson_type type;
+    memset(val, 0, sizeof(*val));
+    if (sr->fail) return false;
+    if (!yyjson_impl_sr_has_val(sr)) return yyjson_impl_sr_no_val(sr);
+    type = yyjson_sr_peek_type(sr);
+    switch (type) {
+        case YYJSON_TYPE_NULL: {
+            yyjson_sr_read_null(sr);
+            if (sr->fail) return false;
+            unsafe_yyjson_set_null(val);
+            return true;
+        }
+        case YYJSON_TYPE_BOOL: {
+            bool value = yyjson_sr_read_bool(sr);
+            if (sr->fail) return false;
+            unsafe_yyjson_set_bool(val, value);
+            return true;
+        }
+        case YYJSON_TYPE_NUM: {
+            *val = yyjson_sr_read_num(sr);
+            return !sr->fail;
+        }
+        case YYJSON_TYPE_STR: {
+            yyjson_sv value = yyjson_sr_read_str(sr);
+            if (sr->fail) return false;
+            unsafe_yyjson_set_strn(val, value.ptr, value.len);
+            return true;
+        }
+        default: {
+            if (!sr_skip_space(sr, NULL)) {
+                return_err(UNEXPECTED_END, MSG_NOT_END);
+            }
+            return_err(UNEXPECTED_CHARACTER,
+                       "unexpected character, expected a scalar value");
+        }
+    }
+}
+
+bool yyjson_sr_finish(yyjson_sr *sr) {
+    if (!sr || sr->fail) return false;
+    if (sr->depth) {
+        return_err(INVALID_PARAMETER, MSG_CTN_OPEN);
+    }
+    if (sr->state == YYJSON_SR_STATE_ROOT && !sr_skip_space(sr, NULL)) {
+        if (sr->fail) return false;
+        return_err(EMPTY_CONTENT, MSG_DAT_EMPTY);
+    }
+    if (!sr_skip_held(sr)) return false;
+    if (sr_skip_space(sr, NULL)) {
+        return_err(UNEXPECTED_CONTENT, MSG_GARBAGE);
+    }
+    return !sr->fail;
+}
+
+bool yyjson_sr_doc_next(yyjson_sr *sr) {
+    if (!sr || sr->fail) return false;
+    if (sr->depth) {
+        return_err(INVALID_PARAMETER, MSG_CTN_OPEN);
+    }
+    /* the first call exposes the first root instead of skipping it */
+    if (sr->state != YYJSON_SR_STATE_ROOT && !sr_skip_held(sr)) return false;
+    if (!sr_skip_space(sr, NULL)) return false; /* end of input or error */
+    sr->state = YYJSON_SR_STATE_HELD;
+    return true;
+}
+
+#undef return_err
+#undef return_err_val
+#endif /* !YYJSON_DISABLE_STREAMING && !YYJSON_DISABLE_READER */
+
+
+
+#if !YYJSON_DISABLE_STREAMING && !YYJSON_DISABLE_WRITER
+
+/*==============================================================================
+ * MARK: - Streaming Writer (Private)
+ *============================================================================*/
+
+/*
+ Data layout:
+
+   hdr               cur                  buf_end
+   [ buffered output | free space | stack ]
+                                     <--
+
+ Output and the stack share one buffer, starting at `hdr`.
+ Each open container stores one parent-state byte at `buf_end[-depth]`.
+ No padding is needed.
+
+ `lim` is the output boundary: `buf_end - depth` in memory mode, also
+ capped at `hdr + win_size` with a callback. Callback mode flushes when
+ the window fills, and grows only if flushing cannot make enough room.
+ Memory mode borrows the caller's buffer and neither flushes nor grows.
+ */
+
+#define return_err(_code, _msg) do { \
+    (void)yyjson_impl_sw_err(sw, _code, _msg); \
+    return false; \
+} while (false)
+
+
+/** Reset the writer and apply the flags. */
+static bool sw_init(yyjson_sw *sw, const yyjson_sw_opts *opts,
+                    const yyjson_alc *alc_ptr) {
+    yyjson_alc alc = alc_ptr ? *alc_ptr : YYJSON_DEFAULT_ALC;
+    memset(sw, 0, sizeof(*sw));
+    sw->alc = alc;
+    sw->flg = opts ? opts->flg : 0;
+    sw->max_depth = opts && opts->max_depth ? opts->max_depth : USIZE_MAX;
+#if YYJSON_WRITER_DEPTH_LIMIT
+    if (sw->max_depth > (usize)YYJSON_WRITER_DEPTH_LIMIT)
+        sw->max_depth = (usize)YYJSON_WRITER_DEPTH_LIMIT;
+#endif
+    sw->win_size = opts && opts->win_size
+        ? opts->win_size
+        : STREAM_WIN_SIZE_DEF;
+    sw->state = (u8)(YYJSON_SW_STATE_ROOT |
+        ((sw->flg & (YYJSON_WRITE_PRETTY | YYJSON_WRITE_PRETTY_TWO_SPACES |
+                     YYJSON_WRITE_PRETTY_TABS)) ?
+         YYJSON_SW_STATE_PRETTY : 0));
+    /* `false` is copied in one write, so the window must hold it */
+    if (sw->win_size < 5) {
+        return_err(INVALID_PARAMETER, "window size is less than 5");
+    }
+    return true;
+}
+
+/** Grow the shared buffer by at least `extra` bytes, keeping the stack. */
+static bool sw_grow(yyjson_sw *sw, usize extra) {
+    u8 *buf;
+    usize size, ofs, need;
+    if (!sw->grow) return false;
+    size = (usize)(sw->buf_end - sw->hdr);
+    ofs = (usize)(sw->cur - sw->hdr);
+    if (size > USIZE_MAX / 2 || extra > USIZE_MAX - size) return false;
+    need = yyjson_max(size * 2, size + extra);
+    buf = sbuf_grow(&sw->alc, sw->hdr, &size, need, sw->depth);
+    if (!buf) return false;
+    sw->buf_end = buf + size;
+    sw->hdr = buf;
+    sw->cur = buf + ofs;
+    yyjson_impl_sw_sync_lim(sw);
+    return true;
+}
+
+#if !YYJSON_FREESTANDING && !YYJSON_DISABLE_FILE
+/** Write callback for a FILE. `ctx` is the FILE. */
+static bool sw_file_write(void *ctx, const void *src, usize len) {
+    return fwrite(src, 1, len, (FILE *)ctx) == len;
+}
+#endif /* !YYJSON_FREESTANDING && !YYJSON_DISABLE_FILE */
+
+/** Set the first error and return false. */
+bool yyjson_impl_sw_set_err(yyjson_sw *sw, yyjson_write_code code,
+                            const char *msg) {
+    if (sw->fail) return false;
+    sw->fail = true;
+    sw->err.code = code;
+    sw->err.msg = msg;
+    return false;
+}
+
+/** Write bytes, sending a block as large as the window to the callback. */
+static bool sw_write_bytes(yyjson_sw *sw, const void *src, usize len) {
+    const u8 *cur = (const u8 *)src;
+    usize cap = (usize)(sw->lim - sw->hdr);
+    if (sw->write && len >= cap) {
+        if (!yyjson_sw_flush(sw)) return false;
+        while (len) {
+            usize num = yyjson_min(len, cap);
+            if (!sw->write(sw->ctx, cur, num)) {
+                return_err(STREAMING_IO, MSG_WRITE);
+            }
+            sw->ofs += (u64)num;
+            cur += num;
+            len -= num;
+        }
+    } else {
+        while (len) {
+            usize num;
+            if (!yyjson_impl_sw_reserve(sw, 1)) return false;
+            num = yyjson_min(len, (usize)(sw->lim - sw->cur));
+            memcpy(sw->cur, cur, num);
+            sw->cur += num;
+            cur += num;
+            len -= num;
+        }
+    }
+    return true;
+}
+
+/** Write one byte. */
+static bool sw_write_byte(yyjson_sw *sw, u8 byte) {
+    if (!yyjson_impl_sw_reserve(sw, 1)) return false;
+    *sw->cur++ = byte;
+    return true;
+}
+
+/** Write a quoted string. `plain` means it needs no escaping.
+    A string that may not fit is encoded in pieces across buffer windows. */
+static bool sw_write_str(yyjson_sw *sw, const char *str, usize len,
+                         bool plain) {
+    const char_enc_type *enc_table = get_enc_table_with_flag(sw->flg);
+    const u8 *hex_table = get_hex_table_with_flag(sw->flg);
+    const u8 *src = (const u8 *)str;
+    const bool esc = (sw->flg & YYJSON_WRITE_ESCAPE_UNICODE) != 0;
+#if YYJSON_DISABLE_NON_STANDARD
+    const bool inv = false;
+#else
+    const bool inv = (sw->flg & YYJSON_WRITE_ALLOW_INVALID_UNICODE) != 0;
+#endif
+    usize cap = (usize)(sw->lim - sw->hdr);
+    if (plain || (cap >= 2 && len > (cap - 2) / 6 &&
+                  yyjson_impl_sw_is_plain(sw, str, len))) {
+        return sw_write_byte(sw, '"') &&
+               sw_write_bytes(sw, str, len) && sw_write_byte(sw, '"');
+    }
+    if (cap >= 2 && len <= (cap - 2) / 6) {
+        usize need = len * 6 + 2;
+        u8 *end;
+        if (need > (usize)(sw->lim - sw->cur)) {
+            if (!sw->write) goto more;
+            if (!yyjson_impl_sw_reserve(sw, need)) return false;
+        }
+        end = write_str(sw->cur, esc, inv, src, len, enc_table, hex_table);
+        if (unlikely(!end)) return_err(INVALID_STRING, MSG_STR_UTF8);
+        sw->cur = end;
+        return true;
+    }
+
+more:
+    if (!sw_write_byte(sw, '"')) return false;
+    while (len) {
+        const u8 *start = src;
+        u8 *next = write_str_body(sw->cur, esc, inv, &src, len,
+                                  enc_table, hex_table, sw->lim);
+        if (unlikely(!next)) return_err(INVALID_STRING, MSG_STR_UTF8);
+        sw->cur = next;
+        len -= (usize)(src - start);
+        if (!len) break;
+        if (sw->write && sw->cur != sw->hdr) {
+            if (!yyjson_sw_flush(sw)) return false;
+            continue;
+        }
+        /* encode into a small temp buffer if the window is too small */
+        {
+            u8 tmp[4 * 6 + 2];
+            start = src;
+            next = write_str_body(tmp, esc, inv, &src, len,
+                                  enc_table, hex_table, tmp + sizeof(tmp));
+            if (unlikely(!next)) return_err(INVALID_STRING, MSG_STR_UTF8);
+            if (!sw_write_bytes(sw, tmp, (usize)(next - tmp))) return false;
+            len -= (usize)(src - start);
+        }
+    }
+    return sw_write_byte(sw, '"');
+}
+
+/** Write a number through a temp buffer if the window is too small. */
+static_noinline bool sw_write_num_slow(yyjson_sw *sw, yyjson_val val) {
+    u8 buf[FP_BUF_LEN];
+    u8 *end;
+    end = write_num(buf, &val, sw->flg & ~YYJSON_WRITE_ALLOW_INF_AND_NAN);
+    if (!end) return_err(NAN_OR_INF, MSG_NAN_INF);
+    if (!sw_write_bytes(sw, buf, (usize)(end - buf))) return false;
+    return yyjson_impl_sw_after_val(sw);
+}
+
+/** Write a UINT, SINT or REAL value. */
+static bool sw_write_num(yyjson_sw *sw, yyjson_val val) {
+    u8 *end;
+    if (!yyjson_impl_sw_before_val(sw)) return false;
+    if (unlikely((usize)(sw->lim - sw->cur) < FP_BUF_LEN)) {
+        return sw_write_num_slow(sw, val);
+    }
+    end = write_num(sw->cur, &val, sw->flg & ~YYJSON_WRITE_ALLOW_INF_AND_NAN);
+    if (unlikely(!end)) return_err(NAN_OR_INF, MSG_NAN_INF);
+    sw->cur = end;
+    return yyjson_impl_sw_after_val(sw);
+}
+
+/** Write an integer through a temp buffer if the window is too small. */
+static_noinline bool sw_write_int_slow(yyjson_sw *sw, u64 val, bool neg) {
+    u8 buf[32];
+    u8 *cur = buf;
+    if (neg) *cur++ = '-';
+    cur = write_u64(val, cur);
+    if (!sw_write_bytes(sw, buf, (usize)(cur - buf))) return false;
+    return yyjson_impl_sw_after_val(sw);
+}
+
+/** Returns whether `val` is NaN or Infinity that must be rejected. */
+static_inline bool sw_reject_inf_or_nan(const yyjson_sw *sw, f64 val) {
+    return (f64_is_inf(val) || f64_is_nan(val)) &&
+           !(sw->flg & YYJSON_WRITE_INF_AND_NAN_AS_NULL);
+}
+
+
+
+/*==============================================================================
+ * MARK: - Streaming Writer (Public)
+ *============================================================================*/
+
+bool yyjson_sw_init_mem(yyjson_sw *sw, void *dst, usize dst_cap,
+                        const yyjson_sw_opts *opts) {
+    if (!sw) return false;
+    if (!sw_init(sw, opts, NULL)) return false;
+    if (!dst) {
+        return_err(INVALID_PARAMETER, MSG_NULL("dst"));
+    }
+    if (!dst_cap) {
+        return_err(INVALID_PARAMETER, MSG_ZERO("dst_cap"));
+    }
+    sw->hdr = (u8 *)dst;
+    sw->cur = (u8 *)dst;
+    sw->buf_end = sw->hdr + dst_cap;
+    sw->win_size = dst_cap;
+    sw->grow = false;
+    yyjson_impl_sw_sync_lim(sw);
+    return true;
+}
+
+bool yyjson_sw_init_cb(yyjson_sw *sw, yyjson_sw_write_cb write, void *ctx,
+                       const yyjson_sw_opts *opts, const yyjson_alc *alc) {
+    usize size;
+    if (!sw) return false;
+    if (!sw_init(sw, opts, alc)) return false;
+    if (!write) return_err(INVALID_PARAMETER, MSG_NULL("write"));
+    sw->hdr = sbuf_alloc(&sw->alc, sw->win_size, &size, &sw->grow);
+    if (!sw->hdr) return_err(MEMORY_ALLOCATION, MSG_ALLOC);
+    sw->cur = sw->hdr;
+    sw->buf_end = sw->hdr + size;
+    sw->write = write;
+    sw->ctx = ctx;
+    yyjson_impl_sw_sync_lim(sw);
+    return true;
+}
+
+#if !YYJSON_FREESTANDING && !YYJSON_DISABLE_FILE
+bool yyjson_sw_init_fp(yyjson_sw *sw, FILE *fp, const yyjson_sw_opts *opts,
+                       const yyjson_alc *alc) {
+    if (!sw) return false;
+    if (!fp) {
+        if (!sw_init(sw, opts, alc)) return false;
+        return_err(INVALID_PARAMETER, MSG_NULL("fp"));
+    }
+    return yyjson_sw_init_cb(sw, sw_file_write, fp, opts, alc);
+}
+#endif /* !YYJSON_FREESTANDING && !YYJSON_DISABLE_FILE */
+
+
+
+void yyjson_sw_free(yyjson_sw *sw) {
+    if (!sw || !sw->write || !sw->hdr) return;
+    sw->alc.free(sw->alc.ctx, sw->hdr);
+    sw->write = NULL;
+    sw->hdr = NULL;
+    sw->cur = NULL;
+    sw->lim = NULL;
+    sw->buf_end = NULL;
+}
+
+/** Flush or grow until `need` bytes are free. */
+bool yyjson_impl_sw_reserve_slow(yyjson_sw *sw, usize need) {
+    if (!sw->write) return_err(BUFFER_LIMIT, MSG_BUF_LIMIT);
+    if (!yyjson_sw_flush(sw)) return false;
+    if (sw->lim >= sw->hdr && (usize)(sw->lim - sw->hdr) >= need) return true;
+    if (sw->grow && sw_grow(sw, need) &&
+        (usize)(sw->lim - sw->hdr) >= need) return true;
+    if (sw->grow) return_err(MEMORY_ALLOCATION, MSG_ALLOC);
+    return_err(BUFFER_LIMIT, MSG_BUF_LIMIT);
+}
+
+/** Write an optional comma, a newline and the indent of `depth`. */
+bool yyjson_impl_sw_pretty(yyjson_sw *sw, usize depth, bool comma) {
+    static const char spaces[] =
+        "                                                                ";
+    bool tabs = (sw->flg & YYJSON_WRITE_PRETTY_TABS) != 0;
+    const char *pad = spaces;
+    char tab_buf[sizeof(spaces) - 1];
+    usize chunk = sizeof(spaces) - 1; /* drop the trailing NUL */
+    usize mul = tabs ? 1 : (sw->flg & YYJSON_WRITE_PRETTY_TWO_SPACES) ? 2 : 4;
+    usize len;
+    if (tabs) {
+        memset(tab_buf, '\t', sizeof(tab_buf));
+        pad = tab_buf;
+    }
+    if (depth > USIZE_MAX / mul) return_err(BUFFER_LIMIT, MSG_BUF_LIMIT);
+    len = depth * mul;
+    if (comma && !sw_write_byte(sw, ',')) return false;
+    if (!sw_write_byte(sw, '\n')) return false;
+    while (len >= chunk) {
+        if (!sw_write_bytes(sw, pad, chunk)) return false;
+        len -= chunk;
+    }
+    return !len || sw_write_bytes(sw, pad, len);
+}
+
+/** Write an object key and the colon. `plain` means no escaping needed. */
+bool yyjson_impl_sw_key(yyjson_sw *sw, const char *key, usize len, bool plain) {
+    if (sw->state & YYJSON_SW_STATE_PRETTY) {
+        if (!yyjson_impl_sw_pretty(sw, sw->depth,
+                (sw->state & YYJSON_SW_STATE_DONE) != 0)) return false;
+    } else if ((sw->state & YYJSON_SW_STATE_DONE) &&
+               !sw_write_byte(sw, ',')) return false;
+    if (!sw_write_str(sw, key, len, plain) ||
+        !sw_write_byte(sw, ':')) return false;
+    if ((sw->state & YYJSON_SW_STATE_PRETTY) &&
+        !sw_write_byte(sw, ' ')) return false;
+    sw->state |= YYJSON_SW_STATE_HELD;
+    return true;
+}
+
+/** Write a string value. `plain` means no escaping needed. */
+bool yyjson_impl_sw_str(yyjson_sw *sw, const char *str, usize len, bool plain) {
+    if (!yyjson_impl_sw_before_val(sw) ||
+        !sw_write_str(sw, str, len, plain)) return false;
+    return yyjson_impl_sw_after_val(sw);
+}
+
+bool yyjson_sw_write_uint(yyjson_sw *sw, u64 val) {
+    if (!sw || sw->fail) return false;
+    if (!yyjson_impl_sw_before_val(sw)) return false;
+    if (unlikely((usize)(sw->lim - sw->cur) < 20)) { /* max uint length */
+        return sw_write_int_slow(sw, val, false);
+    }
+    sw->cur = write_u64(val, sw->cur);
+    return yyjson_impl_sw_after_val(sw);
+}
+
+bool yyjson_sw_write_sint(yyjson_sw *sw, i64 val) {
+    u64 pos, neg;
+    usize sign;
+    u8 *cur;
+    if (!sw || sw->fail) return false;
+    if (!yyjson_impl_sw_before_val(sw)) return false;
+    pos = (u64)val;
+    neg = ~pos + 1;
+    sign = val < 0;
+    if (unlikely((usize)(sw->lim - sw->cur) < 21)) { /* max sint length */
+        return sw_write_int_slow(sw, sign ? neg : pos, sign != 0);
+    }
+    cur = sw->cur;
+    *cur = '-';
+    sw->cur = write_u64(sign ? neg : pos, cur + sign);
+    return yyjson_impl_sw_after_val(sw);
+}
+
+bool yyjson_sw_write_real(yyjson_sw *sw, f64 val) {
+    yyjson_val num;
+    if (!sw || sw->fail) return false;
+    if (unlikely(sw_reject_inf_or_nan(sw, val))) {
+        return_err(NAN_OR_INF, MSG_NAN_INF);
+    }
+    unsafe_yyjson_set_real(&num, val);
+    return sw_write_num(sw, num);
+}
+
+bool yyjson_sw_write_num(yyjson_sw *sw, const yyjson_val *num) {
+    yyjson_val tmp;
+    yyjson_subtype subtype;
+    if (!sw || sw->fail) return false;
+    if (!num || unsafe_yyjson_get_type(num) != YYJSON_TYPE_NUM) {
+        if (num && unsafe_yyjson_get_type(num) == YYJSON_TYPE_RAW) {
+            return yyjson_sw_write_rawn(sw, unsafe_yyjson_get_raw(num),
+                                        unsafe_yyjson_get_len(num));
+        }
+        return_err(INVALID_VALUE_TYPE, MSG_VAL_TYPE);
+    }
+    tmp = *num;
+    subtype = unsafe_yyjson_get_subtype(&tmp);
+    if (subtype != YYJSON_SUBTYPE_UINT && subtype != YYJSON_SUBTYPE_SINT &&
+        subtype != YYJSON_SUBTYPE_REAL) {
+        return_err(INVALID_VALUE_TYPE, MSG_VAL_TYPE);
+    }
+    if (subtype == YYJSON_SUBTYPE_REAL) {
+        if (unlikely(sw_reject_inf_or_nan(sw, tmp.uni.f64))) {
+            return_err(NAN_OR_INF, MSG_NAN_INF);
+        }
+    }
+    return sw_write_num(sw, tmp);
+}
+
+bool yyjson_sw_write_scalar(yyjson_sw *sw, const yyjson_val *val) {
+    if (!sw || sw->fail) return false;
+    if (!val) return_err(INVALID_PARAMETER, MSG_NULL("val"));
+    switch (unsafe_yyjson_get_type(val)) {
+        case YYJSON_TYPE_NULL:
+            return yyjson_sw_write_null(sw);
+        case YYJSON_TYPE_BOOL:
+            return yyjson_sw_write_bool(sw, unsafe_yyjson_get_bool(val));
+        case YYJSON_TYPE_NUM:
+            return yyjson_sw_write_num(sw, val);
+        case YYJSON_TYPE_STR:
+            return yyjson_sw_write_strn(sw, unsafe_yyjson_get_str(val),
+                                        unsafe_yyjson_get_len(val));
+        case YYJSON_TYPE_RAW:
+            return yyjson_sw_write_rawn(sw, unsafe_yyjson_get_raw(val),
+                                        unsafe_yyjson_get_len(val));
+        default:
+            return_err(INVALID_VALUE_TYPE, MSG_VAL_TYPE);
+    }
+}
+
+bool yyjson_sw_write_rawn(yyjson_sw *sw, const char *raw, usize len) {
+    if (!sw || sw->fail) return false;
+    if (!raw) return_err(INVALID_PARAMETER, MSG_NULL("raw"));
+    if (!len) return_err(INVALID_PARAMETER, MSG_EMPTY("raw"));
+    if (!yyjson_impl_sw_before_val(sw) || !sw_write_bytes(sw, raw, len)) {
+        return false;
+    }
+    return yyjson_impl_sw_after_val(sw);
+}
+
+bool yyjson_sw_flush(yyjson_sw *sw) {
+    u8 *cur;
+    if (!sw || sw->fail) return false;
+    if (!sw->write) return true;
+    if (sw->cur < sw->hdr || sw->cur > sw->buf_end - sw->depth) {
+        return_err(INVALID_PARAMETER, MSG_SW_STATE);
+    }
+    for (cur = sw->hdr; cur < sw->cur;) {
+        usize len = yyjson_min((usize)(sw->cur - cur), sw->win_size);
+        if (!sw->write(sw->ctx, cur, len)) {
+            return_err(STREAMING_IO, MSG_WRITE);
+        }
+        cur += len;
+    }
+    sw->ofs += (u64)(sw->cur - sw->hdr);
+    sw->cur = sw->hdr;
+    return true;
+}
+
+bool yyjson_sw_finish(yyjson_sw *sw) {
+    if (!sw || sw->fail) return false;
+    if (sw->state & YYJSON_SW_STATE_END) return true;
+    if (sw->depth != 0 || !(sw->state & YYJSON_SW_STATE_DONE)) {
+        return_err(INVALID_PARAMETER, sw->depth ?
+                   MSG_CTN_OPEN : "root value is not complete");
+    }
+    if ((sw->flg & YYJSON_WRITE_NEWLINE_AT_END) &&
+        !sw_write_byte(sw, '\n')) return false;
+    if (!yyjson_sw_flush(sw)) return false;
+    sw->state |= YYJSON_SW_STATE_END;
+    return true;
+}
+
+bool yyjson_sw_doc_next(yyjson_sw *sw) {
+    if (!sw || sw->fail) return false;
+    if ((sw->state & YYJSON_SW_STATE_END) || sw->depth != 0 ||
+        !(sw->state & YYJSON_SW_STATE_DONE)) {
+        return_err(INVALID_PARAMETER, MSG_SW_STATE);
+    }
+    if (!sw_write_byte(sw, '\n')) return false;
+    sw->state &= (u8)~YYJSON_SW_STATE_DONE;
+    return true;
+}
+
+#undef return_err
+#endif /* !YYJSON_DISABLE_STREAMING && !YYJSON_DISABLE_WRITER */

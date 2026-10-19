@@ -44,6 +44,26 @@
     test_json_reader();
 }
 
+- (void)test_json_sax {
+    extern void test_json_sax(void);
+    test_json_sax();
+}
+
+- (void)test_json_sr {
+    extern void test_json_sr(void);
+    test_json_sr();
+}
+
+- (void)test_json_sw {
+    extern void test_json_sw(void);
+    test_json_sw();
+}
+
+- (void)test_json_trans {
+    extern void test_json_trans(void);
+    test_json_trans();
+}
+
 - (void)test_json_val {
     extern void test_json_val(void);
     test_json_val();

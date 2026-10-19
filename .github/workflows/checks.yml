@@ -130,8 +130,10 @@ jobs:
           - no_writer
           - no_utf8
           - no_incr
+          - no_stream
           - no_unalign
-          - depth_limit
+          - depth_limit_16
+          - depth_limit_1024
 
     steps:
     - name: Checkout Repository
@@ -165,12 +167,19 @@ jobs:
         if [ "${{matrix.opt}}" == "no_incr" ]; then
           BUILD_OPTIONS="${BUILD_OPTIONS} -DYYJSON_DISABLE_INCR_READER=ON"
         fi
+        if [ "${{matrix.opt}}" == "no_stream" ]; then
+          BUILD_OPTIONS="${BUILD_OPTIONS} -DYYJSON_DISABLE_STREAMING=ON"
+        fi
         if [ "${{matrix.opt}}" == "no_unalign" ]; then
           BUILD_OPTIONS="${BUILD_OPTIONS} -DYYJSON_DISABLE_UNALIGNED_MEMORY_ACCESS=ON"
         fi
-        if [ "${{matrix.opt}}" == "depth_limit" ]; then
-          BUILD_OPTIONS="${BUILD_OPTIONS} -DYYJSON_READER_DEPTH_LIMIT=32"
-          BUILD_OPTIONS="${BUILD_OPTIONS} -DYYJSON_WRITER_DEPTH_LIMIT=32"
+        if [ "${{matrix.opt}}" == "depth_limit_16" ]; then
+          BUILD_OPTIONS="${BUILD_OPTIONS} -DYYJSON_READER_DEPTH_LIMIT=16"
+          BUILD_OPTIONS="${BUILD_OPTIONS} -DYYJSON_WRITER_DEPTH_LIMIT=16"
+        fi
+        if [ "${{matrix.opt}}" == "depth_limit_1024" ]; then
+          BUILD_OPTIONS="${BUILD_OPTIONS} -DYYJSON_READER_DEPTH_LIMIT=1024"
+          BUILD_OPTIONS="${BUILD_OPTIONS} -DYYJSON_WRITER_DEPTH_LIMIT=1024"
         fi
         cmake -E make_directory ${{runner.workspace}}/build
         cd ${{runner.workspace}}/build

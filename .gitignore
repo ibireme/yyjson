@@ -1,5 +1,7 @@
 # CMake
+/bench
 /build
+/build-*/
 CMakeLists.txt.user
 CMakeCache.txt
 CMakeFiles
@@ -97,6 +99,10 @@ iOSInjectionProject/
 *.su
 *.idb
 *.pdb
+
+# Python
+__pycache__/
+*.pyc
 
 # OS
 .DS_Store

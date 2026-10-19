@@ -243,7 +243,7 @@ yyjson, feel free to open a PR to add it to this list.
 * [x] Add `RAW` type for JSON reader and writer.
 * [x] Add option to limit real number output precision.
 * [x] Add option to support JSON5.
-* [ ] Add streaming JSON API.
+* [x] Add streaming JSON API.
 * [ ] Add functions to diff two JSON documents.
 * [ ] Add documentation on performance optimizations.
 * [ ] Ensure ABI stability.

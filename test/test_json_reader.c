@@ -37,6 +37,38 @@ static const yyjson_read_flag ALL_FLAGS[] = {
  * MARK: - Helper
  *============================================================================*/
 
+// `pass`: success, or DEPTH when this build has a reader depth limit.
+static void check_should_pass(yyjson_doc *doc, yyjson_read_err *err,
+                              yyjson_read_flag flg, const char *path) {
+#if YYJSON_READER_DEPTH_LIMIT
+    if (!doc && err->code == YYJSON_READ_ERROR_DEPTH) return;
+#endif
+    yy_assertf(doc != NULL, "should pass but fail (0x%X): %s", flg, path);
+    yy_assert(yyjson_doc_get_read_size(doc) > 0);
+    yy_assert(yyjson_doc_get_val_count(doc) > 0);
+    yy_assert(err->code == YYJSON_READ_SUCCESS);
+    yy_assert(err->msg == NULL);
+}
+
+#if !YYJSON_DISABLE_WRITER
+// Write `doc` again. The writer depth limit may reject it.
+static void write_doc_again(yyjson_doc *doc, yyjson_write_flag flg) {
+    yyjson_write_err err;
+    usize len = 0;
+    char *ret = yyjson_write_opts(doc, flg, NULL, &len, &err);
+    if (ret) {
+        yy_assert(len);
+        free(ret);
+        return;
+    }
+#if YYJSON_WRITER_DEPTH_LIMIT
+    yy_assert(err.code == YYJSON_WRITE_ERROR_DEPTH);
+#else
+    yy_assert(ret);
+#endif
+}
+#endif
+
 static void test_read_data(const char *path, char *dat, usize len,
                            yyjson_read_flag flg, expect_type expect) {
 #if YYJSON_DISABLE_UTF8_VALIDATION
@@ -47,13 +79,7 @@ static void test_read_data(const char *path, char *dat, usize len,
     // test read
     yyjson_read_err err;
     yyjson_doc *doc = yyjson_read_opts(dat, len, flg, NULL, &err);
-    if (expect == EXPECT_PASS) {
-        yy_assertf(doc != NULL, "should pass but fail (0x%X): %s", flg, path);
-        yy_assert(yyjson_doc_get_read_size(doc) > 0);
-        yy_assert(yyjson_doc_get_val_count(doc) > 0);
-        yy_assert(err.code == YYJSON_READ_SUCCESS);
-        yy_assert(err.msg == NULL);
-    }
+    if (expect == EXPECT_PASS) check_should_pass(doc, &err, flg, path);
     if (expect == EXPECT_FAIL) {
         yy_assertf(doc == NULL, "should fail but pass (0x%X): %s", flg, path);
         yy_assert(yyjson_doc_get_read_size(doc) == 0);
@@ -65,14 +91,8 @@ static void test_read_data(const char *path, char *dat, usize len,
     // test write again
 #if !YYJSON_DISABLE_WRITER
     if (doc) {
-        usize ret_len;
-        char *ret;
-        ret = yyjson_write(doc, YYJSON_WRITE_INF_AND_NAN_AS_NULL, &ret_len);
-        yy_assert(ret && ret_len);
-        free(ret);
-        ret = yyjson_write(doc, YYJSON_WRITE_INF_AND_NAN_AS_NULL | YYJSON_WRITE_PRETTY, &ret_len);
-        yy_assert(ret && ret_len);
-        free(ret);
+        write_doc_again(doc, YYJSON_WRITE_INF_AND_NAN_AS_NULL);
+        write_doc_again(doc, YYJSON_WRITE_INF_AND_NAN_AS_NULL | YYJSON_WRITE_PRETTY);
     }
 #endif
     yyjson_doc_free(doc);
@@ -92,13 +112,7 @@ static void test_read_data(const char *path, char *dat, usize len,
     yyjson_alc_pool_init(&alc, buf, max_mem_len);
 
     doc = yyjson_read_opts(dat_cpy, len, flg, &alc, &err);
-    if (expect == EXPECT_PASS) {
-        yy_assertf(doc != NULL, "should pass but fail (0x%X): %s", flg, path);
-        yy_assert(yyjson_doc_get_read_size(doc) > 0);
-        yy_assert(yyjson_doc_get_val_count(doc) > 0);
-        yy_assert(err.code == YYJSON_READ_SUCCESS);
-        yy_assert(err.msg == NULL);
-    }
+    if (expect == EXPECT_PASS) check_should_pass(doc, &err, flg, path);
     if (expect == EXPECT_FAIL) {
         yy_assertf(doc == NULL, "should fail but pass (0x%X): %s", flg, path);
         yy_assert(yyjson_doc_get_read_size(doc) == 0);
@@ -161,18 +175,10 @@ restart_incr_read:
     }
     if (doc) { // test write again
 #if !YYJSON_DISABLE_WRITER
-        char *ret = yyjson_write(doc, 0, NULL);
-        yy_assert(ret);
-        free(ret);
+        write_doc_again(doc, 0);
 #endif
     }
-    if (expect == EXPECT_PASS) {
-        yy_assertf(doc != NULL, "should pass but fail (0x%X): %s", flg, path);
-        yy_assert(yyjson_doc_get_read_size(doc) > 0);
-        yy_assert(yyjson_doc_get_val_count(doc) > 0);
-        yy_assert(err.code == YYJSON_READ_SUCCESS);
-        yy_assert(err.msg == NULL);
-    }
+    if (expect == EXPECT_PASS) check_should_pass(doc, &err, flg, path);
     if (expect == EXPECT_FAIL) {
         yy_assertf(doc == NULL, "should fail but pass (0x%X): %s", flg, path);
         yy_assert(yyjson_doc_get_read_size(doc) == 0);
@@ -918,8 +924,11 @@ static void test_incr_trailing_content(void) {
     }
 }
 
+#endif
+
 // yyjson incremental with insitu
 static void test_json_incremental(void) {
+#if !YYJSON_DISABLE_INCR_READER
     test_incr_raw_number_terminator();
     test_incr_root_number_truncation();
     test_incr_insitu_end_byte();
@@ -952,11 +961,70 @@ static void test_json_incremental(void) {
     yyjson_doc_free(doc);
     free(dat);
     free(dat_dup);
+#endif
 }
 
-#else
-static void test_json_incremental() {}
+
+
+/*==============================================================================
+ * MARK: - Depth
+ *============================================================================*/
+
+#if !YYJSON_DISABLE_INCR_READER
+/* Read one byte at a time. */
+static yyjson_doc *check_incr_read_one_byte(char *json, usize len, yyjson_read_err *err) {
+    yyjson_incr_state *state = yyjson_incr_new(json, len, 0, NULL);
+    yyjson_doc *doc = NULL;
+    yy_assert(state != NULL);
+    for (usize n = 1; n <= len; n++) {
+        doc = yyjson_incr_read(state, n, err);
+        if (doc || err->code != YYJSON_READ_ERROR_MORE) break;
+    }
+    yyjson_incr_free(state);
+    return doc;
+}
 #endif
+
+/* `depth` arrays around a zero, such as [[[0]]]. */
+static void check_read_depth(usize depth, bool too_deep) {
+    char *json = malloc(depth * 2 + 2);
+    yy_assert(json != NULL);
+
+    usize len = depth * 2 + 1;
+    memset(json, '[', depth);
+    json[depth] = '0';
+    memset(json + depth + 1, ']', depth);
+    json[len] = '\0';
+
+    yyjson_read_err err;
+    yyjson_doc *doc = yyjson_read_opts(json, len, 0, NULL, &err);
+    if (too_deep) {
+        yy_assert(!doc && err.code == YYJSON_READ_ERROR_DEPTH);
+    } else {
+        yy_assert(doc && err.code == YYJSON_READ_SUCCESS);
+        yyjson_doc_free(doc);
+    }
+#if !YYJSON_DISABLE_INCR_READER
+    doc = check_incr_read_one_byte(json, len, &err);
+    if (too_deep) {
+        yy_assert(!doc && err.code == YYJSON_READ_ERROR_DEPTH);
+    } else {
+        yy_assert(doc && err.code == YYJSON_READ_SUCCESS);
+        yyjson_doc_free(doc);
+    }
+#endif
+    free(json);
+}
+
+static void test_json_depth(void) {
+#if YYJSON_READER_DEPTH_LIMIT
+    /* The limit is allowed. One level past it is an error. */
+    check_read_depth((usize)YYJSON_READER_DEPTH_LIMIT, false);
+    check_read_depth((usize)YYJSON_READER_DEPTH_LIMIT + 1, true);
+#else
+    check_read_depth(8, false);
+#endif
+}
 
 
 
@@ -972,6 +1040,7 @@ yy_test_case(test_json_reader) {
     test_json_encoding();
     test_json_whitespace();
     test_json_incremental();
+    test_json_depth();
 }
 
 #else

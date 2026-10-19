@@ -38,14 +38,14 @@ static void test_read_err_code(void) {
     // -------------------------------------------------------------------------
     // Invalid parameter, such as NULL input string or 0 input length.
     str = "";
-    //     ^ input length is 0
+    //     ^ parameter 'len' is 0
     memset(&err, -1, sizeof(err));
     yyjson_doc_free(yyjson_read_opts((char *)str, 0, 0, NULL, &err));
     yy_assert(err.code == YYJSON_READ_ERROR_INVALID_PARAMETER);
     yy_assert(err.pos == 0);
 
     str = NULL;
-    //    ^ input data is NULL
+    //    ^ parameter 'dat' is NULL
     memset(&err, -1, sizeof(err));
     yyjson_doc_free(yyjson_read_opts((char *)str, 0, 0, NULL, &err));
     yy_assert(err.code == YYJSON_READ_ERROR_INVALID_PARAMETER);
@@ -53,7 +53,7 @@ static void test_read_err_code(void) {
 
 #if !YYJSON_DISABLE_FILE
     str = NULL;
-    //    ^ input path is NULL
+    //    ^ parameter 'path' is NULL
     memset(&err, -1, sizeof(err));
     yyjson_doc_free(yyjson_read_file(str, 0, NULL, &err));
     yy_assert(err.code == YYJSON_READ_ERROR_INVALID_PARAMETER);
