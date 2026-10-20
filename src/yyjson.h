@@ -2441,7 +2441,7 @@ yyjson_api_inline yyjson_val *yyjson_obj_iter_getn(yyjson_obj_iter *iter,
     for ((idx) = 0, \
         (max) = yyjson_obj_size(obj), \
         (key) = (obj) ? unsafe_yyjson_get_first(obj) : NULL, \
-        (val) = (key) + 1; \
+        (val) = (key) ? (key) + 1 : NULL; \
         (idx) < (max); \
         (idx)++, \
         (key) = unsafe_yyjson_get_next(val), \
