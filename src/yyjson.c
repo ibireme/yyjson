@@ -3138,8 +3138,7 @@ bool unsafe_yyjson_mut_equals(const yyjson_mut_val *lhs,
 bool yyjson_locate_pos(const char *str, size_t len, size_t pos,
                        size_t *line, size_t *col, size_t *chr) {
     usize line_sum = 0, line_pos = 0, chr_sum = 0;
-    const u8 *cur = (const u8 *)str;
-    const u8 *end = cur + pos;
+    const u8 *cur, *end;
 
     if (!str || pos > len) {
         if (line) *line = 0;
@@ -3147,6 +3146,9 @@ bool yyjson_locate_pos(const char *str, size_t len, size_t pos,
         if (chr) *chr = 0;
         return false;
     }
+
+    cur = (const u8 *)str;
+    end = cur + pos;
 
     if (pos >= 3 && is_utf8_bom(cur)) cur += 3; /* don't count BOM */
     while (cur < end) {
