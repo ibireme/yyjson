@@ -978,7 +978,12 @@ static void test_sw_state(void) {
 }
 
 static void test_sw_nan(void) {
-    static const f64 bad[] = { INFINITY, -INFINITY, NAN, -NAN, HUGE_VAL };
+    f64 bad[5];
+    bad[0] = INFINITY;
+    bad[1] = -INFINITY;
+    bad[2] = NAN;
+    bad[3] = -NAN;
+    bad[4] = HUGE_VAL;
     usize i;
     each_dst(m) {
         for (i = 0; i < yy_nelems(bad); i++) {
