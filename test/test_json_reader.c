@@ -67,10 +67,14 @@ static void test_read_data(const char *path, char *dat, usize len,
     if (doc) {
         usize ret_len;
         char *ret;
-        ret = yyjson_write(doc, YYJSON_WRITE_INF_AND_NAN_AS_NULL, &ret_len);
+        yyjson_write_flag wflg = YYJSON_WRITE_INF_AND_NAN_AS_NULL;
+        if (flg & YYJSON_READ_ALLOW_INVALID_UNICODE) {
+            wflg |= YYJSON_WRITE_ALLOW_INVALID_UNICODE;
+        }
+        ret = yyjson_write(doc, wflg, &ret_len);
         yy_assert(ret && ret_len);
         free(ret);
-        ret = yyjson_write(doc, YYJSON_WRITE_INF_AND_NAN_AS_NULL | YYJSON_WRITE_PRETTY, &ret_len);
+        ret = yyjson_write(doc, wflg | YYJSON_WRITE_PRETTY, &ret_len);
         yy_assert(ret && ret_len);
         free(ret);
     }

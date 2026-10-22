@@ -1450,6 +1450,35 @@ static void test_unquoted_key(void) {
     }, YYJSON_READ_ALLOW_INVALID_UNICODE);
 }
 
+/// Invalid UTF-8 read with `ALLOW_INVALID_UNICODE` should still be rejected
+/// by the writer unless the writer also allows it.
+static void test_invalid_unicode_write(void) {
+#if !YYJSON_DISABLE_READER && !YYJSON_DISABLE_WRITER && \
+    !YYJSON_DISABLE_NON_STANDARD && !YYJSON_DISABLE_UTF8_VALIDATION
+    const char *str = "[\"abc\x80\",\"\xff\"]";
+    yyjson_doc *doc;
+    yyjson_mut_doc *mdoc;
+    char *ret;
+
+    doc = yyjson_read(str, strlen(str), YYJSON_READ_ALLOW_INVALID_UNICODE);
+    mdoc = yyjson_doc_mut_copy(doc, NULL);
+    yy_assert(doc && mdoc);
+
+    yy_assert(!yyjson_write(doc, 0, NULL));
+    yy_assert(!yyjson_mut_write(mdoc, 0, NULL));
+
+    ret = yyjson_write(doc, YYJSON_WRITE_ALLOW_INVALID_UNICODE, NULL);
+    yy_assert(ret && strcmp(ret, str) == 0);
+    free(ret);
+    ret = yyjson_mut_write(mdoc, YYJSON_WRITE_ALLOW_INVALID_UNICODE, NULL);
+    yy_assert(ret && strcmp(ret, str) == 0);
+    free(ret);
+
+    yyjson_mut_doc_free(mdoc);
+    yyjson_doc_free(doc);
+#endif
+}
+
 
 
 /*==============================================================================
@@ -1461,4 +1490,5 @@ yy_test_case(test_string) {
     test_extended_escape();
     test_single_quoted_string();
     test_unquoted_key();
+    test_invalid_unicode_write();
 }
