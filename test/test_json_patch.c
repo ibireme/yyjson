@@ -526,6 +526,21 @@ static void test_more(void) {
         .patch = "[{\"op\":\"move\",\"from\":\"/0/0\",\"path\":\"\"}]",
         .dst = "1",
     });
+    test_patch((patch_data){
+        .src = "[[1,2],{\"a\":3}]",
+        .patch = "[{\"op\":\"move\",\"from\":\"/0\",\"path\":\"/0/b\"}]",
+        .err = { .code = YYJSON_PATCH_ERROR_INVALID_MEMBER }
+    });
+    test_patch((patch_data){
+        .src = "{\"a\":{\"b\":1}}",
+        .patch = "[{\"op\":\"move\",\"from\":\"/a\",\"path\":\"/a/c\"}]",
+        .err = { .code = YYJSON_PATCH_ERROR_INVALID_MEMBER }
+    });
+    test_patch((patch_data){
+        .src = "{\"a\":1,\"ab\":2}",
+        .patch = "[{\"op\":\"move\",\"from\":\"/a\",\"path\":\"/ab\"}]",
+        .dst = "{\"ab\":1}",
+    });
 
     // ---------------------------------
     // copy
