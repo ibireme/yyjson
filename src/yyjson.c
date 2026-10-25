@@ -11307,6 +11307,13 @@ yyjson_mut_val *yyjson_patch(yyjson_mut_doc *doc,
                 break;
             case PATCH_OP_MOVE: /* val = remove(from), add(path, val) */
                 if (unlikely(from_len == 0 && path_len == 0)) break;
+                /* `from` must not be a proper prefix of `path` (RFC 6902) */
+                if (unlikely(from_len < path_len &&
+                             path->uni.str[from_len] == '/' &&
+                             !memcmp(from->uni.str, path->uni.str, from_len))) {
+                    return_err(INVALID_MEMBER,
+                               "cannot move `from` into its child");
+                }
                 val = ptr_remove(from);
                 if (unlikely(!val)) {
                     return_err(POINTER, "failed to remove `from`");
@@ -11428,6 +11435,13 @@ yyjson_mut_val *yyjson_mut_patch(yyjson_mut_doc *doc,
                 break;
             case PATCH_OP_MOVE: /* val = remove(from), add(path, val) */
                 if (unlikely(from_len == 0 && path_len == 0)) break;
+                /* `from` must not be a proper prefix of `path` (RFC 6902) */
+                if (unlikely(from_len < path_len &&
+                             path->uni.str[from_len] == '/' &&
+                             !memcmp(from->uni.str, path->uni.str, from_len))) {
+                    return_err(INVALID_MEMBER,
+                               "cannot move `from` into its child");
+                }
                 val = ptr_remove(from);
                 if (unlikely(!val)) {
                     return_err(POINTER, "failed to remove `from`");
