@@ -637,6 +637,13 @@ static void test_trans_validate(void) {
             yy_path_combine(path, dir, name, NULL);
             yy_assertf(yy_file_read(path, &dat, &len), "failed to read: %s",
                        path);
+#if YYJSON_DISABLE_UTF8_VALIDATION
+            /* Illegal UTF-8 is not required to match the DOM reader. */
+            if (!yy_str_is_utf8((const char *)dat, len)) {
+                free(dat);
+                continue;
+            }
+#endif
             doc = yyjson_read((const char *)dat, len, 0);
             dom_ok = doc != NULL;
             sr_ok = yyjson_sr_validate((char *)(void *)dat, len, NULL, NULL);
