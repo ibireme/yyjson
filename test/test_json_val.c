@@ -427,6 +427,9 @@ static void test_json_obj_api(void) {
     yyjson_obj_foreach(obj, idx, max, key, val) {
         yy_assert(false);
     }
+    yyjson_obj_foreach(NULL, idx, max, key, val) {
+        yy_assert(false);
+    }
 
     yyjson_doc_free(doc);
 

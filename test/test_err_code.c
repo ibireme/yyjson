@@ -729,9 +729,14 @@ static void test_locate_pos(void) {
     // -------------------------------------------------------------------------
     // Invalid input.
     yy_assert(!yyjson_locate_pos(NULL, 0, 0, NULL, NULL, NULL));
+    yy_assert(!yyjson_locate_pos(NULL, 0, 1, NULL, NULL, NULL));
 
     line = col = chr = SIZE_MAX;
     yy_assert(!yyjson_locate_pos(NULL, 0, 0, &line, &col, &chr));
+    yy_assert(line == 0 && col == 0 && chr == 0);
+
+    line = col = chr = SIZE_MAX;
+    yy_assert(!yyjson_locate_pos(NULL, 0, 1, &line, &col, &chr));
     yy_assert(line == 0 && col == 0 && chr == 0);
 
     yy_assert(!yyjson_locate_pos("abc", 3, 4, NULL, NULL, NULL));
