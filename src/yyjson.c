@@ -4953,8 +4953,12 @@ skip_utf8:
         }
 #endif
         if (unlikely(pos == src)) {
-            if (has_allow(INVALID_UNICODE)) ++src;
-            else return_err(src, "invalid UTF-8 encoding in string");
+            if (!has_allow(INVALID_UNICODE)) {
+                return_err(src, "invalid UTF-8 encoding in string");
+            }
+            /* invalid UTF-8 should not be marked as NOESC, copy it */
+            dst = src;
+            goto copy_utf8;
         }
         goto skip_ascii;
     }
