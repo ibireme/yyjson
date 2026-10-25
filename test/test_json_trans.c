@@ -535,6 +535,127 @@ static void test_trans_corpus(void) {
 
 
 /*==============================================================================
+ * MARK: - Validate
+ *============================================================================*/
+
+// The current value is done. The reader already stores the closer (`]` or `}`).
+static yyjson_inline bool sr_validate_val_next(yyjson_sr *sr) {
+    while (sr->depth) {
+        if (sr->ctn == ']') {
+            if (yyjson_sr_arr_next(sr)) return true;
+            if (yyjson_sr_has_err(sr) || !yyjson_sr_arr_end(sr)) return false;
+        } else {
+            yyjson_sv key;
+            if (yyjson_sr_obj_next(sr, &key)) return true;
+            if (yyjson_sr_has_err(sr) || !yyjson_sr_obj_end(sr)) return false;
+        }
+    }
+    return true;
+}
+
+// Read the root value. Scalars are read, so strings, numbers and literals
+// are checked. A skipped value would not be.
+static yyjson_inline bool sr_validate_val_read(yyjson_sr *sr) {
+    for (;;) {
+        yyjson_type type = yyjson_sr_peek_type(sr);
+        if (type == YYJSON_TYPE_ARR) {
+            if (!yyjson_sr_arr_begin(sr)) return false;
+            if (!yyjson_sr_arr_next(sr)) {
+                if (yyjson_sr_has_err(sr) || !yyjson_sr_arr_end(sr)) return false;
+                if (!sr->depth) return true;
+                if (!sr_validate_val_next(sr)) return false;
+                if (!sr->depth) return true;
+            }
+            continue;
+        }
+        if (type == YYJSON_TYPE_OBJ) {
+            yyjson_sv key;
+            if (!yyjson_sr_obj_begin(sr)) return false;
+            if (!yyjson_sr_obj_next(sr, &key)) {
+                if (yyjson_sr_has_err(sr) || !yyjson_sr_obj_end(sr)) return false;
+                if (!sr->depth) return true;
+                if (!sr_validate_val_next(sr)) return false;
+                if (!sr->depth) return true;
+            }
+            continue;
+        }
+        if (type == YYJSON_TYPE_NONE) {
+            (void)yyjson_sr_read_scalar(sr);
+            return false;
+        }
+        (void)yyjson_sr_read_scalar(sr);
+        if (yyjson_sr_has_err(sr)) return false;
+        if (!sr->depth) return true;
+        if (!sr_validate_val_next(sr)) return false;
+        if (!sr->depth) return true;
+    }
+}
+
+// Validate JSON.
+// Standard JSON passes, Non-standard JSON fails, the same as `yyjson_read_opts()`.
+bool yyjson_sr_validate(char *dat, size_t len, const yyjson_alc *alc,
+                        yyjson_read_err *err) {
+    yyjson_sr sr;
+    yyjson_read_err tmp;
+    bool ok;
+    if (!err) err = &tmp;
+    memset(err, 0, sizeof(*err));
+    if (!yyjson_sr_init_mem(&sr, dat, len, NULL, alc)) {
+        yyjson_sr_get_err(&sr, err);
+        yyjson_sr_free(&sr);
+        return false;
+    }
+    ok = sr_validate_val_read(&sr);
+    if (ok) ok = yyjson_sr_finish(&sr);
+    if (!ok) yyjson_sr_get_err(&sr, err);
+    yyjson_sr_free(&sr);
+    return ok;
+}
+
+static void test_trans_validate(void) {
+    static const char *dirs[] = {
+        "test_checker", "test_encoding", "test_parsing", "test_roundtrip",
+        "test_transform", "test_yyjson",
+    };
+    char dir[YY_MAX_PATH], path[YY_MAX_PATH];
+    usize d, tested = 0, passed = 0;
+
+    for (d = 0; d < yy_nelems(dirs); d++) {
+        int n, count;
+        char **names;
+        yy_path_combine(dir, YYJSON_TEST_DATA_PATH, "data", "json", dirs[d],
+                        NULL);
+        names = yy_dir_read(dir, &count);
+        yy_assertf(names && count, "failed to read corpus: %s", dir);
+        for (n = 0; n < count; n++) {
+            const char *name = names[n];
+            u8 *dat = NULL;
+            usize len = 0;
+            yyjson_doc *doc;
+            bool dom_ok, sr_ok;
+            if (*name == '.') continue;
+            yy_path_combine(path, dir, name, NULL);
+            yy_assertf(yy_file_read(path, &dat, &len), "failed to read: %s",
+                       path);
+            doc = yyjson_read((const char *)dat, len, 0);
+            dom_ok = doc != NULL;
+            sr_ok = yyjson_sr_validate((char *)(void *)dat, len, NULL, NULL);
+            yy_assertf(dom_ok == sr_ok,
+                       "validate mismatch: %s (dom %d, sr %d)",
+                       path, (int)dom_ok, (int)sr_ok);
+            yyjson_doc_free(doc);
+            free(dat);
+            if (sr_ok) passed++;
+            tested++;
+        }
+        yy_dir_free(names);
+    }
+    yy_assert(tested != 0 && passed != 0 && passed < tested);
+}
+
+
+
+/*==============================================================================
  * MARK: - Entry
  *============================================================================*/
 
@@ -545,6 +666,7 @@ yy_test_case(test_json_trans) {
     test_trans_fp();
 #endif
     test_trans_corpus();
+    test_trans_validate();
 }
 
 #else

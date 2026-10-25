@@ -301,7 +301,7 @@ Define as 1 to disable non-standard JSON features support at compile-time:
 - YYJSON_WRITE_ALLOW_INVALID_UNICODE
 - YYJSON_WRITE_TRAILING_COMMAS
 
-This reduces binary size by about 10%, and slightly improves performance.<br/>
+This reduces binary size by about 10% and improves read performance by about 3% to 10%.<br/>
 It is recommended when not dealing with non-standard JSON.
 
 ## YYJSON_DISABLE_UTF8_VALIDATION

@@ -86,7 +86,8 @@
 /* Define as 1 to disable non-standard JSON features support at compile-time,
    such as YYJSON_READ_ALLOW_XXX and YYJSON_WRITE_ALLOW_XXX.
 
-   This reduces binary size by about 10%, and slightly improves performance. */
+   This reduces binary size by about 10% and improves read performance
+   by about 3% to 10%. */
 #ifndef YYJSON_DISABLE_NON_STANDARD
 #define YYJSON_DISABLE_NON_STANDARD 0
 #endif
