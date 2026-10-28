@@ -11043,9 +11043,13 @@ bool unsafe_yyjson_mut_ptr_putx(
         } else {
             /* replace exist value */
             key = pre->next->next;
+            yyjson_mut_obj_put(ctn, key, new_val);
+            /* put() may remove a duplicate key at the tail, which was `pre` */
+            if (((yyjson_mut_val *)ctn->uni.ptr)->next->next == key) {
+                pre = (yyjson_mut_val *)ctn->uni.ptr;
+            }
             if (ctx) ctx->pre = pre;
             if (ctx) ctx->old = val;
-            yyjson_mut_obj_put(ctn, key, new_val);
         }
     } else {
         /* array */
@@ -11103,6 +11107,10 @@ yyjson_mut_val *unsafe_yyjson_mut_ptr_replacex(
     if (yyjson_mut_is_obj(ctx->ctn)) {
         yyjson_mut_val *key = ctx->pre->next->next;
         yyjson_mut_obj_put(ctx->ctn, key, new_val);
+        /* put() may remove a duplicate key at the tail, which was `pre` */
+        if (((yyjson_mut_val *)ctx->ctn->uni.ptr)->next->next == key) {
+            ctx->pre = (yyjson_mut_val *)ctx->ctn->uni.ptr;
+        }
     } else {
         yyjson_ptr_ctx_replace(ctx, new_val);
     }

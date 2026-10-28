@@ -2697,6 +2697,29 @@ static void test_ptr_put(void) {
         .old = "1",
     });
 
+    // duplicated key at the tail, removed by set/replace
+    test_ptr_op((ptr_data){
+        .op = PTR_OP_SET,
+        .src = "{\"a\":1,\"b\":2,\"a\":3}",
+        .ptr = "/a",
+        .val = "5",
+        .dst = "{\"a\":5,\"b\":2}",
+        .ctn = "{\"a\":5,\"b\":2}",
+        .pre = "\"b\"",
+        .old = "1",
+        .create_parent = true,
+    });
+    test_ptr_op((ptr_data){
+        .op = PTR_OP_REPLACE,
+        .src = "{\"a\":1,\"b\":2,\"a\":3}",
+        .ptr = "/a",
+        .val = "5",
+        .dst = "{\"a\":5,\"b\":2}",
+        .ctn = "{\"a\":5,\"b\":2}",
+        .pre = "\"b\"",
+        .old = "1",
+    });
+
     // ---------------------------------
     // special key (escaped character)
     test_ptr_op((ptr_data){
