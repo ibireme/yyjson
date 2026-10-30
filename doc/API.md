@@ -747,7 +747,7 @@ Escape unicode as `\uXXXX`, making the output ASCII-only, for example:
 
 ### **YYJSON_WRITE_LOWERCASE_HEX**
 Use lowercase hex digits in `\uXXXX` escape sequences instead of the default uppercase.
-Only effective when `YYJSON_WRITE_ESCAPE_UNICODE` is also set.
+This applies to escaped control characters such as `\u001f`, and also to non-ASCII characters when `YYJSON_WRITE_ESCAPE_UNICODE` is set.
 
 ### **YYJSON_WRITE_TRAILING_COMMAS**
 Writes a comma after the last element of each non-empty array and object.

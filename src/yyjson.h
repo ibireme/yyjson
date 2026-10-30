@@ -1283,7 +1283,8 @@ static const yyjson_write_flag YYJSON_WRITE_PRETTY_TWO_SPACES       = 1 << 6;
 static const yyjson_write_flag YYJSON_WRITE_NEWLINE_AT_END          = 1 << 7;
 
 /** Use lowercase hex digits in `\uXXXX` escape sequences instead of the default
-    uppercase. Only effective when `YYJSON_WRITE_ESCAPE_UNICODE` is also set. */
+    uppercase. This applies to escaped control characters, and also to
+    non-ASCII characters when `YYJSON_WRITE_ESCAPE_UNICODE` is set. */
 static const yyjson_write_flag YYJSON_WRITE_LOWERCASE_HEX           = 1 << 8;
 
 /** Write JSON pretty with tab indentation.
