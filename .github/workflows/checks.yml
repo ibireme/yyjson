@@ -132,6 +132,7 @@ jobs:
           - no_incr
           - no_unalign
           - depth_limit
+          - reader_ratios
 
     steps:
     - name: Checkout Repository
@@ -171,6 +172,9 @@ jobs:
         if [ "${{matrix.opt}}" == "depth_limit" ]; then
           BUILD_OPTIONS="${BUILD_OPTIONS} -DYYJSON_READER_DEPTH_LIMIT=32"
           BUILD_OPTIONS="${BUILD_OPTIONS} -DYYJSON_WRITER_DEPTH_LIMIT=32"
+        fi
+        if [ "${{matrix.opt}}" == "reader_ratios" ]; then
+          export CFLAGS="-Werror -DYYJSON_READER_ESTIMATED_PRETTY_RATIO=10000 -DYYJSON_READER_ESTIMATED_MINIFY_RATIO=10000"
         fi
         cmake -E make_directory ${{runner.workspace}}/build
         cd ${{runner.workspace}}/build

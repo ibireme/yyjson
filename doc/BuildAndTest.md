@@ -331,6 +331,32 @@ When a document exceeds this depth, writing stops and returns `YYJSON_WRITE_ERRO
 
 The default value is `0`, which means unlimited depth is supported. The writer does not use stack recursion, so nesting depth is only bounded by available memory.
 
+## YYJSON_READER_ESTIMATED_PRETTY_RATIO / YYJSON_READER_ESTIMATED_MINIFY_RATIO
+Define these macros when compiling `yyjson.c` to tune the reader's initial value
+allocation. The defaults are `16` for pretty-printed input and `6` for minified
+input. Each ratio must be an integer of at least `2`, preserving the bound
+returned by `yyjson_read_max_memory_usage()`.
+
+The reader estimates the value count by dividing the input size by the ratio.
+Larger ratios can reduce initial allocation for documents with long strings and
+few values. Smaller ratios reserve more space for values up front. The value
+buffer still grows as needed, so larger ratios may increase reallocations and
+reduce performance on documents with many values. These settings do not limit
+total memory usage or change string storage. The incremental reader uses the
+minified ratio for its initial allocation.
+
+For example, to use a ratio of `10000` for both input layouts:
+```shell
+cc -DYYJSON_READER_ESTIMATED_PRETTY_RATIO=10000 \
+   -DYYJSON_READER_ESTIMATED_MINIFY_RATIO=10000 -c src/yyjson.c
+```
+
+With CMake, pass the definitions through the C compiler flags:
+```shell
+cmake -S . -B build \
+  '-DCMAKE_C_FLAGS=-DYYJSON_READER_ESTIMATED_PRETTY_RATIO=10000 -DYYJSON_READER_ESTIMATED_MINIFY_RATIO=10000'
+```
+
 ## YYJSON_EXPORTS
 Define as 1 to export symbols when building the library as a Windows DLL.
 
