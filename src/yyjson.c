@@ -319,12 +319,27 @@ uint32_t yyjson_version(void) {
  yyjson uses dynamic memory with a growth factor of 1.5 when reading and writing
  JSON, the ratios below are used to determine the initial memory size.
 
- A too large ratio will waste memory, and a too small ratio will cause multiple
- memory growths and degrade performance. Currently, these ratios are generated
- with some commonly used JSON datasets.
+ The reader divides the input size by its ratio to estimate the value count;
+ a larger ratio reduces initial allocation but may cause more memory growths.
+ The writer multiplies the value count by its ratio to estimate the output size;
+ a larger ratio increases initial allocation. These defaults are generated with
+ some commonly used JSON datasets.
  */
+#ifndef YYJSON_READER_ESTIMATED_PRETTY_RATIO
 #define YYJSON_READER_ESTIMATED_PRETTY_RATIO 16
+#endif
+#ifndef YYJSON_READER_ESTIMATED_MINIFY_RATIO
 #define YYJSON_READER_ESTIMATED_MINIFY_RATIO 6
+#endif
+
+/* Keep initial allocation within yyjson_read_max_memory_usage()'s bound. */
+#if YYJSON_READER_ESTIMATED_PRETTY_RATIO < 2
+#error YYJSON_READER_ESTIMATED_PRETTY_RATIO must be at least 2
+#endif
+#if YYJSON_READER_ESTIMATED_MINIFY_RATIO < 2
+#error YYJSON_READER_ESTIMATED_MINIFY_RATIO must be at least 2
+#endif
+
 #define YYJSON_WRITER_ESTIMATED_PRETTY_RATIO 32
 #define YYJSON_WRITER_ESTIMATED_MINIFY_RATIO 18
 
