@@ -11042,10 +11042,16 @@ bool unsafe_yyjson_mut_ptr_putx(
             unsafe_yyjson_mut_obj_add(ctn, key, new_val, ctn_len);
         } else {
             /* replace exist value */
+            bool pre_removed;
             key = pre->next->next;
+            pre_removed = ctx && pre != key &&
+                unsafe_yyjson_equals_strn(pre, key->uni.str,
+                                          unsafe_yyjson_get_len(key));
             if (ctx) ctx->pre = pre;
             if (ctx) ctx->old = val;
             yyjson_mut_obj_put(ctn, key, new_val);
+            /* put() removes a duplicate tail referenced by pre. */
+            if (pre_removed) ctx->pre = (yyjson_mut_val *)ctn->uni.ptr;
         }
     } else {
         /* array */
@@ -11095,6 +11101,7 @@ yyjson_mut_val *unsafe_yyjson_mut_ptr_replacex(
 
     yyjson_mut_val *cur_val;
     yyjson_ptr_ctx cur_ctx;
+    bool has_ctx = ctx != NULL;
     memset(&cur_ctx, 0, sizeof(cur_ctx));
     if (!ctx) ctx = &cur_ctx;
     cur_val = unsafe_yyjson_mut_ptr_getx(val, ptr, len, ctx, err);
@@ -11102,7 +11109,12 @@ yyjson_mut_val *unsafe_yyjson_mut_ptr_replacex(
 
     if (yyjson_mut_is_obj(ctx->ctn)) {
         yyjson_mut_val *key = ctx->pre->next->next;
+        bool pre_removed = has_ctx && ctx->pre != key &&
+            unsafe_yyjson_equals_strn(ctx->pre, key->uni.str,
+                                      unsafe_yyjson_get_len(key));
         yyjson_mut_obj_put(ctx->ctn, key, new_val);
+        /* put() removes a duplicate tail referenced by pre. */
+        if (pre_removed) ctx->pre = (yyjson_mut_val *)ctx->ctn->uni.ptr;
     } else {
         yyjson_ptr_ctx_replace(ctx, new_val);
     }
