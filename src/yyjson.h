@@ -5817,7 +5817,7 @@ yyjson_api_inline yyjson_val *yyjson_obj_iter_getn(yyjson_obj_iter *iter,
         size_t idx = iter->idx;
         size_t max = iter->max;
         yyjson_val *cur = iter->cur;
-        if (yyjson_unlikely(idx == max)) {
+        if (yyjson_unlikely(idx == max && max != 0)) {
             idx = 0;
             cur = unsafe_yyjson_get_first(iter->obj);
         }
