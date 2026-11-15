@@ -323,10 +323,18 @@ uint32_t yyjson_version(void) {
  memory growths and degrade performance. Currently, these ratios are generated
  with some commonly used JSON datasets.
  */
+#ifndef YYJSON_READER_ESTIMATED_PRETTY_RATIO
 #define YYJSON_READER_ESTIMATED_PRETTY_RATIO 16
+#endif
+#ifndef YYJSON_READER_ESTIMATED_MINIFY_RATIO
 #define YYJSON_READER_ESTIMATED_MINIFY_RATIO 6
+#endif
+#ifndef YYJSON_WRITER_ESTIMATED_PRETTY_RATIO
 #define YYJSON_WRITER_ESTIMATED_PRETTY_RATIO 32
+#endif
+#ifndef YYJSON_WRITER_ESTIMATED_MINIFY_RATIO
 #define YYJSON_WRITER_ESTIMATED_MINIFY_RATIO 18
+#endif
 
 /* The initial and maximum size of the memory pool's chunk in yyjson_mut_doc. */
 #define YYJSON_MUT_DOC_STR_POOL_INIT_SIZE   0x100
