@@ -172,6 +172,8 @@ jobs:
 
   # Check old GCC 32-bit
   linux_gcc5_x86:
+    # disabled due to DNS failures in container
+    if: ${{ false }}
     runs-on: ubuntu-latest
     steps:
     - name: Checkout Repository
