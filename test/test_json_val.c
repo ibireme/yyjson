@@ -715,6 +715,8 @@ static void test_json_obj_api(void) {
     // iter
     yy_assert(yyjson_obj_iter_init(obj, NULL) == false);
     yy_assert(yyjson_obj_iter_init(NULL, &iter) == false);
+    yy_assert(!yyjson_obj_iter_get(&iter, "x"));
+    yy_assert(!yyjson_obj_iter_getn(&iter, "x", 1));
     yy_assert(yyjson_obj_iter_init(NULL, NULL) == false);
 
     yyjson_doc_free(doc);
