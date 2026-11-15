@@ -2833,8 +2833,8 @@ yyjson_mut_val *yyjson_mut_val_mut_copy(yyjson_mut_doc *doc,
     return NULL;
 }
 
-/* Count the number of values and the total length of the strings. */
-static void yyjson_mut_stat(const yyjson_mut_val *val,
+/* Count values and string bytes, returning false on string size overflow. */
+static bool yyjson_mut_stat(const yyjson_mut_val *val,
                             usize *val_sum, usize *str_sum) {
     yyjson_type type = unsafe_yyjson_get_type(val);
     *val_sum += 1;
@@ -2846,16 +2846,21 @@ static void yyjson_mut_stat(const yyjson_mut_val *val,
         for (i = 0; i < len; i++) {
             yyjson_type stype = unsafe_yyjson_get_type(child);
             if (stype == YYJSON_TYPE_STR || stype == YYJSON_TYPE_RAW) {
-                *str_sum += unsafe_yyjson_get_len(child) + 1;
+                usize str_len = unsafe_yyjson_get_len(child);
+                if (unlikely(str_len >= USIZE_MAX - *str_sum)) return false;
+                *str_sum += str_len + 1;
             } else if (stype == YYJSON_TYPE_ARR || stype == YYJSON_TYPE_OBJ) {
-                yyjson_mut_stat(child, val_sum, str_sum);
+                if (!yyjson_mut_stat(child, val_sum, str_sum)) return false;
                 *val_sum -= 1;
             }
             child = child->next;
         }
     } else if (type == YYJSON_TYPE_STR || type == YYJSON_TYPE_RAW) {
-        *str_sum += unsafe_yyjson_get_len(val) + 1;
+        usize str_len = unsafe_yyjson_get_len(val);
+        if (unlikely(str_len >= USIZE_MAX - *str_sum)) return false;
+        *str_sum += str_len + 1;
     }
+    return true;
 }
 
 /* Copy mutable values to immutable value pool. */
@@ -2918,7 +2923,8 @@ yyjson_doc *yyjson_mut_val_imut_copy(const yyjson_mut_val *mval,
     if (!alc) alc = &YYJSON_DEFAULT_ALC;
 
     /* traverse the input value to get pool size */
-    yyjson_mut_stat(mval, &val_num, &str_sum);
+    if (!yyjson_mut_stat(mval, &val_num, &str_sum)) return NULL;
+    if (unlikely(str_sum == USIZE_MAX)) return NULL; /* dat_read = str_sum + 1 */
 
     /* create doc and val pool */
     hdr_size = size_align_up(sizeof(yyjson_doc), sizeof(yyjson_val));
@@ -5616,7 +5622,7 @@ arr_end:
 
     /* save the next sibling value offset */
     ctn->uni.ofs = (usize)((u8 *)val - (u8 *)ctn) + sizeof(yyjson_val);
-    ctn->tag = ((ctn_len) << YYJSON_TAG_BIT) | YYJSON_TYPE_ARR;
+    ctn->tag = ((u64)ctn_len << YYJSON_TAG_BIT) | YYJSON_TYPE_ARR;
     if (unlikely(ctn == ctn_parent)) goto doc_end;
 
     /* pop parent as current container */
@@ -5788,7 +5794,7 @@ obj_end:
     ctn_parent = (yyjson_val *)(void *)((u8 *)ctn - ctn->uni.ofs);
     /* point to the next value */
     ctn->uni.ofs = (usize)((u8 *)val - (u8 *)ctn) + sizeof(yyjson_val);
-    ctn->tag = (ctn_len << (YYJSON_TAG_BIT - 1)) | YYJSON_TYPE_OBJ;
+    ctn->tag = ((u64)ctn_len << (YYJSON_TAG_BIT - 1)) | YYJSON_TYPE_OBJ;
     if (unlikely(ctn == ctn_parent)) goto doc_end;
     ctn = ctn_parent;
     ctn_len = (usize)(ctn->tag >> YYJSON_TAG_BIT);
@@ -6062,7 +6068,7 @@ arr_end:
 
     /* save the next sibling value offset */
     ctn->uni.ofs = (usize)((u8 *)val - (u8 *)ctn) + sizeof(yyjson_val);
-    ctn->tag = ((ctn_len) << YYJSON_TAG_BIT) | YYJSON_TYPE_ARR;
+    ctn->tag = ((u64)ctn_len << YYJSON_TAG_BIT) | YYJSON_TYPE_ARR;
     if (unlikely(ctn == ctn_parent)) goto doc_end;
 
     /* pop parent as current container */
@@ -6257,7 +6263,7 @@ obj_end:
     ctn_parent = (yyjson_val *)(void *)((u8 *)ctn - ctn->uni.ofs);
     /* point to the next value */
     ctn->uni.ofs = (usize)((u8 *)val - (u8 *)ctn) + sizeof(yyjson_val);
-    ctn->tag = (ctn_len << (YYJSON_TAG_BIT - 1)) | YYJSON_TYPE_OBJ;
+    ctn->tag = ((u64)ctn_len << (YYJSON_TAG_BIT - 1)) | YYJSON_TYPE_OBJ;
     if (unlikely(ctn == ctn_parent)) goto doc_end;
     ctn = ctn_parent;
     ctn_len = (usize)(ctn->tag >> YYJSON_TAG_BIT);
@@ -7025,7 +7031,7 @@ arr_end:
 
     /* save the next sibling value offset */
     ctn->uni.ofs = (usize)((u8 *)val - (u8 *)ctn) + sizeof(yyjson_val);
-    ctn->tag = ((ctn_len) << YYJSON_TAG_BIT) | YYJSON_TYPE_ARR;
+    ctn->tag = ((u64)ctn_len << YYJSON_TAG_BIT) | YYJSON_TYPE_ARR;
     if (unlikely(ctn == ctn_parent)) goto doc_end;
 
     /* pop parent as current container */
@@ -7167,7 +7173,7 @@ obj_end:
     ctn_parent = (yyjson_val *)(void *)((u8 *)ctn - ctn->uni.ofs);
     /* point to the next value */
     ctn->uni.ofs = (usize)((u8 *)val - (u8 *)ctn) + sizeof(yyjson_val);
-    ctn->tag = (ctn_len << (YYJSON_TAG_BIT - 1)) | YYJSON_TYPE_OBJ;
+    ctn->tag = ((u64)ctn_len << (YYJSON_TAG_BIT - 1)) | YYJSON_TYPE_OBJ;
     if (unlikely(ctn == ctn_parent)) goto doc_end;
     ctn = ctn_parent;
     ctn_len = (usize)(ctn->tag >> YYJSON_TAG_BIT);
