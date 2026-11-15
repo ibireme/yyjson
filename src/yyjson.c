@@ -2183,6 +2183,15 @@ static_inline void *mem_align_up(void *mem, usize align) {
     return mem;
 }
 
+/** Align address downwards. */
+static_inline void *mem_align_down(void *mem, usize align) {
+    usize size;
+    memcpy(&size, &mem, sizeof(usize));
+    size = size_align_down(size, align);
+    memcpy(&mem, &size, sizeof(usize));
+    return mem;
+}
+
 
 
 /*==============================================================================
@@ -2338,9 +2347,8 @@ static void *pool_realloc(void *ctx_ptr, void *ptr,
 
     /* check size */
     if (unlikely(size >= ctx->size)) return NULL;
-    pool_size_align(&old_size);
     pool_size_align(&size);
-    if (unlikely(old_size == size)) return ptr;
+    if (unlikely(cur->size >= size)) return ptr;
 
     /* find next and prev chunk */
     prev = NULL;
@@ -9441,7 +9449,9 @@ static_inline u8 *write_root_minify(const yyjson_val *root,
     if (buf) {
         hdr = (u8 *)buf;
         alc_len = *dat_len;
-        alc_len = size_align_down(alc_len, sizeof(yyjson_write_ctx));
+        if (alc_len <= sizeof(yyjson_write_ctx)) goto fail_alloc;
+        end = (u8 *)mem_align_down(hdr + alc_len, sizeof(yyjson_write_ctx));
+        alc_len = (usize)(end - hdr);
         if (alc_len <= sizeof(yyjson_write_ctx)) goto fail_alloc;
     } else {
         alc_len = root->uni.ofs / sizeof(yyjson_val);
@@ -9654,7 +9664,9 @@ static_inline u8 *write_root_pretty(const yyjson_val *root,
     if (buf) {
         hdr = (u8 *)buf;
         alc_len = *dat_len;
-        alc_len = size_align_down(alc_len, sizeof(yyjson_write_ctx));
+        if (alc_len <= sizeof(yyjson_write_ctx)) goto fail_alloc;
+        end = (u8 *)mem_align_down(hdr + alc_len, sizeof(yyjson_write_ctx));
+        alc_len = (usize)(end - hdr);
         if (alc_len <= sizeof(yyjson_write_ctx)) goto fail_alloc;
     } else {
         alc_len = root->uni.ofs / sizeof(yyjson_val);
@@ -10094,7 +10106,9 @@ static_inline u8 *mut_write_root_minify(const yyjson_mut_val *root,
     if (buf) {
         hdr = (u8 *)buf;
         alc_len = *dat_len;
-        alc_len = size_align_down(alc_len, sizeof(yyjson_mut_write_ctx));
+        if (alc_len <= sizeof(yyjson_mut_write_ctx)) goto fail_alloc;
+        end = (u8 *)mem_align_down(hdr + alc_len, sizeof(yyjson_mut_write_ctx));
+        alc_len = (usize)(end - hdr);
         if (alc_len <= sizeof(yyjson_mut_write_ctx)) goto fail_alloc;
     } else {
         alc_len = estimated_val_num * YYJSON_WRITER_ESTIMATED_MINIFY_RATIO + 64;
@@ -10313,7 +10327,9 @@ static_inline u8 *mut_write_root_pretty(const yyjson_mut_val *root,
     if (buf) {
         hdr = (u8 *)buf;
         alc_len = *dat_len;
-        alc_len = size_align_down(alc_len, sizeof(yyjson_mut_write_ctx));
+        if (alc_len <= sizeof(yyjson_mut_write_ctx)) goto fail_alloc;
+        end = (u8 *)mem_align_down(hdr + alc_len, sizeof(yyjson_mut_write_ctx));
+        alc_len = (usize)(end - hdr);
         if (alc_len <= sizeof(yyjson_mut_write_ctx)) goto fail_alloc;
     } else {
         alc_len = estimated_val_num * YYJSON_WRITER_ESTIMATED_PRETTY_RATIO + 64;
