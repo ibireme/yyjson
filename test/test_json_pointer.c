@@ -2840,27 +2840,6 @@ static void test_ptr_put(void) {
     });
 }
 
-static void test_ptr_ctx_after_duplicate_key_set(void) {
-    const char *json = "{\"a\":1,\"b\":2,\"a\":3}";
-    yyjson_doc *idoc = yyjson_read(json, strlen(json), 0);
-    yyjson_mut_doc *doc = yyjson_doc_mut_copy(idoc, NULL);
-    yyjson_ptr_ctx ctx;
-    yyjson_doc *copy;
-
-    yy_assert(yyjson_mut_doc_ptr_setx(doc, "/a", 2,
-                                     yyjson_mut_int(doc, 4), false,
-                                     &ctx, NULL));
-    yy_assert(yyjson_ptr_ctx_remove(&ctx));
-    assert_mut_doc_eq(doc, "{\"b\":2}");
-
-    copy = yyjson_mut_doc_imut_copy(doc, NULL);
-    assert_val_eq(yyjson_doc_get_root(copy), "{\"b\":2}");
-
-    yyjson_doc_free(copy);
-    yyjson_mut_doc_free(doc);
-    yyjson_doc_free(idoc);
-}
-
 // ctx.append, replace, remove
 static void test_ptr_ctx(void) {
     // ---------------------------------
@@ -3304,6 +3283,29 @@ static void test_ptr_ctx(void) {
         .ctn = "{\"a\":1,\"b\":2}",
         .err = 1,
     });
+
+    // ---------------------------------
+    // object context after replacing duplicate keys
+    {
+        const char *json = "{\"a\":1,\"b\":2,\"a\":3}";
+        yyjson_doc *idoc = yyjson_read(json, strlen(json), 0);
+        yyjson_mut_doc *doc = yyjson_doc_mut_copy(idoc, NULL);
+        yyjson_ptr_ctx ctx;
+        yyjson_doc *copy;
+
+        yy_assert(yyjson_mut_doc_ptr_setx(doc, "/a", 2,
+                                         yyjson_mut_int(doc, 4), false,
+                                         &ctx, NULL));
+        yy_assert(yyjson_ptr_ctx_remove(&ctx));
+        assert_mut_doc_eq(doc, "{\"b\":2}");
+
+        copy = yyjson_mut_doc_imut_copy(doc, NULL);
+        assert_val_eq(yyjson_doc_get_root(copy), "{\"b\":2}");
+
+        yyjson_doc_free(copy);
+        yyjson_mut_doc_free(doc);
+        yyjson_doc_free(idoc);
+    }
 }
 
 static void test_ptr_get_type(void) {
@@ -3372,7 +3374,6 @@ yy_test_case(test_json_pointer) {
     test_ptr_get();
     test_ptr_put();
     test_ptr_ctx();
-    test_ptr_ctx_after_duplicate_key_set();
     test_ptr_get_type();
 }
 
