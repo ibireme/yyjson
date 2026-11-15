@@ -5038,13 +5038,10 @@ yyjson_api yyjson_mut_val *yyjson_mut_merge_patch(yyjson_mut_doc *doc,
  * MARK: - Streaming JSON API
  *============================================================================*/
 
-/**
- Extra bytes added by `YYJSON_SR_POOL_SIZE` and `YYJSON_SW_POOL_SIZE`.
- */
+/** Extra bytes added by `YYJSON_SR_POOL_SIZE` and `YYJSON_SW_POOL_SIZE`. */
 #define YYJSON_STREAMING_POOL_SIZE_MIN ((size_t)256)
 
-/** A string view: a pointer and a length in bytes.
-    UTF-8 and null-termination are not required. */
+/** String view: a non-owning reference to a string. */
 typedef struct yyjson_sv {
     const char *ptr; /**< string pointer, may be NULL */
     size_t len;      /**< string length in bytes */
@@ -5080,21 +5077,22 @@ yyjson_api_inline bool yyjson_sv_equals_str(yyjson_sv sv, const char *str) {
  *============================================================================*/
 
 /**
- Returns the pool size for a streaming reader.
- Values of `val_len` bytes and `depth` levels fit. Anything larger may
- fail with `YYJSON_READ_ERROR_BUFFER_LIMIT`.
+ Returns the pool size for a streaming reader, for use with
+ `yyjson_alc_pool_init()`.
+
+ The pool is sufficient for values up to `val_len` bytes and nesting
+ up to `depth` levels. If either is exceeded, the pool may be too small.
 
  @warning The caller must ensure the sum fits in `size_t`.
  */
 #define YYJSON_SR_POOL_SIZE(val_len, depth) \
-    ((size_t)(val_len) + (size_t)(depth) + \
-     YYJSON_STREAMING_POOL_SIZE_MIN)
+    ((size_t)(val_len) + (size_t)(depth) + YYJSON_STREAMING_POOL_SIZE_MIN)
 
 /**
  Input callback for the streaming reader.
 
  @param ctx The user context.
- @param dst The output buffer to fill.
+ @param dst The output buffer to fill (nonnull).
  @param cap The maximum number of bytes to write.
  @return The number of bytes written.
     Returns `0` for EOF, or `((size_t)-1)` if an error occurs.
@@ -5104,44 +5102,39 @@ typedef size_t (*yyjson_sr_read_cb)(void *ctx, void *dst, size_t cap);
 /**
  Seek callback for the streaming reader.
 
- `pos` is a byte offset from the start of this reader's input, not
- necessarily byte 0 of an underlying file. The next read begins there.
-
  @param ctx The user context.
  @param pos The byte offset from the start of this reader's input.
+    The next read begins at this position.
  @return true on success, false if the position cannot be reached.
  */
 typedef bool (*yyjson_sr_seek_cb)(void *ctx, uint64_t pos);
 
 /**
- A streaming JSON reader. Only standard JSON is accepted.
-
- After the first error, later calls fail. Only a value that is read is
- fully validated.
+ A streaming JSON reader.
+ 
+ Reads JSON values one at a time without building a complete document.
+ Non-standard JSON features are not supported.
  */
 typedef struct yyjson_sr yyjson_sr;
 
 /**
  Streaming reader options.
- Pass NULL to use the defaults. Zero means the default for each field.
- The options are copied at init.
 
+ `flg` supports `YYJSON_READ_INSITU`, `YYJSON_READ_NUMBER_AS_RAW`,
+ `YYJSON_READ_BIGNUM_AS_RAW` and `YYJSON_READ_ALLOW_INVALID_UNICODE`.
  Flags for non-standard JSON are ignored.
- `YYJSON_READ_INSITU`, `YYJSON_READ_NUMBER_AS_RAW`,
- `YYJSON_READ_BIGNUM_AS_RAW` and `YYJSON_READ_ALLOW_INVALID_UNICODE`
- apply.
 
- `max_depth` and `max_val_len` are limits. Exceeding either is an error.
- `max_depth` defaults to `YYJSON_READER_DEPTH_LIMIT` if enabled, otherwise
- no limit. A larger value uses that limit. Skipped containers are not
- counted.
- `max_val_len` defaults to no limit. Strings and keys count decoded bytes;
- other values count source bytes.
- These limits are not memory limits. The default allocator may grow.
- A pool that is too small fails with `YYJSON_READ_ERROR_BUFFER_LIMIT`.
+ `max_depth` limits the nesting depth. Exceeding it is an error.
+ If `YYJSON_READER_DEPTH_LIMIT` is enabled, zero or a larger value uses
+ that limit. Otherwise, zero means no limit.
+ Skipped containers are not counted.
 
- `win_size` is the maximum bytes read at a time.
- 0 uses the default (currently 16 KiB).
+ `max_val_len` limits the length of a single value in bytes.
+ Exceeding it is an error. Zero means no limit.
+ Strings and keys count decoded bytes; other values count source bytes.
+
+ `win_size` is the maximum number of bytes requested from each read callback.
+ Zero uses the default (currently 16 KiB).
  */
 typedef struct yyjson_sr_opts {
     yyjson_read_flag flg; /**< JSON read flags, 0 by default */
@@ -5159,15 +5152,14 @@ typedef struct yyjson_sr_opts {
     If `src` is NULL, returns false.
     The `src` will not be modified without the flag `YYJSON_READ_INSITU`.
     With `YYJSON_READ_INSITU`, `src` and `YYJSON_PADDING_SIZE` bytes after
-    it must be writable. In-situ input cannot rewind; other memory input
-    can, see `yyjson_sr_obj_find_rewind()`.
+    it must be writable. In-situ input cannot rewind.
  @param len The length of JSON data in bytes.
     If using `YYJSON_READ_INSITU`, `len` should not include the padding size.
  @param opts The reader options. Pass NULL to use the defaults.
  @param alc The memory allocator used by JSON reader.
     Pass NULL to use the libc's default allocator.
  @return true if successful, false if an error occurs.
-    After init, call `yyjson_sr_free()`, whether init succeeded or failed.
+    When it is no longer used, call `yyjson_sr_free()` to free its memory.
  */
 yyjson_api bool yyjson_sr_init_mem(yyjson_sr *sr, char *src, size_t len,
                                    const yyjson_sr_opts *opts,
@@ -5181,14 +5173,12 @@ yyjson_api bool yyjson_sr_init_mem(yyjson_sr *sr, char *src, size_t len,
  @param read The input read callback.
     If `read` is NULL, returns false.
  @param seek The seek callback, or NULL if the input cannot rewind.
-    `yyjson_sr_obj_find_rewind()` needs it. Offsets start at this reader's
-    input.
  @param ctx The user context passed to `read` and `seek`.
  @param opts The reader options. Pass NULL to use the defaults.
  @param alc The memory allocator used by JSON reader.
     Pass NULL to use the libc's default allocator.
  @return true if successful, false if an error occurs.
-    After init, call `yyjson_sr_free()`, whether init succeeded or failed.
+    When it is no longer used, call `yyjson_sr_free()` to free its memory.
  */
 yyjson_api bool yyjson_sr_init_cb(yyjson_sr *sr, yyjson_sr_read_cb read,
                                   yyjson_sr_seek_cb seek, void *ctx,
@@ -5199,7 +5189,6 @@ yyjson_api bool yyjson_sr_init_cb(yyjson_sr *sr, yyjson_sr_read_cb read,
 
 /**
  Initialize a streaming reader from a file pointer.
-
  This function does not close the file.
 
  @param sr The streaming reader.
@@ -5207,15 +5196,15 @@ yyjson_api bool yyjson_sr_init_cb(yyjson_sr *sr, yyjson_sr_read_cb read,
  @param fp The file pointer.
     The data will be read from the current position of the FILE to the end.
     If `fp` is NULL or invalid, returns false.
-    For a pipe or socket, use `yyjson_sr_init_cb()`.
  @param opts The reader options. Pass NULL to use the defaults.
  @param alc The memory allocator used by JSON reader.
     Pass NULL to use the libc's default allocator.
  @return true if successful, false if an error occurs.
-    After init, call `yyjson_sr_free()`, whether init succeeded or failed.
+    When it is no longer used, call `yyjson_sr_free()` to free its memory.
 
- @warning A rewind past `LONG_MAX` fails with
-    `YYJSON_READ_ERROR_STREAMING_IO`.
+ @warning File seeking uses `ftell()` and `fseek()`.
+    Rewind is unavailable if the initial file position cannot be obtained.
+    Seek offsets from the start of the file must fit in `long`.
  */
 yyjson_api bool yyjson_sr_init_fp(yyjson_sr *sr, FILE *fp,
                                   const yyjson_sr_opts *opts,
@@ -5225,13 +5214,13 @@ yyjson_api bool yyjson_sr_init_fp(yyjson_sr *sr, FILE *fp,
 
 
 
-/** Release the streaming reader and free the memory.
+/** Release the streaming reader and free its memory.
     After calling this function, the reader is no longer available until the
-    next init. This function will do nothing if the `sr` is NULL. */
+    next init. This function does nothing if `sr` is NULL, initialization
+    failed, or the reader has already been freed. */
 yyjson_api void yyjson_sr_free(yyjson_sr *sr);
 
-/** Returns whether an error has occurred.
-    Returns true if `sr` is NULL. Does not validate or finish the document. */
+/** Returns whether an error has occurred. Returns true if `sr` is NULL. */
 yyjson_api_inline bool yyjson_sr_has_err(const yyjson_sr *sr);
 
 /**
@@ -5257,14 +5246,14 @@ yyjson_api_inline uint64_t yyjson_sr_pos(const yyjson_sr *sr);
 yyjson_api_inline size_t yyjson_sr_depth(const yyjson_sr *sr);
 
 /** Returns whether `yyjson_sr_obj_find_rewind()` can rewind this input.
-    In-situ input, a one-way callback, and a non-seekable file return
-    false. */
+    Returns false for in-situ input, input without a seek callback,
+    or a non-seekable file. */
 yyjson_api_inline bool yyjson_sr_can_rewind(const yyjson_sr *sr);
 
-/** Returns the type of the next value without consuming it.
-    The value is not validated.
-    Returns `YYJSON_TYPE_NONE` at the end, on error, or when the next byte
-    cannot start a value. This does not set an error. */
+/** Returns the type of the next value without consuming or validating it.
+    Returns `YYJSON_TYPE_NONE` at the end of input or on error.
+    An invalid starting byte also returns `YYJSON_TYPE_NONE` without
+    setting an error. */
 yyjson_api_inline yyjson_type yyjson_sr_peek_type(yyjson_sr *sr);
 
 /** Begins reading an array. This consumes the current value.
@@ -5273,10 +5262,10 @@ yyjson_api_inline bool yyjson_sr_arr_begin(yyjson_sr *sr);
 
 /**
  Moves to the next array element and makes it the current value.
+ An unconsumed previous element is skipped first.
 
- @return true if an element is available, false if the array ended or an
-    error occurs. An unconsumed previous element is skipped first.
-    After false with no error, call `yyjson_sr_arr_end()`.
+ @return true if an element is available, false if the array has ended
+    or an error occurs. When the array has ended, call `yyjson_sr_arr_end()`.
  */
 yyjson_api_inline bool yyjson_sr_arr_next(yyjson_sr *sr);
 
@@ -5299,13 +5288,14 @@ yyjson_api bool yyjson_sr_obj_begin_rewind(yyjson_sr *sr, uint64_t *start);
 
 /**
  Moves to the next object member and makes its value the current value.
+ An unconsumed previous value is skipped first.
 
  @param sr The streaming reader.
  @param key A pointer to receive the key on success.
     The key is unescaped and null-terminated, with the length in `key->len`.
- @return true if a member is available, false if the object ended or an
-    error occurs. An unconsumed previous value is skipped first.
-    After false with no error, call `yyjson_sr_obj_end()`.
+ @return true if a member is available, false if the object has ended
+    or an error occurs.
+    When the object has ended, call `yyjson_sr_obj_end()`.
  @note The key is valid until the next operation that advances or modifies
     the reader, including reading its value.
  */
@@ -5328,10 +5318,10 @@ yyjson_api_inline bool yyjson_sr_obj_find(yyjson_sr *sr, const char *key);
 yyjson_api_inline bool yyjson_sr_obj_findn(yyjson_sr *sr, const char *key,
                                            size_t key_len);
 
-/** Finds an object member by key.
-    If the key is not ahead, the input is read again from `start`.
-    Returns false if the key is not found or on error.
-    A miss does not set an error.
+/** Finds an object member by key and makes its value the current value.
+    If not found in the remaining members, searches again from `start`.
+    Returns false if the key is not found or an error occurs.
+    A missing key is not an error.
 
     `start` comes from `yyjson_sr_obj_begin_rewind()` for this object.
     Sets `YYJSON_READ_ERROR_INVALID_PARAMETER` if the input cannot rewind,
@@ -5339,19 +5329,16 @@ yyjson_api_inline bool yyjson_sr_obj_findn(yyjson_sr *sr, const char *key,
 
     The `key` should be a null-terminated UTF-8 string.
 
-    @warning `start` must be the offset just after this object's `{`.
     @warning Non-matching values are skipped, see `yyjson_sr_skip_val()`. */
 yyjson_api_inline bool yyjson_sr_obj_find_rewind(yyjson_sr *sr,
                                                  const char *key,
                                                  uint64_t start);
 
-/** Finds an object member by key, rewinding on a forward miss.
+/** Finds an object member by key.
     See `yyjson_sr_obj_find_rewind()`.
 
     The `key` should be a UTF-8 string, null-terminator is not required.
-    The `key_len` should be the length of the key, in bytes.
-
-    @warning `start` must be the offset just after this object's `{`. */
+    The `key_len` should be the length of the key, in bytes. */
 yyjson_api bool yyjson_sr_obj_find_rewindn(yyjson_sr *sr, const char *key,
                                            size_t key_len, uint64_t start);
 
@@ -5380,8 +5367,8 @@ yyjson_api_inline uint64_t yyjson_sr_read_uint(yyjson_sr *sr);
 yyjson_api_inline int64_t yyjson_sr_read_sint(yyjson_sr *sr);
 
 /** Returns the current number as double.
-    Any number is accepted, an integer or not, and rounded to the nearest
-    double. A number that overflows to infinity is an error.
+    Accepts both integers and floating-point numbers.
+    A number that overflows to infinity is an error.
     Returns 0.0 on error. */
 yyjson_api_inline double yyjson_sr_read_real(yyjson_sr *sr);
 
@@ -5401,16 +5388,17 @@ yyjson_api_inline bool yyjson_sr_read_null(yyjson_sr *sr);
     @warning The text is not validated, see `yyjson_sr_skip_val()`. */
 yyjson_api yyjson_sv yyjson_sr_read_raw(yyjson_sr *sr);
 
-/** Returns the current number as a standalone `yyjson_val`.
-    The result may be RAW when a number-as-raw flag is enabled. RAW data is
-    valid until the next operation that advances or modifies the reader.
+/** Returns the current number as a `yyjson_val`.
+    The result may be a raw value when a number-as-raw flag is enabled.
+    The raw data is valid until the next operation that advances or modifies
+    the reader.
     Returns type `YYJSON_TYPE_NONE` on error. */
 yyjson_api_inline yyjson_val yyjson_sr_read_num(yyjson_sr *sr);
 
-/** Returns the current scalar as a standalone `yyjson_val`.
-    Arrays and objects are rejected. A string or RAW number is valid only until
-    the next operation that advances or modifies the reader. Returns type
-    `YYJSON_TYPE_NONE` on error. */
+/** Returns the current scalar as a `yyjson_val`.
+    Arrays and objects are rejected. String and raw number data are valid only
+    until the next operation that advances or modifies the reader.
+    Returns type `YYJSON_TYPE_NONE` on error. */
 yyjson_api_inline yyjson_val yyjson_sr_read_scalar(yyjson_sr *sr);
 
 /** Skips the current value.
@@ -5490,9 +5478,12 @@ yyjson_api bool yyjson_sr_doc_next(yyjson_sr *sr);
  *============================================================================*/
 
 /**
- Returns the pool size for a streaming writer.
- A callback window of `win_size` bytes and `depth` levels fit.
- This does not size the buffer for `yyjson_sw_init_mem()`.
+ Returns the pool size for a streaming writer, for use with
+ `yyjson_alc_pool_init()`.
+
+ The pool is sufficient for an output window of `win_size` bytes and
+ nesting up to `depth` levels. Longer values are written in chunks.
+ If the depth is exceeded, the pool may be too small.
 
  @warning The caller must ensure the sum fits in `size_t`.
  */
@@ -5503,38 +5494,36 @@ yyjson_api bool yyjson_sr_doc_next(yyjson_sr *sr);
  Output callback for the streaming writer.
 
  @param ctx The user context.
- @param src The bytes to write.
+ @param src The bytes to write (nonnull).
  @param len The number of bytes, at most the current window size.
-    A chunk may be smaller.
  @return true if successful, false if an error occurs.
  */
 typedef bool (*yyjson_sw_write_cb)(void *ctx, const void *src, size_t len);
 
 /**
- A streaming JSON writer. Only standard JSON is written.
-
- After the first error, later calls fail.
+ A streaming JSON writer.
+ 
+ Writes JSON values one at a time without building a complete document.
+ Non-standard JSON features are not supported.
  */
 typedef struct yyjson_sw yyjson_sw;
 
 /**
  Streaming writer options.
- Pass NULL to use the defaults. Zero means the default for each field.
- The options are copied at init.
 
+ `flg` specifies the JSON write flags.
  Flags for non-standard JSON are ignored.
- NaN and Infinity are an error, or `null` with
- `YYJSON_WRITE_INF_AND_NAN_AS_NULL`.
+ NaN and Infinity cause an error unless
+ `YYJSON_WRITE_INF_AND_NAN_AS_NULL` is set, in which case they are
+ written as `null`.
 
- `max_depth` is a limit. Exceeding it is an error.
- It defaults to `YYJSON_WRITER_DEPTH_LIMIT` if enabled, otherwise no limit.
- A larger value uses that limit.
- This limit is not a memory limit. The default allocator may grow.
- A pool that is too small fails with `YYJSON_WRITE_ERROR_BUFFER_LIMIT`.
+ `max_depth` limits the nesting depth. Exceeding it is an error.
+ If `YYJSON_WRITER_DEPTH_LIMIT` is enabled, zero or a larger value uses
+ that limit. Otherwise, zero means no limit.
 
- `win_size` is the maximum bytes passed to one write callback.
- 0 uses the default (currently 16 KiB). A nonzero value must be at least 5.
- Memory output ignores `win_size`.
+ `win_size` is the maximum number of bytes passed to each write callback.
+ Zero uses the default (currently 16 KiB); other values must be at least 5.
+ This option is ignored when writing to memory.
  */
 typedef struct yyjson_sw_opts {
     yyjson_write_flag flg; /**< JSON write flags, 0 by default */
@@ -5557,13 +5546,13 @@ typedef struct yyjson_sw_opts {
     If `dst_cap` is 0, returns false.
  @param opts The writer options. Pass NULL to use the defaults.
  @return true if successful, false if an error occurs.
-    After init, call `yyjson_sw_free()`, whether init succeeded or failed.
+    When it is no longer used, call `yyjson_sw_free()` to free its memory.
  */
 yyjson_api bool yyjson_sw_init_mem(yyjson_sw *sw, void *dst, size_t dst_cap,
                                    const yyjson_sw_opts *opts);
 
 /**
- Initialize a streaming writer from a callback.
+ Initialize a streaming writer with an output callback.
 
  @param sw The streaming writer.
     If `sw` is NULL, returns false.
@@ -5574,7 +5563,7 @@ yyjson_api bool yyjson_sw_init_mem(yyjson_sw *sw, void *dst, size_t dst_cap,
  @param alc The memory allocator used by JSON writer.
     Pass NULL to use the libc's default allocator.
  @return true if successful, false if an error occurs.
-    After init, call `yyjson_sw_free()`, whether init succeeded or failed.
+    When it is no longer used, call `yyjson_sw_free()` to free its memory.
  */
 yyjson_api bool yyjson_sw_init_cb(yyjson_sw *sw,
                                   yyjson_sw_write_cb write, void *ctx,
@@ -5597,7 +5586,7 @@ yyjson_api bool yyjson_sw_init_cb(yyjson_sw *sw,
  @param alc The memory allocator used by JSON writer.
     Pass NULL to use the libc's default allocator.
  @return true if successful, false if an error occurs.
-    After init, call `yyjson_sw_free()`, whether init succeeded or failed.
+    When it is no longer used, call `yyjson_sw_free()` to free its memory.
  */
 yyjson_api bool yyjson_sw_init_fp(yyjson_sw *sw, FILE *fp,
                                   const yyjson_sw_opts *opts,
@@ -5607,13 +5596,13 @@ yyjson_api bool yyjson_sw_init_fp(yyjson_sw *sw, FILE *fp,
 
 
 
-/** Release the streaming writer and free the memory.
+/** Release the streaming writer and free its memory.
     After calling this function, the writer is no longer available until the
-    next init. This function will do nothing if the `sw` is NULL. */
+    next init. This function does nothing if `sw` is NULL, initialization
+    failed, or the writer has already been freed. */
 yyjson_api void yyjson_sw_free(yyjson_sw *sw);
 
-/** Returns whether an error has occurred.
-    Returns true if `sw` is NULL. Does not validate or finish the document. */
+/** Returns whether an error has occurred. Returns true if `sw` is NULL. */
 yyjson_api_inline bool yyjson_sw_has_err(const yyjson_sw *sw);
 
 /**
@@ -5628,7 +5617,7 @@ yyjson_api_inline bool yyjson_sw_has_err(const yyjson_sw *sw);
 yyjson_api_inline yyjson_write_code yyjson_sw_get_err(const yyjson_sw *sw,
                                                       yyjson_write_err *err);
 
-/** Returns the total number of bytes written.
+/** Returns the total number of bytes written, including buffered output.
     Returns 0 if `sw` is NULL. */
 yyjson_api_inline uint64_t yyjson_sw_len(const yyjson_sw *sw);
 
@@ -5720,17 +5709,19 @@ yyjson_api_inline bool yyjson_sw_write_raw(yyjson_sw *sw, const char *raw) {
 
 
 /** Flushes buffered bytes to the callback.
-    This function is a no-op in memory mode.
+    This function does nothing when writing to memory.
     Returns false if an error occurs. */
 yyjson_api bool yyjson_sw_flush(yyjson_sw *sw);
 
-/** Finishes the final root value.
-    All containers must be closed. May append a newline and flush.
+/** Finishes writing the document and flushes buffered output.
+    All containers must be closed.
+    Appends a newline if `YYJSON_WRITE_NEWLINE_AT_END` is set.
     Returns false if an error occurs. */
 yyjson_api bool yyjson_sw_finish(yyjson_sw *sw);
 
-/** Starts another root after a complete value (NDJSON).
-    Another root must be written before finish.
+/** Writes a newline and prepares to write the next root value.
+    The current root must be complete.
+    Another root must be written before calling `yyjson_sw_finish()`.
     Returns false if an error occurs. */
 yyjson_api bool yyjson_sw_doc_next(yyjson_sw *sw);
 
