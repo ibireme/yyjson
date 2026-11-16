@@ -535,6 +535,38 @@ static void test_json_whitespace(void) {
 
 
     // ---------------------------------
+    // multi-byte whitespace before object keys
+    validate_whitespace
+    (
+     "{\xC2\xA0\"a\":1,\xE2\x80\xA8\"b\":2}",
+     "{\"a\":1,\"b\":2}", YYJSON_READ_ALLOW_EXT_WHITESPACE);
+    validate_whitespace
+    (
+     "{\xC2\xA0\"a\":1,\xE2\x80\xA8\"b\":2}",
+     "{\"a\":1,\"b\":2}", YYJSON_READ_JSON5);
+    validate_whitespace
+    (
+     "{\xC2\xA0" "a:1,\xE3\x80\x80" "b:2\xEF\xBB\xBF}",
+     "{\"a\":1,\"b\":2}", YYJSON_READ_JSON5);
+    validate_whitespace
+    (
+     "{\xE2\x80\xA8}",
+     "{}", YYJSON_READ_JSON5);
+    validate_whitespace
+    (
+     "{\"a\":1,\xC2\xA0}",
+     "{\"a\":1}", YYJSON_READ_JSON5);
+    validate_whitespace
+    (
+     "{\xC2\xA0:1}",
+     NULL, YYJSON_READ_JSON5);
+    validate_whitespace
+    (
+     "{\xC2\xA0" "a:1}",
+     "{\"\xC2\xA0" "a\":1}", YYJSON_READ_ALLOW_UNQUOTED_KEY);
+
+
+    // ---------------------------------
     // BOM head
     validate_whitespace
     (
