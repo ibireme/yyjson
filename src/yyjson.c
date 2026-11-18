@@ -5691,15 +5691,17 @@ obj_key_begin:
         if (likely(read_str_sq(&cur, eof, flg, val, &msg))) goto obj_key_end;
         goto fail_string;
     }
+    /* skip trivia before reading an unquoted key: the lead byte of a
+       non-ASCII whitespace (e.g. U+00A0) is also an identifier start */
+    if (has_allow(TRIVIA) && char_is_trivia(*cur)) {
+        if (skip_trivia(&cur, eof, flg)) goto obj_key_begin;
+        if (cur == eof) goto fail_comment;
+    }
     if (has_allow(UNQUOTED_KEY) && char_is_id_start(*cur)) {
         val_incr();
         ctn_len++;
         if (read_str_id(&cur, eof, flg, pre, val, &msg)) goto obj_key_end;
         goto fail_string;
-    }
-    if (has_allow(TRIVIA) && char_is_trivia(*cur)) {
-        if (skip_trivia(&cur, eof, flg)) goto obj_key_begin;
-        if (cur == eof) goto fail_comment;
     }
     goto fail_character_obj_key;
 
@@ -6151,15 +6153,17 @@ obj_key_begin:
         if (likely(read_str_sq(&cur, eof, flg, val, &msg))) goto obj_key_end;
         goto fail_string;
     }
+    /* skip trivia before reading an unquoted key: the lead byte of a
+       non-ASCII whitespace (e.g. U+00A0) is also an identifier start */
+    if (has_allow(TRIVIA) && char_is_trivia(*cur)) {
+        if (skip_trivia(&cur, eof, flg)) goto obj_key_begin;
+        if (cur == eof) goto fail_comment;
+    }
     if (has_allow(UNQUOTED_KEY) && char_is_id_start(*cur)) {
         val_incr();
         ctn_len++;
         if (read_str_id(&cur, eof, flg, pre, val, &msg)) goto obj_key_end;
         goto fail_string;
-    }
-    if (has_allow(TRIVIA) && char_is_trivia(*cur)) {
-        if (skip_trivia(&cur, eof, flg)) goto obj_key_begin;
-        if (cur == eof) goto fail_comment;
     }
     goto fail_character_obj_key;
 
