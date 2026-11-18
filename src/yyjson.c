@@ -5055,7 +5055,8 @@ copy_escape:
         if (con) con[0] = con[1] = NULL;
         return true;
     } else {
-        if (!has_allow(INVALID_UNICODE)) {
+        if (!has_allow(INVALID_UNICODE) &&
+            (!has_allow(UNESCAPED_CTRL) || char_is_eol(*src))) {
             return_err(src, "unexpected control character in string");
         }
         if (src >= eof) return_err(src, "unclosed string");

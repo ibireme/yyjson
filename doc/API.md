@@ -491,6 +491,10 @@ Allow object keys without quotes (non-standard), such as `{a:1,b:2}`.
 This extends the ECMAScript IdentifierName rule by allowing any
 non-whitespace character with code point above `U+007F`.
 
+### **YYJSON_READ_ALLOW_UNESCAPED_CTRL**
+Allow unescaped control characters `U+0000` to `U+001F` in strings,
+except for LF and CR (non-standard).
+
 ### **YYJSON_READ_JSON5**
 Allow JSON5 format, see: https://json5.org.
 

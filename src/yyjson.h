@@ -893,6 +893,10 @@ static const yyjson_read_flag YYJSON_READ_ALLOW_SINGLE_QUOTED_STR   = 1 << 12;
     non-whitespace character with code point above `U+007F`. */
 static const yyjson_read_flag YYJSON_READ_ALLOW_UNQUOTED_KEY        = 1 << 13;
 
+/** Allow unescaped control characters U+0000 to U+001F in strings,
+    except for LF and CR (non-standard). */
+static const yyjson_read_flag YYJSON_READ_ALLOW_UNESCAPED_CTRL      = 1 << 14;
+
 /** Allow JSON5 format, see: [https://json5.org].
     This flag supports all JSON5 features with some additional extensions:
     - Accepts more escape sequences than JSON5 (e.g. `\a`, `\e`).
@@ -906,7 +910,8 @@ static const yyjson_read_flag YYJSON_READ_JSON5 =
     (1 << 10) | /* YYJSON_READ_ALLOW_EXT_ESCAPE */
     (1 << 11) | /* YYJSON_READ_ALLOW_EXT_WHITESPACE */
     (1 << 12) | /* YYJSON_READ_ALLOW_SINGLE_QUOTED_STR */
-    (1 << 13);  /* YYJSON_READ_ALLOW_UNQUOTED_KEY */
+    (1 << 13) | /* YYJSON_READ_ALLOW_UNQUOTED_KEY */
+    (1 << 14);  /* YYJSON_READ_ALLOW_UNESCAPED_CTRL */
 
 
 

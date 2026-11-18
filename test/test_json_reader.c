@@ -29,6 +29,7 @@ static const yyjson_read_flag ALL_FLAGS[] = {
     1 << 11, // YYJSON_READ_ALLOW_EXT_WHITESPACE
     1 << 12, // YYJSON_READ_ALLOW_SINGLE_QUOTED_STR
     1 << 13, // YYJSON_READ_ALLOW_UNQUOTED_KEY
+    1 << 14, // YYJSON_READ_ALLOW_UNESCAPED_CTRL
 };
 
 
@@ -240,10 +241,11 @@ static void test_json_yyjson(void) {
         bool has_ext_ws     = yy_str_contains(name, "(ext_ws)");
         bool has_str_sq     = yy_str_contains(name, "(str_sq)");
         bool has_str_uq     = yy_str_contains(name, "(str_uq)");
+        bool has_ctrl       = yy_str_contains(name, "(ctrl)");
         bool has_non_std = (has_bighex | has_comma | has_comment |
                             has_inf | has_nan | has_str_err | has_bom |
                             has_ext_num | has_ext_esc |
-                            has_ext_ws | has_str_sq | has_str_uq);
+                            has_ext_ws | has_str_sq | has_str_uq | has_ctrl);
 
         // test all flag combination
         u32 flg_num = (u32)yy_nelems(ALL_FLAGS);
@@ -276,6 +278,8 @@ static void test_json_yyjson(void) {
             pass &= !has_ext_ws     || (flg & (YYJSON_READ_ALLOW_EXT_WHITESPACE));
             pass &= !has_str_sq     || (flg & (YYJSON_READ_ALLOW_SINGLE_QUOTED_STR));
             pass &= !has_str_uq     || (flg & (YYJSON_READ_ALLOW_UNQUOTED_KEY));
+            pass &= !has_ctrl       || (flg & (YYJSON_READ_ALLOW_UNESCAPED_CTRL |
+                                               YYJSON_READ_ALLOW_INVALID_UNICODE));
 #if YYJSON_DISABLE_NON_STANDARD
             pass &= !has_non_std;
             pass &= !has_bignum     || (flg & (YYJSON_READ_BIGNUM_AS_RAW |

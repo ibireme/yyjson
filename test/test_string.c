@@ -1074,6 +1074,37 @@ static void test_extended_escape(void) {
 
 
 /*==============================================================================
+ * MARK: - Unescaped Control Characters
+ *============================================================================*/
+
+static void test_unescaped_ctrl(void) {
+#if !YYJSON_DISABLE_READER && !YYJSON_DISABLE_NON_STANDARD
+    for (int c = 0; c < 0x20; c++) {
+        char buf[] = { 'a', (char)c, 'b', '\0' };
+        string_set set = { { buf, 3 }, { buf, 3 } };
+        if (c == '\n' || c == '\r') set.esc_non.str = NULL;
+        validate_str_esc('"', set, YYJSON_READ_ALLOW_UNESCAPED_CTRL);
+        validate_str_esc('\'', set, YYJSON_READ_JSON5);
+        set.esc_non.str = NULL;
+        validate_str_esc('"', set, 0);
+    }
+
+    yy_assert(!yyjson_read("\"\0", 2, YYJSON_READ_ALLOW_UNESCAPED_CTRL));
+
+#if !YYJSON_DISABLE_WRITER
+    const char str[] = "{\"\ta\":\"b\0\"}";
+    yyjson_doc *doc = yyjson_read(str, sizeof(str) - 1, YYJSON_READ_JSON5);
+    char *ret = yyjson_write(doc, 0, NULL);
+    yy_assert(ret && strcmp(ret, "{\"\\ta\":\"b\\u0000\"}") == 0);
+    free(ret);
+    yyjson_doc_free(doc);
+#endif
+#endif
+}
+
+
+
+/*==============================================================================
  * MARK: - Single-quoted String
  *============================================================================*/
 
@@ -1488,6 +1519,7 @@ static void test_invalid_unicode_write(void) {
 yy_test_case(test_string) {
     test_read_write();
     test_extended_escape();
+    test_unescaped_ctrl();
     test_single_quoted_string();
     test_unquoted_key();
     test_invalid_unicode_write();
