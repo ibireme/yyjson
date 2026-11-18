@@ -3420,9 +3420,10 @@ static_noinline bool read_num_hex(u8 **ptr, u8 **pre, yyjson_read_flag flg,
     u64 sig = 0, i = 0;
     bool sign;
 
-    /* skip sign and '0x' */
+    /* skip sign, '0x' and leading zeros */
     sign = (*cur == '-');
     cur += (*cur == '-' || *cur == '+') + 2;
+    while (*cur == '0' && char_is_hex(cur[1])) cur++;
 
     /* read hex */
     for(; i < 16; i++) {
@@ -4032,14 +4033,9 @@ static_inline bool read_num(u8 **ptr, u8 **pre, yyjson_read_flag flg,
 leading_dot:
             dot_pos = cur++;
             if (unlikely(!char_is_digit(*cur))) {
-                if (has_allow(EXT_NUMBER)) {
-                    if (char_is_exp(*cur)) {
-                        goto digi_exp_more;
-                    } else {
-                        return_f64_bin(0);
-                    }
+                if (!has_allow(EXT_NUMBER)) {
+                    return_err(cur, "no digit after decimal point");
                 }
-                return_err(cur, "no digit after decimal point");
             }
             while (unlikely(*cur == '0')) cur++;
             if (likely(char_is_digit(*cur))) {
@@ -4185,13 +4181,13 @@ digi_frac_more:
     exp_sig = (i64)(dot_pos - sig_cut);
     exp_sig += (dot_pos < sig_cut);
 
-    /* ignore trailing zeros */
+    /* ignore trailing zeros and decimal point */
     tmp = cur - 1;
     while ((*tmp == '0' || *tmp == '.') && tmp > hdr) tmp--;
     if (tmp < sig_cut) {
         sig_cut = NULL;
     } else {
-        sig_end = cur;
+        sig_end = tmp + 1;
     }
 
     if (char_is_exp(*cur)) goto digi_exp_more;

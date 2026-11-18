@@ -303,12 +303,12 @@ static yy_inline bool check_int_overflow(const char *str, num_type type) {
 
     bool neg = (*str == '-');
     str += char_is_sign(*str);
-    usize str_len = strlen(str);
 
     if (str[0] == '0' && char_is_x(str[1])) {
         // hex integer
-        str_len -= 2;
         str += 2;
+        while (*str == '0') str++;
+        usize str_len = strlen(str);
         if (str_len < 16) return false;
         if (str_len > 16) return true;
         if (neg) {
@@ -318,6 +318,7 @@ static yy_inline bool check_int_overflow(const char *str, num_type type) {
         }
     } else {
         // standard integer
+        usize str_len = strlen(str);
         if (str_len < 19) return false;
         const char *max = neg ? "9223372036854775808" : "18446744073709551615";
         usize max_len = strlen(max);
