@@ -74,28 +74,51 @@ static yy_inline bool f64_isfinite(double x) {
 #endif
 }
 
-/// Current locale decimal point.
-static char locale_decimal_point = '.';
+/// Current locale decimal point (may be multi-byte).
+static char locale_decimal_point[8] = ".";
+static usize locale_decimal_point_len = 1;
 
 /// Update locale decimal point.
 static void update_locale_decimal_point(void) {
     struct lconv *conv = localeconv();
-    char c = conv->decimal_point[0];
-    yy_assertf(c && conv->decimal_point[1] == '\0',
+    usize len = strlen(conv->decimal_point);
+    yy_assertf(len > 0 && len < sizeof(locale_decimal_point),
                "locale decimal point is invalid: %s\n", conv->decimal_point);
-    locale_decimal_point = c;
+    memcpy(locale_decimal_point, conv->decimal_point, len + 1);
+    locale_decimal_point_len = len;
 }
 
-/// Replace decimal point to current locale.
-static void decimal_point_to_locale(char *buf) {
-    char *ptr = strchr(buf, '.');
-    if (ptr) *ptr = locale_decimal_point;
+/// Whether the current locale decimal point is not '.'.
+static bool has_locale_decimal_point(void) {
+    return strcmp(locale_decimal_point, ".") != 0;
+}
+
+/// Copy the string and replace decimal point to current locale.
+/// Returns the position of the decimal point, or NULL if not found.
+static char *decimal_point_to_locale(const char *str, char **dup) {
+    usize len = strlen(str), pnt_len = locale_decimal_point_len;
+    char *ptr = strchr(str, '.');
+    *dup = (char *)malloc(len + pnt_len);
+    if (!ptr) {
+        memcpy(*dup, str, len + 1);
+        return NULL;
+    }
+    usize pos = (usize)(ptr - str);
+    memcpy(*dup, str, pos);
+    memcpy(*dup + pos, locale_decimal_point, pnt_len);
+    memcpy(*dup + pos + pnt_len, ptr + 1, len - pos);
+    return *dup + pos;
 }
 
 /// Reset decimal point to default minimal "C" locale.
-static void decimal_point_to_std(char *buf) {
-    char *ptr = strchr(buf, locale_decimal_point);
-    if (ptr) *ptr = '.';
+/// Returns the new string length.
+static usize decimal_point_to_std(char *buf, usize len) {
+    usize pnt_len = locale_decimal_point_len;
+    char *ptr = strstr(buf, locale_decimal_point);
+    if (!ptr) return len;
+    *ptr = '.';
+    memmove(ptr + 1, ptr + pnt_len, len - (usize)(ptr - buf) - pnt_len + 1);
+    return len - (pnt_len - 1);
 }
 
 
@@ -106,31 +129,31 @@ static void decimal_point_to_std(char *buf) {
 
 /// Read float from string (libc).
 static usize libc_f32_read(const char *str, f32 *val) {
-    bool has_locale = (locale_decimal_point != '.');
-    if (has_locale) {
-        char *dup = yy_str_copy(str);
-        decimal_point_to_locale(dup);
+    char *dup = NULL, *dot = NULL, *end = NULL;
+    usize len;
+    if (has_locale_decimal_point()) {
+        dot = decimal_point_to_locale(str, &dup);
         str = dup;
     }
-    char *end = NULL;
     *val = strtof(str, &end);
-    usize len = end ? (end - str) : 0;
-    if (has_locale) free((void *)str);
+    len = end ? (usize)(end - str) : 0;
+    if (dot && end > dot) len -= locale_decimal_point_len - 1;
+    free(dup);
     return len;
 }
 
 /// Read double from string (libc).
 static usize libc_f64_read(const char *str, f64 *val) {
-    bool has_locale = (locale_decimal_point != '.');
-    if (has_locale) {
-        char *dup = yy_str_copy(str);
-        decimal_point_to_locale(dup);
+    char *dup = NULL, *dot = NULL, *end = NULL;
+    usize len;
+    if (has_locale_decimal_point()) {
+        dot = decimal_point_to_locale(str, &dup);
         str = dup;
     }
-    char *end = NULL;
     *val = strtod(str, &end);
-    usize len = end ? (end - str) : 0;
-    if (has_locale) free((void *)str);
+    len = end ? (usize)(end - str) : 0;
+    if (dot && end > dot) len -= locale_decimal_point_len - 1;
+    free(dup);
     return len;
 }
 
@@ -139,8 +162,8 @@ static usize libc_f32_write(f32 val, char *buf, usize len) {
     if (f64_isinf(val)) return snprintf(buf, len, (val > 0) ? "Infinity" : "-Infinity");
     if (f64_isnan(val)) return snprintf(buf, len, "NaN");
     int out_len = snprintf(buf, len, "%.*g", FLT_DECIMAL_DIG, val);
-    if (locale_decimal_point != '.') decimal_point_to_std(buf);
-    return (out_len >= (int)len) ? 0 : out_len;
+    if (out_len < 0 || out_len >= (int)len) return 0;
+    return decimal_point_to_std(buf, (usize)out_len);
 }
 
 /// Write double to string shortest (libc).
@@ -148,8 +171,8 @@ static usize libc_f64_write(f64 val, char *buf, usize len) {
     if (f64_isinf(val)) return snprintf(buf, len, (val > 0) ? "Infinity" : "-Infinity");
     if (f64_isnan(val)) return snprintf(buf, len, "NaN");
     int out_len = snprintf(buf, len, "%.*g", DBL_DECIMAL_DIG, val);
-    if (locale_decimal_point != '.') decimal_point_to_std(buf);
-    return (out_len >= (int)len) ? 0 : out_len;
+    if (out_len < 0 || out_len >= (int)len) return 0;
+    return decimal_point_to_std(buf, (usize)out_len);
 }
 
 /// Write double to string with fixed-point notation (libc).
@@ -157,8 +180,8 @@ static usize libc_f64_write_fixed(f64 val, int prec, char *buf, usize len) {
     if (f64_isinf(val)) return snprintf(buf, len, (val > 0) ? "Infinity" : "-Infinity");
     if (f64_isnan(val)) return snprintf(buf, len, "NaN");
     int out_len = snprintf(buf, len, "%.*f", prec, val);
-    if (locale_decimal_point != '.') decimal_point_to_std(buf);
-    return (out_len >= (int)len) ? 0 : out_len;
+    if (out_len < 0 || out_len >= (int)len) return 0;
+    return decimal_point_to_std(buf, (usize)out_len);
 }
 
 
@@ -1684,15 +1707,18 @@ static void test_number_extra(void) {
 }
 
 yy_test_case(test_number) {
-    /// change locale (decimal point is ',')
-    setlocale(LC_ALL, "fr_FR");
-    update_locale_decimal_point();
-    test_number_locale();
-
-    /// reset locale (decimal point is '.')
-    setlocale(LC_ALL, "C");
-    update_locale_decimal_point();
-    test_number_locale();
+    /// test with different locales (skip if not available)
+    const char *locales[] = {
+        "ps_AF.UTF-8",  /// decimal point is U+066B (Linux)
+        "fa_IR.UTF-8",  /// decimal point is U+066B (macOS), '.' (Linux)
+        "fr_FR",        /// decimal point is ','
+        "C",            /// decimal point is '.', reset to default
+    };
+    for (usize i = 0; i < yy_nelems(locales); i++) {
+        if (!setlocale(LC_ALL, locales[i])) continue;
+        update_locale_decimal_point();
+        test_number_locale();
+    }
 
     /// test some extra numbers
     test_number_extra();

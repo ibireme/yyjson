@@ -2102,6 +2102,31 @@ static_inline void u128_mul_add(u64 a, u64 b, u64 c, u64 *hi, u64 *lo) {
 #endif
 }
 
+#if YYJSON_DISABLE_FAST_FP_CONV
+
+#if YYJSON_MSC_VER >= 1400
+#define snprintf_num(buf, len, fmt, dig, val) \
+    sprintf_s((char *)buf, len, fmt, dig, val)
+#elif defined(snprintf) || (YYJSON_STDC_VER >= 199901L)
+#define snprintf_num(buf, len, fmt, dig, val) \
+    snprintf((char *)buf, len, fmt, dig, val)
+#else
+#define snprintf_num(buf, len, fmt, dig, val) \
+    sprintf((char *)buf, fmt, dig, val)
+#endif
+
+/** Get the 2-byte decimal point of the current locale, such as U+066B in
+    "ps_AF.UTF-8". Returns false if the decimal point is not 2 bytes. */
+static_inline bool fp_locale_point(u8 *point) {
+    u8 buf[16];
+    int len = snprintf_num(buf, sizeof(buf), "%.*f", 1, 1.0); /* "1.0" */
+    if (len != 4) return false;
+    byte_copy_2(point, buf + 1);
+    return true;
+}
+
+#endif
+
 
 
 /*==============================================================================
@@ -4614,6 +4639,7 @@ static_inline bool read_num(u8 **ptr, u8 **pre, yyjson_read_flag flg,
     u8 **end = ptr;
     u8 *dot = NULL;
     u8 *f64_end = NULL;
+    u8 tmp[2], point[2];
     bool sign;
 
     /* read number as raw string if has `YYJSON_READ_NUMBER_AS_RAW` flag */
@@ -4729,25 +4755,37 @@ read_double:
      Note that the decimal point character used by strtod() is locale-dependent,
      and the rounding direction may affected by fesetround().
 
-     For currently known locales, (en, zh, ja, ko, am, he, hi) use '.' as the
-     decimal point, while other locales use ',' as the decimal point.
+     Most locales use '.' or ',' as the decimal point, while a few locales use
+     a 2-byte character, such as "\xD9\xAB" (U+066B) in "ps_AF.UTF-8".
 
-     Here strtod() is called twice for different locales, but if another thread
-     happens calls setlocale() between two strtod(), parsing may still fail.
+     Here we try '.' and ',' first, then get the decimal point of the current
+     locale. If another thread happens calls setlocale() during this period,
+     parsing may still fail.
      */
+    byte_copy_2(tmp, cur);
+    *cur = '\0'; /* cut the number, the next ',' may be read as decimal point */
     val->uni.f64 = strtod((const char *)hdr, (char **)&f64_end);
-    if (unlikely(f64_end != cur)) {
-        /* replace '.' with ',' for locale */
-        bool cut = (*cur == ',');
-        if (cut) *cur = ' ';
-        if (dot) *dot = ',';
+    if (unlikely(f64_end != cur) && dot) {
+        /* replace '.' with ',' */
+        *dot = ',';
         val->uni.f64 = strtod((const char *)hdr, (char **)&f64_end);
-        /* restore ',' to '.' */
-        if (cut) *cur = ',';
-        if (dot) *dot = '.';
-        if (unlikely(f64_end != cur)) {
-            return_err(hdr, "strtod() failed to parse the number");
+        *dot = '.';
+        if (f64_end != cur && fp_locale_point(point)) {
+            /* replace '.' with the 2-byte decimal point, the fraction part is
+               shifted right by 1 byte (the input has padding after number) */
+            usize len = (usize)(cur - dot - 1);
+            memmove(dot + 2, dot + 1, len);
+            byte_copy_2(dot, point);
+            cur[1] = '\0';
+            val->uni.f64 = strtod((const char *)hdr, (char **)&f64_end);
+            if (f64_end == cur + 1) f64_end = cur;
+            memmove(dot + 1, dot + 2, len);
+            *dot = '.';
         }
+    }
+    byte_copy_2(cur, tmp);
+    if (unlikely(f64_end != cur)) {
+        return_err(hdr, "strtod() failed to parse the number");
     }
     if (unlikely(f64_is_inf(val->uni.f64))) {
         return_inf();
@@ -6595,27 +6633,26 @@ const char *yyjson_read_number(const char *dat,
 #if YYJSON_DISABLE_FAST_FP_CONV
     if (!alc) alc = &YYJSON_DEFAULT_ALC;
     dat_len = strlen(dat);
-    if (dat_len < sizeof(buf)) {
-        memcpy(buf, dat, dat_len + 1);
+    if (dat_len + YYJSON_PADDING_SIZE <= sizeof(buf)) {
         hdr = buf;
         cur = hdr;
     } else {
-        hdr = (u8 *)alc->malloc(alc->ctx, dat_len + 1);
+        hdr = (u8 *)alc->malloc(alc->ctx, dat_len + YYJSON_PADDING_SIZE);
         cur = hdr;
         if (unlikely(!hdr)) {
             return_err(cur, MEMORY_ALLOCATION, MSG_MALLOC);
         }
-        memcpy(hdr, dat, dat_len + 1);
     }
-    hdr[dat_len] = 0;
+    memcpy(hdr, dat, dat_len);
+    memset(hdr + dat_len, 0, YYJSON_PADDING_SIZE);
 #endif
 
 #if YYJSON_DISABLE_FAST_FP_CONV
     if (!read_num(&cur, pre, flg, val, &msg)) {
-        if (dat_len >= sizeof(buf)) alc->free(alc->ctx, hdr);
+        if (hdr != buf) alc->free(alc->ctx, hdr);
         return_err(cur, INVALID_NUMBER, msg);
     }
-    if (dat_len >= sizeof(buf)) alc->free(alc->ctx, hdr);
+    if (hdr != buf) alc->free(alc->ctx, hdr);
     if (yyjson_is_raw(val)) val->uni.str = dat;
     return dat + (cur - hdr);
 #else
@@ -8387,21 +8424,10 @@ static_noinline u8 *write_f64_raw_fixed(u8 *buf, u64 raw, yyjson_write_flag flg,
 
 #else /* FP_WRITER */
 
-#if YYJSON_MSC_VER >= 1400
-#define snprintf_num(buf, len, fmt, dig, val) \
-    sprintf_s((char *)buf, len, fmt, dig, val)
-#elif defined(snprintf) || (YYJSON_STDC_VER >= 199901L)
-#define snprintf_num(buf, len, fmt, dig, val) \
-    snprintf((char *)buf, len, fmt, dig, val)
-#else
-#define snprintf_num(buf, len, fmt, dig, val) \
-    sprintf((char *)buf, fmt, dig, val)
-#endif
-
 static_noinline u8 *write_fp_reformat(u8 *buf, int len,
                                     yyjson_write_flag flg, bool fixed) {
     u8 *cur = buf;
-    if (unlikely(len < 1)) return NULL;
+    if (unlikely(len < 1 || len >= FP_BUF_LEN)) return NULL;
     cur += (*cur == '-');
     if (unlikely(!char_is_digit(*cur))) {
         /* nan, inf, or bad output */
@@ -8423,19 +8449,23 @@ static_noinline u8 *write_fp_reformat(u8 *buf, int len,
         u8 *end = buf + len, *dot = NULL, *exp = NULL;
 
         /*
-         The snprintf() function is locale-dependent. For currently known
-         locales, (en, zh, ja, ko, am, he, hi) use '.' as the decimal point,
-         while other locales use ',' as the decimal point. we need to replace
-         ',' with '.' to avoid the locale setting.
+         The snprintf() function is locale-dependent. Most locales use '.' or
+         ',' as the decimal point, while a few locales use a 2-byte character,
+         such as "\xD9\xAB" (U+066B) in "ps_AF.UTF-8". We need to replace it
+         with '.' to avoid the locale setting.
          */
-        for (; cur < end; cur++) {
-            switch (*cur) {
-                case ',': *cur = '.'; /* fallthrough */
-                case '.': dot = cur; break;
-                case 'e': exp = cur; break;
-                default: break;
+        while (char_is_digit(*cur)) cur++;
+        if (*cur && *cur != 'e') {
+            dot = cur++;
+            if (!char_is_digit(*cur)) {
+                /* 2-byte decimal point, include the null-terminator */
+                memmove(cur, cur + 1, (usize)(end - cur));
+                end--;
             }
+            *dot = '.';
+            while (char_is_digit(*cur)) cur++;
         }
+        if (*cur == 'e') exp = cur;
         if (fixed) {
             /* remove trailing zeros */
             while (*(end - 1) == '0') end--;
