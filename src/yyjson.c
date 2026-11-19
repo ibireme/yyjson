@@ -3399,7 +3399,7 @@ read_double:
     /* read exponent part */
     if (char_is_exp(*cur)) {
         cur += 1 + char_is_sign(cur[1]);
-        if (!char_is_digit(*cur++)) {
+        if (!char_is_digit(*cur)) {
             return_err(cur, "no digit after exponent sign");
         }
         while (char_is_digit(*cur)) cur++;
@@ -6584,6 +6584,7 @@ const char *yyjson_read_number(const char *dat,
 #endif
 
     if (!err) err = &tmp_err;
+    memset(err, 0, sizeof(*err));
     if (unlikely(!dat)) {
         return_err(cur, INVALID_PARAMETER, "input data is NULL");
     }
@@ -11224,13 +11225,12 @@ static patch_op patch_op_get(yyjson_val *op) {
 #define return_err(_code, _msg) do { \
     if (err->ptr.code == YYJSON_PTR_ERR_MEMORY_ALLOCATION) { \
         err->code = YYJSON_PATCH_ERROR_MEMORY_ALLOCATION; \
-        err->msg = _msg; \
         memset(&err->ptr, 0, sizeof(yyjson_ptr_err)); \
     } else { \
         err->code = YYJSON_PATCH_ERROR_##_code; \
-        err->msg = _msg; \
-        err->idx = iter.idx ? iter.idx - 1 : 0; \
     } \
+    err->msg = _msg; \
+    err->idx = iter.idx ? iter.idx - 1 : 0; \
     return NULL; \
 } while (false)
 

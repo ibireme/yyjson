@@ -1083,6 +1083,14 @@ static void test_read_params(void) {
     yyjson_val ival;
     yyjson_mut_val mval;
     const char *ptr;
+    yyjson_read_err err;
+
+    ptr = yyjson_read_number("1e", &ival, YYJSON_READ_NUMBER_AS_RAW, NULL, &err);
+    yy_assert(ptr == NULL && err.code == YYJSON_READ_ERROR_INVALID_NUMBER);
+    yy_assert(err.pos == 2);
+    ptr = yyjson_read_number("123", &ival, 0, NULL, &err);
+    yy_assert(ptr && *ptr == 0 && err.code == YYJSON_READ_SUCCESS);
+    yy_assert(err.pos == 0 && err.msg == NULL);
 
     ptr = yyjson_read_number(NULL, &ival, 0, NULL, NULL);
     yy_assertf(ptr == NULL, "read line NULL should fail\n");

@@ -901,9 +901,32 @@ static void test_numeric_builder_equals(void) {
     yyjson_mut_doc_free(doc);
 }
 
+static void test_patch_alloc_failure(void) {
+    const char *str = "[{\"op\":\"test\",\"path\":\"\",\"value\":{}},"
+                       "{\"op\":\"add\",\"path\":\"/a\",\"value\":1}]";
+    yyjson_doc *pat = yyjson_read(str, strlen(str), 0);
+    yyjson_doc *src = yyjson_read("{}", 2, 0);
+    yyjson_mut_doc *doc;
+    yyjson_patch_err err;
+    yyjson_alc alc;
+    char buf[2048];
+
+    yy_assert(yyjson_alc_pool_init(&alc, buf, sizeof(buf)));
+    doc = yyjson_mut_doc_new(&alc);
+    /* Only the second operation needs a string allocation. */
+    yy_assert(yyjson_mut_doc_set_str_pool_size(doc, sizeof(buf)));
+    yy_assert(!yyjson_patch(doc, yyjson_doc_get_root(src),
+                            yyjson_doc_get_root(pat), &err));
+    yy_assert(err.code == YYJSON_PATCH_ERROR_MEMORY_ALLOCATION && err.idx == 1);
+    yyjson_mut_doc_free(doc);
+    yyjson_doc_free(src);
+    yyjson_doc_free(pat);
+}
+
 yy_test_case(test_json_patch) {
     test_spec();
     test_more();
+    test_patch_alloc_failure();
     test_numeric_equals();
     test_numeric_builder_equals();
 }
