@@ -1543,7 +1543,13 @@ static void test_json_mut_obj_api(void) {
     yy_assert(yyjson_mut_obj_replace(obj, key, val));
     validate_mut_obj(obj, keys, key_lens, vals, 3);
 
-    // remove {a:30,b:21,c:43,c44} -> {a:30,b:21}
+    // replace(c) -> {a:30,b:21,c:[1]}
+    val = yyjson_mut_arr(doc);
+    yy_assert(yyjson_mut_obj_replace(obj, key, val));
+    yy_assert(yyjson_mut_arr_add_int(doc, val, 1));
+    yy_assert(yyjson_mut_arr_size(yyjson_mut_obj_get(obj, "c")) == 1);
+
+    // remove {a:30,b:21,c:[1],c:44} -> {a:30,b:21}
     set_validate(3, "c", 1, 44);
     new_key_val(3);
     yy_assert(yyjson_mut_obj_add(obj, key, val));

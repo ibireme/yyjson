@@ -7307,8 +7307,8 @@ yyjson_api_inline bool unsafe_yyjson_mut_obj_replace(yyjson_mut_val *obj,
         size_t i;
         for (i = 0; i < obj_len; i++) {
             if (unsafe_yyjson_equals_strn(cur_key, key->uni.str, key_len)) {
-                cur_key->next->tag = val->tag;
-                cur_key->next->uni.u64 = val->uni.u64;
+                val->next = cur_key->next->next;
+                cur_key->next = val;
                 return true;
             } else {
                 cur_key = cur_key->next->next;
