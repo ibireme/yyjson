@@ -30,6 +30,30 @@ Benchmark project and dataset: [yyjson_benchmark](https://github.com/ibireme/yyj
 The simdjson's new `On Demand` API is faster if most JSON fields are known at compile-time.
 This benchmark project only checks the DOM API, a new benchmark will be added later.
 
+#### Desktop (AMD Ryzen 9 9950X, gcc 15.2)
+
+Current library versions: yyjson 0.13.0, simdjson v5.2.0, RapidJSON master (2026-11).
+simdjson >= 1.0 dispatches an AVX-512 kernel on this CPU, so its DOM parsing
+is now on par with (or faster than) yyjson on many documents, while yyjson
+remains clearly faster at serialization.
+
+|twitter.json|parse (GB/s)|stringify, minify (GB/s)|
+|---|---|---|
+|yyjson(insitu)|5.16|   |
+|yyjson|5.04|6.15|
+|simdjson|5.61|3.72|
+|rapidjson|0.99|1.82|
+
+Notes:
+* `yyjson(insitu)` uses `YYJSON_READ_INSITU` with a reusable pool allocator;
+  `yyjson` uses plain `yyjson_read()` with the default allocator.
+* The plain `yyjson_read()` result depends on the allocator state: in a fresh
+  process glibc serves MB-scale document allocations with fresh pages, which
+  can reduce throughput by 3-4x (this is an allocator effect, not parser
+  speed). Prefer insitu with a pool allocator, or a replacement allocator,
+  for large documents. See the methodology notes in
+  [yyjson_benchmark](https://github.com/ibireme/yyjson_benchmark).
+
 #### AWS EC2 (AMD EPYC 7R32, gcc 9.3)
 ![ec2_chart](doc/images/perf_reader_ec2.svg)
 
@@ -59,7 +83,7 @@ This benchmark project only checks the DOM API, a new benchmark will be added la
 |cjson|0.48|0.33|
 |jansson|0.09|0.24|
 
-More benchmark reports with interactive charts (last updated 2020-12-12)
+More benchmark reports with interactive charts (last updated 2020-12-12):
 
 |Platform|CPU|Compiler|OS|Report|
 |---|---|---|---|---|
